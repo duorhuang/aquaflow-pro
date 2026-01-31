@@ -6,29 +6,61 @@ export interface Swimmer {
     group: GroupLevel;
     status: "Active" | "Injured" | "Resting";
     readiness: number; // 0-100, calculated from RPE
+    username?: string;
+    password?: string;
+    // Gamification
+    xp?: number;
+    level?: number;
+    currentStreak?: number;
+    lastCheckIn?: string; // YYYY-MM-DD
+    // Data Profile (WeChat Sync)
+    mainStroke?: "Free" | "Back" | "Breast" | "Fly" | "IM";
+    bestTimes?: Record<string, string>; // e.g. "50Free": "25.5"
+    injuries?: string[]; // ["Shoulder", "Knee"]
+    lastProfileUpdate?: string; // ISO Date of last data confirmation
 }
 
-export type Equipment = "Paddles" | "Fins" | "Snorkel" | "Kickboard" | "Pullbuoy";
+// Sub-types for TrainingPlan
+export type Equipment = "Fins" | "Paddles" | "Snorkel" | "Kickboard" | "Pullbuoy";
+
+export interface PlanSegment {
+    distance: number;
+    type: "Swim" | "Kick" | "Drill";
+    description?: string;
+}
 
 export interface PlanItem {
     id: string;
-    order: number;
-    description: string; // e.g. "10 x 100 Free @ 1:30"
-    distance: number; // in meters
-    intensity: "Low" | "Moderate" | "High" | "Race Pace";
-    equipment: Equipment[];
+    repeats: number;
+    distance: number;
     stroke: "Free" | "Back" | "Breast" | "Fly" | "IM" | "Choice";
+    intensity: "Low" | "Moderate" | "High" | "RacePace";
+    description: string;
+    equipment: Equipment[];
+    segments?: PlanSegment[];
+    intervalMode?: "Interval" | "Rest";
+    interval?: string;
+}
+
+export interface TrainingBlock {
+    id: string;
+    type: "Warmup" | "Pre-Set" | "Main Set" | "Drill Set" | "Cool Down";
+    rounds: number;
+    items: PlanItem[];
+    note?: string;
 }
 
 export interface TrainingPlan {
     id: string;
-    date: string; // ISO YYYY-MM-DD
+    date: string;
     group: GroupLevel;
-    items: PlanItem[];
+    blocks: TrainingBlock[];
     totalDistance: number;
-    focus: string; // e.g. "Aerobic Capacity"
+    focus: string;
     status: "Draft" | "Published" | "Finalized";
     coachNotes?: string;
+    targetedNotes?: Record<string, string>;
+    isStarred?: boolean; // Archived if false & > 14 days
 }
 
 export interface Feedback {
@@ -43,3 +75,11 @@ export interface Feedback {
 
 // "Timeline" logic helper types
 export type TimelinePhase = "T-24 (Preview)" | "T-12 (Feedback)" | "T-2 (Processing)" | "T-0 (Execution)";
+
+export interface AttendanceRecord {
+    id: string;
+    date: string; // YYYY-MM-DD
+    swimmerId: string;
+    status: "Present";
+    timestamp: string; // ISO
+}

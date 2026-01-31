@@ -1,13 +1,16 @@
 import { TrainingPlan } from "@/types";
 import { cn } from "@/lib/utils";
-import { Link2, Target } from "lucide-react";
+import { Link2, Target, Star } from "lucide-react";
 import Link from "next/link";
+import { useStore } from "@/lib/store";
 
 interface PlanCardProps {
     plan: TrainingPlan;
 }
 
 export function PlanCard({ plan }: PlanCardProps) {
+    const { starPlan } = useStore();
+
     return (
         <Link href={`/dashboard/plan/${plan.id}`}>
             <div className={cn(
@@ -28,10 +31,18 @@ export function PlanCard({ plan }: PlanCardProps) {
                             {plan.date} Plan
                         </h3>
                     </div>
-                    <div className={cn(
-                        "w-2 h-2 rounded-full shadow-[0_0_10px]",
-                        plan.status === "Published" ? "bg-primary shadow-primary" : "bg-gray-500"
-                    )} />
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); starPlan(plan.id); }}
+                            className="text-muted-foreground hover:text-yellow-400 transition-colors"
+                        >
+                            <Star className={cn("w-5 h-5", plan.isStarred ? "fill-yellow-400 text-yellow-400" : "")} />
+                        </button>
+                        <div className={cn(
+                            "w-2 h-2 rounded-full shadow-[0_0_10px]",
+                            plan.status === "Published" ? "bg-primary shadow-primary" : "bg-gray-500"
+                        )} />
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 my-4">
@@ -42,6 +53,12 @@ export function PlanCard({ plan }: PlanCardProps) {
                     <div className="flex items-center gap-2 text-muted-foreground">
                         <Target className="w-4 h-4" />
                         <span className="text-sm truncate">{plan.focus}</span>
+                    </div>
+                    <div className="col-span-2 text-xs text-muted-foreground flex gap-2">
+                        {plan.blocks?.slice(0, 3).map(b => (
+                            <span key={b.id} className="bg-secondary/20 px-1.5 py-0.5 rounded border border-white/5">{b.type}</span>
+                        ))}
+                        {(plan.blocks?.length || 0) > 3 && <span>+{(plan.blocks?.length || 0) - 3}</span>}
                     </div>
                 </div>
 
