@@ -22,8 +22,8 @@ export default function DashboardPage() {
     const visiblePlans = getVisiblePlans().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const handleLogout = () => {
-        localStorage.clear();
-        router.push('/login');
+        localStorage.removeItem("aquaflow_coach_session");
+        router.push('/login?role=coach');
     };
 
     return (
