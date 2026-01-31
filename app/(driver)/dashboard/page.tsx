@@ -41,7 +41,7 @@ export default function DashboardPage() {
                 <div className="lg:col-span-2 space-y-6">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-semibold text-white">{t.dashboard.recentPlans}</h2>
-                        <Link href="/dashboard/editor">
+                        <Link href="/dashboard/new-plan">
                             <button className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full font-medium hover:brightness-110 transition-all shadow-[0_0_15px_rgba(100,255,218,0.3)]">
                                 <Plus className="w-4 h-4" />
                                 {t.dashboard.createPlan}

@@ -455,19 +455,25 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                     <div className="flex flex-col gap-4">
                         {/* Swimmer Selector */}
                         <div className="flex flex-wrap gap-2">
-                            {swimmers.filter(s => s.group === plan.group).map(s => (
+                            {swimmers.map(s => (
                                 <button
                                     key={s.id}
                                     onClick={() => toggleSwimmerSelection(s.id)}
                                     className={cn(
-                                        "px-3 py-1.5 rounded-full text-xs font-bold transition-all border",
+                                        "px-3 py-1.5 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5",
                                         selectedSwimmers.includes(s.id)
                                             ? "bg-primary text-primary-foreground border-primary shadow-[0_0_10px_rgba(100,255,218,0.4)]"
                                             : "bg-black/20 text-muted-foreground border-white/10 hover:border-white/30"
                                     )}
                                 >
                                     {s.name}
-                                    {plan.targetedNotes?.[s.id] && <span className="ml-1 text-[10px] text-yellow-400">★</span>}
+                                    <span className={cn(
+                                        "text-[9px] px-1.5 py-0.5 rounded",
+                                        s.group === plan.group ? "bg-primary/20" : "bg-white/10"
+                                    )}>
+                                        {s.group}
+                                    </span>
+                                    {plan.targetedNotes?.[s.id] && <span className="ml-0.5 text-[10px] text-yellow-400">★</span>}
                                 </button>
                             ))}
                         </div>

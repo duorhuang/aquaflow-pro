@@ -109,6 +109,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (isLoaded) localStorage.setItem("aquaflow_attendance", JSON.stringify(attendance));
     }, [attendance, isLoaded]);
 
+    // Listen for localStorage changes from other tabs/windows
+    useEffect(() => {
+        const handleStorageChange = (e: StorageEvent) => {
+            if (!e.key?.startsWith('aquaflow_')) return;
+
+            // Reload data when another tab makes changes
+            if (e.key === 'aquaflow_swimmers' && e.newValue) {
+                setSwimmers(JSON.parse(e.newValue));
+            }
+            if (e.key === 'aquaflow_plans' && e.newValue) {
+                setPlans(JSON.parse(e.newValue));
+            }
+            if (e.key === 'aquaflow_attendance' && e.newValue) {
+                setAttendance(JSON.parse(e.newValue));
+            }
+            if (e.key === 'aquaflow_feedbacks' && e.newValue) {
+                setFeedbacks(JSON.parse(e.newValue));
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
+
     const addPlan = (plan: TrainingPlan) => {
         setPlans((prev) => [plan, ...prev]);
     };
