@@ -14,7 +14,7 @@ export default function Home() {
 
         <div className="flex gap-4 justify-center">
           <Link
-            href="/dashboard"
+            href="/login?role=coach"
             className="flex items-center gap-2 bg-[#64ffda] text-[#0a192f] px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform"
           >
             Enter Coach Portal <ArrowRight className="w-5 h-5" />

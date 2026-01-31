@@ -7,6 +7,7 @@ import { SwimmerStatusPanel } from "@/components/dashboard/SwimmerStatusPanel";
 import { TeamStatsPanel } from "@/components/dashboard/TeamStatsPanel";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
 import { RecentPerformances } from "@/components/dashboard/RecentPerformances";
+import { AthletesFeedbackPanel } from "@/components/dashboard/AthletesFeedbackPanel";
 import { Plus, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
@@ -118,6 +119,7 @@ export default function DashboardPage() {
                 {/* Right Column: Swimmer Status */}
                 <div className="space-y-6">
                     <SwimmerStatusPanel />
+                    <AthletesFeedbackPanel />
                     <RecentPerformances />
                 </div>
             </div>

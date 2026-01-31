@@ -77,6 +77,7 @@ export interface Feedback {
     id: string;
     swimmerId: string;
     planId: string;
+    date: string; // YYYY-MM-DD
     rpe: number; // 1-10
     soreness: number; // 1-10
     comments: string;
