@@ -2,7 +2,9 @@
 
 import { FeedbackForm } from "@/components/athlete/FeedbackForm";
 import { AttendanceCalendar } from "@/components/athlete/AttendanceCalendar";
-import { LogOut, MessageSquareQuote, Calendar, Activity, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { PerformanceList } from "@/components/athlete/PerformanceTracker";
+import { TrainingHistory } from "@/components/athlete/TrainingHistory";
+import { LogOut, MessageSquareQuote, Calendar, Activity, TrendingUp, ChevronLeft, ChevronRight, Trophy, History } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
@@ -11,6 +13,7 @@ import { useStore } from "@/lib/store";
 import { useEffect, useState } from "react";
 import { TrainingPlan, Swimmer } from "@/types";
 import { useRouter } from "next/navigation";
+import { getLocalDateISOString } from "@/lib/date-utils";
 
 export default function AthleteWorkoutPage() {
     const { t } = useLanguage();
@@ -19,7 +22,7 @@ export default function AthleteWorkoutPage() {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [currentUser, setCurrentUser] = useState<Swimmer | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'plan' | 'status' | 'stats'>('plan');
+    const [activeTab, setActiveTab] = useState<'plan' | 'history' | 'performance' | 'status' | 'stats'>('plan');
 
     // Status form
     const [readiness, setReadiness] = useState(95);
@@ -54,7 +57,7 @@ export default function AthleteWorkoutPage() {
             injuryNote,
             lastProfileUpdate: new Date().toISOString()
         });
-        alert('状态已更新！');
+        alert('✅ 状态已更新！数据已实时同步至教练仪表板。');
     };
 
     // Get next 7 days for date selector
@@ -71,11 +74,19 @@ export default function AthleteWorkoutPage() {
     // Get plan for selected date
     const getSelectedDatePlan = (): TrainingPlan | null => {
         if (!currentUser) return null;
-        const dateStr = selectedDate.toISOString().split('T')[0];
+        const dateStr = getLocalDateISOString(selectedDate);
         const dayPlans = plans.filter(p =>
             p.date === dateStr &&
             p.group === currentUser.group
         );
+
+        // Debug logging
+        if (dayPlans.length > 0) {
+            console.log('📅 Found plan for date:', dateStr);
+            console.log('👤 Current user ID:', currentUser.id);
+            console.log('📝 Targeted notes:', dayPlans[0].targetedNotes);
+        }
+
         return dayPlans.length > 0 ? dayPlans[0] : null;
     };
 
@@ -164,39 +175,61 @@ export default function AthleteWorkoutPage() {
 
             <main className="p-4 max-w-lg mx-auto space-y-6">
                 {/* Tab Navigation */}
-                <div className="flex gap-2 bg-card/30 border border-border rounded-xl p-1">
+                <div className="grid grid-cols-5 gap-1 bg-card/30 border border-border rounded-xl p-1">
                     <button
                         onClick={() => setActiveTab('plan')}
                         className={cn(
-                            "flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all",
+                            "py-2 px-1 rounded-lg text-[10px] font-medium transition-all",
                             activeTab === 'plan'
                                 ? "bg-primary text-primary-foreground shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        今日训练
+                        今日
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('history')}
+                        className={cn(
+                            "py-2 px-1 rounded-lg text-[10px] font-medium transition-all",
+                            activeTab === 'history'
+                                ? "bg-primary text-primary-foreground shadow-lg"
+                                : "text-muted-foreground hover:text-white"
+                        )}
+                    >
+                        历史
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('performance')}
+                        className={cn(
+                            "py-2 px-1 rounded-lg text-[10px] font-medium transition-all",
+                            activeTab === 'performance'
+                                ? "bg-primary text-primary-foreground shadow-lg"
+                                : "text-muted-foreground hover:text-white"
+                        )}
+                    >
+                        成绩
                     </button>
                     <button
                         onClick={() => setActiveTab('status')}
                         className={cn(
-                            "flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all",
+                            "py-2 px-1 rounded-lg text-[10px] font-medium transition-all",
                             activeTab === 'status'
                                 ? "bg-primary text-primary-foreground shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        我的状态
+                        状态
                     </button>
                     <button
                         onClick={() => setActiveTab('stats')}
                         className={cn(
-                            "flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all",
+                            "py-2 px-1 rounded-lg text-[10px] font-medium transition-all",
                             activeTab === 'stats'
                                 ? "bg-primary text-primary-foreground shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        月度统计
+                        统计
                     </button>
                 </div>
 
@@ -223,13 +256,20 @@ export default function AthleteWorkoutPage() {
                             </select>
                         </div>
 
-                        {/* Coach Note */}
+                        {/* Coach Note Section - Distinct and Separate */}
                         {myNote && (
-                            <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl flex gap-3">
-                                <MessageSquareQuote className="w-5 h-5 text-primary flex-shrink-0" />
-                                <div>
-                                    <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">教练备注</p>
-                                    <p className="text-sm text-white italic">"{myNote}"</p>
+                            <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 p-5 rounded-3xl relative overflow-hidden shadow-lg animate-in slide-in-from-top-4 duration-500">
+                                <div className="absolute top-0 right-0 p-3 opacity-20">
+                                    <MessageSquareQuote className="w-12 h-12 text-yellow-400" />
+                                </div>
+                                <div className="relative z-10">
+                                    <h3 className="text-yellow-400 font-bold uppercase tracking-widest text-xs mb-2 flex items-center gap-2">
+                                        <MessageSquareQuote className="w-4 h-4" />
+                                        Coach's Special Note (教练寄语)
+                                    </h3>
+                                    <p className="text-white text-lg font-medium italic leading-relaxed">
+                                        "{myNote}"
+                                    </p>
                                 </div>
                             </div>
                         )}
@@ -296,7 +336,7 @@ export default function AthleteWorkoutPage() {
                                 </div>
 
                                 {/* Check-in */}
-                                <FeedbackForm />
+                                <FeedbackForm swimmerId={currentUser.id} planId={selectedPlan.id} />
                             </>
                         ) : (
                             <div className="text-center py-12 bg-card/30 border border-dashed border-border rounded-xl">
@@ -392,6 +432,20 @@ export default function AthleteWorkoutPage() {
                 )}
 
                 {/* Tab Content: Monthly Stats */}
+                {/* Tab Content: Training History */}
+                {activeTab === 'history' && (
+                    <div className="space-y-6">
+                        <TrainingHistory swimmerId={currentUser.id} />
+                    </div>
+                )}
+
+                {/* Tab Content: Performance */}
+                {activeTab === 'performance' && (
+                    <div className="space-y-6">
+                        <PerformanceList swimmerId={currentUser.id} />
+                    </div>
+                )}
+
                 {activeTab === 'stats' && (
                     <div className="space-y-6">
                         <div className="bg-gradient-to-br from-secondary to-card p-6 rounded-3xl border border-white/5">

@@ -4,12 +4,36 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Send, ThumbsUp, Activity } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
+import { useStore } from "@/lib/store";
+import { Feedback } from "@/types";
 
-export function FeedbackForm() {
+interface FeedbackFormProps {
+    swimmerId: string;
+    planId: string;
+}
+
+export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
     const { t } = useLanguage();
+    const { submitFeedback } = useStore();
     const [submitted, setSubmitted] = useState(false);
     const [rpe, setRpe] = useState(5);
     const [soreness, setSoreness] = useState(3);
+    const [comments, setComments] = useState("");
+
+    const handleSubmit = () => {
+        const feedback: Feedback = {
+            id: Math.random().toString(36).substr(2, 9),
+            swimmerId,
+            planId,
+            rpe,
+            soreness,
+            comments,
+            timestamp: new Date().toISOString()
+        };
+
+        submitFeedback(feedback);
+        setSubmitted(true);
+    };
 
     if (submitted) {
         return (
@@ -18,7 +42,7 @@ export function FeedbackForm() {
                     <ThumbsUp className="w-8 h-8 text-green-500" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">{t.athlete.greatJob}</h3>
-                <p className="text-green-400">{t.athlete.feedbackSubmitted}</p>
+                <p className="text-green-400 font-medium">反馈已提交，教练将即时收到通知！</p>
             </div>
         );
     }
@@ -62,10 +86,21 @@ export function FeedbackForm() {
                         className="w-full accent-blue-400 h-2 bg-secondary rounded-lg appearance-none cursor-pointer"
                     />
                 </div>
+
+                <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-2 block">备注 (可选)</label>
+                    <textarea
+                        value={comments}
+                        onChange={(e) => setComments(e.target.value)}
+                        placeholder="今天的训练感觉如何？..."
+                        rows={2}
+                        className="w-full bg-black/20 rounded-xl p-3 text-sm text-white border border-white/5 focus:border-primary/50 outline-none resize-none"
+                    />
+                </div>
             </div>
 
             <button
-                onClick={() => setSubmitted(true)}
+                onClick={handleSubmit}
                 className="w-full py-4 bg-primary text-primary-foreground font-bold rounded-xl hover:brightness-110 transition-all flex items-center justify-center gap-2"
             >
                 {t.athlete.submit} <Send className="w-4 h-4" />

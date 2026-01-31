@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useLanguage } from "@/lib/i18n";
 
 export default function SettingsPage() {
-    const { hydrateMockData } = useStore();
+    const { hydrateMockData, clearData } = useStore();
     const { language, toggleLanguage } = useLanguage();
     const [showGuide, setShowGuide] = useState(false);
 
@@ -53,9 +53,8 @@ export default function SettingsPage() {
     };
 
     const handleClearData = () => {
-        if (confirm('Are you sure you want to clear ALL data? This cannot be undone!')) {
-            localStorage.clear();
-            window.location.reload();
+        if (confirm('确定要清除所有数据吗？此操作无法撤销！\n(这将清除所有本地缓存的计划、队员和记录)')) {
+            clearData();
         }
     };
 
@@ -74,7 +73,7 @@ export default function SettingsPage() {
             <div className="bg-card/30 border border-border rounded-xl p-6">
                 <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                     <SettingsIcon className="w-5 h-5 text-primary" />
-                    Data Management
+                    数据管理
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <button
@@ -83,8 +82,8 @@ export default function SettingsPage() {
                     >
                         <Download className="w-5 h-5 text-green-400" />
                         <div className="text-left">
-                            <div className="font-medium text-white">Export Data</div>
-                            <div className="text-xs text-muted-foreground">Download backup as JSON</div>
+                            <div className="font-medium text-white">导出备份</div>
+                            <div className="text-xs text-muted-foreground">下载 JSON 备份文件</div>
                         </div>
                     </button>
 
@@ -94,8 +93,8 @@ export default function SettingsPage() {
                     >
                         <Upload className="w-5 h-5 text-blue-400" />
                         <div className="text-left">
-                            <div className="font-medium text-white">Import Data</div>
-                            <div className="text-xs text-muted-foreground">Restore from backup</div>
+                            <div className="font-medium text-white">导入备份</div>
+                            <div className="text-xs text-muted-foreground">从备份文件恢复</div>
                         </div>
                     </button>
 
@@ -105,8 +104,8 @@ export default function SettingsPage() {
                     >
                         <RefreshCw className="w-5 h-5 text-yellow-400" />
                         <div className="text-left">
-                            <div className="font-medium text-white">Reset to Demo</div>
-                            <div className="text-xs text-muted-foreground">Load sample data</div>
+                            <div className="font-medium text-white">重置演示数据</div>
+                            <div className="text-xs text-muted-foreground">加载示例数据</div>
                         </div>
                     </button>
 
@@ -116,8 +115,8 @@ export default function SettingsPage() {
                     >
                         <Trash2 className="w-5 h-5 text-red-400" />
                         <div className="text-left">
-                            <div className="font-medium text-red-400">Clear All Data</div>
-                            <div className="text-xs text-red-400/70">Permanent deletion</div>
+                            <div className="font-medium text-red-400">清除试用数据</div>
+                            <div className="text-xs text-red-400/70">永久删除所有记录</div>
                         </div>
                     </button>
                 </div>

@@ -52,9 +52,17 @@ export interface TrainingBlock {
     note?: string;
 }
 
+export interface BlockTemplate extends TrainingBlock {
+    templateId: string;
+    name: string;
+    category: "Warmup" | "Pre-Set" | "Main Set" | "Drill Set" | "Cool Down";
+}
+
 export interface TrainingPlan {
     id: string;
     date: string;
+    startTime?: string; // HH:mm
+    endTime?: string;   // HH:mm
     group: GroupLevel;
     blocks: TrainingBlock[];
     totalDistance: number;
@@ -84,4 +92,23 @@ export interface AttendanceRecord {
     swimmerId: string;
     status: "Present";
     timestamp: string; // ISO
+}
+
+export type SwimEvent =
+    | "50Free" | "100Free" | "200Free" | "400Free" | "800Free" | "1500Free"
+    | "50Back" | "100Back" | "200Back"
+    | "50Breast" | "100Breast" | "200Breast"
+    | "50Fly" | "100Fly" | "200Fly"
+    | "200IM" | "400IM";
+
+export interface PerformanceRecord {
+    id: string;
+    swimmerId: string;
+    event: SwimEvent;
+    time: string;      // "28.50" (seconds format)
+    date: string;      // "2026-01-31"
+    isPB: boolean;     // Is Personal Best
+    improvement?: number; // Improvement in seconds (negative = faster)
+    meetName?: string; // Optional meet/competition name
+    notes?: string;    // Additional notes
 }

@@ -25,10 +25,10 @@ export function PlanCard({ plan }: PlanCardProps) {
                                 plan.group === "Intermediate" ? "bg-yellow-500/10 text-yellow-400" :
                                     "bg-green-500/10 text-green-400"
                         )}>
-                            {plan.group}
+                            {plan.group === "Advanced" ? "高级组" : plan.group === "Intermediate" ? "中级组" : "初级组"}
                         </span>
                         <h3 className="text-xl font-bold mt-2 text-white group-hover:text-primary transition-colors">
-                            {plan.date} Plan
+                            {plan.date} 训练计划
                         </h3>
                     </div>
                     <div className="flex items-center gap-3">
@@ -56,14 +56,19 @@ export function PlanCard({ plan }: PlanCardProps) {
                     </div>
                     <div className="col-span-2 text-xs text-muted-foreground flex gap-2">
                         {plan.blocks?.slice(0, 3).map(b => (
-                            <span key={b.id} className="bg-secondary/20 px-1.5 py-0.5 rounded border border-white/5">{b.type}</span>
+                            <span key={b.id} className="bg-secondary/20 px-1.5 py-0.5 rounded border border-white/5">
+                                {b.type === "Warmup" ? "热身" :
+                                    b.type === "Pre-Set" ? "预备" :
+                                        b.type === "Main Set" ? "主项" :
+                                            b.type === "Drill Set" ? "分解" : "放松"}
+                            </span>
                         ))}
                         {(plan.blocks?.length || 0) > 3 && <span>+{(plan.blocks?.length || 0) - 3}</span>}
                     </div>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-border/50 flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground">Tap to edit</span>
+                    <span className="text-xs text-muted-foreground">点击编辑</span>
                     <Link2 className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-x-1" />
                 </div>
             </div>

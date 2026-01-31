@@ -1,6 +1,6 @@
 "use client";
 
-import { MOCK_PLAN } from "@/lib/data";
+import { MOCK_PLANS } from "@/lib/data";
 import { useState, useEffect } from "react";
 import { Play, Pause, SkipForward, Maximize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,8 @@ export default function PoolsidePage() {
     }, []);
 
     // Safe access to items, assuming Main Set is present or just flattening for display
-    const allItems = MOCK_PLAN.blocks.flatMap(b => b.items);
+    const allItems = MOCK_PLANS[0].blocks.flatMap(b => b.items);
+    const MOCK_PLAN = MOCK_PLANS[0];
     const currentSet = allItems[currentSetIndex] || allItems[0];
 
     return (

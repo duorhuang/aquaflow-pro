@@ -1,8 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { TrainingPlan, Swimmer, Feedback, AttendanceRecord } from "@/types";
-import { MOCK_PLAN, MOCK_SWIMMERS } from "./data";
+import { TrainingPlan, Swimmer, Feedback, AttendanceRecord, PerformanceRecord, BlockTemplate, TrainingBlock } from "@/types";
+import { MOCK_PLANS, MOCK_SWIMMERS, MOCK_TEMPLATES } from "./data";
+import { getLocalDateISOString } from "@/lib/date-utils";
 
 const uid = () => Math.random().toString(36).substr(2, 9);
 
@@ -11,6 +12,7 @@ interface StoreContextType {
     swimmers: Swimmer[];
     feedbacks: Feedback[];
     attendance: AttendanceRecord[];
+    performances: PerformanceRecord[];
     addPlan: (plan: TrainingPlan) => void;
     updatePlan: (id: string, updates: Partial<TrainingPlan>) => void;
     deletePlan: (id: string) => void;
@@ -24,6 +26,14 @@ interface StoreContextType {
     hydrateMockData: () => void;
     starPlan: (id: string) => void;
     getVisiblePlans: () => TrainingPlan[];
+    addPerformance: (performance: PerformanceRecord) => void;
+    getSwimmerPerformances: (swimmerId: string) => PerformanceRecord[];
+    getSwimmerPBs: (swimmerId: string) => Record<string, PerformanceRecord>;
+    // Templates
+    templates: BlockTemplate[];
+    addTemplate: (block: TrainingBlock, name: string, category: BlockTemplate['category']) => void;
+    deleteTemplate: (templateId: string) => void;
+    clearData: () => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -33,6 +43,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const [swimmers, setSwimmers] = useState<Swimmer[]>([]);
     const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
     const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+    const [performances, setPerformances] = useState<PerformanceRecord[]>([]);
+    const [templates, setTemplates] = useState<BlockTemplate[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
 
     // Load from LocalStorage on mount
@@ -41,6 +53,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const loadedSwimmers = localStorage.getItem("aquaflow_swimmers");
         const loadedFeedbacks = localStorage.getItem("aquaflow_feedbacks");
         const loadedAttendance = localStorage.getItem("aquaflow_attendance");
+        const loadedPerformances = localStorage.getItem("aquaflow_performances");
+        const loadedTemplates = localStorage.getItem("aquaflow_templates");
 
         if (loadedPlans) {
             const parsedPlans = JSON.parse(loadedPlans);
@@ -70,7 +84,43 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             setPlans(migratedPlans);
         } else {
             // Initialize with Mock Data for first run
-            setPlans([MOCK_PLAN]);
+            const examplePlan: TrainingPlan = {
+                id: 'tutorial-plan',
+                date: '2026-01-01',
+                group: 'Advanced',
+                status: 'Published',
+                focus: 'Example Training (Tutorial)',
+                totalDistance: 2500,
+                coachNotes: '这是一个示例训练计划，帮助您熟悉系统操作。',
+                blocks: [
+                    {
+                        id: 'block-1',
+                        type: 'Warmup',
+                        rounds: 1,
+                        items: [
+                            { id: 'i1', repeats: 1, distance: 400, stroke: 'Choice', intensity: 'Low', description: '400m Choice Swim', equipment: [], interval: '8:00', intervalMode: 'Interval' }
+                        ]
+                    },
+                    {
+                        id: 'block-2',
+                        type: 'Main Set',
+                        rounds: 1,
+                        items: [
+                            { id: 'i2', repeats: 10, distance: 100, stroke: 'Free', intensity: 'Moderate', description: '10x100m Free', equipment: ['Paddles', 'Pullbuoy'], interval: '1:30', intervalMode: 'Interval' },
+                            { id: 'i3', repeats: 8, distance: 50, stroke: 'Back', intensity: 'High', description: '8x50m Back Sprint', equipment: ['Fins'], interval: '1:00', intervalMode: 'Interval' }
+                        ]
+                    },
+                    {
+                        id: 'block-3',
+                        type: 'Cool Down',
+                        rounds: 1,
+                        items: [
+                            { id: 'i4', repeats: 1, distance: 200, stroke: 'Choice', intensity: 'Low', description: '200m Easy', equipment: [], interval: '', intervalMode: 'Rest' }
+                        ]
+                    }
+                ]
+            };
+            setPlans([examplePlan, ...MOCK_PLANS]);
         }
 
         if (loadedSwimmers) {
@@ -87,6 +137,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
         if (loadedFeedbacks) setFeedbacks(JSON.parse(loadedFeedbacks));
         if (loadedAttendance) setAttendance(JSON.parse(loadedAttendance));
+        if (loadedPerformances) setPerformances(JSON.parse(loadedPerformances));
+        if (loadedTemplates) {
+            setTemplates(JSON.parse(loadedTemplates));
+        } else {
+            setTemplates(MOCK_TEMPLATES);
+        }
 
         setIsLoaded(true);
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -109,6 +165,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (isLoaded) localStorage.setItem("aquaflow_attendance", JSON.stringify(attendance));
     }, [attendance, isLoaded]);
 
+    useEffect(() => {
+        if (isLoaded) localStorage.setItem("aquaflow_performances", JSON.stringify(performances));
+    }, [performances, isLoaded]);
+
+    useEffect(() => {
+        if (isLoaded) localStorage.setItem("aquaflow_templates", JSON.stringify(templates));
+    }, [templates, isLoaded]);
+
     // Listen for localStorage changes from other tabs/windows
     useEffect(() => {
         const handleStorageChange = (e: StorageEvent) => {
@@ -126,6 +190,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             }
             if (e.key === 'aquaflow_feedbacks' && e.newValue) {
                 setFeedbacks(JSON.parse(e.newValue));
+            }
+            if (e.key === 'aquaflow_performances' && e.newValue) {
+                setPerformances(JSON.parse(e.newValue));
+            }
+            if (e.key === 'aquaflow_templates' && e.newValue) {
+                setTemplates(JSON.parse(e.newValue));
             }
         };
 
@@ -160,7 +230,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     const markAttendance = (swimmerId: string) => {
         const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
+        const todayStr = getLocalDateISOString(today);
 
         // 1. Check if already checked in
         if (attendance.some(a => a.swimmerId === swimmerId && a.date === todayStr)) return;
@@ -285,17 +355,105 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
 
     const hydrateMockData = () => {
-        setPlans([MOCK_PLAN]);
+        setPlans(MOCK_PLANS);
         setSwimmers(MOCK_SWIMMERS);
+    };
+
+    // Performance Record Functions
+    const addPerformance = (performance: PerformanceRecord) => {
+        // Check if this is a new PB for this event
+        const swimmerPerfs = performances.filter(
+            p => p.swimmerId === performance.swimmerId && p.event === performance.event
+        );
+
+        const timeInSeconds = parseFloat(performance.time);
+        const bestTime = swimmerPerfs.length > 0
+            ? Math.min(...swimmerPerfs.map(p => parseFloat(p.time)))
+            : Infinity;
+
+        const isPB = timeInSeconds < bestTime;
+
+        // Calculate improvement from previous best
+        let improvement: number | undefined;
+        if (swimmerPerfs.length > 0) {
+            improvement = timeInSeconds - bestTime;
+        }
+
+        const newPerformance: PerformanceRecord = {
+            ...performance,
+            isPB,
+            improvement
+        };
+
+        setPerformances(prev => [...prev, newPerformance]);
+    };
+
+    const getSwimmerPerformances = (swimmerId: string): PerformanceRecord[] => {
+        return performances
+            .filter(p => p.swimmerId === swimmerId)
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    };
+
+    const getSwimmerPBs = (swimmerId: string): Record<string, PerformanceRecord> => {
+        const swimmerPerfs = performances.filter(p => p.swimmerId === swimmerId);
+        const pbs: Record<string, PerformanceRecord> = {};
+
+        swimmerPerfs.forEach(perf => {
+            const existing = pbs[perf.event];
+            if (!existing || parseFloat(perf.time) < parseFloat(existing.time)) {
+                pbs[perf.event] = perf;
+            }
+        });
+
+        return pbs;
+    };
+
+    // Template Functions
+    const addTemplate = (block: TrainingBlock, name: string, category: BlockTemplate['category']) => {
+        const newTemplate: BlockTemplate = {
+            ...block,
+            templateId: uid(),
+            name,
+            category
+        };
+        setTemplates(prev => [...prev, newTemplate]);
+    };
+
+    const deleteTemplate = (templateId: string) => {
+        setTemplates(prev => prev.filter(t => t.templateId !== templateId));
+    };
+
+    const clearData = () => {
+        // Clear LocalStorage
+        localStorage.removeItem("aquaflow_plans");
+        localStorage.removeItem("aquaflow_swimmers");
+        localStorage.removeItem("aquaflow_feedbacks");
+        localStorage.removeItem("aquaflow_attendance");
+        localStorage.removeItem("aquaflow_performances");
+        localStorage.removeItem("aquaflow_templates");
+
+        // Reset State
+        setPlans([]);
+        setSwimmers(MOCK_SWIMMERS);
+        setFeedbacks([]);
+        setAttendance([]);
+        setPerformances([]);
+        setTemplates(MOCK_TEMPLATES);
+
+        // Force reload to ensure clean state
+        window.location.reload();
     };
 
     return (
         <StoreContext.Provider value={{
-            plans, swimmers, feedbacks, attendance,
+            plans, swimmers, feedbacks, attendance, performances,
             addPlan, updatePlan, deletePlan, starPlan, getVisiblePlans,
             addSwimmer, updateSwimmer, deleteSwimmer,
             submitFeedback, markAttendance, adjustXP, getSwimmerArgs,
-            hydrateMockData
+            hydrateMockData,
+            addPerformance, getSwimmerPerformances, getSwimmerPBs,
+            templates, addTemplate, deleteTemplate,
+            clearData
         }}>
             {children}
         </StoreContext.Provider>

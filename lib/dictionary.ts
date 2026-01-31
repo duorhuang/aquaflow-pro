@@ -27,6 +27,8 @@ export const DICTIONARY = {
         editor: {
             newPlan: "New Training Plan",
             editPlan: "Edit Plan",
+            updatePlan: "Update Plan",
+            publishPlan: "Publish Plan",
             draftingFor: "Drafting for",
             date: "Date",
             group: "Group",
@@ -41,6 +43,13 @@ export const DICTIONARY = {
             intensity: "Intensity",
             addSet: "Add Next Set",
             instruction: "Coach Instruction",
+            timeStart: "Start Time",
+            timeEnd: "End Time",
+            groupSelector: {
+                Advanced: "Advanced",
+                Intermediate: "Intermediate",
+                Junior: "Junior",
+            },
             strokes: {
                 Free: "Free",
                 Back: "Back",
@@ -61,6 +70,13 @@ export const DICTIONARY = {
                 Snorkel: "Snorkel",
                 Kickboard: "Kickboard",
                 Pullbuoy: "Pullbuoy",
+            },
+            blockTypes: {
+                "Warmup": "Warmup",
+                "Pre-Set": "Pre-Set",
+                "Main Set": "Main Set",
+                "Drill Set": "Drill Set",
+                "Cool Down": "Cool Down",
             }
         },
         athlete: {
@@ -116,6 +132,8 @@ export const DICTIONARY = {
         editor: {
             newPlan: "新建训练计划",
             editPlan: "编辑计划",
+            updatePlan: "更新计划",
+            publishPlan: "发布计划",
             draftingFor: "目标组别：",
             date: "日期",
             group: "组别",
@@ -130,6 +148,13 @@ export const DICTIONARY = {
             intensity: "强度",
             addSet: "添加下一组",
             instruction: "教练指令",
+            timeStart: "开始时间",
+            timeEnd: "结束时间",
+            groupSelector: {
+                Advanced: "高级组",
+                Intermediate: "中级组",
+                Junior: "初级组",
+            },
             strokes: {
                 Free: "自由泳",
                 Back: "仰泳",
@@ -150,6 +175,13 @@ export const DICTIONARY = {
                 Snorkel: "呼吸管",
                 Kickboard: "浮板",
                 Pullbuoy: "夹板",
+            },
+            blockTypes: {
+                "Warmup": "热身",
+                "Pre-Set": "预备组",
+                "Main Set": "主项",
+                "Drill Set": "分解游",
+                "Cool Down": "放松",
             }
         },
         athlete: {

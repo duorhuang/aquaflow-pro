@@ -2,43 +2,75 @@
 
 import { useStore } from "@/lib/store";
 import { PlanCard } from "@/components/dashboard/PlanCard";
-import { AttendanceStats } from "@/components/dashboard/AttendanceStats";
-import { Plus, AlertTriangle, Zap, ThumbsDown, ThumbsUp, UserPlus, Settings } from "lucide-react";
+import { TodayAttendance } from "@/components/dashboard/TodayAttendance";
+import { SwimmerStatusPanel } from "@/components/dashboard/SwimmerStatusPanel";
+import { TeamStatsPanel } from "@/components/dashboard/TeamStatsPanel";
+import { RefreshButton } from "@/components/dashboard/RefreshButton";
+import { RecentPerformances } from "@/components/dashboard/RecentPerformances";
+import { Plus, LogOut } from "lucide-react";
 import Link from "next/link";
-import { MOCK_SWIMMERS } from "@/lib/data";
-import { cn } from "@/lib/utils";
-import { Swimmer } from "@/types";
 import { useLanguage } from "@/lib/i18n";
-import { useState } from "react";
-import { SwimmerModal } from "@/components/dashboard/SwimmerModal";
+import { LanguageToggle } from "@/components/common/LanguageToggle";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
     const { t } = useLanguage();
-    const { plans, swimmers, adjustXP, getVisiblePlans } = useStore();
-    const [selectedSwimmerId, setSelectedSwimmerId] = useState<string | null>(null);
+    const { getVisiblePlans } = useStore();
+    const router = useRouter();
 
     // Get visible plans (active < 14 days OR starred) and sort
     const visiblePlans = getVisiblePlans().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    // Show all swimmers in Radar for XP management
-    const allSwimmers = [...swimmers];
-
-    const handleXP = (amount: number) => {
-        if (!selectedSwimmerId) return;
-        adjustXP(selectedSwimmerId, amount);
-        // Optional: Show toast
+    const handleLogout = () => {
+        localStorage.clear();
+        router.push('/login');
     };
 
     return (
-        <div className="space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
+        <div className="min-h-screen bg-background p-4 md:p-8">
             {/* Header */}
-            {/* ... */}
+            <header className="mb-8">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h1 className="text-3xl font-bold text-white mb-1">
+                            AquaFlow Pro
+                        </h1>
+                        <p className="text-sm text-muted-foreground">教练仪表板</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <RefreshButton />
+                        <LanguageToggle />
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            <span className="text-sm font-medium">登出</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
 
-            {/* ... Timeline ... */}
+            {/* Mobile Quick Actions */}
+            <div className="md:hidden w-full mb-6">
+                <Link href="/dashboard/quick-plan">
+                    <button className="w-full bg-gradient-to-r from-primary to-blue-400 text-black font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <Plus className="w-6 h-6" />
+                        <span className="text-lg">发布今日训练 (Quick Publish)</span>
+                    </button>
+                </Link>
+            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Main Col: Plans */}
-                <div className="lg:col-span-2 space-y-6">
+            {/* Main Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Column: Attendance & Status */}
+                <div className="space-y-6">
+                    <TodayAttendance />
+                    <TeamStatsPanel />
+                </div>
+
+                {/* Middle Column: Plans */}
+                <div className="lg:col-span-1 space-y-6">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-semibold text-white">{t.dashboard.recentPlans}</h2>
                         <Link href="/dashboard/new-plan">
@@ -49,77 +81,44 @@ export default function DashboardPage() {
                         </Link>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {visiblePlans.map((plan) => (
+                    <div className="space-y-4">
+                        {visiblePlans.slice(0, 6).map((plan) => (
                             <PlanCard key={plan.id} plan={plan} />
                         ))}
+
+                        {visiblePlans.length === 0 && (
+                            <div className="bg-card/30 border border-border rounded-2xl p-8 text-center">
+                                <p className="text-muted-foreground mb-4">还没有训练计划</p>
+                                <Link href="/dashboard/new-plan">
+                                    <button className="bg-primary text-primary-foreground px-6 py-2 rounded-full font-medium hover:brightness-110 transition-all">
+                                        创建第一个计划
+                                    </button>
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Quick Links */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <Link href="/dashboard/schedule">
+                            <div className="bg-card/30 border border-border rounded-xl p-4 hover:bg-card/50 transition-all cursor-pointer">
+                                <p className="text-sm font-medium text-white">📅 日历视图</p>
+                                <p className="text-xs text-muted-foreground mt-1">查看训练安排</p>
+                            </div>
+                        </Link>
+                        <Link href="/dashboard/athletes">
+                            <div className="bg-card/30 border border-border rounded-xl p-4 hover:bg-card/50 transition-all cursor-pointer">
+                                <p className="text-sm font-medium text-white">👥 队员管理</p>
+                                <p className="text-xs text-muted-foreground mt-1">编辑队员信息</p>
+                            </div>
+                        </Link>
                     </div>
                 </div>
 
-                {/* Right Col: Team Radar & XP */}
+                {/* Right Column: Swimmer Status */}
                 <div className="space-y-6">
-                    <h2 className="text-xl font-semibold text-white">{t.dashboard.teamRadar}</h2>
-
-                    <div className="bg-card/50 border border-border rounded-2xl p-6 backdrop-blur-md">
-                        <h3 className="text-sm uppercase tracking-widest text-muted-foreground mb-4">Manage Team XP</h3>
-                        <div className="space-y-3">
-                            {allSwimmers.map(s => (
-                                <div
-                                    key={s.id}
-                                    onClick={() => setSelectedSwimmerId(selectedSwimmerId === s.id ? null : s.id)}
-                                    className={cn(
-                                        "p-3 rounded-lg border transition-all cursor-pointer",
-                                        selectedSwimmerId === s.id
-                                            ? "bg-primary/10 border-primary shadow-[0_0_10px_rgba(100,255,218,0.2)]"
-                                            : "bg-secondary/20 border-white/5 hover:bg-secondary/40"
-                                    )}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className={cn(
-                                                "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold",
-                                                s.readiness < 90 ? "bg-red-500/20 text-red-500" : "bg-blue-500/20 text-blue-500"
-                                            )}>
-                                                {s.level || 1}
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-sm text-white">{s.name}</p>
-                                                <p className="text-[10px] text-muted-foreground">{s.xp || 0} XP • {s.status}</p>
-                                            </div>
-                                        </div>
-                                        {s.readiness < 90 && <AlertTriangle className="w-4 h-4 text-red-500" />}
-                                    </div>
-
-                                    {/* XP Actions (Visible if selected) */}
-                                    {selectedSwimmerId === s.id && (
-                                        <div className="mt-3 flex gap-2 animate-in slide-in-from-top-2">
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); handleXP(5); }}
-                                                className="flex-1 bg-green-500/20 text-green-400 hover:bg-green-500/30 py-1 rounded text-xs font-bold flex items-center justify-center gap-1"
-                                            >
-                                                <ThumbsUp className="w-3 h-3" /> +5
-                                            </button>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); handleXP(20); }}
-                                                className="flex-1 bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 py-1 rounded text-xs font-bold flex items-center justify-center gap-1"
-                                            >
-                                                <Zap className="w-3 h-3" /> +20
-                                            </button>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); handleXP(-10); }}
-                                                className="flex-1 bg-red-500/20 text-red-400 hover:bg-red-500/30 py-1 rounded text-xs font-bold flex items-center justify-center gap-1"
-                                            >
-                                                <ThumbsDown className="w-3 h-3" /> -10
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Attendance Stats */}
-                    <AttendanceStats />
+                    <SwimmerStatusPanel />
+                    <RecentPerformances />
                 </div>
             </div>
         </div>

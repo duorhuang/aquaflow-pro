@@ -29,7 +29,7 @@ export function AIInsight({ plan, swimmers }: AIInsightProps) {
         if (hasShoulderIssue && (hasPaddles || hasFly)) {
             risks.push({
                 swimmer: s,
-                reason: `Shoulder risk! Plan has ${hasPaddles ? "Paddles" : ""} ${hasFly ? "hard Fly" : ""}. Consider modification.`,
+                reason: `肩部风险警报！计划包含 ${hasPaddles ? "手蹼" : ""} ${hasFly ? "高强蝶泳" : ""}。建议调整。`,
                 level: "high"
             });
         }
@@ -38,7 +38,7 @@ export function AIInsight({ plan, swimmers }: AIInsightProps) {
         if (s.readiness < 40 && totalDist > 3000) {
             risks.push({
                 swimmer: s,
-                reason: `Fatigued (RPE Base). Volume (${totalDist}m) might be too high.`,
+                reason: `体能预警 (RPE). 训练量 (${totalDist}m) 可能过大。`,
                 level: "medium"
             });
         }
@@ -47,7 +47,7 @@ export function AIInsight({ plan, swimmers }: AIInsightProps) {
         if (s.readiness > 85 && (s.currentStreak || 0) > 3) {
             opportunities.push({
                 swimmer: s,
-                reason: "High readiness & active streak. Can handle extra intensity."
+                reason: "状态极佳且训练连续。建议增加强度。"
             });
         }
     });
@@ -59,7 +59,7 @@ export function AIInsight({ plan, swimmers }: AIInsightProps) {
             {/* Header */}
             <div className="flex items-center gap-2 text-sm font-bold text-white/50 uppercase tracking-widest">
                 <Activity className="w-4 h-4 text-primary" />
-                AI Load Analysis
+                AI 负荷分析
             </div>
 
             {/* High Risks */}

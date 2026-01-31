@@ -39,21 +39,46 @@ export default function AthletesPage() {
         );
     };
 
+    const [activeTab, setActiveTab] = useState<"All" | "Junior" | "Intermediate" | "Advanced">("All");
+
+    const filteredSwimmers = swimmers.filter(s => activeTab === "All" || s.group === activeTab);
+
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-white">Team Roster</h1>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-white mb-1">Team Roster</h1>
+                    <p className="text-sm text-muted-foreground">Manage your squad and class assignments</p>
+                </div>
                 <button
                     onClick={handleAddSwimmer}
-                    className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full font-medium hover:brightness-110 transition-all shadow-[0_0_15px_rgba(100,255,218,0.3)]"
+                    className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-full font-bold hover:brightness-110 transition-all shadow-[0_0_15px_rgba(100,255,218,0.3)]"
                 >
                     <UserPlus className="w-4 h-4" />
                     Add Swimmer
                 </button>
             </div>
 
+            {/* Group Filter Tabs */}
+            <div className="flex p-1 bg-card/30 border border-border rounded-xl overflow-x-auto no-scrollbar">
+                {(["All", "Advanced", "Intermediate", "Junior"] as const).map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={cn(
+                            "flex-1 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all",
+                            activeTab === tab
+                                ? "bg-primary text-primary-foreground shadow-lg"
+                                : "text-muted-foreground hover:text-white hover:bg-white/5"
+                        )}
+                    >
+                        {tab === "All" ? "All Swimmers" : `${tab} Group`}
+                    </button>
+                ))}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {swimmers.map((s) => (
+                {filteredSwimmers.map((s) => (
                     <div
                         key={s.id}
                         onClick={() => handleEditSwimmer(s)}
