@@ -103,20 +103,44 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // Listen for localStorage changes from other tabs/windows
 
 
-    const addPlan = (plan: TrainingPlan) => {
+    const addPlan = async (plan: TrainingPlan) => {
+        // Optimistic update
         setPlans((prev) => [plan, ...prev]);
+        try {
+            await api.plans.create(plan);
+        } catch (e) {
+            console.error("Failed to sync plan", e);
+        }
     };
 
-    const updatePlan = (id: string, updates: Partial<TrainingPlan>) => {
+    const updatePlan = async (id: string, updates: Partial<TrainingPlan>) => {
         setPlans((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)));
+        try {
+            const currentPlan = plans.find(p => p.id === id);
+            if (currentPlan) {
+                await api.plans.update(id, { ...currentPlan, ...updates });
+            }
+        } catch (e) {
+            console.error("Failed to sync plan update", e);
+        }
     };
 
-    const deletePlan = (id: string) => {
+    const deletePlan = async (id: string) => {
         setPlans((prev) => prev.filter((p) => p.id !== id));
+        try {
+            await api.plans.delete(id);
+        } catch (e) {
+            console.error("Failed to sync plan delete", e);
+        }
     };
 
-    const submitFeedback = (fb: Feedback) => {
+    const submitFeedback = async (fb: Feedback) => {
         setFeedbacks((prev) => [...prev, fb]);
+        try {
+            await api.feedbacks.create(fb);
+        } catch (e) {
+            console.error("Failed to sync feedback", e);
+        }
     };
 
     // Helper to find the PREVIOUS plan date before today
@@ -128,14 +152,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return groupPlans.length > 0 ? groupPlans[0].date : null;
     };
 
-    const markAttendance = (swimmerId: string) => {
+    const markAttendance = async (swimmerId: string) => {
         const today = new Date();
         const todayStr = getLocalDateISOString(today);
 
-        // 1. Check if already checked in
         if (attendance.some(a => a.swimmerId === swimmerId && a.date === todayStr)) return;
 
-        // 2. Add Attendance Record
         const newRecord: AttendanceRecord = {
             id: uid(),
             date: todayStr,
@@ -143,64 +165,72 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             status: "Present",
             timestamp: today.toISOString()
         };
-        setAttendance((prev) => [...prev, newRecord]);
 
-        // 3. Update Swimmer Stats
+        setAttendance((prev) => [...prev, newRecord]);
+        try {
+            await api.attendance.create(newRecord);
+        } catch (e) { console.error("Sync error", e); }
+
+        // Update Swimmer Stats logic (XP, Streak) remains local for UI speed, 
+        // but we should ideally update swimmer object in DB too.
+        // For now, let's keep complex XP logic locally calculated 
+        // and just sync the swimmer object update.
+
+        let updatedSwimmer: Swimmer | undefined;
+
         setSwimmers(prevSwimmers => prevSwimmers.map(s => {
             if (s.id !== swimmerId) return s;
 
-            // STREAK LOGIC v2: Based on PLANS, not calendar days
-            // If they checked in last time there was a plan, streak continues.
+            // ... (keep existing streak logic)
+            // STREAK LOGIC v2: Based on PLANS
             let newStreak = s.currentStreak || 0;
             const lastCheckIn = s.lastCheckIn;
 
             if (lastCheckIn) {
-                // Find the plan date just before today for this user's group
                 const prevPlanDate = getPreviousPlanDate(s.group, todayStr);
-
                 if (prevPlanDate) {
-                    // If their last check-in MATCHES the previous plan date, streak up!
-                    // Or if they checked in YESTERDAY (standard daily), also streak up.
                     const isConsecutivePlan = lastCheckIn === prevPlanDate;
-
                     if (isConsecutivePlan) {
                         newStreak += 1;
                     } else {
-                        // Check strict calendar day just in case (e.g. ad-hoc training)
                         const d1 = new Date(todayStr);
                         const d2 = new Date(lastCheckIn);
                         const diffTime = Math.abs(d1.getTime() - d2.getTime());
                         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                         if (diffDays <= 1) newStreak += 1;
-                        else newStreak = 1; // BROKEN
+                        else newStreak = 1;
                     }
                 } else {
-                    // No previous plans? First day.
                     newStreak = 1;
                 }
             } else {
                 newStreak = 1;
             }
 
-            // Streak Bonus Cap: 3 days = +1, 6 days = +2, 15 days = +3
             let streakBonus = 0;
             if (newStreak >= 15) streakBonus = 3;
             else if (newStreak >= 6) streakBonus = 2;
             else if (newStreak >= 3) streakBonus = 1;
 
-            // Base XP + Streak Bonus
             const xpGained = 20 + streakBonus;
             const newXP = (s.xp || 0) + xpGained;
             const newLevel = calculateLevel(newXP);
 
-            return {
+            updatedSwimmer = {
                 ...s,
                 lastCheckIn: todayStr,
                 currentStreak: newStreak,
                 xp: newXP,
                 level: newLevel
             };
+            return updatedSwimmer;
         }));
+
+        if (updatedSwimmer) {
+            try {
+                await api.swimmers.update(updatedSwimmer.id, updatedSwimmer);
+            } catch (e) { console.error("Sync swimmer error", e); }
+        }
     };
 
     // Level Calculation: 10 * (2^(L-1) - 1)
@@ -211,8 +241,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
 
 
-    const starPlan = (id: string) => {
-        setPlans(prev => prev.map(p => p.id === id ? { ...p, isStarred: !p.isStarred } : p));
+    const starPlan = async (id: string) => {
+        let updatedPlan: TrainingPlan | undefined;
+        setPlans(prev => prev.map(p => {
+            if (p.id === id) {
+                updatedPlan = { ...p, isStarred: !p.isStarred };
+                return updatedPlan;
+            }
+            return p;
+        }));
+
+        if (updatedPlan) {
+            try {
+                await api.plans.update(id, updatedPlan);
+            } catch (e) { console.error("Sync error", e); }
+        }
     };
 
     const getVisiblePlans = () => {
@@ -228,25 +271,36 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         });
     };
 
-    const adjustXP = (swimmerId: string, amount: number) => {
+    const adjustXP = async (swimmerId: string, amount: number) => {
+        let updatedSwimmer: Swimmer | undefined;
         setSwimmers(prev => prev.map(s => {
             if (s.id !== swimmerId) return s;
             const newXP = Math.max(0, (s.xp || 0) + amount); // Prevent negative XP
             const newLevel = calculateLevel(newXP);
-            return { ...s, xp: newXP, level: newLevel };
+            updatedSwimmer = { ...s, xp: newXP, level: newLevel };
+            return updatedSwimmer;
         }));
+        if (updatedSwimmer) {
+            try { await api.swimmers.update(swimmerId, updatedSwimmer); } catch (e) { }
+        }
     };
 
-    const addSwimmer = (swimmer: Swimmer) => {
+    const addSwimmer = async (swimmer: Swimmer) => {
         setSwimmers((prev) => [...prev, swimmer]);
+        try { await api.swimmers.create(swimmer); } catch (e) { }
     };
 
-    const updateSwimmer = (id: string, updates: Partial<Swimmer>) => {
+    const updateSwimmer = async (id: string, updates: Partial<Swimmer>) => {
         setSwimmers((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+        try {
+            const s = swimmers.find(sw => sw.id === id);
+            if (s) await api.swimmers.update(id, { ...s, ...updates });
+        } catch (e) { }
     };
 
-    const deleteSwimmer = (id: string) => {
+    const deleteSwimmer = async (id: string) => {
         setSwimmers((prev) => prev.filter((s) => s.id !== id));
+        try { await api.swimmers.delete(id); } catch (e) { }
     };
 
     const getSwimmerArgs = (id: string) => {
@@ -260,8 +314,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
 
     // Performance Record Functions
-    const addPerformance = (performance: PerformanceRecord) => {
-        // Check if this is a new PB for this event
+    const addPerformance = async (performance: PerformanceRecord) => {
+        // ... (keep PB logic)
         const swimmerPerfs = performances.filter(
             p => p.swimmerId === performance.swimmerId && p.event === performance.event
         );
@@ -273,7 +327,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
         const isPB = timeInSeconds < bestTime;
 
-        // Calculate improvement from previous best
+        // Calculate improvement
         let improvement: number | undefined;
         if (swimmerPerfs.length > 0) {
             improvement = timeInSeconds - bestTime;
@@ -286,6 +340,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         };
 
         setPerformances(prev => [...prev, newPerformance]);
+        try { await api.performances.create(newPerformance); } catch (e) { }
     };
 
     const getSwimmerPerformances = (swimmerId: string): PerformanceRecord[] => {
