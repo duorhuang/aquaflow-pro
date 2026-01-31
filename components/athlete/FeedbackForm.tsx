@@ -21,14 +21,18 @@ export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
     const [comments, setComments] = useState("");
 
     const handleSubmit = () => {
+        const today = new Date();
+        const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+
         const feedback: Feedback = {
             id: Math.random().toString(36).substr(2, 9),
             swimmerId,
             planId,
+            date: dateStr,
             rpe,
             soreness,
             comments,
-            timestamp: new Date().toISOString()
+            timestamp: today.toISOString()
         };
 
         submitFeedback(feedback);
