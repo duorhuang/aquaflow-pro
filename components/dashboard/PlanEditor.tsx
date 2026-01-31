@@ -420,6 +420,86 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                         </div>
                     </div>
 
+                    {/* Quick Add Training Blocks */}
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                        <h3 className="text-xs font-bold text-white/70 mb-3">快速添加训练块</h3>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                onClick={() => {
+                                    const newBlock: TrainingBlock = {
+                                        id: uid(),
+                                        type: "Warmup",
+                                        rounds: 1,
+                                        items: [
+                                            {
+                                                id: uid(),
+                                                repeats: 1,
+                                                distance: 400,
+                                                stroke: "Choice",
+                                                description: "混合泳热身: 游/腿/划/游",
+                                                intensity: "Low",
+                                                equipment: []
+                                            }
+                                        ]
+                                    };
+                                    setPlan({ ...plan, blocks: [...(plan.blocks || []), newBlock] });
+                                }}
+                                className="px-3 py-2 bg-blue-500/20 border border-blue-500/50 rounded-lg text-xs font-bold text-blue-300 hover:bg-blue-500/30 transition-all"
+                            >
+                                + 热身
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const newBlock: TrainingBlock = {
+                                        id: uid(),
+                                        type: "Main Set",
+                                        rounds: 1,
+                                        items: [
+                                            {
+                                                id: uid(),
+                                                repeats: 10,
+                                                distance: 100,
+                                                stroke: "Free",
+                                                description: "有氧耐力游",
+                                                intensity: "Moderate",
+                                                equipment: [],
+                                                interval: "1:45"
+                                            }
+                                        ]
+                                    };
+                                    setPlan({ ...plan, blocks: [...(plan.blocks || []), newBlock] });
+                                }}
+                                className="px-3 py-2 bg-green-500/20 border border-green-500/50 rounded-lg text-xs font-bold text-green-300 hover:bg-green-500/30 transition-all"
+                            >
+                                + 主项
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const newBlock: TrainingBlock = {
+                                        id: uid(),
+                                        type: "Cool Down",
+                                        rounds: 1,
+                                        items: [
+                                            {
+                                                id: uid(),
+                                                repeats: 1,
+                                                distance: 200,
+                                                stroke: "Choice",
+                                                description: "放松游",
+                                                intensity: "Low",
+                                                equipment: []
+                                            }
+                                        ]
+                                    };
+                                    setPlan({ ...plan, blocks: [...(plan.blocks || []), newBlock] });
+                                }}
+                                className="px-3 py-2 bg-purple-500/20 border border-purple-500/50 rounded-lg text-xs font-bold text-purple-300 hover:bg-purple-500/30 transition-all"
+                            >
+                                + 放松
+                            </button>
+                        </div>
+                    </div>
+
                     {/* Blocks List */}
                     <div className="space-y-8">
                         {plan.blocks?.map((block, bIndex) => (

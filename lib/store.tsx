@@ -56,27 +56,49 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const loadedPerformances = localStorage.getItem("aquaflow_performances");
         const loadedTemplates = localStorage.getItem("aquaflow_templates");
 
+        // Load plans
         if (loadedPlans) {
-            setPlans(JSON.parse(loadedPlans));
+            try {
+                setPlans(JSON.parse(loadedPlans));
+            } catch (e) {
+                console.error("Failed to parse plans", e);
+                setPlans([]);
+            }
         } else {
             setPlans([]);
         }
 
+        // Load swimmers - if empty, initialize with seed data
         if (loadedSwimmers) {
-            setSwimmers(JSON.parse(loadedSwimmers));
+            try {
+                const parsed = JSON.parse(loadedSwimmers);
+                setSwimmers(parsed.length > 0 ? parsed : MOCK_SWIMMERS);
+            } catch (e) {
+                console.error("Failed to parse swimmers", e);
+                setSwimmers(MOCK_SWIMMERS);
+            }
         } else {
-            setSwimmers([]);
+            // First time user - initialize with seed data
+            setSwimmers(MOCK_SWIMMERS);
         }
 
         if (loadedFeedbacks) setFeedbacks(JSON.parse(loadedFeedbacks));
         if (loadedAttendance) setAttendance(JSON.parse(loadedAttendance));
         if (loadedPerformances) setPerformances(JSON.parse(loadedPerformances));
+
         if (loadedTemplates) {
-            setTemplates(JSON.parse(loadedTemplates));
+            try {
+                const parsed = JSON.parse(loadedTemplates);
+                setTemplates(parsed.length > 0 ? parsed : DEFAULT_TEMPLATES);
+            } catch (e) {
+                console.error("Failed to parse templates", e);
+                setTemplates(DEFAULT_TEMPLATES);
+            }
         } else {
             setTemplates(DEFAULT_TEMPLATES);
         }
 
+        // Mark as loaded AFTER all data is set
         setIsLoaded(true);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
