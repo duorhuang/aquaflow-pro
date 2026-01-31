@@ -23,6 +23,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         if (saved && (saved === 'en' || saved === 'zh')) {
             setLanguage(saved);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleSetLanguage = (lang: Language) => {

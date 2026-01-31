@@ -45,6 +45,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (loadedPlans) {
             const parsedPlans = JSON.parse(loadedPlans);
             // Migration: If plan has 'items' but no 'blocks', convert.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const migratedPlans = parsedPlans.map((p: any) => {
                 if (p.items && !p.blocks && Array.isArray(p.items)) {
                     // Convert old flat items to a single Main Set block
@@ -54,6 +55,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                             id: "default-block",
                             type: "Main Set",
                             rounds: 1,
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             items: p.items.map((it: any) => ({
                                 ...it,
                                 interval: "", // add missing
@@ -75,7 +77,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             setSwimmers(JSON.parse(loadedSwimmers));
             // Force update if schema changed (missing username)
             const parsed = JSON.parse(loadedSwimmers);
-            if (parsed.some((s: any) => !s.username)) {
+            if (parsed.some((s: Swimmer) => !s.username)) {
                 console.log("Migrating data: Adding credentials...");
                 setSwimmers(MOCK_SWIMMERS);
             }
@@ -87,6 +89,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (loadedAttendance) setAttendance(JSON.parse(loadedAttendance));
 
         setIsLoaded(true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Persist to LocalStorage whenever state changes

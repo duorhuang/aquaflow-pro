@@ -275,7 +275,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                             </div>
                             <select
                                 value={block.type}
-                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateBlock(block.id, { type: e.target.value as any })}
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateBlock(block.id, { type: e.target.value as TrainingBlock["type"] })}
                                 className="bg-transparent font-bold text-lg text-white outline-none"
                             >
                                 {BLOCK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -342,7 +342,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                         <div className="col-span-3 flex flex-col gap-2">
                                             <select
                                                 value={item.stroke}
-                                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateItem(block.id, item.id, { stroke: e.target.value as any })}
+                                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateItem(block.id, item.id, { stroke: e.target.value as PlanItem["stroke"] })}
                                                 className="bg-secondary/30 rounded px-2 py-1 text-sm font-medium outline-none text-white border border-white/5"
                                             >
                                                 {STROKES_KEYS.map(s => <option key={s} value={s}>{s}</option>)}
@@ -394,7 +394,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                                             />
                                                             <select
                                                                 value={seg.type}
-                                                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateSegment(block.id, item.id, sIdx, { type: e.target.value as any })}
+                                                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateSegment(block.id, item.id, sIdx, { type: e.target.value as PlanSegment["type"] })}
                                                                 className="bg-transparent text-muted-foreground"
                                                             >
                                                                 <option>Swim</option><option>Kick</option><option>Drill</option>

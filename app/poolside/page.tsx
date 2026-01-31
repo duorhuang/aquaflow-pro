@@ -15,7 +15,9 @@ export default function PoolsidePage() {
         return () => clearInterval(timer);
     }, []);
 
-    const currentSet = MOCK_PLAN.items[currentSetIndex];
+    // Safe access to items, assuming Main Set is present or just flattening for display
+    const allItems = MOCK_PLAN.blocks.flatMap(b => b.items);
+    const currentSet = allItems[currentSetIndex] || allItems[0];
 
     return (
         <div className="h-screen w-screen bg-black text-white overflow-hidden flex flex-col">
@@ -52,9 +54,9 @@ export default function PoolsidePage() {
             {/* Controls */}
             <div className="h-32 bg-white/5 flex items-center justify-between px-12 border-t border-white/10">
                 <div className="flex items-center gap-4 text-2xl text-muted-foreground">
-                    <span className="font-mono text-primary">Set {currentSet.order}</span>
+                    <span className="font-mono text-primary">Set {currentSetIndex + 1}</span>
                     <span>/</span>
-                    <span>{MOCK_PLAN.items.length}</span>
+                    <span>{allItems.length}</span>
                 </div>
 
                 <div className="flex items-center gap-8">
@@ -69,7 +71,7 @@ export default function PoolsidePage() {
                     </button>
 
                     <button
-                        onClick={() => setCurrentSetIndex((prev) => (prev + 1) % MOCK_PLAN.items.length)}
+                        onClick={() => setCurrentSetIndex((prev) => (prev + 1) % allItems.length)}
                         className="p-6 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
                     >
                         <SkipForward className="w-12 h-12" />

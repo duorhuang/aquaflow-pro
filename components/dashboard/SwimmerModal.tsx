@@ -35,6 +35,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
             setUsername(randomUser);
             setPassword("123456");
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [swimmerToEdit, isOpen]);
 
     if (!isOpen) return null;
@@ -113,8 +114,8 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                                     type="button"
                                     onClick={() => setGroup(lvl)}
                                     className={`py-2 rounded-lg text-xs font-bold border transition-all ${group === lvl
-                                            ? "bg-primary text-primary-foreground border-primary"
-                                            : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50"
+                                        ? "bg-primary text-primary-foreground border-primary"
+                                        : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50"
                                         }`}
                                 >
                                     {lvl}
