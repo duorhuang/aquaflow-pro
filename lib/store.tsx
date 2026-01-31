@@ -222,13 +222,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
 
     const getVisiblePlans = () => {
-        const now = new Date();
-        const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+        // Return ALL plans, never archive
+        // Sort: Starred plans first, then by date (newest first)
+        return [...plans].sort((a, b) => {
+            // Starred plans always come first
+            if (a.isStarred && !b.isStarred) return -1;
+            if (!a.isStarred && b.isStarred) return 1;
 
-        return plans.filter(p => {
-            if (p.isStarred) return true; // Keep starred forever
-            const pDate = new Date(p.date);
-            return pDate >= fourteenDaysAgo; // Only last 2 weeks match
+            // Within same starred status, sort by date (newest first)
+            return new Date(b.date).getTime() - new Date(a.date).getTime();
         });
     };
 
