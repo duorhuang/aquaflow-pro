@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { TrainingPlan, Swimmer, Feedback, AttendanceRecord, PerformanceRecord, BlockTemplate, TrainingBlock } from "@/types";
 import { MOCK_PLANS, MOCK_SWIMMERS, DEFAULT_TEMPLATES } from "./data";
 import { getLocalDateISOString } from "@/lib/date-utils";
+import { api } from "./api-client";
 
 const uid = () => Math.random().toString(36).substr(2, 9);
 
@@ -48,115 +49,59 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const [isLoaded, setIsLoaded] = useState(false);
 
     // Load from LocalStorage on mount
+    // Load from API on mount
     useEffect(() => {
-        const loadedPlans = localStorage.getItem("aquaflow_plans");
-        const loadedSwimmers = localStorage.getItem("aquaflow_swimmers");
-        const loadedFeedbacks = localStorage.getItem("aquaflow_feedbacks");
-        const loadedAttendance = localStorage.getItem("aquaflow_attendance");
-        const loadedPerformances = localStorage.getItem("aquaflow_performances");
-        const loadedTemplates = localStorage.getItem("aquaflow_templates");
-
-        // Load plans
-        if (loadedPlans) {
+        const loadData = async () => {
             try {
-                setPlans(JSON.parse(loadedPlans));
-            } catch (e) {
-                console.error("Failed to parse plans", e);
-                setPlans([]);
-            }
-        } else {
-            setPlans([]);
-        }
+                // Load plans
+                const plans = await api.plans.getAll();
+                setPlans(plans);
 
-        // Load swimmers - if empty, initialize with seed data
-        if (loadedSwimmers) {
-            try {
-                const parsed = JSON.parse(loadedSwimmers);
-                setSwimmers(parsed.length > 0 ? parsed : MOCK_SWIMMERS);
-            } catch (e) {
-                console.error("Failed to parse swimmers", e);
-                setSwimmers(MOCK_SWIMMERS);
-            }
-        } else {
-            // First time user - initialize with seed data
-            setSwimmers(MOCK_SWIMMERS);
-        }
+                // Load swimmers
+                const swimmers = await api.swimmers.getAll();
+                if (swimmers.length === 0) {
+                    // Seed initial swimmers
+                    for (const s of MOCK_SWIMMERS) {
+                        try { await api.swimmers.create(s); } catch (e) { }
+                    }
+                    setSwimmers(MOCK_SWIMMERS);
+                } else {
+                    setSwimmers(swimmers);
+                }
 
-        if (loadedFeedbacks) setFeedbacks(JSON.parse(loadedFeedbacks));
-        if (loadedAttendance) setAttendance(JSON.parse(loadedAttendance));
-        if (loadedPerformances) setPerformances(JSON.parse(loadedPerformances));
-
-        if (loadedTemplates) {
-            try {
-                const parsed = JSON.parse(loadedTemplates);
-                setTemplates(parsed.length > 0 ? parsed : DEFAULT_TEMPLATES);
-            } catch (e) {
-                console.error("Failed to parse templates", e);
+                // Load templates
                 setTemplates(DEFAULT_TEMPLATES);
-            }
-        } else {
-            setTemplates(DEFAULT_TEMPLATES);
-        }
 
-        // Mark as loaded AFTER all data is set
-        setIsLoaded(true);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+                // Load feedbacks
+                const feedbacks = await api.feedbacks.getAll();
+                setFeedbacks(feedbacks);
 
-    // Persist to LocalStorage whenever state changes
-    useEffect(() => {
-        if (isLoaded) localStorage.setItem("aquaflow_plans", JSON.stringify(plans));
-    }, [plans, isLoaded]);
+                // Load attendance
+                const attendance = await api.attendance.getAll();
+                setAttendance(attendance);
 
-    useEffect(() => {
-        if (isLoaded) localStorage.setItem("aquaflow_swimmers", JSON.stringify(swimmers));
-    }, [swimmers, isLoaded]);
+                // Load performances
+                const performances = await api.performances.getAll();
+                setPerformances(performances);
 
-    useEffect(() => {
-        if (isLoaded) localStorage.setItem("aquaflow_feedbacks", JSON.stringify(feedbacks));
-    }, [feedbacks, isLoaded]);
-
-    useEffect(() => {
-        if (isLoaded) localStorage.setItem("aquaflow_attendance", JSON.stringify(attendance));
-    }, [attendance, isLoaded]);
-
-    useEffect(() => {
-        if (isLoaded) localStorage.setItem("aquaflow_performances", JSON.stringify(performances));
-    }, [performances, isLoaded]);
-
-    useEffect(() => {
-        if (isLoaded) localStorage.setItem("aquaflow_templates", JSON.stringify(templates));
-    }, [templates, isLoaded]);
-
-    // Listen for localStorage changes from other tabs/windows
-    useEffect(() => {
-        const handleStorageChange = (e: StorageEvent) => {
-            if (!e.key?.startsWith('aquaflow_')) return;
-
-            // Reload data when another tab makes changes
-            if (e.key === 'aquaflow_swimmers' && e.newValue) {
-                setSwimmers(JSON.parse(e.newValue));
-            }
-            if (e.key === 'aquaflow_plans' && e.newValue) {
-                setPlans(JSON.parse(e.newValue));
-            }
-            if (e.key === 'aquaflow_attendance' && e.newValue) {
-                setAttendance(JSON.parse(e.newValue));
-            }
-            if (e.key === 'aquaflow_feedbacks' && e.newValue) {
-                setFeedbacks(JSON.parse(e.newValue));
-            }
-            if (e.key === 'aquaflow_performances' && e.newValue) {
-                setPerformances(JSON.parse(e.newValue));
-            }
-            if (e.key === 'aquaflow_templates' && e.newValue) {
-                setTemplates(JSON.parse(e.newValue));
+            } catch (error) {
+                console.error("Failed to load data from API:", error);
+            } finally {
+                setIsLoaded(true);
             }
         };
 
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
+        loadData();
     }, []);
+
+    // Persist to LocalStorage whenever state changes
+    // No-op for persistence effects as we use API directly
+    useEffect(() => {
+        // Placeholder to keep hook order if needed, or simply nothing
+    }, []);
+
+    // Listen for localStorage changes from other tabs/windows
+
 
     const addPlan = (plan: TrainingPlan) => {
         setPlans((prev) => [plan, ...prev]);
