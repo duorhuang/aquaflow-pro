@@ -2,6 +2,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// Force dynamic rendering - don't try to connect to DB at build time
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     try {
         const swimmers = await prisma.swimmer.findMany({
