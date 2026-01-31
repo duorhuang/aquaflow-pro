@@ -69,8 +69,8 @@ export function MobileNav() {
                     <div className="mt-auto mb-8 border-t border-white/10 pt-6">
                         <button
                             onClick={() => {
-                                localStorage.clear();
-                                window.location.href = '/login';
+                                localStorage.removeItem("aquaflow_coach_session");
+                                window.location.href = '/login?role=coach';
                             }}
                             className="flex items-center gap-4 px-4 py-4 w-full rounded-xl text-red-400 hover:bg-red-500/10 transition-colors"
                         >

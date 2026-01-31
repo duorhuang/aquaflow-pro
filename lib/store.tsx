@@ -57,82 +57,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const loadedTemplates = localStorage.getItem("aquaflow_templates");
 
         if (loadedPlans) {
-            const parsedPlans = JSON.parse(loadedPlans);
-            // Migration: If plan has 'items' but no 'blocks', convert.
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const migratedPlans = parsedPlans.map((p: any) => {
-                if (p.items && !p.blocks && Array.isArray(p.items)) {
-                    // Convert old flat items to a single Main Set block
-                    return {
-                        ...p,
-                        blocks: [{
-                            id: "default-block",
-                            type: "Main Set",
-                            rounds: 1,
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            items: p.items.map((it: any) => ({
-                                ...it,
-                                interval: "", // add missing
-                                segments: [] // add missing
-                            }))
-                        }],
-                        items: undefined // Remove old key
-                    };
-                }
-                return p;
-            });
-            setPlans(migratedPlans);
+            setPlans(JSON.parse(loadedPlans));
         } else {
-            // Initialize with Mock Data for first run
-            const examplePlan: TrainingPlan = {
-                id: 'tutorial-plan',
-                date: '2026-01-01',
-                group: 'Advanced',
-                status: 'Published',
-                focus: 'Example Training (Tutorial)',
-                totalDistance: 2500,
-                coachNotes: '这是一个示例训练计划，帮助您熟悉系统操作。',
-                blocks: [
-                    {
-                        id: 'block-1',
-                        type: 'Warmup',
-                        rounds: 1,
-                        items: [
-                            { id: 'i1', repeats: 1, distance: 400, stroke: 'Choice', intensity: 'Low', description: '400m Choice Swim', equipment: [], interval: '8:00', intervalMode: 'Interval' }
-                        ]
-                    },
-                    {
-                        id: 'block-2',
-                        type: 'Main Set',
-                        rounds: 1,
-                        items: [
-                            { id: 'i2', repeats: 10, distance: 100, stroke: 'Free', intensity: 'Moderate', description: '10x100m Free', equipment: ['Paddles', 'Pullbuoy'], interval: '1:30', intervalMode: 'Interval' },
-                            { id: 'i3', repeats: 8, distance: 50, stroke: 'Back', intensity: 'High', description: '8x50m Back Sprint', equipment: ['Fins'], interval: '1:00', intervalMode: 'Interval' }
-                        ]
-                    },
-                    {
-                        id: 'block-3',
-                        type: 'Cool Down',
-                        rounds: 1,
-                        items: [
-                            { id: 'i4', repeats: 1, distance: 200, stroke: 'Choice', intensity: 'Low', description: '200m Easy', equipment: [], interval: '', intervalMode: 'Rest' }
-                        ]
-                    }
-                ]
-            };
-            setPlans([examplePlan, ...MOCK_PLANS]);
+            setPlans([]);
         }
 
         if (loadedSwimmers) {
             setSwimmers(JSON.parse(loadedSwimmers));
-            // Force update if schema changed (missing username)
-            const parsed = JSON.parse(loadedSwimmers);
-            if (parsed.some((s: Swimmer) => !s.username)) {
-                console.log("Migrating data: Adding credentials...");
-                setSwimmers(MOCK_SWIMMERS);
-            }
         } else {
-            setSwimmers(MOCK_SWIMMERS);
+            setSwimmers([]);
         }
 
         if (loadedFeedbacks) setFeedbacks(JSON.parse(loadedFeedbacks));
@@ -141,7 +74,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (loadedTemplates) {
             setTemplates(JSON.parse(loadedTemplates));
         } else {
-            setTemplates(MOCK_TEMPLATES);
+            setTemplates([]);
         }
 
         setIsLoaded(true);
@@ -434,11 +367,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
         // Reset State
         setPlans([]);
-        setSwimmers(MOCK_SWIMMERS);
+        setSwimmers([]);
         setFeedbacks([]);
         setAttendance([]);
         setPerformances([]);
-        setTemplates(MOCK_TEMPLATES);
+        setTemplates([]);
 
         // Force reload to ensure clean state
         window.location.reload();

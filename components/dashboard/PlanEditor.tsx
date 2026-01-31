@@ -376,8 +376,14 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                         </div>
                                     </div>
 
-                                    <div className="text-xs text-muted-foreground border-l border-white/10 pl-3">
-                                        {plan.date}
+                                    <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded px-2 py-1">
+                                        <span className="text-[10px] text-muted-foreground">日期</span>
+                                        <input
+                                            type="date"
+                                            value={plan.date}
+                                            onChange={(e) => setPlan({ ...plan, date: e.target.value })}
+                                            className="bg-transparent text-xs font-mono text-white outline-none"
+                                        />
                                     </div>
                                 </div>
                             </div>

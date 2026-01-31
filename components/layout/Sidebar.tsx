@@ -69,9 +69,10 @@ export function Sidebar() {
                 <button
                     onClick={() => {
                         // Clear all localStorage data
-                        localStorage.clear();
+                        // Clear session only
+                        localStorage.removeItem("aquaflow_coach_session");
                         // Redirect to login page
-                        window.location.href = '/login';
+                        window.location.href = '/login?role=coach';
                     }}
                     className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-red-400 hover:bg-red-500/10 transition-colors opacity-70 hover:opacity-100"
                 >

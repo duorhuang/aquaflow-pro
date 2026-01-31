@@ -46,7 +46,7 @@ export default function AthleteWorkoutPage() {
     }, [swimmers, router]);
 
     const handleLogout = () => {
-        localStorage.clear();
+        localStorage.removeItem("aquaflow_athlete_id");
         router.push('/login');
     };
 
