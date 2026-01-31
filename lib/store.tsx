@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { TrainingPlan, Swimmer, Feedback, AttendanceRecord, PerformanceRecord, BlockTemplate, TrainingBlock } from "@/types";
-import { MOCK_PLANS, MOCK_SWIMMERS, MOCK_TEMPLATES } from "./data";
+import { MOCK_PLANS, MOCK_SWIMMERS, DEFAULT_TEMPLATES } from "./data";
 import { getLocalDateISOString } from "@/lib/date-utils";
 
 const uid = () => Math.random().toString(36).substr(2, 9);
@@ -74,7 +74,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (loadedTemplates) {
             setTemplates(JSON.parse(loadedTemplates));
         } else {
-            setTemplates([]);
+            setTemplates(DEFAULT_TEMPLATES);
         }
 
         setIsLoaded(true);
@@ -371,7 +371,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setFeedbacks([]);
         setAttendance([]);
         setPerformances([]);
-        setTemplates([]);
+        setTemplates(DEFAULT_TEMPLATES);
 
         // Force reload to ensure clean state
         window.location.reload();

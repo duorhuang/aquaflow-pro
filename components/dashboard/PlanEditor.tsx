@@ -338,25 +338,25 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                 <div className="flex flex-wrap items-center gap-3 mt-1">
                                     {/* Group Selector */}
                                     <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded px-2 py-1">
-                                        <label className="text-[10px] text-muted-foreground">{t.editor.group}</label>
+                                        <label className="text-[10px] text-muted-foreground">组别</label>
                                         <select
                                             value={plan.group}
                                             onChange={(e) => setPlan({ ...plan, group: e.target.value as GroupLevel })}
                                             className="bg-transparent text-xs font-bold text-white outline-none [&>option]:text-black"
                                         >
                                             {/* @ts-ignore */}
-                                            <option value="Advanced">{t.editor.groupSelector?.Advanced || "Advanced"}</option>
+                                            <option value="Advanced">高级组</option>
                                             {/* @ts-ignore */}
-                                            <option value="Intermediate">{t.editor.groupSelector?.Intermediate || "Intermediate"}</option>
+                                            <option value="Intermediate">中级组</option>
                                             {/* @ts-ignore */}
-                                            <option value="Junior">{t.editor.groupSelector?.Junior || "Junior"}</option>
+                                            <option value="Junior">初级组</option>
                                         </select>
                                     </div>
 
                                     {/* Time Selector */}
                                     <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded px-2 py-1">
                                         <div className="flex items-center gap-1">
-                                            <span className="text-[10px] text-muted-foreground">{t.editor.timeStart}</span>
+                                            <span className="text-[10px] text-muted-foreground">开始</span>
                                             <input
                                                 type="time"
                                                 value={plan.startTime || ""}
@@ -366,7 +366,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                         </div>
                                         <span className="text-white/20">-</span>
                                         <div className="flex items-center gap-1">
-                                            <span className="text-[10px] text-muted-foreground">{t.editor.timeEnd}</span>
+                                            <span className="text-[10px] text-muted-foreground">结束</span>
                                             <input
                                                 type="time"
                                                 value={plan.endTime || ""}
@@ -677,6 +677,14 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
 
                                     {/* Swimmer Selector */}
                                     <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto no-scrollbar">
+                                        {swimmers.length === 0 && (
+                                            <div className="w-full text-center py-4 bg-white/5 rounded-lg border border-dashed border-white/10">
+                                                <p className="text-[10px] text-red-300 mb-1">⚠️ 暂无队员</p>
+                                                <Link href="/dashboard/athletes" className="text-[10px] text-blue-400 hover:underline">
+                                                    前往【队员管理】添加 &rarr;
+                                                </Link>
+                                            </div>
+                                        )}
                                         {swimmers.map(s => (
                                             <button
                                                 key={s.id}

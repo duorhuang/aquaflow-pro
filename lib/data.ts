@@ -123,7 +123,7 @@ export const MOCK_PLANS: TrainingPlan[] = [
 
 // ... MOCK_PLANS
 
-export const MOCK_TEMPLATES: BlockTemplate[] = [
+export const DEFAULT_TEMPLATES: BlockTemplate[] = [
     {
         templateId: "t1",
         id: "temp_b1",
