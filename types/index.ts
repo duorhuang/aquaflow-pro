@@ -17,8 +17,10 @@ export interface Swimmer {
     mainStroke?: "Free" | "Back" | "Breast" | "Fly" | "IM";
     bestTimes?: Record<string, string>; // e.g. "50Free": "25.5"
     injuries?: string[]; // ["Shoulder", "Knee"]
+    injuryNote?: string; // Current injury report text
     lastProfileUpdate?: string; // ISO Date of last data confirmation
 }
+
 
 // Sub-types for TrainingPlan
 export type Equipment = "Fins" | "Paddles" | "Snorkel" | "Kickboard" | "Pullbuoy";
