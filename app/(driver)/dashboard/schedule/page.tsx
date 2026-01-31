@@ -24,9 +24,9 @@ export default function SchedulePage() {
     };
 
     const getDistanceColor = (distance: number): string => {
-        if (distance >= 4000) return 'bg-green-600'; // Deep green
+        if (distance >= 4000) return 'bg-green-700'; // Deep green
         if (distance >= 2000) return 'bg-green-500'; // Medium green
-        if (distance > 0) return 'bg-green-400';     // Light green
+        if (distance > 0) return 'bg-green-300';     // Light green
         return 'transparent';
     };
 
@@ -58,8 +58,8 @@ export default function SchedulePage() {
         calendarDays.push(day);
     }
 
-    const monthNames = ["January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"];
+    const monthNames = ["一月", "二月", "三月", "四月", "五月", "六月",
+        "七月", "八月", "九月", "十月", "十一月", "十二月"];
 
     const today = new Date();
     const isToday = (day: number) => {
@@ -72,12 +72,12 @@ export default function SchedulePage() {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-white">Training Schedule</h1>
+                <h1 className="text-3xl font-bold text-white">训练日程表</h1>
                 <button
                     onClick={goToToday}
                     className="px-4 py-2 bg-primary/20 text-primary rounded-lg text-sm font-medium hover:bg-primary/30 transition-colors"
                 >
-                    Today
+                    今天
                 </button>
             </div>
 
@@ -104,7 +104,7 @@ export default function SchedulePage() {
             <div className="bg-card/30 border border-border rounded-xl p-6">
                 {/* Day Headers */}
                 <div className="grid grid-cols-7 gap-2 mb-4">
-                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                    {['周日', '周一', '周二', '周三', '周四', '周五', '周六'].map(day => (
                         <div key={day} className="text-center text-xs font-bold text-muted-foreground py-2">
                             {day}
                         </div>
@@ -179,21 +179,20 @@ export default function SchedulePage() {
                 </div>
             </div>
 
-            {/* Legend */}
             <div className="bg-card/30 border border-border rounded-xl p-4">
-                <h3 className="text-sm font-bold text-white mb-3">Training Intensity</h3>
+                <h3 className="text-sm font-bold text-white mb-3">训练强度分布</h3>
                 <div className="flex items-center gap-6 flex-wrap">
                     <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded bg-green-400" />
-                        <span className="text-xs text-muted-foreground">Light (0-2000m)</span>
+                        <div className="w-4 h-4 rounded bg-green-300" />
+                        <span className="text-xs text-muted-foreground">低强度 (0-2000m)</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-4 h-4 rounded bg-green-500" />
-                        <span className="text-xs text-muted-foreground">Medium (2000-4000m)</span>
+                        <span className="text-xs text-muted-foreground">中强度 (2000-4000m)</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded bg-green-600" />
-                        <span className="text-xs text-muted-foreground">Intense (4000m+)</span>
+                        <div className="w-4 h-4 rounded bg-green-700" />
+                        <span className="text-xs text-muted-foreground">高强度 (4000m+)</span>
                     </div>
                 </div>
             </div>
