@@ -1,0 +1,130 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Swimmer {
+  id        String   @id @default(cuid())
+  name      String
+  group     String
+  status    String
+  readiness Int      @default(100)
+  username  String   @unique
+  password  String
+  
+  // Gamification
+  xp            Int?
+  level         Int?
+  currentStreak Int?
+  lastCheckIn   String?
+  
+  // Data Profile
+  mainStroke         String?
+  bestTimes          Json?
+  injuries           Json?
+  injuryNote         String?
+  lastProfileUpdate  String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  feedbacks    Feedback[]
+  attendance   AttendanceRecord[]
+  performances PerformanceRecord[]
+}
+
+model TrainingPlan {
+  id            String   @id @default(cuid())
+  date          String
+  startTime     String?
+  endTime       String?
+  group         String
+  blocks        Json     // TrainingBlock[]
+  totalDistance Int
+  focus         String
+  status        String
+  coachNotes    String?
+  targetedNotes Json?    // Record<string, string>
+  isStarred     Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([date])
+  @@index([group])
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  swimmerId String
+  planId    String
+  date      String
+  rpe       Int
+  soreness  Int
+  comments  String
+  timestamp String
+  
+  createdAt DateTime @default(now())
+  
+  swimmer Swimmer @relation(fields: [swimmerId], references: [id], onDelete: Cascade)
+  
+  @@index([swimmerId])
+  @@index([date])
+}
+
+model AttendanceRecord {
+  id        String   @id @default(cuid())
+  date      String
+  swimmerId String
+  status    String
+  timestamp String
+  
+  createdAt DateTime @default(now())
+  
+  swimmer Swimmer @relation(fields: [swimmerId], references: [id], onDelete: Cascade)
+  
+  @@index([date])
+  @@index([swimmerId])
+}
+
+model PerformanceRecord {
+  id          String   @id @default(cuid())
+  swimmerId   String
+  event       String
+  time        String
+  date        String
+  isPB        Boolean  @default(false)
+  improvement Float?
+  meetName    String?
+  notes       String?
+  
+  createdAt DateTime @default(now())
+  
+  swimmer Swimmer @relation(fields: [swimmerId], references: [id], onDelete: Cascade)
+  
+  @@index([swimmerId])
+  @@index([date])
+}
+
+model BlockTemplate {
+  id         String   @id @default(cuid())
+  templateId String   @unique
+  name       String
+  category   String
+  type       String
+  rounds     Int
+  items      Json     // PlanItem[]
+  note       String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([category])
+}
