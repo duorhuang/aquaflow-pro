@@ -69,8 +69,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                     setSwimmers(swimmers);
                 }
 
-                // Load templates
-                setTemplates(DEFAULT_TEMPLATES);
+                // Load templates from localStorage and merge with defaults
+                const savedTemplates = localStorage.getItem("aquaflow_templates");
+                const userTemplates = savedTemplates ? JSON.parse(savedTemplates) : [];
+                // Merge: user templates + default templates (avoid duplicates)
+                const defaultIds = new Set(DEFAULT_TEMPLATES.map(t => t.templateId));
+                const uniqueUserTemplates = userTemplates.filter((t: BlockTemplate) => !defaultIds.has(t.templateId));
+                setTemplates([...uniqueUserTemplates, ...DEFAULT_TEMPLATES]);
 
                 // Load feedbacks
                 const feedbacks = await api.feedbacks.getAll();
@@ -94,11 +99,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         loadData();
     }, []);
 
-    // Persist to LocalStorage whenever state changes
-    // No-op for persistence effects as we use API directly
+    // Persist templates to localStorage
     useEffect(() => {
-        // Placeholder to keep hook order if needed, or simply nothing
-    }, []);
+        if (isLoaded && templates.length > 0) {
+            // Only save user templates (not default ones)
+            const defaultIds = new Set(DEFAULT_TEMPLATES.map(t => t.templateId));
+            const userTemplates = templates.filter(t => !defaultIds.has(t.templateId));
+            localStorage.setItem("aquaflow_templates", JSON.stringify(userTemplates));
+        }
+    }, [templates, isLoaded]);
 
     // Listen for localStorage changes from other tabs/windows
 
