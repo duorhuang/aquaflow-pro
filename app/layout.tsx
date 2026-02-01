@@ -1,22 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n";
 import { StoreProvider } from "@/lib/store";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "AquaFlow Pro",
-  description: "Professional Swimming Team Management",
+  title: "AquaFlow Pro - 游泳队管理系统",
+  description: "专业游泳队训练管理系统 | Professional Swimming Team Management",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -42,10 +31,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="zh-CN">
+      <head>
+        {/* Preconnect to Vercel for faster loading */}
+        <link rel="preconnect" href="https://vercel.app" />
+      </head>
+      <body className="antialiased">
         <LanguageProvider>
           <StoreProvider>
             {children}
