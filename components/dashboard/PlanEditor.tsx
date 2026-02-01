@@ -55,7 +55,7 @@ interface PlanEditorProps {
 export function PlanEditor({ initialPlan }: PlanEditorProps) {
     const router = useRouter();
     const { t } = useLanguage();
-    const { addPlan, updatePlan, swimmers, addTemplate } = useStore();
+    const { addPlan, updatePlan, deletePlan, swimmers, addTemplate } = useStore();
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
     // Initialize State
@@ -396,6 +396,21 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                             <div className="hidden lg:block">
                                 <AIInsight plan={plan} swimmers={swimmers} />
                             </div>
+
+                            {initialPlan && (
+                                <button
+                                    onClick={() => {
+                                        if (confirm("确定要删除这个训练计划吗？此操作不可撤销。")) {
+                                            deletePlan(plan.id);
+                                            router.push("/dashboard");
+                                        }
+                                    }}
+                                    className="flex items-center gap-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 px-4 py-2 rounded-full font-bold transition-all text-xs md:text-sm border border-red-500/30"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    删除
+                                </button>
+                            )}
 
                             <button
                                 onClick={handleSave}

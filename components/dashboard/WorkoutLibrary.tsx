@@ -3,22 +3,22 @@
 import { useState } from "react";
 import { BlockTemplate, TrainingBlock } from "@/types";
 import { useStore } from "@/lib/store";
-import { BookOpen, Plus, Trash2, Search, Filter, Calculator, Library } from "lucide-react";
+import { BookOpen, Plus, Trash2, Search, Filter, Calculator, Library, Star, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PaceCalculator } from "./PaceCalculator";
+import { DEFAULT_TEMPLATES } from "@/lib/data";
 
 interface WorkoutLibraryProps {
     onSelect: (template: BlockTemplate) => void;
     onClose?: () => void;
 }
 
-const CATEGORIES = ["All", "Warmup", "Main Set", "Sprint", "Drill", "Cool Down"];
+const CATEGORIES = ["All", "Warmup", "Main Set", "Drill Set", "Cool Down"];
 const CATEGORY_MAP: Record<string, string> = {
     "All": "全部",
     "Warmup": "热身",
     "Main Set": "主项",
-    "Sprint": "冲刺",
-    "Drill": "分解",
+    "Drill Set": "分解",
     "Cool Down": "放松"
 };
 
@@ -27,18 +27,102 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
     const [mainTab, setMainTab] = useState<"Templates" | "Tools">("Templates");
     const [activeTab, setActiveTab] = useState("All");
     const [searchQuery, setSearchQuery] = useState("");
+    const [showSection, setShowSection] = useState<"all" | "my" | "system">("all");
 
-    const filteredTemplates = templates.filter(t => {
-        const matchesCategory = activeTab === "All" || t.category === activeTab;
-        const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
-    });
+    // Separate user templates from system templates
+    const systemTemplateIds = new Set(DEFAULT_TEMPLATES.map(t => t.templateId));
+    const userTemplates = templates.filter(t => !systemTemplateIds.has(t.templateId));
+    const systemTemplates = templates.filter(t => systemTemplateIds.has(t.templateId));
+
+    // Filter templates based on current filters
+    const filterTemplates = (templateList: BlockTemplate[]) => {
+        return templateList.filter(t => {
+            const matchesCategory = activeTab === "All" || t.category === activeTab;
+            const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                t.items.some(item => item.description?.toLowerCase().includes(searchQuery.toLowerCase()));
+            return matchesCategory && matchesSearch;
+        });
+    };
+
+    const filteredUserTemplates = filterTemplates(userTemplates);
+    const filteredSystemTemplates = filterTemplates(systemTemplates);
+
+    const displayTemplates = showSection === "my" ? filteredUserTemplates
+        : showSection === "system" ? filteredSystemTemplates
+            : [...filteredUserTemplates, ...filteredSystemTemplates];
 
     // Calculate distance for a block
     const getBlockDistance = (block: TrainingBlock) => {
         const dist = block.items.reduce((sum, item) => sum + (item.distance * item.repeats), 0);
         return dist * block.rounds;
     };
+
+    const renderTemplateCard = (template: BlockTemplate, isUserTemplate: boolean) => (
+        <div
+            key={template.templateId}
+            className={cn(
+                "bg-secondary/30 border rounded-xl p-3 hover:border-primary/50 transition-all group relative",
+                isUserTemplate ? "border-yellow-500/20" : "border-white/5"
+            )}
+        >
+            <div className="flex justify-between items-start mb-2">
+                <div>
+                    <div className="flex items-center gap-1.5">
+                        {isUserTemplate && <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />}
+                        <h4 className="font-bold text-sm text-white truncate max-w-[130px]" title={template.name}>
+                            {template.name}
+                        </h4>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded uppercase">
+                        {CATEGORY_MAP[template.category] || template.category}
+                    </span>
+                </div>
+                <div className="text-right">
+                    <div className="text-xs font-mono font-bold text-primary">
+                        {getBlockDistance(template)}m
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                        {template.items.length} 项
+                    </div>
+                </div>
+            </div>
+
+            {/* Items Preview */}
+            <div className="space-y-1 mb-3">
+                {template.items.slice(0, 2).map((item, i) => (
+                    <div key={i} className="text-[10px] text-muted-foreground truncate">
+                        {item.repeats}x{item.distance}m {item.stroke}
+                    </div>
+                ))}
+                {template.items.length > 2 && (
+                    <div className="text-[10px] text-muted-foreground opacity-50">...</div>
+                )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2">
+                <button
+                    onClick={() => onSelect(template)}
+                    className="flex-1 bg-primary/20 text-primary hover:bg-primary hover:text-primary-foreground text-xs py-1.5 rounded-lg flex items-center justify-center gap-1 transition-all font-medium"
+                >
+                    <Plus className="w-3 h-3" /> 使用
+                </button>
+                {isUserTemplate && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm("确定要删除这个模板吗？")) {
+                                deleteTemplate(template.templateId);
+                            }
+                        }}
+                        className="px-2 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition-all"
+                    >
+                        <Trash2 className="w-3 h-3" />
+                    </button>
+                )}
+            </div>
+        </div>
+    );
 
     return (
         <>
@@ -88,9 +172,46 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="搜索模板..."
+                                    placeholder="搜索模板名称或描述..."
                                     className="w-full bg-secondary/50 rounded-lg pl-9 pr-3 py-2 text-xs text-white border border-transparent focus:border-primary outline-none"
                                 />
+                            </div>
+
+                            {/* Section Tabs */}
+                            <div className="flex gap-1 mb-3">
+                                <button
+                                    onClick={() => setShowSection("all")}
+                                    className={cn(
+                                        "flex-1 text-[10px] py-1.5 rounded-lg transition-all font-medium",
+                                        showSection === "all"
+                                            ? "bg-primary/20 text-primary"
+                                            : "bg-white/5 text-muted-foreground hover:bg-white/10"
+                                    )}
+                                >
+                                    全部
+                                </button>
+                                <button
+                                    onClick={() => setShowSection("my")}
+                                    className={cn(
+                                        "flex-1 text-[10px] py-1.5 rounded-lg transition-all font-medium flex items-center justify-center gap-1",
+                                        showSection === "my"
+                                            ? "bg-yellow-500/20 text-yellow-400"
+                                            : "bg-white/5 text-muted-foreground hover:bg-white/10"
+                                    )}
+                                >
+                                    <Star className="w-3 h-3" /> 我的 ({userTemplates.length})
+                                </button>
+                                <button
+                                    onClick={() => setShowSection("system")}
+                                    className={cn(
+                                        "flex-1 text-[10px] py-1.5 rounded-lg transition-all font-medium flex items-center justify-center gap-1",
+                                        showSection === "system"
+                                            ? "bg-blue-500/20 text-blue-400"
+                                            : "bg-white/5 text-muted-foreground hover:bg-white/10"
+                                    )}
+                                >
+                                    <Sparkles className="w-3 h-3" /> 系统
+                                </button>
                             </div>
 
                             {/* Categories */}
@@ -114,70 +235,42 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
 
                         {/* List */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                            {filteredTemplates.length === 0 ? (
+                            {displayTemplates.length === 0 ? (
                                 <div className="text-center py-8 text-muted-foreground text-xs">
                                     <Filter className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                                    没有找到模板
+                                    {showSection === "my" && userTemplates.length === 0
+                                        ? "还没有自定义模板，在编辑器中保存训练块来创建"
+                                        : "没有找到匹配的模板"
+                                    }
                                 </div>
                             ) : (
-                                filteredTemplates.map(template => (
-                                    <div
-                                        key={template.templateId}
-                                        className="bg-secondary/30 border border-white/5 rounded-xl p-3 hover:border-primary/50 transition-all group relative"
-                                    >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <h4 className="font-bold text-sm text-white truncate max-w-[140px]" title={template.name}>
-                                                    {template.name}
-                                                </h4>
-                                                <span className="text-[10px] text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded uppercase">
-                                                    {template.category}
-                                                </span>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-xs font-mono font-bold text-primary">
-                                                    {getBlockDistance(template)}m
+                                <>
+                                    {/* My Templates Section */}
+                                    {showSection !== "system" && filteredUserTemplates.length > 0 && (
+                                        <>
+                                            {showSection === "all" && (
+                                                <div className="flex items-center gap-2 text-xs text-yellow-400 font-bold">
+                                                    <Star className="w-3 h-3 fill-yellow-400" />
+                                                    我的模板
                                                 </div>
-                                                <div className="text-[10px] text-muted-foreground">
-                                                    {template.items.length} items
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Items Preview */}
-                                        <div className="space-y-1 mb-3">
-                                            {template.items.slice(0, 2).map((item, i) => (
-                                                <div key={i} className="text-[10px] text-muted-foreground truncate">
-                                                    {item.repeats}x{item.distance}m {item.stroke}
-                                                </div>
-                                            ))}
-                                            {template.items.length > 2 && (
-                                                <div className="text-[10px] text-muted-foreground opacity-50">...</div>
                                             )}
-                                        </div>
+                                            {filteredUserTemplates.map(t => renderTemplateCard(t, true))}
+                                        </>
+                                    )}
 
-                                        {/* Actions */}
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => onSelect(template)}
-                                                className="flex-1 bg-primary/20 text-primary hover:bg-primary hover:text-primary-foreground text-xs py-1.5 rounded-lg flex items-center justify-center gap-1 transition-all font-medium"
-                                            >
-                                                <Plus className="w-3 h-3" /> 使用
-                                            </button>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    if (confirm("确定要删除这个模板吗？")) {
-                                                        deleteTemplate(template.templateId);
-                                                    }
-                                                }}
-                                                className="px-2 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition-all"
-                                            >
-                                                <Trash2 className="w-3 h-3" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
+                                    {/* System Templates Section */}
+                                    {showSection !== "my" && filteredSystemTemplates.length > 0 && (
+                                        <>
+                                            {showSection === "all" && filteredUserTemplates.length > 0 && (
+                                                <div className="flex items-center gap-2 text-xs text-blue-400 font-bold mt-4">
+                                                    <Sparkles className="w-3 h-3" />
+                                                    系统模板
+                                                </div>
+                                            )}
+                                            {filteredSystemTemplates.map(t => renderTemplateCard(t, false))}
+                                        </>
+                                    )}
+                                </>
                             )}
                         </div>
                     </>
@@ -189,7 +282,7 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
 
                 <div className="p-3 bg-black/20 border-t border-white/10 text-[10px] text-center text-muted-foreground">
                     {mainTab === 'Templates'
-                        ? "提示: 在编辑器中点击保存图标可创建新模板"
+                        ? "提示: 在训练块上点击「保存为模板」可创建自定义模板"
                         : "提示: 配速计算器仅供参考"
                     }
                 </div>

@@ -4,6 +4,7 @@ import { useStore } from "@/lib/store";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { getLocalDateISOString } from "@/lib/date-utils";
 
 export default function SchedulePage() {
     const { plans } = useStore();
@@ -19,7 +20,7 @@ export default function SchedulePage() {
 
     // Get training data for each date
     const getTrainingForDate = (date: Date) => {
-        const dateStr = date.toISOString().split('T')[0];
+        const dateStr = getLocalDateISOString(date);
         return plans.filter(p => p.date === dateStr);
     };
 

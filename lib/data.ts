@@ -124,39 +124,127 @@ export const MOCK_PLANS: TrainingPlan[] = [
 // ... MOCK_PLANS
 
 export const DEFAULT_TEMPLATES: BlockTemplate[] = [
+    // 热身模板
     {
         templateId: "t1",
         id: "temp_b1",
-        name: "Standard Warmup",
+        name: "标准热身",
         category: "Warmup",
         type: "Warmup",
         rounds: 1,
         items: [
-            { id: "1", repeats: 1, distance: 400, stroke: "Choice", description: "Swim/Kick/Pull/Swim", intensity: "Low", equipment: [] },
-            { id: "2", repeats: 4, distance: 50, stroke: "IM", description: "Drill/Swim by 25", intensity: "Moderate", equipment: ["Fins"] }
+            { id: "1", repeats: 1, distance: 400, stroke: "Choice", description: "游/腿/划/游", intensity: "Low", equipment: [] },
+            { id: "2", repeats: 4, distance: 50, stroke: "IM", description: "分解/配合 by 25", intensity: "Moderate", equipment: ["Fins"] }
         ]
     },
     {
+        templateId: "t1b",
+        id: "temp_b1b",
+        name: "技术热身",
+        category: "Warmup",
+        type: "Warmup",
+        rounds: 1,
+        items: [
+            { id: "1b1", repeats: 1, distance: 200, stroke: "Free", description: "放松游", intensity: "Low", equipment: [] },
+            { id: "1b2", repeats: 4, distance: 50, stroke: "Free", description: "分解练习：划水/抱水", intensity: "Low", equipment: ["Paddles"] },
+            { id: "1b3", repeats: 4, distance: 25, stroke: "Fly", description: "打腿练习", intensity: "Moderate", equipment: ["Fins"] }
+        ]
+    },
+    // 主项模板 - 耐力
+    {
         templateId: "t2",
         id: "temp_b2",
-        name: "Aerobic Maintenance",
+        name: "有氧耐力",
         category: "Main Set",
         type: "Main Set",
         rounds: 3,
         items: [
-            { id: "3", repeats: 4, distance: 100, stroke: "Free", description: "Pace holding", intensity: "Moderate", interval: "1:30", equipment: [] },
-            { id: "4", repeats: 1, distance: 50, stroke: "Back", description: "Active recovery", intensity: "Low", equipment: [] }
+            { id: "3", repeats: 4, distance: 100, stroke: "Free", description: "保持配速", intensity: "Moderate", interval: "1:30", equipment: [] },
+            { id: "4", repeats: 1, distance: 50, stroke: "Back", description: "积极恢复", intensity: "Low", equipment: [] }
         ]
     },
     {
-        templateId: "t3",
-        id: "temp_b3",
-        name: "Sprint 25s",
+        templateId: "t2b",
+        id: "temp_b2b",
+        name: "长距离耐力",
         category: "Main Set",
         type: "Main Set",
         rounds: 1,
         items: [
-            { id: "5", repeats: 16, distance: 25, stroke: "Choice", description: "Max Effort!", intensity: "RacePace", interval: "0:45", equipment: ["Fins"] }
+            { id: "3b", repeats: 5, distance: 200, stroke: "Free", description: "稳定配速游", intensity: "Moderate", interval: "3:00", equipment: ["Pullbuoy"] }
+        ]
+    },
+    // 主项模板 - 冲刺
+    {
+        templateId: "t3",
+        id: "temp_b3",
+        name: "25米冲刺",
+        category: "Main Set",
+        type: "Main Set",
+        rounds: 1,
+        items: [
+            { id: "5", repeats: 16, distance: 25, stroke: "Choice", description: "全力冲刺！", intensity: "RacePace", interval: "0:45", equipment: ["Fins"] }
+        ]
+    },
+    {
+        templateId: "t3b",
+        id: "temp_b3b",
+        name: "50米冲刺",
+        category: "Main Set",
+        type: "Main Set",
+        rounds: 1,
+        items: [
+            { id: "5b", repeats: 8, distance: 50, stroke: "Free", description: "全力冲刺", intensity: "RacePace", interval: "1:30", equipment: [] }
+        ]
+    },
+    // 分解练习模板
+    {
+        templateId: "t4",
+        id: "temp_b4",
+        name: "蝶泳分解",
+        category: "Drill Set",
+        type: "Drill Set",
+        rounds: 1,
+        items: [
+            { id: "6", repeats: 4, distance: 25, stroke: "Fly", description: "单臂蝶泳", intensity: "Low", equipment: ["Fins"] },
+            { id: "7", repeats: 4, distance: 25, stroke: "Fly", description: "蝶泳腿", intensity: "Moderate", equipment: ["Fins"] },
+            { id: "8", repeats: 4, distance: 25, stroke: "Fly", description: "完整蝶泳", intensity: "Moderate", equipment: [] }
+        ]
+    },
+    {
+        templateId: "t4b",
+        id: "temp_b4b",
+        name: "仰泳分解",
+        category: "Drill Set",
+        type: "Drill Set",
+        rounds: 1,
+        items: [
+            { id: "6b", repeats: 4, distance: 25, stroke: "Back", description: "单臂仰泳", intensity: "Low", equipment: [] },
+            { id: "7b", repeats: 4, distance: 25, stroke: "Back", description: "仰泳腿（双手在头上）", intensity: "Moderate", equipment: ["Fins"] }
+        ]
+    },
+    // 放松模板
+    {
+        templateId: "t5",
+        id: "temp_b5",
+        name: "标准放松",
+        category: "Cool Down",
+        type: "Cool Down",
+        rounds: 1,
+        items: [
+            { id: "9", repeats: 1, distance: 200, stroke: "Choice", description: "放松游", intensity: "Low", equipment: [] }
+        ]
+    },
+    {
+        templateId: "t5b",
+        id: "temp_b5b",
+        name: "拉伸放松",
+        category: "Cool Down",
+        type: "Cool Down",
+        rounds: 1,
+        items: [
+            { id: "9b", repeats: 1, distance: 100, stroke: "Back", description: "轻松仰泳", intensity: "Low", equipment: [] },
+            { id: "10b", repeats: 1, distance: 100, stroke: "Breast", description: "轻松蛙泳", intensity: "Low", equipment: [] }
         ]
     }
 ];

@@ -13,9 +13,10 @@ export function TeamStatsPanel() {
     const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const GROUP_MAP: Record<string, string> = { "Advanced": "高级组", "Intermediate": "中级组", "Junior": "初级组" };
 
-    // Total distance this month
+    // Total distance this month (Advanced group only)
     const monthPlans = plans.filter(p => p.date.startsWith(thisMonth));
-    const totalDistance = monthPlans.reduce((sum, p) => sum + p.totalDistance, 0);
+    const advancedMonthPlans = monthPlans.filter(p => p.group === "Advanced");
+    const totalDistance = advancedMonthPlans.reduce((sum, p) => sum + p.totalDistance, 0);
 
     // Average attendance rate
     const monthAttendance = attendance.filter(a => a.date.startsWith(thisMonth));
@@ -50,10 +51,9 @@ export function TeamStatsPanel() {
         });
 
         const stats = days.map(day => {
-            const dayPlans = plans.filter(p => p.date === day.dateStr);
-            // Use maximum distance across groups as the "Load" for the day
-            // This avoids double counting if multiple groups have plans
-            const load = Math.max(0, ...dayPlans.map(p => p.totalDistance));
+            // Only show Advanced group for weekly load
+            const dayPlans = plans.filter(p => p.date === day.dateStr && p.group === "Advanced");
+            const load = dayPlans.reduce((sum, p) => sum + p.totalDistance, 0);
             return { ...day, load };
         });
 
@@ -63,20 +63,22 @@ export function TeamStatsPanel() {
     const weeklyStats = getWeeklyStats();
     const maxWeekLoad = Math.max(1, ...weeklyStats.map(s => s.load));
 
-    // Group breakdown
-    const groupStats = swimmers.reduce((acc, swimmer) => {
-        if (!acc[swimmer.group]) {
-            acc[swimmer.group] = { distance: 0, count: 0 };
+    // Group breakdown - calculate distance per group directly from plans
+    const groupStats = monthPlans.reduce((acc, plan) => {
+        if (!acc[plan.group]) {
+            acc[plan.group] = { distance: 0, count: 0 };
         }
-
-        const swimmerPlans = monthPlans.filter(p => p.group === swimmer.group);
-        const swimmerDistance = swimmerPlans.reduce((sum, p) => sum + p.totalDistance, 0);
-
-        acc[swimmer.group].distance += swimmerDistance;
-        acc[swimmer.group].count++;
-
+        acc[plan.group].distance += plan.totalDistance;
+        acc[plan.group].count++;
         return acc;
     }, {} as Record<string, { distance: number; count: number }>);
+
+    // Count swimmers per group
+    swimmers.forEach(swimmer => {
+        if (!groupStats[swimmer.group]) {
+            groupStats[swimmer.group] = { distance: 0, count: 0 };
+        }
+    });
 
     const maxGroupDistance = Math.max(...Object.values(groupStats).map(g => g.distance), 1);
 
@@ -97,7 +99,7 @@ export function TeamStatsPanel() {
                 <div className="bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 rounded-xl p-3">
                     <div className="flex items-center gap-2 mb-1">
                         <TrendingUp className="w-4 h-4 text-primary" />
-                        <span className="text-xs text-muted-foreground">总距离</span>
+                        <span className="text-xs text-muted-foreground">高级组距离</span>
                     </div>
                     <p className="text-xl font-bold text-primary">
                         {(totalDistance / 1000).toFixed(1)}k
@@ -119,7 +121,7 @@ export function TeamStatsPanel() {
             <div className="mb-6 space-y-3">
                 <h4 className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                     <CalendarDays className="w-4 h-4" />
-                    本周负荷 (最大训练量)
+                    本周负荷 (高级组)
                 </h4>
                 <div className="bg-black/20 rounded-xl p-4 h-40 flex items-end justify-between gap-2 border border-white/5">
                     {weeklyStats.map((stat) => {

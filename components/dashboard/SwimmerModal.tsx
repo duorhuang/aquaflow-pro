@@ -11,6 +11,12 @@ interface SwimmerModalProps {
     swimmerToEdit?: Swimmer | null; // If null, we are adding new
 }
 
+const GROUP_LABELS: Record<GroupLevel, string> = {
+    "Junior": "初级组",
+    "Intermediate": "中级组",
+    "Advanced": "高级组"
+};
+
 export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalProps) {
     const { addSwimmer, updateSwimmer, deleteSwimmer } = useStore();
 
@@ -72,7 +78,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
     };
 
     const handleDelete = () => {
-        if (swimmerToEdit && confirm(`Are you sure you want to remove ${swimmerToEdit.name}?`)) {
+        if (swimmerToEdit && confirm(`确定要删除队员 ${swimmerToEdit.name} 吗？`)) {
             deleteSwimmer(swimmerToEdit.id);
             onClose();
         }
@@ -83,7 +89,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
             <div className="bg-card border border-border w-full max-w-md rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                        {swimmerToEdit ? "Edit Swimmer" : "Registration"}
+                        {swimmerToEdit ? "编辑队员" : "添加队员"}
                     </h2>
                     <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
                         <X className="w-5 h-5 text-muted-foreground" />
@@ -93,20 +99,20 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Name */}
                     <div>
-                        <label className="text-xs uppercase font-bold text-muted-foreground mb-1 block">Full Name</label>
+                        <label className="text-xs uppercase font-bold text-muted-foreground mb-1 block">姓名</label>
                         <input
                             required
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             className="w-full bg-secondary/50 border border-transparent focus:border-primary rounded-lg px-4 py-3 text-white outline-none transition-all"
-                            placeholder="e.g. Michael Phelps"
+                            placeholder="例如：张三"
                         />
                     </div>
 
                     {/* Group Selection */}
                     <div>
-                        <label className="text-xs uppercase font-bold text-muted-foreground mb-1 block">Training Group (Class)</label>
+                        <label className="text-xs uppercase font-bold text-muted-foreground mb-1 block">训练组别</label>
                         <div className="grid grid-cols-3 gap-2">
                             {(["Junior", "Intermediate", "Advanced"] as GroupLevel[]).map((lvl) => (
                                 <button
@@ -118,7 +124,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                                         : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50"
                                         }`}
                                 >
-                                    {lvl}
+                                    {GROUP_LABELS[lvl]}
                                 </button>
                             ))}
                         </div>
@@ -127,7 +133,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                     {/* Credentials */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-xs uppercase font-bold text-muted-foreground mb-1 block">Username</label>
+                            <label className="text-xs uppercase font-bold text-muted-foreground mb-1 block">用户名</label>
                             <input
                                 required
                                 type="text"
@@ -137,7 +143,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                             />
                         </div>
                         <div>
-                            <label className="text-xs uppercase font-bold text-muted-foreground mb-1 block">Password</label>
+                            <label className="text-xs uppercase font-bold text-muted-foreground mb-1 block">密码</label>
                             <input
                                 required
                                 type="text"
@@ -164,7 +170,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                             className="flex-1 bg-primary text-primary-foreground hover:brightness-110 px-4 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(100,255,218,0.3)]"
                         >
                             {swimmerToEdit ? <Save className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-                            {swimmerToEdit ? "Save Changes" : "Register Swimmer"}
+                            {swimmerToEdit ? "保存修改" : "添加队员"}
                         </button>
                     </div>
                 </form>
