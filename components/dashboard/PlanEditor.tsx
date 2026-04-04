@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { TrainingPlan, PlanItem, GroupLevel, Equipment, TrainingBlock, PlanSegment, BlockTemplate } from "@/types";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, GripVertical, Save, ArrowLeft, Waves, Info, Layers, Clock, List, Copy, Timer, Hourglass, BookOpen, X, MessageSquareQuote } from "lucide-react";
+import { Plus, Trash2, GripVertical, Save, ArrowLeft, Waves, Info, Layers, Clock, List, Copy, Timer, Hourglass, BookOpen, X, MessageSquareQuote, ImageIcon, FileText } from "lucide-react";
+import { PhotoPlanUpload } from "@/components/plan/PhotoUpload";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n";
@@ -57,6 +58,10 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
     const { t } = useLanguage();
     const { addPlan, updatePlan, deletePlan, swimmers, addTemplate } = useStore();
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+    const [editorMode, setEditorMode] = useState<"text" | "photo">("text");
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [aiAnalysis, setAiAnalysis] = useState<{ summary?: string; safetyAlerts?: string[]; suggestions?: any[] } | null>(null);
+
 
     // Initialize State
     const [plan, setPlan] = useState<TrainingPlan>(initialPlan || {
@@ -68,8 +73,16 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
         totalDistance: 0,
         coachNotes: "",
         blocks: [], // New Structure
-        targetedNotes: {}
+        targetedNotes: {},
+        imageUrl: "", // Support photo plans
     });
+
+    // Detect mode from initial plan
+    useEffect(() => {
+        if (initialPlan?.imageUrl) {
+            setEditorMode("photo");
+        }
+    }, [initialPlan]);
 
     const [batchNote, setBatchNote] = useState("");
     const [batchNoteOpen, setBatchNoteOpen] = useState(false);
@@ -414,10 +427,24 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
 
                             <button
                                 onClick={handleSave}
-                                className="flex items-center gap-2 bg-primary text-primary-foreground px-4 md:px-6 py-2 rounded-full font-bold hover:brightness-110 transition-all shadow-[0_0_15px_rgba(100,255,218,0.3)] text-xs md:text-sm"
+                                className={cn(
+                                    "flex items-center gap-2 px-4 md:px-6 py-2 rounded-full font-bold transition-all shadow-[0_0_15px_rgba(100,255,218,0.3)] text-xs md:text-sm",
+                                    isAnalyzing
+                                        ? "bg-yellow-500/80 text-white cursor-wait"
+                                        : "bg-primary text-primary-foreground hover:brightness-110"
+                                )}
                             >
-                                <Save className="w-4 h-4" />
-                                {initialPlan ? t.editor.updatePlan : t.editor.publishPlan}
+                                {isAnalyzing ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        {t.editor.publishPlan} (AI...)
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="w-4 h-4" />
+                                        {initialPlan ? t.editor.updatePlan : t.editor.publishPlan}
+                                    </>
+                                )}
                             </button>
 
                             <button
@@ -435,400 +462,534 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                         </div>
                     </div>
 
-                    {/* Quick Add Training Blocks */}
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                        <h3 className="text-xs font-bold text-white/70 mb-3">快速添加训练块</h3>
-                        <div className="flex flex-wrap gap-2">
-                            <button
-                                onClick={() => {
-                                    const newBlock: TrainingBlock = {
-                                        id: uid(),
-                                        type: "Warmup",
-                                        rounds: 1,
-                                        items: [
-                                            {
-                                                id: uid(),
-                                                repeats: 1,
-                                                distance: 400,
-                                                stroke: "Choice",
-                                                description: "混合泳热身: 游/腿/划/游",
-                                                intensity: "Low",
-                                                equipment: []
-                                            }
-                                        ]
-                                    };
-                                    setPlan({ ...plan, blocks: [...(plan.blocks || []), newBlock] });
-                                }}
-                                className="px-3 py-2 bg-blue-500/20 border border-blue-500/50 rounded-lg text-xs font-bold text-blue-300 hover:bg-blue-500/30 transition-all"
-                            >
-                                + 热身
-                            </button>
-                            <button
-                                onClick={() => {
-                                    const newBlock: TrainingBlock = {
-                                        id: uid(),
-                                        type: "Main Set",
-                                        rounds: 1,
-                                        items: [
-                                            {
-                                                id: uid(),
-                                                repeats: 10,
-                                                distance: 100,
-                                                stroke: "Free",
-                                                description: "有氧耐力游",
-                                                intensity: "Moderate",
-                                                equipment: [],
-                                                interval: "1:45"
-                                            }
-                                        ]
-                                    };
-                                    setPlan({ ...plan, blocks: [...(plan.blocks || []), newBlock] });
-                                }}
-                                className="px-3 py-2 bg-green-500/20 border border-green-500/50 rounded-lg text-xs font-bold text-green-300 hover:bg-green-500/30 transition-all"
-                            >
-                                + 主项
-                            </button>
-                            <button
-                                onClick={() => {
-                                    const newBlock: TrainingBlock = {
-                                        id: uid(),
-                                        type: "Cool Down",
-                                        rounds: 1,
-                                        items: [
-                                            {
-                                                id: uid(),
-                                                repeats: 1,
-                                                distance: 200,
-                                                stroke: "Choice",
-                                                description: "放松游",
-                                                intensity: "Low",
-                                                equipment: []
-                                            }
-                                        ]
-                                    };
-                                    setPlan({ ...plan, blocks: [...(plan.blocks || []), newBlock] });
-                                }}
-                                className="px-3 py-2 bg-purple-500/20 border border-purple-500/50 rounded-lg text-xs font-bold text-purple-300 hover:bg-purple-500/30 transition-all"
-                            >
-                                + 放松
-                            </button>
-                        </div>
+                    {/* Mode Toggle Tabs */}
+                    <div className="flex items-center gap-4 border-b border-white/10 mb-6">
+                        <button
+                            onClick={() => setEditorMode("text")}
+                            className={cn(
+                                "flex items-center gap-2 px-4 py-2 border-b-2 transition-all font-bold text-sm",
+                                editorMode === "text"
+                                    ? "border-primary text-primary"
+                                    : "border-transparent text-muted-foreground hover:text-white"
+                            )}
+                        >
+                            <FileText className="w-4 h-4" />
+                            {t.editor.editorMode || "编辑器模式"}
+                        </button>
+                        <button
+                            onClick={() => setEditorMode("photo")}
+                            className={cn(
+                                "flex items-center gap-2 px-4 py-2 border-b-2 transition-all font-bold text-sm",
+                                editorMode === "photo"
+                                    ? "border-primary text-primary"
+                                    : "border-transparent text-muted-foreground hover:text-white"
+                            )}
+                        >
+                            <ImageIcon className="w-4 h-4" />
+                            {t.editor.photoMode || "照片模式"}
+                        </button>
                     </div>
 
-                    {/* Blocks List */}
-                    <div className="space-y-8">
-                        {plan.blocks?.map((block, bIndex) => (
-                            <div key={block.id} className="relative group/block">
-                                {/* Block Header */}
-                                <div className="flex items-center gap-4 mb-4 bg-secondary/10 p-3 rounded-xl border border-white/5">
-                                    <div className="bg-primary/20 p-2 rounded-lg">
-                                        <Layers className="w-5 h-5 text-primary" />
+                    {editorMode === "photo" ? (
+                        <div className="bg-card/40 border border-border rounded-xl p-6">
+                            <div className="mb-6">
+                                <h2 className="text-xl font-bold text-white mb-2">上传计划照片</h2>
+                                <p className="text-sm text-muted-foreground">
+                                    直接上传手写计划或白板照片。
+                                    <br />
+                                    AI 将会自动读取内容并提供建议。
+                                </p>
+                            </div>
+                            <PhotoPlanUpload
+                                currentUrl={plan.imageUrl}
+                                onUpload={(url) => {
+                                    setPlan({ ...plan, imageUrl: url });
+                                    // Trigger AI Analysis
+                                    setIsAnalyzing(true);
+                                    fetch('/api/ai/analyze-plan', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ imageUrl: url })
+                                    })
+                                        .then(res => res.json())
+                                        .then(data => {
+                                            setAiAnalysis(data);
+                                            // Store analysis in plan for saving
+                                            setPlan(prev => ({
+                                                ...prev,
+                                                analysis: {
+                                                    imageUrl: url,
+                                                    ...data
+                                                }
+                                            }));
+                                        })
+                                        .catch(err => console.error("AI Error:", err))
+                                        .finally(() => setIsAnalyzing(false));
+                                }}
+                            />
+
+                            {/* AI Analysis Result */}
+                            {(isAnalyzing || aiAnalysis) && (
+                                <div className="mt-6 border-t border-white/10 pt-6 animate-in fade-in slide-in-from-bottom-4">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className={cn("w-2 h-2 rounded-full", isAnalyzing ? "bg-yellow-400 animate-ping" : "bg-green-400")} />
+                                        <h3 className="text-sm font-bold text-white">
+                                            {isAnalyzing ? "AI 正在分析计划照片..." : "AI 助手分析报告"}
+                                        </h3>
                                     </div>
-                                    <select
-                                        value={block.type}
-                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateBlock(block.id, { type: e.target.value as TrainingBlock["type"] })}
-                                        className="bg-transparent font-bold text-lg text-white outline-none [&>option]:text-black"
-                                    >
-                                        {BLOCK_TYPES.map(t => <option key={t} value={t}>{BLOCK_TYPES_MAP[t]}</option>)}
-                                    </select>
 
-                                    <div className="h-6 w-px bg-white/10" />
+                                    {aiAnalysis && (
+                                        <div className="space-y-4">
+                                            {/* Summary */}
+                                            {aiAnalysis.summary && (
+                                                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-sm text-blue-200">
+                                                    <span className="font-bold block mb-1 text-blue-100">💡 摘要</span>
+                                                    {aiAnalysis.summary}
+                                                </div>
+                                            )}
 
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs text-muted-foreground font-mono uppercase">组数:</span>
-                                        <input
-                                            type="number"
-                                            min="1"
-                                            value={block.rounds}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateBlock(block.id, { rounds: parseInt(e.target.value) || 1 })}
-                                            className="w-12 bg-black/20 rounded text-center font-bold text-white border border-white/10"
-                                        />
-                                    </div>
+                                            {/* Safety Alerts */}
+                                            {aiAnalysis.safetyAlerts?.map((alert, idx) => (
+                                                <div key={idx} className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-sm text-red-200 flex gap-2">
+                                                    <span>⚠️</span>
+                                                    {alert}
+                                                </div>
+                                            ))}
 
-                                    <input
-                                        type="text"
-                                        placeholder="训练块备注 (例如: 递减游)"
-                                        value={block.note || ""}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateBlock(block.id, { note: e.target.value })}
-                                        className="flex-1 bg-transparent text-sm text-muted-foreground focus:text-white outline-none border-b border-transparent focus:border-primary/50 transition-all placeholder:text-muted-foreground/30"
-                                    />
+                                            {/* Creative Suggestions */}
+                                            {aiAnalysis.suggestions && aiAnalysis.suggestions.length > 0 && (
+                                                <div className="space-y-2">
+                                                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">✨ 创意建议 (Creative Drills)</h4>
+                                                    {aiAnalysis.suggestions.map((drill: any, idx: number) => (
+                                                        <div key={idx} className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
+                                                            <div className="flex justify-between items-start mb-1">
+                                                                <span className="font-bold text-purple-200 text-sm">{drill.name}</span>
+                                                                <span className="text-[10px] bg-purple-500/20 px-1.5 py-0.5 rounded text-purple-300">{drill.benefit}</span>
+                                                            </div>
+                                                            <p className="text-xs text-purple-200/70">{drill.description}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
+
+                        </div>
+                    ) : (
+                        <>
+                            {/* Quick Add Training Blocks */}
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                                <h3 className="text-xs font-bold text-white/70 mb-3">快速添加训练块</h3>
+                                <div className="flex flex-wrap gap-2">
                                     <button
-                                        onClick={() => handleSaveTemplate(block)}
-                                        className="p-2 text-white/20 hover:text-green-400 transition-colors"
-                                        title="保存为模板"
+                                        onClick={() => {
+                                            const newBlock: TrainingBlock = {
+                                                id: uid(),
+                                                type: "Warmup",
+                                                rounds: 1,
+                                                items: [
+                                                    {
+                                                        id: uid(),
+                                                        repeats: 1,
+                                                        distance: 400,
+                                                        stroke: "Choice",
+                                                        description: "混合泳热身: 游/腿/划/游",
+                                                        intensity: "Low",
+                                                        equipment: []
+                                                    }
+                                                ]
+                                            };
+                                            setPlan({ ...plan, blocks: [...(plan.blocks || []), newBlock] });
+                                        }}
+                                        className="px-3 py-2 bg-blue-500/20 border border-blue-500/50 rounded-lg text-xs font-bold text-blue-300 hover:bg-blue-500/30 transition-all"
                                     >
-                                        <Save className="w-4 h-4" />
+                                        + 热身
                                     </button>
-                                    <button onClick={() => duplicateBlock(block.id)} className="p-2 text-white/20 hover:text-primary transition-colors" title="复制训练块">
-                                        <Copy className="w-4 h-4" />
+                                    <button
+                                        onClick={() => {
+                                            const newBlock: TrainingBlock = {
+                                                id: uid(),
+                                                type: "Main Set",
+                                                rounds: 1,
+                                                items: [
+                                                    {
+                                                        id: uid(),
+                                                        repeats: 10,
+                                                        distance: 100,
+                                                        stroke: "Free",
+                                                        description: "有氧耐力游",
+                                                        intensity: "Moderate",
+                                                        equipment: [],
+                                                        interval: "1:45"
+                                                    }
+                                                ]
+                                            };
+                                            setPlan({ ...plan, blocks: [...(plan.blocks || []), newBlock] });
+                                        }}
+                                        className="px-3 py-2 bg-green-500/20 border border-green-500/50 rounded-lg text-xs font-bold text-green-300 hover:bg-green-500/30 transition-all"
+                                    >
+                                        + 主项
                                     </button>
-                                    <button onClick={() => deleteBlock(block.id)} className="p-2 text-white/20 hover:text-red-500 transition-colors" title="删除训练块">
-                                        <Trash2 className="w-4 h-4" />
+                                    <button
+                                        onClick={() => {
+                                            const newBlock: TrainingBlock = {
+                                                id: uid(),
+                                                type: "Cool Down",
+                                                rounds: 1,
+                                                items: [
+                                                    {
+                                                        id: uid(),
+                                                        repeats: 1,
+                                                        distance: 200,
+                                                        stroke: "Choice",
+                                                        description: "放松游",
+                                                        intensity: "Low",
+                                                        equipment: []
+                                                    }
+                                                ]
+                                            };
+                                            setPlan({ ...plan, blocks: [...(plan.blocks || []), newBlock] });
+                                        }}
+                                        className="px-3 py-2 bg-purple-500/20 border border-purple-500/50 rounded-lg text-xs font-bold text-purple-300 hover:bg-purple-500/30 transition-all"
+                                    >
+                                        + 放松
                                     </button>
                                 </div>
+                            </div>
 
-                                {/* Items Container */}
-                                <div className={`space-y-3 pl-4 border-l-2 ${block.rounds > 1 ? "border-primary/50" : "border-white/5"}`}>
-                                    {block.items.map((item, iIndex) => (
-                                        <div key={item.id} className="bg-card/40 border border-border rounded-xl p-4 hover:bg-card/60 transition-all relative group/item">
-                                            <div className="grid grid-cols-12 gap-4 items-start">
+                            {/* Blocks List */}
+                            <div className="space-y-8">
+                                {plan.blocks?.map((block, bIndex) => (
+                                    <div key={block.id} className="relative group/block">
+                                        {/* Block Header */}
+                                        <div className="flex items-center gap-4 mb-4 bg-secondary/10 p-3 rounded-xl border border-white/5">
+                                            <div className="bg-primary/20 p-2 rounded-lg">
+                                                <Layers className="w-5 h-5 text-primary" />
+                                            </div>
+                                            <select
+                                                value={block.type}
+                                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateBlock(block.id, { type: e.target.value as TrainingBlock["type"] })}
+                                                className="bg-transparent font-bold text-lg text-white outline-none [&>option]:text-black"
+                                            >
+                                                {BLOCK_TYPES.map(t => <option key={t} value={t}>{BLOCK_TYPES_MAP[t]}</option>)}
+                                            </select>
 
-                                                {/* Repeats x Distance */}
-                                                <div className="col-span-3 flex items-center gap-2">
-                                                    <input
-                                                        type="number"
-                                                        value={item.repeats}
-                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateItem(block.id, item.id, { repeats: parseInt(e.target.value) })}
-                                                        className="w-10 bg-transparent text-xl font-bold text-right outline-none"
-                                                    />
-                                                    <span className="text-muted-foreground">x</span>
-                                                    <input
-                                                        type="number"
-                                                        value={item.distance}
-                                                        disabled={item.segments && item.segments.length > 0}
-                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateItem(block.id, item.id, { distance: parseInt(e.target.value) })}
-                                                        className={cn(
-                                                            "w-16 bg-transparent text-xl font-bold outline-none",
-                                                            item.segments && item.segments.length > 0 && "text-muted-foreground opacity-50"
-                                                        )}
-                                                    />
-                                                    <span className="text-xs text-muted-foreground">m</span>
+                                            <div className="h-6 w-px bg-white/10" />
 
-                                                    {/* Distance Presets */}
-                                                    <select
-                                                        className="w-4 bg-transparent outline-none text-muted-foreground hover:text-white cursor-pointer"
-                                                        onChange={(e) => updateItem(block.id, item.id, { distance: parseInt(e.target.value) })}
-                                                        value=""
-                                                    >
-                                                        <option value="" disabled>▾</option>
-                                                        {DISTANCE_PRESETS.map(d => (
-                                                            <option key={d} value={d} className="text-black">
-                                                                {d}m
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-muted-foreground font-mono uppercase">组数:</span>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={block.rounds}
+                                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateBlock(block.id, { rounds: parseInt(e.target.value) || 1 })}
+                                                    className="w-12 bg-black/20 rounded text-center font-bold text-white border border-white/10"
+                                                />
+                                            </div>
 
-                                                {/* Stroke & Interval */}
-                                                <div className="col-span-3 flex flex-col gap-2">
-                                                    <select
-                                                        value={item.stroke}
-                                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateItem(block.id, item.id, { stroke: e.target.value as PlanItem["stroke"] })}
-                                                        className="bg-secondary/30 rounded px-2 py-1 text-sm font-medium outline-none text-white border border-white/5 [&>option]:text-black"
-                                                    >
-                                                        {STROKES_KEYS.map(s => <option key={s} value={s}>{STROKES_MAP[s]}</option>)}
-                                                    </select>
+                                            <input
+                                                type="text"
+                                                placeholder="训练块备注 (例如: 递减游)"
+                                                value={block.note || ""}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateBlock(block.id, { note: e.target.value })}
+                                                className="flex-1 bg-transparent text-sm text-muted-foreground focus:text-white outline-none border-b border-transparent focus:border-primary/50 transition-all placeholder:text-muted-foreground/30"
+                                            />
 
-                                                    {/* Interval Toggle */}
-                                                    <div className="flex items-center gap-1 bg-black/20 rounded px-2 py-1 group/interval hover:bg-black/40 transition-colors cursor-pointer">
-                                                        <button
-                                                            onClick={() => updateItem(block.id, item.id, { intervalMode: item.intervalMode === 'Rest' ? 'Interval' : 'Rest' })}
-                                                            className={cn(
-                                                                "w-4 h-4 flex items-center justify-center rounded-sm transition-colors",
-                                                                item.intervalMode === 'Rest' ? "text-yellow-400" : "text-primary"
-                                                            )}
-                                                            title={item.intervalMode === 'Rest' ? "休息模式" : "包干模式"}
-                                                        >
-                                                            {item.intervalMode === 'Rest' ? <Hourglass className="w-3 h-3" /> : <Timer className="w-3 h-3" />}
-                                                        </button>
-                                                        <input
-                                                            type="text"
-                                                            placeholder={item.intervalMode === 'Rest' ? "休息 :15" : "包干 1:30"}
-                                                            value={item.interval || ""}
-                                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateItem(block.id, item.id, { interval: e.target.value })}
-                                                            className={cn(
-                                                                "w-full bg-transparent text-xs font-mono outline-none",
-                                                                item.intervalMode === 'Rest' ? "text-yellow-400 placeholder:text-yellow-400/30" : "text-primary placeholder:text-primary/30"
-                                                            )}
-                                                        />
-                                                    </div>
-                                                </div>
+                                            <button
+                                                onClick={() => handleSaveTemplate(block)}
+                                                className="p-2 text-white/20 hover:text-green-400 transition-colors"
+                                                title="保存为模板"
+                                            >
+                                                <Save className="w-4 h-4" />
+                                            </button>
+                                            <button onClick={() => duplicateBlock(block.id)} className="p-2 text-white/20 hover:text-primary transition-colors" title="复制训练块">
+                                                <Copy className="w-4 h-4" />
+                                            </button>
+                                            <button onClick={() => deleteBlock(block.id)} className="p-2 text-white/20 hover:text-red-500 transition-colors" title="删除训练块">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
 
-                                                {/* Description */}
-                                                <div className="col-span-5 px-2">
-                                                    {/* Segments Toggle */}
-                                                    {(!item.segments || item.segments.length === 0) ? (
-                                                        <input
-                                                            value={item.description}
-                                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateItem(block.id, item.id, { description: e.target.value })}
-                                                            className="w-full bg-transparent text-sm text-white/80 outline-none border-b border-transparent focus:border-white/20"
-                                                        />
-                                                    ) : (
-                                                        <div className="space-y-2">
-                                                            {item.segments.map((seg, sIdx) => (
-                                                                <div key={sIdx} className="flex items-center gap-2 text-xs">
-                                                                    <input
-                                                                        type="number"
-                                                                        value={seg.distance}
-                                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSegment(block.id, item.id, sIdx, { distance: parseInt(e.target.value) })}
-                                                                        className="w-10 bg-black/20 rounded px-1 py-0.5 text-center"
-                                                                    />
-                                                                    <select
-                                                                        value={seg.type}
-                                                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateSegment(block.id, item.id, sIdx, { type: e.target.value as PlanSegment["type"] })}
-                                                                        className="bg-transparent text-muted-foreground"
-                                                                    >
-                                                                        <option value="Swim">配合</option><option value="Kick">打腿</option><option value="Drill">分解</option>
-                                                                    </select>
-                                                                    <input
-                                                                        value={seg.description || ""}
-                                                                        placeholder="详情..."
-                                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSegment(block.id, item.id, sIdx, { description: e.target.value })}
-                                                                        className="flex-1 bg-transparent border-b border-white/10"
-                                                                    />
-                                                                    <button onClick={() => removeSegment(block.id, item.id, sIdx)} className="text-red-500"><Trash2 className="w-3 h-3" /></button>
-                                                                </div>
-                                                            ))}
+                                        {/* Items Container */}
+                                        <div className={`space-y-3 pl-4 border-l-2 ${block.rounds > 1 ? "border-primary/50" : "border-white/5"}`}>
+                                            {block.items.map((item, iIndex) => (
+                                                <div key={item.id} className="bg-card/40 border border-border rounded-xl p-4 hover:bg-card/60 transition-all relative group/item">
+                                                    <div className="grid grid-cols-12 gap-4 items-start">
+
+                                                        {/* Repeats x Distance */}
+                                                        <div className="col-span-3 flex items-center gap-2">
+                                                            <input
+                                                                type="number"
+                                                                value={item.repeats}
+                                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateItem(block.id, item.id, { repeats: parseInt(e.target.value) })}
+                                                                className="w-10 bg-transparent text-xl font-bold text-right outline-none"
+                                                            />
+                                                            <span className="text-muted-foreground">x</span>
+                                                            <input
+                                                                type="number"
+                                                                value={item.distance}
+                                                                disabled={item.segments && item.segments.length > 0}
+                                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateItem(block.id, item.id, { distance: parseInt(e.target.value) })}
+                                                                className={cn(
+                                                                    "w-16 bg-transparent text-xl font-bold outline-none",
+                                                                    item.segments && item.segments.length > 0 && "text-muted-foreground opacity-50"
+                                                                )}
+                                                            />
+                                                            <span className="text-xs text-muted-foreground">m</span>
+
+                                                            {/* Distance Presets */}
+                                                            <select
+                                                                className="w-4 bg-transparent outline-none text-muted-foreground hover:text-white cursor-pointer"
+                                                                onChange={(e) => updateItem(block.id, item.id, { distance: parseInt(e.target.value) })}
+                                                                value=""
+                                                            >
+                                                                <option value="" disabled>▾</option>
+                                                                {DISTANCE_PRESETS.map(d => (
+                                                                    <option key={d} value={d} className="text-black">
+                                                                        {d}m
+                                                                    </option>
+                                                                ))}
+                                                            </select>
                                                         </div>
-                                                    )}
 
-                                                    <button
-                                                        onClick={() => addSegment(block.id, item.id)}
-                                                        className="mt-2 text-[10px] text-blue-400 flex items-center gap-1 hover:underline"
-                                                    >
-                                                        <List className="w-3 h-3" />
-                                                        {(item.segments && item.segments.length > 0) ? "添加分段" : "拆分动作 (混合)"}
-                                                    </button>
+                                                        {/* Stroke & Interval */}
+                                                        <div className="col-span-3 flex flex-col gap-2">
+                                                            <select
+                                                                value={item.stroke}
+                                                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateItem(block.id, item.id, { stroke: e.target.value as PlanItem["stroke"] })}
+                                                                className="bg-secondary/30 rounded px-2 py-1 text-sm font-medium outline-none text-white border border-white/5 [&>option]:text-black"
+                                                            >
+                                                                {STROKES_KEYS.map(s => <option key={s} value={s}>{STROKES_MAP[s]}</option>)}
+                                                            </select>
 
-                                                    {/* Equipment Selection */}
-                                                    <div className="flex flex-wrap gap-1 mt-2">
-                                                        {EQUIPMENT.map(eq => {
-                                                            const isSelected = item.equipment?.includes(eq);
-                                                            return (
-                                                                <button
-                                                                    key={eq}
-                                                                    onClick={() => toggleEquipment(block.id, item.id, eq)}
-                                                                    className={cn(
-                                                                        "px-2 py-0.5 rounded text-[10px] border transition-all",
-                                                                        isSelected
-                                                                            ? "bg-primary/20 border-primary text-primary"
-                                                                            : "bg-transparent border-white/5 text-muted-foreground hover:bg-white/5"
-                                                                    )}
+                                                            {/* Alternate Stroke (交换泳姿) */}
+                                                            <div className="flex items-center gap-1">
+                                                                <span className="text-[10px] text-purple-400">↩</span>
+                                                                <select
+                                                                    value={item.alternateStroke || ""}
+                                                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateItem(block.id, item.id, { alternateStroke: e.target.value || undefined })}
+                                                                    className="flex-1 bg-secondary/30 rounded px-2 py-1 text-xs outline-none text-purple-300 border border-purple-500/20 [&>option]:text-black"
                                                                 >
-                                                                    {EQUIPMENT_MAP[eq]}
+                                                                    <option value="">无交换</option>
+                                                                    {STROKES_KEYS.map(s => <option key={s} value={s}>{STROKES_MAP[s]}</option>)}
+                                                                </select>
+                                                            </div>
+                                                            {/* Interval Toggle */}
+                                                            <div className="flex items-center gap-1 bg-black/20 rounded px-2 py-1 group/interval hover:bg-black/40 transition-colors cursor-pointer">
+                                                                <button
+                                                                    onClick={() => updateItem(block.id, item.id, { intervalMode: item.intervalMode === 'Rest' ? 'Interval' : 'Rest' })}
+                                                                    className={cn(
+                                                                        "w-4 h-4 flex items-center justify-center rounded-sm transition-colors",
+                                                                        item.intervalMode === 'Rest' ? "text-yellow-400" : "text-primary"
+                                                                    )}
+                                                                    title={item.intervalMode === 'Rest' ? "休息模式" : "包干模式"}
+                                                                >
+                                                                    {item.intervalMode === 'Rest' ? <Hourglass className="w-3 h-3" /> : <Timer className="w-3 h-3" />}
                                                                 </button>
-                                                            );
-                                                        })}
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder={item.intervalMode === 'Rest' ? "休息 :15" : "包干 1:30"}
+                                                                    value={item.interval || ""}
+                                                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateItem(block.id, item.id, { interval: e.target.value })}
+                                                                    className={cn(
+                                                                        "w-full bg-transparent text-xs font-mono outline-none",
+                                                                        item.intervalMode === 'Rest' ? "text-yellow-400 placeholder:text-yellow-400/30" : "text-primary placeholder:text-primary/30"
+                                                                    )}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Description */}
+                                                        <div className="col-span-5 px-2">
+                                                            {/* Segments Toggle */}
+                                                            {(!item.segments || item.segments.length === 0) ? (
+                                                                <input
+                                                                    value={item.description}
+                                                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateItem(block.id, item.id, { description: e.target.value })}
+                                                                    className="w-full bg-transparent text-sm text-white/80 outline-none border-b border-transparent focus:border-white/20"
+                                                                />
+                                                            ) : (
+                                                                <div className="space-y-2">
+                                                                    {item.segments.map((seg, sIdx) => (
+                                                                        <div key={sIdx} className="flex items-center gap-2 text-xs">
+                                                                            <input
+                                                                                type="number"
+                                                                                value={seg.distance}
+                                                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSegment(block.id, item.id, sIdx, { distance: parseInt(e.target.value) })}
+                                                                                className="w-10 bg-black/20 rounded px-1 py-0.5 text-center"
+                                                                            />
+                                                                            <select
+                                                                                value={seg.type}
+                                                                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateSegment(block.id, item.id, sIdx, { type: e.target.value as PlanSegment["type"] })}
+                                                                                className="bg-transparent text-muted-foreground"
+                                                                            >
+                                                                                <option value="Swim">配合</option><option value="Kick">打腿</option><option value="Drill">分解</option>
+                                                                            </select>
+                                                                            <input
+                                                                                value={seg.description || ""}
+                                                                                placeholder="详情..."
+                                                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSegment(block.id, item.id, sIdx, { description: e.target.value })}
+                                                                                className="flex-1 bg-transparent border-b border-white/10"
+                                                                            />
+                                                                            <button onClick={() => removeSegment(block.id, item.id, sIdx)} className="text-red-500"><Trash2 className="w-3 h-3" /></button>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            <button
+                                                                onClick={() => addSegment(block.id, item.id)}
+                                                                className="mt-2 text-[10px] text-blue-400 flex items-center gap-1 hover:underline"
+                                                            >
+                                                                <List className="w-3 h-3" />
+                                                                {(item.segments && item.segments.length > 0) ? "添加分段" : "拆分动作 (混合)"}
+                                                            </button>
+
+                                                            {/* Equipment Selection */}
+                                                            <div className="flex flex-wrap gap-1 mt-2">
+                                                                {EQUIPMENT.map(eq => {
+                                                                    const isSelected = item.equipment?.includes(eq);
+                                                                    return (
+                                                                        <button
+                                                                            key={eq}
+                                                                            onClick={() => toggleEquipment(block.id, item.id, eq)}
+                                                                            className={cn(
+                                                                                "px-2 py-0.5 rounded text-[10px] border transition-all",
+                                                                                isSelected
+                                                                                    ? "bg-primary/20 border-primary text-primary"
+                                                                                    : "bg-transparent border-white/5 text-muted-foreground hover:bg-white/5"
+                                                                            )}
+                                                                        >
+                                                                            {EQUIPMENT_MAP[eq]}
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Delete Item */}
+                                                        <div className="col-span-1 flex justify-end">
+                                                            <button onClick={() => deleteItem(block.id, item.id)} className="text-white/10 hover:text-red-500">
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
+                                            ))}
 
-                                                {/* Delete Item */}
-                                                <div className="col-span-1 flex justify-end">
-                                                    <button onClick={() => deleteItem(block.id, item.id)} className="text-white/10 hover:text-red-500">
-                                                        <Trash2 className="w-4 h-4" />
+                                            <button
+                                                onClick={() => addItemToBlock(block.id)}
+                                                className="w-full py-2 border border-dashed border-white/10 rounded-lg text-xs text-muted-foreground hover:text-white hover:border-white/20 transition-all"
+                                            >
+                                                + 添加训练项
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {/* Batch Notes Section - Collapsible Bottom Sheet Style */}
+                                <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end pointer-events-none">
+                                    {/* Toggle Button */}
+                                    <button
+                                        onClick={() => setBatchNoteOpen(!batchNoteOpen)}
+                                        className="pointer-events-auto bg-yellow-500 text-black p-4 rounded-full shadow-[0_0_20px_rgba(234,179,8,0.4)] hover:scale-110 transition-transform flex items-center justify-center relative"
+                                        title="Add Private Note"
+                                    >
+                                        <MessageSquareQuote className="w-6 h-6" />
+                                        {Object.keys(plan.targetedNotes || {}).length > 0 && (
+                                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center font-bold">
+                                                {Object.keys(plan.targetedNotes || {}).length}
+                                            </span>
+                                        )}
+                                    </button>
+
+                                    {/* Collapsible Content */}
+                                    {/* Collapsible Content */}
+                                    <div className={cn(
+                                        "pointer-events-auto mt-4 w-72 bg-[#0f172a] border border-yellow-500/30 rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 origin-bottom-right",
+                                        batchNoteOpen ? "scale-100 opacity-100 translate-y-0" : "scale-0 opacity-0 translate-y-12 h-0"
+                                    )}>
+                                        <div className="p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-b border-yellow-500/20 flex justify-between items-center">
+                                            <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-widest flex items-center gap-2">
+                                                <MessageSquareQuote className="w-3 h-3" />
+                                                教练专属备注
+                                            </h3>
+                                            <button onClick={() => setBatchNoteOpen(false)} className="text-muted-foreground hover:text-white">
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+
+                                        <div className="p-3 space-y-3">
+                                            <p className="text-[10px] text-muted-foreground">
+                                                给队员的悄悄话 (选人 → 写内容 → 添加)
+                                            </p>
+
+                                            {/* Swimmer Selector */}
+                                            <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto no-scrollbar">
+                                                {swimmers.length === 0 && (
+                                                    <div className="w-full text-center py-4 bg-white/5 rounded-lg border border-dashed border-white/10">
+                                                        <p className="text-[10px] text-red-300 mb-1">⚠️ 暂无队员</p>
+                                                        <Link href="/dashboard/athletes" className="text-[10px] text-blue-400 hover:underline">
+                                                            前往【队员管理】添加 &rarr;
+                                                        </Link>
+                                                    </div>
+                                                )}
+                                                {swimmers.map(s => (
+                                                    <button
+                                                        key={s.id}
+                                                        onClick={() => toggleSwimmerSelection(s.id)}
+                                                        className={cn(
+                                                            "px-2 py-1 rounded-lg text-[10px] font-bold transition-all border flex items-center gap-1",
+                                                            selectedSwimmers.includes(s.id)
+                                                                ? "bg-yellow-500 text-black border-yellow-500"
+                                                                : "bg-white/5 text-muted-foreground border-white/10 hover:border-white/30"
+                                                        )}
+                                                    >
+                                                        {s.name}
+                                                        {plan.targetedNotes?.[s.id] && <span className="text-[9px] ml-0.5 opacity-70">★</span>}
                                                     </button>
-                                                </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Note Input */}
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={batchNote}
+                                                    onChange={(e) => setBatchNote(e.target.value)}
+                                                    placeholder="输入叮嘱..."
+                                                    className="flex-1 bg-black/40 rounded-lg px-2 py-1.5 text-xs text-white placeholder:text-muted-foreground/50 border border-white/5 focus:border-yellow-500/50 outline-none transition-all"
+                                                    onKeyDown={(e) => e.key === 'Enter' && applyBatchNote()}
+                                                />
+                                                <button
+                                                    onClick={applyBatchNote}
+                                                    disabled={selectedSwimmers.length === 0 || !batchNote.trim()}
+                                                    className="bg-yellow-500 text-black px-2.5 py-1.5 rounded-lg font-bold text-xs hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                                >
+                                                    <Plus className="w-4 h-4" />
+                                                </button>
                                             </div>
                                         </div>
-                                    ))}
-
-                                    <button
-                                        onClick={() => addItemToBlock(block.id)}
-                                        className="w-full py-2 border border-dashed border-white/10 rounded-lg text-xs text-muted-foreground hover:text-white hover:border-white/20 transition-all"
-                                    >
-                                        + 添加训练项
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-
-                        {/* Batch Notes Section - Collapsible Bottom Sheet Style */}
-                        <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end pointer-events-none">
-                            {/* Toggle Button */}
-                            <button
-                                onClick={() => setBatchNoteOpen(!batchNoteOpen)}
-                                className="pointer-events-auto bg-yellow-500 text-black p-4 rounded-full shadow-[0_0_20px_rgba(234,179,8,0.4)] hover:scale-110 transition-transform flex items-center justify-center relative"
-                                title="Add Private Note"
-                            >
-                                <MessageSquareQuote className="w-6 h-6" />
-                                {Object.keys(plan.targetedNotes || {}).length > 0 && (
-                                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center font-bold">
-                                        {Object.keys(plan.targetedNotes || {}).length}
-                                    </span>
-                                )}
-                            </button>
-
-                            {/* Collapsible Content */}
-                            {/* Collapsible Content */}
-                            <div className={cn(
-                                "pointer-events-auto mt-4 w-72 bg-[#0f172a] border border-yellow-500/30 rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 origin-bottom-right",
-                                batchNoteOpen ? "scale-100 opacity-100 translate-y-0" : "scale-0 opacity-0 translate-y-12 h-0"
-                            )}>
-                                <div className="p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-b border-yellow-500/20 flex justify-between items-center">
-                                    <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-widest flex items-center gap-2">
-                                        <MessageSquareQuote className="w-3 h-3" />
-                                        教练专属备注
-                                    </h3>
-                                    <button onClick={() => setBatchNoteOpen(false)} className="text-muted-foreground hover:text-white">
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </div>
-
-                                <div className="p-3 space-y-3">
-                                    <p className="text-[10px] text-muted-foreground">
-                                        给队员的悄悄话 (选人 → 写内容 → 添加)
-                                    </p>
-
-                                    {/* Swimmer Selector */}
-                                    <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto no-scrollbar">
-                                        {swimmers.length === 0 && (
-                                            <div className="w-full text-center py-4 bg-white/5 rounded-lg border border-dashed border-white/10">
-                                                <p className="text-[10px] text-red-300 mb-1">⚠️ 暂无队员</p>
-                                                <Link href="/dashboard/athletes" className="text-[10px] text-blue-400 hover:underline">
-                                                    前往【队员管理】添加 &rarr;
-                                                </Link>
-                                            </div>
-                                        )}
-                                        {swimmers.map(s => (
-                                            <button
-                                                key={s.id}
-                                                onClick={() => toggleSwimmerSelection(s.id)}
-                                                className={cn(
-                                                    "px-2 py-1 rounded-lg text-[10px] font-bold transition-all border flex items-center gap-1",
-                                                    selectedSwimmers.includes(s.id)
-                                                        ? "bg-yellow-500 text-black border-yellow-500"
-                                                        : "bg-white/5 text-muted-foreground border-white/10 hover:border-white/30"
-                                                )}
-                                            >
-                                                {s.name}
-                                                {plan.targetedNotes?.[s.id] && <span className="text-[9px] ml-0.5 opacity-70">★</span>}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    {/* Note Input */}
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            value={batchNote}
-                                            onChange={(e) => setBatchNote(e.target.value)}
-                                            placeholder="输入叮嘱..."
-                                            className="flex-1 bg-black/40 rounded-lg px-2 py-1.5 text-xs text-white placeholder:text-muted-foreground/50 border border-white/5 focus:border-yellow-500/50 outline-none transition-all"
-                                            onKeyDown={(e) => e.key === 'Enter' && applyBatchNote()}
-                                        />
-                                        <button
-                                            onClick={applyBatchNote}
-                                            disabled={selectedSwimmers.length === 0 || !batchNote.trim()}
-                                            className="bg-yellow-500 text-black px-2.5 py-1.5 rounded-lg font-bold text-xs hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                        >
-                                            <Plus className="w-4 h-4" />
-                                        </button>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </>
+                    )}
                 </div>
-            </div>
+            </div >
 
             {/* Library Sidebar */}
-            {isLibraryOpen && (
-                <WorkoutLibrary
-                    onSelect={addBlockFromTemplate}
-                    onClose={() => setIsLibraryOpen(false)}
-                />
-            )}
+            {
+                isLibraryOpen && (
+                    <WorkoutLibrary
+                        onSelect={addBlockFromTemplate}
+                        onClose={() => setIsLibraryOpen(false)}
+                    />
+                )
+            }
         </>
     );
 }

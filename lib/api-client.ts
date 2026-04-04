@@ -14,7 +14,7 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `API Error: ${response.statusText}`);
+        throw new Error(error.message || `API Error: ${response.status} ${response.statusText}`);
     }
 
     return response.json();
@@ -72,5 +72,29 @@ export const api = {
     },
     templates: {
         getAll: () => fetchAPI<any[]>('/templates'),
+    },
+    weeklyPlans: {
+        getAll: (group?: string) => fetchAPI<any[]>(`/weekly-plans${group ? `?group=${group}` : ''}`),
+        getById: (id: string) => fetchAPI<any>(`/weekly-plans?id=${id}`),
+        create: (data: any) => fetchAPI<any>('/weekly-plans', { method: 'POST', body: JSON.stringify(data) }),
+        update: (id: string, data: any) => fetchAPI<any>(`/weekly-plans?id=${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        delete: (id: string) => fetchAPI<void>(`/weekly-plans?id=${id}`, { method: 'DELETE' }),
+        addSession: (data: any) => fetchAPI<any>('/weekly-plans/sessions', { method: 'POST', body: JSON.stringify(data) }),
+        updateSession: (id: string, data: any) => fetchAPI<any>(`/weekly-plans/sessions?id=${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        deleteSession: (id: string) => fetchAPI<void>(`/weekly-plans/sessions?id=${id}`, { method: 'DELETE' }),
+    },
+    weeklyFeedbacks: {
+        getSubmitted: () => fetchAPI<any[]>('/weekly-feedbacks?submitted=true'),
+        getBySwimmerAndWeek: (swimmerId: string, weekStart: string) =>
+            fetchAPI<any>(`/weekly-feedbacks?swimmerId=${swimmerId}&weekStart=${weekStart}`),
+        save: (data: any) => fetchAPI<any>('/weekly-feedbacks', { method: 'POST', body: JSON.stringify(data) }),
+    },
+    feedbackReminders: {
+        getAll: (withResponses?: boolean) =>
+            fetchAPI<any[]>(`/feedback-reminders${withResponses ? '?withResponses=true' : ''}`),
+        getForSwimmer: (swimmerId: string) =>
+            fetchAPI<any[]>(`/feedback-reminders?swimmerId=${swimmerId}`),
+        create: (data: any) => fetchAPI<any>('/feedback-reminders', { method: 'POST', body: JSON.stringify(data) }),
+        respond: (data: any) => fetchAPI<any>('/feedback-reminders', { method: 'POST', body: JSON.stringify(data) }),
     }
 };

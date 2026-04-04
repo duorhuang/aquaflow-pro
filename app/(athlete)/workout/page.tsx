@@ -4,7 +4,11 @@ import { FeedbackForm } from "@/components/athlete/FeedbackForm";
 import { AttendanceCalendar } from "@/components/athlete/AttendanceCalendar";
 import { PerformanceList } from "@/components/athlete/PerformanceTracker";
 import { TrainingHistory } from "@/components/athlete/TrainingHistory";
-import { LogOut, MessageSquareQuote, Calendar, Activity, TrendingUp, ChevronLeft, ChevronRight, Trophy, History } from "lucide-react";
+import { BlockFeedbackPanel } from "@/components/athlete/BlockFeedbackPanel";
+import { WeeklyFeedbackForm } from "@/components/athlete/WeeklyFeedbackForm";
+import { TargetedFeedbackForm } from "@/components/athlete/TargetedFeedbackForm";
+import { api } from "@/lib/api-client";
+import { LogOut } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
@@ -22,11 +26,23 @@ export default function AthleteWorkoutPage() {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [currentUser, setCurrentUser] = useState<Swimmer | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'plan' | 'history' | 'performance' | 'status' | 'stats'>('plan');
+    const [activeTab, setActiveTab] = useState<'plan' | 'weekly' | 'feedback' | 'history' | 'performance' | 'status' | 'stats'>('plan');
+    const [weeklyPlans, setWeeklyPlans] = useState<any[]>([]);
+
+    // Get current week Monday
+    const getCurrentWeekMonday = () => {
+        const d = new Date();
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        d.setDate(diff);
+        return d.toISOString().split('T')[0];
+    };
+    const [currentWeekStart] = useState(getCurrentWeekMonday());
 
     // Status form
     const [readiness, setReadiness] = useState(95);
     const [injuryNote, setInjuryNote] = useState("");
+    const [status, setStatus] = useState<"Active" | "Resting" | "Injured">("Active");
 
     useEffect(() => {
         // Check Login Session
@@ -41,9 +57,24 @@ export default function AthleteWorkoutPage() {
             setCurrentUser(user);
             setReadiness(user.readiness || 95);
             setInjuryNote(user.injuryNote || "");
+            if (user.status === "Active" || user.status === "Resting" || user.status === "Injured") {
+                setStatus(user.status);
+            }
         }
         setIsLoading(false);
+
+        // Load weekly plans
+        loadWeeklyPlans();
     }, [swimmers, router]);
+
+    const loadWeeklyPlans = async () => {
+        try {
+            const plans = await api.weeklyPlans.getAll();
+            setWeeklyPlans(plans.filter((p: any) => p.isPublished));
+        } catch (e) {
+            console.error("Failed to load weekly plans", e);
+        }
+    };
 
     const handleLogout = () => {
         localStorage.removeItem("aquaflow_athlete_id");
@@ -55,6 +86,7 @@ export default function AthleteWorkoutPage() {
         updateSwimmer(currentUser.id, {
             readiness,
             injuryNote,
+            status: status as "Active" | "Resting" | "Injured",
             lastProfileUpdate: new Date().toISOString()
         });
         alert('✅ 状态已更新！数据已实时同步至教练仪表板。');
@@ -175,7 +207,7 @@ export default function AthleteWorkoutPage() {
 
             <main className="p-4 max-w-lg mx-auto space-y-6">
                 {/* Tab Navigation */}
-                <div className="grid grid-cols-5 gap-1 bg-card/30 border border-border rounded-xl p-1">
+                <div className="grid grid-cols-7 gap-1 bg-card/30 border border-border rounded-xl p-1">
                     <button
                         onClick={() => setActiveTab('plan')}
                         className={cn(
@@ -186,6 +218,31 @@ export default function AthleteWorkoutPage() {
                         )}
                     >
                         今日
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('weekly')}
+                        className={cn(
+                            "py-2 px-1 rounded-lg text-[10px] font-medium transition-all relative",
+                            activeTab === 'weekly'
+                                ? "bg-purple-500 text-white shadow-lg"
+                                : "text-muted-foreground hover:text-white"
+                        )}
+                    >
+                        📂 本周
+                        {weeklyPlans.length > 0 && (
+                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-purple-400 rounded-full" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('feedback')}
+                        className={cn(
+                            "py-2 px-1 rounded-lg text-[10px] font-medium transition-all",
+                            activeTab === 'feedback'
+                                ? "bg-orange-500 text-white shadow-lg"
+                                : "text-muted-foreground hover:text-white"
+                        )}
+                    >
+                        反馈
                     </button>
                     <button
                         onClick={() => setActiveTab('history')}
@@ -279,6 +336,20 @@ export default function AthleteWorkoutPage() {
                             <>
                                 {/* Plan Summary */}
                                 <div className="bg-gradient-to-br from-secondary to-card p-6 rounded-3xl border border-white/5">
+                                    {selectedPlan.imageUrl ? (
+                                        <div className="mb-6 rounded-2xl overflow-hidden border border-white/10 relative group">
+                                            <img
+                                                src={selectedPlan.imageUrl}
+                                                alt="Training Plan"
+                                                className="w-full h-auto object-contain hover:scale-105 transition-transform duration-500 cursor-zoom-in"
+                                                onClick={() => window.open(selectedPlan.imageUrl, '_blank')}
+                                            />
+                                            <div className="absolute top-2 right-2 bg-black/60 backdrop-blur px-2 py-1 rounded text-[10px] text-white/80 pointer-events-none">
+                                                点击查看大图
+                                            </div>
+                                        </div>
+                                    ) : null}
+
                                     <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">总距离</p>
                                     <div className="text-4xl font-mono font-bold text-white mb-2">{selectedPlan.totalDistance}m</div>
                                     <div className="flex gap-2">
@@ -322,6 +393,12 @@ export default function AthleteWorkoutPage() {
                                                             </div>
                                                             <div className="flex flex-wrap gap-2 mb-2">
                                                                 <span className="text-sm text-primary font-medium">{item.stroke}</span>
+                                                                {item.alternateStroke && (
+                                                                    <span className="text-sm text-purple-400 font-medium flex items-center gap-1">
+                                                                        <ArrowLeftRight className="w-3 h-3" />
+                                                                        {item.alternateStroke}
+                                                                    </span>
+                                                                )}
                                                                 {item.equipment?.map(e => (
                                                                     <span key={e} className="text-xs border border-white/10 px-1.5 py-0.5 rounded text-muted-foreground">{e}</span>
                                                                 ))}
@@ -331,6 +408,14 @@ export default function AthleteWorkoutPage() {
                                                     </div>
                                                 ))}
                                             </div>
+
+                                            {/* Block Feedback */}
+                                            <BlockFeedbackPanel
+                                                planId={selectedPlan.id}
+                                                blockId={block.id}
+                                                swimmerId={currentUser.id}
+                                                blockName={`${block.type} (${block.items.length} items)`}
+                                            />
                                         </div>
                                     ))}
                                 </div>
@@ -345,6 +430,75 @@ export default function AthleteWorkoutPage() {
                                 <p className="text-sm text-muted-foreground">请联系教练或查看其他日期</p>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {/* Tab Content: Weekly Training */}
+                {activeTab === 'weekly' && currentUser && (
+                    <div className="space-y-4">
+                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                            <FolderOpen className="w-5 h-5 text-purple-400" />
+                            本周训练计划
+                        </h2>
+
+                        {weeklyPlans.length > 0 ? (
+                            weeklyPlans.map((plan: any) => (
+                                <div key={plan.id} className="bg-card/30 border border-border rounded-2xl overflow-hidden">
+                                    <div className="p-4 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-b border-border">
+                                        <h3 className="font-bold text-white">{plan.title || `${plan.weekStart} 周训练`}</h3>
+                                        <p className="text-xs text-muted-foreground">{plan.weekStart} ~ {plan.weekEnd}</p>
+                                        {plan.coachNotes && (
+                                            <p className="text-xs text-primary mt-2 bg-primary/10 rounded-lg p-2">教练备注: {plan.coachNotes}</p>
+                                        )}
+                                    </div>
+                                    <div className="p-4 space-y-4">
+                                        {plan.sessions?.map((session: any) => (
+                                            <div key={session.id} className="bg-black/20 rounded-xl p-3">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Calendar className="w-4 h-4 text-purple-400" />
+                                                    <span className="font-bold text-white text-sm">{session.label}</span>
+                                                    <span className="text-xs text-muted-foreground">{session.date}</span>
+                                                </div>
+                                                {(session.imageData || session.imageUrl) && (
+                                                    <img
+                                                        src={session.imageData || session.imageUrl}
+                                                        alt={session.label}
+                                                        className="w-full max-h-[400px] object-contain rounded-lg mb-2 cursor-zoom-in"
+                                                        onClick={() => window.open(session.imageData || session.imageUrl, '_blank')}
+                                                    />
+                                                )}
+                                                {session.notes && (
+                                                    <p className="text-xs text-muted-foreground">{session.notes}</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-12 bg-card/30 border border-dashed border-border rounded-xl">
+                                <FolderOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                                <h3 className="text-lg font-bold text-white mb-2">本周没有新训练计划</h3>
+                                <p className="text-sm text-muted-foreground">教练发布后将显示在这里</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Tab Content: Weekly Feedback */}
+                {activeTab === 'feedback' && currentUser && (
+                    <div className="space-y-6">
+                        {/* Targeted Feedback Notifications */}
+                        <TargetedFeedbackForm swimmerId={currentUser.id} />
+
+                        {/* Weekly Feedback Form */}
+                        <div>
+                            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                📝 周反馈
+                                <span className="text-xs text-muted-foreground font-normal">{currentWeekStart} 周</span>
+                            </h2>
+                            <WeeklyFeedbackForm swimmerId={currentUser.id} weekStart={currentWeekStart} />
+                        </div>
                     </div>
                 )}
 
@@ -377,6 +531,39 @@ export default function AthleteWorkoutPage() {
                                     <span>疲劳</span>
                                     <span>良好</span>
                                     <span>最佳</span>
+                                </div>
+                            </div>
+
+                            {/* Status Mode Toggle */}
+                            <div className="mb-6">
+                                <label className="text-sm text-muted-foreground mb-2 block">
+                                    当前状态 (Status)
+                                </label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={() => setStatus("Active")}
+                                        className={cn(
+                                            "py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2",
+                                            status === "Active"
+                                                ? "bg-green-500/20 text-green-400 border border-green-500/50"
+                                                : "bg-secondary text-muted-foreground border border-transparent hover:bg-secondary/80"
+                                        )}
+                                    >
+                                        <Activity className="w-4 h-4" />
+                                        Active (训练中)
+                                    </button>
+                                    <button
+                                        onClick={() => setStatus("Resting")}
+                                        className={cn(
+                                            "py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2",
+                                            status === "Resting"
+                                                ? "bg-orange-500/20 text-orange-400 border border-orange-500/50"
+                                                : "bg-secondary text-muted-foreground border border-transparent hover:bg-secondary/80"
+                                        )}
+                                    >
+                                        <History className="w-4 h-4" />
+                                        Resting (休息/伤病)
+                                    </button>
                                 </div>
                             </div>
 

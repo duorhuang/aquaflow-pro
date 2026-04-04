@@ -35,7 +35,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
             setPassword(swimmerToEdit.password || "");
         } else {
             // Reset for new
-            const randomUser = `swimmer${Math.floor(Math.random() * 1000)}`;
+            const randomUser = `swimmer${Date.now().toString().slice(-6)}`;
             setName("");
             setGroup("Junior");
             setUsername(randomUser);
@@ -46,41 +46,49 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (swimmerToEdit) {
-            // Update
-            updateSwimmer(swimmerToEdit.id, {
-                name,
-                group,
-                username,
-                password
-            });
-        } else {
-            // Create
-            const newSwimmer: Swimmer = {
-                id: Math.random().toString(36).substr(2, 9),
-                name,
-                group,
-                username,
-                password,
-                status: "Active",
-                readiness: 100,
-                xp: 0,
-                level: 1,
-                currentStreak: 0,
-                lastCheckIn: undefined
-            };
-            addSwimmer(newSwimmer);
+        try {
+            if (swimmerToEdit) {
+                // Update
+                await updateSwimmer(swimmerToEdit.id, {
+                    name,
+                    group,
+                    username,
+                    password
+                });
+            } else {
+                // Create
+                const newSwimmer: Swimmer = {
+                    id: Math.random().toString(36).substr(2, 9),
+                    name,
+                    group,
+                    username,
+                    password,
+                    status: "Active",
+                    readiness: 100,
+                    xp: 0,
+                    level: 1,
+                    currentStreak: 0,
+                    lastCheckIn: undefined
+                };
+                await addSwimmer(newSwimmer);
+            }
+            onClose();
+        } catch (error: any) {
+            alert("Failed to save swimmer. Please try again.\n" + (error.message || "Unknown error"));
         }
-        onClose();
     };
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (swimmerToEdit && confirm(`确定要删除队员 ${swimmerToEdit.name} 吗？`)) {
-            deleteSwimmer(swimmerToEdit.id);
-            onClose();
+            try {
+                await deleteSwimmer(swimmerToEdit.id);
+                onClose();
+            } catch (error: any) {
+                alert("Failed to delete swimmer.\n" + (error.message || "Unknown error"));
+            }
         }
     };
 

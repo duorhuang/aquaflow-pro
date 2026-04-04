@@ -8,6 +8,7 @@ export const DICTIONARY = {
             athlete: "Athlete",
             settings: "Settings",
             logout: "Log Out",
+            feedbacks: "Feedbacks",
             language: "Language",
             back: "Back",
             save: "Save",
@@ -27,6 +28,8 @@ export const DICTIONARY = {
         editor: {
             newPlan: "New Training Plan",
             editPlan: "Edit Plan",
+            editorMode: "Editor Mode",
+            photoMode: "Photo Mode",
             updatePlan: "Update Plan",
             publishPlan: "Publish Plan",
             draftingFor: "Drafting for",
@@ -113,6 +116,7 @@ export const DICTIONARY = {
             athlete: "运动员",
             settings: "设置",
             logout: "登出",
+            feedbacks: "训练反馈",
             language: "语言",
             back: "返回",
             save: "保存",
@@ -132,6 +136,8 @@ export const DICTIONARY = {
         editor: {
             newPlan: "新建训练计划",
             editPlan: "编辑计划",
+            editorMode: "编辑器模式",
+            photoMode: "照片模式",
             updatePlan: "更新计划",
             publishPlan: "发布计划",
             draftingFor: "目标组别：",

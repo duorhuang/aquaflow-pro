@@ -33,10 +33,8 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <head>
-        {/* Preconnect to Vercel for faster loading */}
-        <link rel="preconnect" href="https://vercel.app" />
       </head>
-      <body className="antialiased">
+      <body className="antialiased" suppressHydrationWarning={true}>
         <LanguageProvider>
           <StoreProvider>
             {children}

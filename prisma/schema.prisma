@@ -2,12 +2,14 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Swimmer {
@@ -35,9 +37,12 @@ model Swimmer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  feedbacks    Feedback[]
-  attendance   AttendanceRecord[]
-  performances PerformanceRecord[]
+  feedbacks        Feedback[]
+  attendance       AttendanceRecord[]
+  performances     PerformanceRecord[]
+  blockFeedbacks   BlockFeedback[]
+  weeklyFeedbacks  WeeklyFeedback[]
+  targetedFeedbacks TargetedFeedback[]
 }
 
 model TrainingPlan {
@@ -52,6 +57,8 @@ model TrainingPlan {
   status        String
   coachNotes    String?
   targetedNotes Json?    // Record<string, string>
+  imageUrl      String?  // URL of the uploaded plan photo
+  analysis      PlanAnalysis?
   isStarred     Boolean  @default(false)
   
   createdAt DateTime @default(now())
@@ -70,6 +77,8 @@ model Feedback {
   soreness  Int
   comments  String
   timestamp String
+  goodPoints        String?
+  improvementAreas  String?
   
   createdAt DateTime @default(now())
   
@@ -127,4 +136,157 @@ model BlockTemplate {
   updatedAt DateTime @updatedAt
   
   @@index([category])
+}
+
+model PlanAnalysis {
+  id             String   @id @default(cuid())
+  planId         String   @unique
+  imageUrl       String
+  rawText        String?  // OCR raw text
+  structuredData Json?    // Parsed blocks and sets
+  coachInsights  Json?    // Detected patterns (e.g. "Likes 400 IM warmup")
+  aiSuggestions  Json?    // Suggestions given by AI
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  plan           TrainingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+}
+
+// Block-level feedback from athletes
+model BlockFeedback {
+  id        String   @id @default(cuid())
+  planId    String
+  blockId   String   // ID of the training block within the plan
+  swimmerId String
+  reaction  String?  // 'like' | 'dislike' | null
+  comment   String?  // Text comment from athlete
+  tags      String[] // e.g. ["Too Tight", "Shoulder Pain"]
+  
+  createdAt DateTime @default(now())
+  
+  swimmer   Swimmer  @relation(fields: [swimmerId], references: [id], onDelete: Cascade)
+  
+  @@index([planId])
+  @@index([blockId])
+  @@index([swimmerId])
+  @@unique([planId, blockId, swimmerId])
+}
+
+// ==========================================
+// Weekly Training & Feedback System
+// ==========================================
+
+// Weekly training plan (folder of daily sessions)
+model WeeklyPlan {
+  id          String   @id @default(cuid())
+  weekStart   String   // Monday date YYYY-MM-DD
+  weekEnd     String   // Sunday date YYYY-MM-DD
+  group       String
+  title       String?  // e.g. "第12周训练"
+  coachNotes  String?
+  isPublished Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  sessions    DailySession[]
+  feedbacks   WeeklyFeedback[]
+  
+  @@index([weekStart])
+  @@index([group])
+}
+
+// Daily session within a weekly plan (photo + annotation)
+model DailySession {
+  id            String   @id @default(cuid())
+  weeklyPlanId  String
+  label         String   // e.g. "周三", "周六上午", "周六下午"
+  date          String   // YYYY-MM-DD
+  imageData     String?  // Base64 encoded image data
+  imageType     String?  // MIME type e.g. "image/jpeg"
+  notes         String?
+  sortOrder     Int      @default(0)
+  
+  createdAt     DateTime @default(now())
+  
+  weeklyPlan    WeeklyPlan @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+  
+  @@index([weeklyPlanId])
+  @@index([date])
+}
+
+// Athlete weekly feedback (big feedback containing daily sub-feedbacks)
+model WeeklyFeedback {
+  id            String   @id @default(cuid())
+  swimmerId     String
+  weeklyPlanId  String?  // Optional link to weekly plan
+  weekStart     String   // Monday date YYYY-MM-DD
+  summary       String?  // Overall weekly summary text
+  isSubmitted   Boolean  @default(false)
+  submittedAt   String?  // ISO date when submitted
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  swimmer       Swimmer  @relation(fields: [swimmerId], references: [id], onDelete: Cascade)
+  weeklyPlan    WeeklyPlan? @relation(fields: [weeklyPlanId], references: [id], onDelete: SetNull)
+  dailyFeedbacks DailyFeedback[]
+  
+  @@index([swimmerId])
+  @@index([weekStart])
+  @@unique([swimmerId, weekStart])
+}
+
+// Daily sub-feedback within a weekly feedback
+model DailyFeedback {
+  id               String   @id @default(cuid())
+  weeklyFeedbackId String
+  date             String   // YYYY-MM-DD
+  rpe              Int?     // 1-10 fatigue
+  soreness         Int?     // 1-10 soreness
+  reflection       String?  // Free text
+  
+  createdAt        DateTime @default(now())
+  
+  weeklyFeedback   WeeklyFeedback @relation(fields: [weeklyFeedbackId], references: [id], onDelete: Cascade)
+  
+  @@index([weeklyFeedbackId])
+  @@index([date])
+  @@unique([weeklyFeedbackId, date])
+}
+
+// Coach-initiated feedback reminder
+model FeedbackReminder {
+  id               String   @id @default(cuid())
+  message          String   // Coach's message/instruction
+  targetSwimmerIds Json?    // JSON array of swimmer IDs, null = entire team
+  targetGroup      String?  // Optional group filter
+  periodStart      String   // Start date YYYY-MM-DD
+  periodEnd        String   // End date YYYY-MM-DD
+  
+  createdAt        DateTime @default(now())
+  
+  responses        TargetedFeedback[]
+  
+  @@index([createdAt])
+}
+
+// Athlete response to a coach feedback reminder
+model TargetedFeedback {
+  id          String   @id @default(cuid())
+  reminderId  String
+  swimmerId   String
+  content     String   // Athlete's feedback text
+  rpe         Int?     // Optional RPE
+  soreness    Int?     // Optional soreness
+  
+  createdAt   DateTime @default(now())
+  
+  reminder    FeedbackReminder @relation(fields: [reminderId], references: [id], onDelete: Cascade)
+  swimmer     Swimmer  @relation(fields: [swimmerId], references: [id], onDelete: Cascade)
+  
+  @@index([reminderId])
+  @@index([swimmerId])
+  @@unique([reminderId, swimmerId])
 }

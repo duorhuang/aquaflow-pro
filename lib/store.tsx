@@ -48,6 +48,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const [templates, setTemplates] = useState<BlockTemplate[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
 
+
     // Load from LocalStorage on mount
     // Load from API on mount
     useEffect(() => {
@@ -60,11 +61,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 // Load swimmers
                 const swimmers = await api.swimmers.getAll();
                 if (swimmers.length === 0) {
-                    // Seed initial swimmers
-                    for (const s of MOCK_SWIMMERS) {
-                        try { await api.swimmers.create(s); } catch (e) { }
-                    }
-                    setSwimmers(MOCK_SWIMMERS);
+                    // Do not seed mock data automatically
+                    setSwimmers([]);
                 } else {
                     setSwimmers(swimmers);
                 }
@@ -97,7 +95,36 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         };
 
         loadData();
+
+        // Auto-sync: Poll for updates every 30 seconds
+        // This ensures data stays in sync across devices with different network environments
+        const AUTO_SYNC_INTERVAL = 30000; // 30 seconds
+        const syncInterval = setInterval(async () => {
+            try {
+                // Silently refresh data in the background
+                const [plans, swimmers, feedbacks, attendance, performances] = await Promise.all([
+                    api.plans.getAll(),
+                    api.swimmers.getAll(),
+                    api.feedbacks.getAll(),
+                    api.attendance.getAll(),
+                    api.performances.getAll()
+                ]);
+
+                setPlans(plans);
+                setSwimmers(swimmers);
+                setFeedbacks(feedbacks);
+                setAttendance(attendance);
+                setPerformances(performances);
+            } catch (error) {
+                // Silently fail - don't disrupt user experience
+                console.error("Auto-sync failed:", error);
+            }
+        }, AUTO_SYNC_INTERVAL);
+
+        // Cleanup interval on unmount
+        return () => clearInterval(syncInterval);
     }, []);
+
 
     // Persist templates to localStorage
     useEffect(() => {
@@ -150,6 +177,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         } catch (e) {
             console.error("Failed to sync feedback", e);
         }
+        // Auto-check-in: when athlete writes feedback, auto mark attendance
+        markAttendance(fb.swimmerId);
     };
 
     // Helper to find the PREVIOUS plan date before today
@@ -295,21 +324,51 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
 
     const addSwimmer = async (swimmer: Swimmer) => {
+        // 1. Optimistic Add
         setSwimmers((prev) => [...prev, swimmer]);
-        try { await api.swimmers.create(swimmer); } catch (e) { }
+        try {
+            // 2. Server Call
+            const savedSwimmer = await api.swimmers.create(swimmer);
+
+            // 3. Update with real server data (in case ID or other fields changed/normalized)
+            if (savedSwimmer && savedSwimmer.id) {
+                setSwimmers((prev) => prev.map(s => s.id === swimmer.id ? savedSwimmer : s));
+            }
+        } catch (e) {
+            console.error("Failed to add swimmer:", e);
+            // Revert on failure
+            setSwimmers((prev) => prev.filter((s) => s.id !== swimmer.id));
+            throw e;
+        }
     };
 
     const updateSwimmer = async (id: string, updates: Partial<Swimmer>) => {
+        const oldSwimmer = swimmers.find(s => s.id === id);
         setSwimmers((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
         try {
             const s = swimmers.find(sw => sw.id === id);
             if (s) await api.swimmers.update(id, { ...s, ...updates });
-        } catch (e) { }
+        } catch (e) {
+            console.error("Failed to update swimmer:", e);
+            if (oldSwimmer) {
+                setSwimmers((prev) => prev.map((s) => (s.id === id ? oldSwimmer : s)));
+            }
+            throw e;
+        }
     };
 
     const deleteSwimmer = async (id: string) => {
+        const oldSwimmer = swimmers.find(s => s.id === id);
         setSwimmers((prev) => prev.filter((s) => s.id !== id));
-        try { await api.swimmers.delete(id); } catch (e) { }
+        try {
+            await api.swimmers.delete(id);
+        } catch (e) {
+            console.error("Failed to delete swimmer:", e);
+            if (oldSwimmer) {
+                setSwimmers((prev) => [...prev, oldSwimmer]);
+            }
+            throw e;
+        }
     };
 
     const getSwimmerArgs = (id: string) => {
