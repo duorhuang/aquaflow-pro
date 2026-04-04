@@ -111,12 +111,18 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                 setIsSubmitted(true);
                 setSaveStatus("提交成功！教练已收到您的本周总结。");
                 
-                // Smart auto-attendance: mark check-in for the day this was submitted
-                const today = new Date().toISOString().split('T')[0];
+                // Smart auto-attendance
                 markAttendance(swimmerId);
                 
             } else {
-                setSaveStatus("草稿已局部保存。");
+                setSaveStatus("草稿已局部保存。今日已自动为你打卡！");
+                
+                // Also smart auto-attendance for saving drafts if they wrote something for today
+                const todayStr = new Date().toISOString().split('T')[0];
+                const todayFeedback = dailyFeedbacks.find(d => d.date === todayStr);
+                if (todayFeedback && todayFeedback.reflection && todayFeedback.reflection.trim().length > 0) {
+                    markAttendance(swimmerId);
+                }
             }
         } catch (e) {
             console.error(e);

@@ -8,7 +8,7 @@ import { BlockFeedbackPanel } from "@/components/athlete/BlockFeedbackPanel";
 import { WeeklyFeedbackForm } from "@/components/athlete/WeeklyFeedbackForm";
 import { TargetedFeedbackForm } from "@/components/athlete/TargetedFeedbackForm";
 import { api } from "@/lib/api-client";
-import { LogOut } from "lucide-react";
+import { LogOut, Calendar, FolderOpen, Activity, History, Quote, MessageSquare, ArrowRightLeft } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
@@ -26,7 +26,7 @@ export default function AthleteWorkoutPage() {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [currentUser, setCurrentUser] = useState<Swimmer | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'plan' | 'weekly' | 'feedback' | 'history' | 'performance' | 'status' | 'stats'>('plan');
+    const [activeTab, setActiveTab] = useState<'plan' | 'weekly' | 'diary' | 'feedback' | 'history' | 'performance' | 'status' | 'stats'>('plan');
     const [weeklyPlans, setWeeklyPlans] = useState<any[]>([]);
 
     // Get current week Monday
@@ -207,7 +207,7 @@ export default function AthleteWorkoutPage() {
 
             <main className="p-4 max-w-lg mx-auto space-y-6">
                 {/* Tab Navigation */}
-                <div className="grid grid-cols-7 gap-1 bg-card/30 border border-border rounded-xl p-1">
+                <div className="grid grid-cols-8 gap-1 bg-card/30 border border-border rounded-xl p-1">
                     <button
                         onClick={() => setActiveTab('plan')}
                         className={cn(
@@ -232,6 +232,17 @@ export default function AthleteWorkoutPage() {
                         {weeklyPlans.length > 0 && (
                             <span className="absolute -top-1 -right-1 w-2 h-2 bg-purple-400 rounded-full" />
                         )}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('diary')}
+                        className={cn(
+                            "py-2 px-1 rounded-lg text-[10px] font-medium transition-all",
+                            activeTab === 'diary'
+                                ? "bg-primary text-primary-foreground shadow-lg"
+                                : "text-muted-foreground hover:text-white"
+                        )}
+                    >
+                        📝 日记
                     </button>
                     <button
                         onClick={() => setActiveTab('feedback')}
@@ -317,11 +328,11 @@ export default function AthleteWorkoutPage() {
                         {myNote && (
                             <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 p-5 rounded-3xl relative overflow-hidden shadow-lg animate-in slide-in-from-top-4 duration-500">
                                 <div className="absolute top-0 right-0 p-3 opacity-20">
-                                    <MessageSquareQuote className="w-12 h-12 text-yellow-400" />
+                                    <MessageSquare className="w-12 h-12 text-yellow-400" />
                                 </div>
                                 <div className="relative z-10">
                                     <h3 className="text-yellow-400 font-bold uppercase tracking-widest text-xs mb-2 flex items-center gap-2">
-                                        <MessageSquareQuote className="w-4 h-4" />
+                                        <Quote className="w-4 h-4" />
                                         Coach's Special Note (教练寄语)
                                     </h3>
                                     <p className="text-white text-lg font-medium italic leading-relaxed">
@@ -395,7 +406,7 @@ export default function AthleteWorkoutPage() {
                                                                 <span className="text-sm text-primary font-medium">{item.stroke}</span>
                                                                 {item.alternateStroke && (
                                                                     <span className="text-sm text-purple-400 font-medium flex items-center gap-1">
-                                                                        <ArrowLeftRight className="w-3 h-3" />
+                                                                        <ArrowRightLeft className="w-3 h-3" />
                                                                         {item.alternateStroke}
                                                                     </span>
                                                                 )}
@@ -485,20 +496,21 @@ export default function AthleteWorkoutPage() {
                     </div>
                 )}
 
-                {/* Tab Content: Weekly Feedback */}
+                {/* Tab Content: Diary (Weekly Feedback Form) */}
+                {activeTab === 'diary' && currentUser && (
+                    <div className="space-y-6">
+                        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            📝 训练日记
+                            <span className="text-xs text-muted-foreground font-normal">{currentWeekStart} 周</span>
+                        </h2>
+                        <WeeklyFeedbackForm swimmerId={currentUser.id} weekStart={currentWeekStart} />
+                    </div>
+                )}
+
+                {/* Tab Content: Specialized Feedback Notifications */}
                 {activeTab === 'feedback' && currentUser && (
                     <div className="space-y-6">
-                        {/* Targeted Feedback Notifications */}
                         <TargetedFeedbackForm swimmerId={currentUser.id} />
-
-                        {/* Weekly Feedback Form */}
-                        <div>
-                            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                                📝 周反馈
-                                <span className="text-xs text-muted-foreground font-normal">{currentWeekStart} 周</span>
-                            </h2>
-                            <WeeklyFeedbackForm swimmerId={currentUser.id} weekStart={currentWeekStart} />
-                        </div>
                     </div>
                 )}
 

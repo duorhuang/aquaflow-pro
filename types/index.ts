@@ -36,6 +36,7 @@ export interface PlanItem {
     repeats: number;
     distance: number;
     stroke: "Free" | "Back" | "Breast" | "Fly" | "IM" | "Choice";
+    alternateStroke?: "Free" | "Back" | "Breast" | "Fly" | "IM" | "Choice"; // For stroke alternation (e.g. butterfly out, backstroke back)
     intensity: "Low" | "Moderate" | "High" | "RacePace";
     description: string;
     equipment: Equipment[];
@@ -70,7 +71,20 @@ export interface TrainingPlan {
     status: "Draft" | "Published" | "Finalized";
     coachNotes?: string;
     targetedNotes?: Record<string, string>;
+    imageUrl?: string; // URL of uploaded plan photo
     isStarred?: boolean; // Archived if false & > 14 days
+    analysis?: PlanAnalysis;
+}
+
+export interface PlanAnalysis {
+    id?: string;
+    planId?: string;
+    imageUrl: string;
+    rawText?: string;
+    structuredData?: any;
+    coachInsights?: any; // JSON
+    aiSuggestions?: any; // JSON
+    createdAt?: string;
 }
 
 export interface Feedback {
@@ -78,10 +92,12 @@ export interface Feedback {
     swimmerId: string;
     planId: string;
     date: string; // YYYY-MM-DD
-    rpe: number; // 1-10
-    soreness: number; // 1-10
+    rpe: number; // 1-10 疲劳度
+    soreness: number; // 1-10 酸痛度
     comments: string;
     timestamp: string;
+    goodPoints?: string;        // 今日表现好的方面
+    improvementAreas?: string;  // 需要改进的地方
 }
 
 // "Timeline" logic helper types
@@ -112,4 +128,81 @@ export interface PerformanceRecord {
     improvement?: number; // Improvement in seconds (negative = faster)
     meetName?: string; // Optional meet/competition name
     notes?: string;    // Additional notes
+}
+
+// ==========================================
+// Weekly Training & Feedback System
+// ==========================================
+
+export type StrokeType = "Free" | "Back" | "Breast" | "Fly" | "IM" | "Choice";
+
+export interface WeeklyPlan {
+    id: string;
+    weekStart: string;    // Monday YYYY-MM-DD
+    weekEnd: string;      // Sunday YYYY-MM-DD
+    group: string;
+    title?: string;
+    coachNotes?: string;
+    isPublished: boolean;
+    sessions?: DailySession[];
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface DailySession {
+    id: string;
+    weeklyPlanId: string;
+    label: string;        // "周三", "周六上午"
+    date: string;         // YYYY-MM-DD
+    imageData?: string;   // Base64 image
+    imageType?: string;   // MIME type
+    notes?: string;
+    sortOrder: number;
+    createdAt?: string;
+}
+
+export interface WeeklyFeedbackType {
+    id: string;
+    swimmerId: string;
+    weeklyPlanId?: string;
+    weekStart: string;    // Monday YYYY-MM-DD
+    summary?: string;
+    isSubmitted: boolean;
+    submittedAt?: string;
+    dailyFeedbacks?: DailyFeedbackEntry[];
+    swimmer?: { id: string; name: string };
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface DailyFeedbackEntry {
+    id: string;
+    weeklyFeedbackId: string;
+    date: string;
+    rpe?: number;
+    soreness?: number;
+    reflection?: string;
+    createdAt?: string;
+}
+
+export interface FeedbackReminder {
+    id: string;
+    message: string;
+    targetSwimmerIds?: string[]; // null = entire team
+    targetGroup?: string;
+    periodStart: string;
+    periodEnd: string;
+    responses?: TargetedFeedbackType[];
+    createdAt?: string;
+}
+
+export interface TargetedFeedbackType {
+    id: string;
+    reminderId: string;
+    swimmerId: string;
+    content: string;
+    rpe?: number;
+    soreness?: number;
+    swimmer?: { id: string; name: string };
+    createdAt?: string;
 }

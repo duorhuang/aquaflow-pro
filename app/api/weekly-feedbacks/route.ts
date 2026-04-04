@@ -1,16 +1,54 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: Request) {
+    try {
+        const { searchParams } = new URL(req.url);
+        const submitted = searchParams.get('submitted') === 'true';
+        const swimmerId = searchParams.get('swimmerId');
+        const weekStart = searchParams.get('weekStart');
+
+        if (swimmerId && weekStart) {
+            const feedback = await (db.weeklyFeedbacks as any).findUnique({
+                where: {
+                    swimmerId_weekStart: { swimmerId, weekStart }
+                },
+                include: { dailyFeedbacks: true, swimmer: true }
+            });
+            return NextResponse.json(feedback || null);
+        }
+
+        if (submitted) {
+            const feedbacks = await (db.weeklyFeedbacks as any).findMany({
+                where: { isSubmitted: true },
+                include: { dailyFeedbacks: true, swimmer: true },
+                orderBy: { submittedAt: 'desc' }
+            });
+            return NextResponse.json(feedbacks);
+        }
+
+        return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
+    } catch (error: any) {
+        console.error("GET weekly feedbacks error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
 export async function POST(req: Request) {
     try {
         const body = await req.json();
         const { swimmerId, weekStart, summary, dailyFeedbacks } = body;
 
-        // Smart auto-submission logic: Check if they actually have attendance this week
-        // and if they actually wrote any feedback.
+        if (!swimmerId || !weekStart) {
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        }
+
+        // Smart auto-submission logic
         let hasContent = false;
         if (summary && summary.trim().length > 0) hasContent = true;
-        for (const df of dailyFeedbacks) {
+        for (const df of (dailyFeedbacks || [])) {
             if (df.reflection && df.reflection.trim().length > 0) hasContent = true;
         }
 
@@ -18,12 +56,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: true, skipped: true, message: "No feedback provided." });
         }
 
-        const weeklyFeedback = await db.weeklyFeedback.upsert({
+        const weeklyFeedback = await (db.weeklyFeedbacks as any).upsert({
             where: {
-                swimmerId_weekStart: {
-                    swimmerId,
-                    weekStart
-                }
+                swimmerId_weekStart: { swimmerId, weekStart }
             },
             update: {
                 summary,
@@ -40,40 +75,35 @@ export async function POST(req: Request) {
         });
 
         // Upsert daily feedbacks
-        for (const df of dailyFeedbacks) {
+        for (const df of (dailyFeedbacks || [])) {
             if (!df.date) continue;
-            const existing = await db.dailyFeedback.findFirst({
+            
+            // Using prisma directly for complex upserts if needed, or but here we use db abstraction
+            await (db.dailyFeedbacks as any).upsert({
                 where: {
+                    weeklyFeedbackId_date: {
+                        weeklyFeedbackId: weeklyFeedback.id,
+                        date: df.date
+                    }
+                },
+                update: {
+                    rpe: df.rpe,
+                    soreness: df.soreness,
+                    reflection: df.reflection
+                },
+                create: {
                     weeklyFeedbackId: weeklyFeedback.id,
-                    date: df.date
+                    date: df.date,
+                    rpe: df.rpe,
+                    soreness: df.soreness,
+                    reflection: df.reflection
                 }
             });
-
-            if (existing) {
-                await db.dailyFeedback.update({
-                    where: { id: existing.id },
-                    data: {
-                        rpe: df.rpe,
-                        soreness: df.soreness,
-                        reflection: df.reflection
-                    }
-                });
-            } else {
-                await db.dailyFeedback.create({
-                    data: {
-                        weeklyFeedbackId: weeklyFeedback.id,
-                        date: df.date,
-                        rpe: df.rpe,
-                        soreness: df.soreness,
-                        reflection: df.reflection
-                    }
-                });
-            }
         }
 
         return NextResponse.json(weeklyFeedback);
-    } catch (error) {
-        console.error("Weekly feedback error:", error);
-        return NextResponse.json({ error: "Internal Error" }, { status: 500 });
+    } catch (error: any) {
+        console.error("POST weekly feedback error:", error);
+        return NextResponse.json({ error: error.message || "Internal Error" }, { status: 500 });
     }
 }

@@ -1,0 +1,86 @@
+import { NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: Request) {
+    try {
+        const { searchParams } = new URL(req.url);
+        const group = searchParams.get('group');
+        const id = searchParams.get('id');
+
+        if (id) {
+            const plan = await (db.weeklyPlans as any).findUnique({
+                where: { id },
+                include: { sessions: { orderBy: { sortOrder: 'asc' } } }
+            });
+            return NextResponse.json(plan);
+        }
+
+        const where = group ? { group } : {};
+        const plans = await (db.weeklyPlans as any).findMany({
+            where,
+            include: { sessions: { orderBy: { sortOrder: 'asc' } } },
+            orderBy: { weekStart: 'desc' }
+        });
+
+        return NextResponse.json(plans);
+    } catch (error: any) {
+        console.error("GET weekly plans error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
+export async function POST(req: Request) {
+    try {
+        const data = await req.json();
+        const plan = await (db.weeklyPlans as any).create({
+            weekStart: data.weekStart,
+            weekEnd: data.weekEnd,
+            group: data.group,
+            title: data.title,
+            coachNotes: data.coachNotes,
+            isPublished: data.isPublished || false
+        });
+        return NextResponse.json(plan);
+    } catch (error: any) {
+        console.error("POST weekly plan error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
+export async function PUT(req: Request) {
+    try {
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get('id');
+        if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
+
+        const data = await req.json();
+        const plan = await (db.weeklyPlans as any).update(id, {
+            weekStart: data.weekStart,
+            weekEnd: data.weekEnd,
+            group: data.group,
+            title: data.title,
+            coachNotes: data.coachNotes,
+            isPublished: data.isPublished
+        });
+        return NextResponse.json(plan);
+    } catch (error: any) {
+        console.error("PUT weekly plan error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
+export async function DELETE(req: Request) {
+    try {
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get('id');
+        if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
+
+        await (db.weeklyPlans as any).delete(id);
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        console.error("DELETE weekly plan error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
