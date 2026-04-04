@@ -207,97 +207,97 @@ export default function AthleteWorkoutPage() {
 
             <main className="p-4 max-w-lg mx-auto space-y-6">
                 {/* Tab Navigation */}
-                <div className="grid grid-cols-8 gap-1 bg-card/30 border border-border rounded-xl p-1">
+                <div className="flex overflow-x-auto hide-scrollbar gap-2 bg-card/30 border border-border rounded-xl p-2">
                     <button
                         onClick={() => setActiveTab('plan')}
                         className={cn(
-                            "py-2 px-1 rounded-lg text-[10px] font-medium transition-all",
+                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all",
                             activeTab === 'plan'
                                 ? "bg-primary text-primary-foreground shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        今日
+                        ⚡️ 今日任务
                     </button>
                     <button
                         onClick={() => setActiveTab('weekly')}
                         className={cn(
-                            "py-2 px-1 rounded-lg text-[10px] font-medium transition-all relative",
+                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all relative",
                             activeTab === 'weekly'
                                 ? "bg-purple-500 text-white shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        📂 本周
+                        📂 本周大纲
                         {weeklyPlans.length > 0 && (
-                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-purple-400 rounded-full" />
+                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-purple-400 rounded-full animate-pulse border border-white" />
                         )}
                     </button>
                     <button
                         onClick={() => setActiveTab('diary')}
                         className={cn(
-                            "py-2 px-1 rounded-lg text-[10px] font-medium transition-all",
+                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all",
                             activeTab === 'diary'
                                 ? "bg-primary text-primary-foreground shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        📝 日记
+                        📝 训练日记 (打卡)
                     </button>
                     <button
                         onClick={() => setActiveTab('feedback')}
                         className={cn(
-                            "py-2 px-1 rounded-lg text-[10px] font-medium transition-all",
+                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all",
                             activeTab === 'feedback'
                                 ? "bg-orange-500 text-white shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        反馈
+                        💬 教练反馈
                     </button>
                     <button
                         onClick={() => setActiveTab('history')}
                         className={cn(
-                            "py-2 px-1 rounded-lg text-[10px] font-medium transition-all",
+                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all",
                             activeTab === 'history'
                                 ? "bg-primary text-primary-foreground shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        历史
+                        历史记录
                     </button>
                     <button
                         onClick={() => setActiveTab('performance')}
                         className={cn(
-                            "py-2 px-1 rounded-lg text-[10px] font-medium transition-all",
+                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all",
                             activeTab === 'performance'
                                 ? "bg-primary text-primary-foreground shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        成绩
+                        成绩考核
                     </button>
                     <button
                         onClick={() => setActiveTab('status')}
                         className={cn(
-                            "py-2 px-1 rounded-lg text-[10px] font-medium transition-all",
+                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all",
                             activeTab === 'status'
                                 ? "bg-primary text-primary-foreground shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        状态
+                        更新状态
                     </button>
                     <button
                         onClick={() => setActiveTab('stats')}
                         className={cn(
-                            "py-2 px-1 rounded-lg text-[10px] font-medium transition-all",
+                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all",
                             activeTab === 'stats'
                                 ? "bg-primary text-primary-foreground shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        统计
+                        我的统计
                     </button>
                 </div>
 
