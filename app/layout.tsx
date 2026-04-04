@@ -3,6 +3,8 @@ import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n";
 import { StoreProvider } from "@/lib/store";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "AquaFlow Pro - 游泳队管理系统",
   description: "专业游泳队训练管理系统 | Professional Swimming Team Management",
