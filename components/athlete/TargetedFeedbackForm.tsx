@@ -32,7 +32,7 @@ export function TargetedFeedbackForm({ swimmerId }: { swimmerId: string }) {
         setSubmitting({ ...submitting, [reminderId]: true });
         try {
             // Mock API or actual
-            await api.targetedFeedbacks?.create({
+            await api.feedbackReminders?.respond({
                 reminderId,
                 swimmerId,
                 content: responses[reminderId] || "",

@@ -50,7 +50,7 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
         const loadData = async () => {
             setIsLoading(true);
             try {
-                const res = await api.weeklyFeedbacks?.getOne(swimmerId, weekStart);
+                const res = await api.weeklyFeedbacks?.getBySwimmerAndWeek(swimmerId, weekStart);
                 if (res) {
                     setSummary(res.summary || "");
                     setIsSubmitted(res.isSubmitted || false);
@@ -98,7 +98,7 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                 return;
             }
 
-            const res = await api.weeklyFeedbacks?.submit({
+            const res = await api.weeklyFeedbacks?.save({
                 swimmerId,
                 weekStart,
                 summary,
@@ -113,7 +113,7 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                 
                 // Smart auto-attendance: mark check-in for the day this was submitted
                 const today = new Date().toISOString().split('T')[0];
-                markAttendance(swimmerId, today, "Present");
+                markAttendance(swimmerId);
                 
             } else {
                 setSaveStatus("草稿已局部保存。");
