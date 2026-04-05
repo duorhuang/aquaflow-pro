@@ -35,5 +35,5 @@ next-env.d.ts
 
 # my debug files
 *_output.txt
-\n.npm-cache/
+.npm-cache/
 build-output.log
