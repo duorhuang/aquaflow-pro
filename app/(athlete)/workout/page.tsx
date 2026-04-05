@@ -496,7 +496,7 @@ export default function AthleteWorkoutPage() {
                                         )}
                                     </div>
                                     <div className="p-4 space-y-4">
-                                        {plan.sessions?.map((session: any) => (
+                                        {[...(plan.sessions || [])].sort((a, b) => a.date.localeCompare(b.date) || a.sortOrder - b.sortOrder).map((session: any) => (
                                             <div key={session.id} className="bg-black/20 rounded-xl p-3">
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <Calendar className="w-4 h-4 text-purple-400" />

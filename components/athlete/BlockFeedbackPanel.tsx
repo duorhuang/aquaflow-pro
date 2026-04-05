@@ -8,11 +8,13 @@ export function BlockFeedbackPanel({
     planId,
     blockId,
     swimmerId,
+    blockName,
     onFeedbackSubmitted
 }: {
     planId: string;
     blockId: string;
     swimmerId: string;
+    blockName?: string;
     onFeedbackSubmitted?: () => void;
 }) {
     const [reaction, setReaction] = useState<'like'|'dislike'|null>(null);
