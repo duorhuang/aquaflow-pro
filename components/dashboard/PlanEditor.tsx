@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { TrainingPlan, PlanItem, GroupLevel, Equipment, TrainingBlock, PlanSegment, BlockTemplate } from "@/types";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2, GripVertical, Save, ArrowLeft, Waves, Info, Layers, Clock, List, Copy, Timer, Hourglass, BookOpen, X, MessageSquareQuote, ImageIcon, FileText } from "lucide-react";
-import { PhotoPlanUpload } from "@/components/plan/PhotoUpload";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n";
@@ -12,6 +12,7 @@ import { useStore } from "@/lib/store";
 import { AIInsight } from "@/components/dashboard/AIInsight";
 import { WorkoutLibrary } from "@/components/dashboard/WorkoutLibrary";
 import { getLocalDateISOString } from "@/lib/date-utils";
+import { PhotoUpload } from "@/components/plan/PhotoUpload";
 
 // UID Helper (Deterministic-ish for client)
 const uid = () => {
@@ -20,7 +21,6 @@ const uid = () => {
     }
     return Math.random().toString(36).substr(2, 9);
 };
-
 
 const DISTANCE_PRESETS = [15, 25, 50, 100, 200, 400, 800, 1500];
 const STROKES_KEYS = ["Free", "Back", "Breast", "Fly", "IM", "Choice"] as const;
@@ -62,7 +62,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [aiAnalysis, setAiAnalysis] = useState<{ summary?: string; safetyAlerts?: string[]; suggestions?: any[] } | null>(null);
 
-
     // Initialize State
     const [plan, setPlan] = useState<TrainingPlan>(initialPlan || {
         id: uid(),
@@ -72,9 +71,9 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
         focus: "",
         totalDistance: 0,
         coachNotes: "",
-        blocks: [], // New Structure
+        blocks: [],
         targetedNotes: {},
-        imageUrl: "", // Support photo plans
+        imageUrl: "",
     });
 
     // Detect mode from initial plan
@@ -149,7 +148,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
         };
 
         const newBlocks = [...plan.blocks];
-        newBlocks.splice(blockIndex + 1, 0, newBlock); // Insert after original
+        newBlocks.splice(blockIndex + 1, 0, newBlock);
         setPlan({ ...plan, blocks: newBlocks, totalDistance: calculateTotalDistance(newBlocks) });
     };
 
@@ -162,7 +161,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
         const name = prompt("给这个训练块起个名字 (保存为模板):", `${BLOCK_TYPES_MAP[block.type]} - ${block.items.length} 项`);
         if (name) {
             addTemplate(block, name, block.type);
-            setIsLibraryOpen(true); // Auto open
+            setIsLibraryOpen(true);
         }
     };
 
@@ -170,12 +169,10 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
         const newBlock: TrainingBlock = {
             ...template,
             id: uid(),
-            // Regenerate item IDs
             items: template.items.map(item => ({ ...item, id: uid() }))
         };
         const newBlocks = [...plan.blocks, newBlock];
         setPlan({ ...plan, blocks: newBlocks, totalDistance: calculateTotalDistance(newBlocks) });
-        // Optional: Scroll to bottom
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     };
 
@@ -209,7 +206,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
             const newItems = b.items.map(item => {
                 if (item.id !== itemId) return item;
                 const updatedItem = { ...item, ...updates };
-                // Auto-desc if basic fields change
                 if (updates.distance || updates.stroke || updates.repeats) {
                     const sName = STROKES_MAP[updatedItem.stroke] || updatedItem.stroke;
                     updatedItem.description = `${updatedItem.repeats}x${updatedItem.distance}m ${sName}`;
@@ -249,7 +245,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
         const newSegment: PlanSegment = { distance: 25, type: "Swim", description: "" };
         const segments = [...(item.segments || []), newSegment];
 
-        // Sum segments for total distance if they exist
         const totalSegDist = segments.reduce((sum, s) => sum + s.distance, 0);
 
         updateItem(blockId, itemId, { segments, distance: totalSegDist });
@@ -273,7 +268,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
         if (!item || !item.segments) return;
 
         const newSegments = item.segments.filter((_, idx) => idx !== segIdx);
-        // If no segments left, don't auto-update distance (keep manual)
         if (newSegments.length === 0) {
             updateItem(blockId, itemId, { segments: [] });
         } else {
@@ -283,7 +277,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
     };
 
     const handleSave = () => {
-        // Count how many swimmers have notes
         const notesCount = Object.keys(plan.targetedNotes || {}).length;
 
         if (initialPlan) {
@@ -292,7 +285,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
             addPlan(plan);
         }
 
-        // Show success message with details
         const message = `✅ 计划已保存！\n\n` +
             `📅 日期: ${plan.date}\n` +
             `👥 组别: ${plan.group === "Advanced" ? "高级组" : plan.group === "Intermediate" ? "中级组" : "初级组"}\n` +
@@ -303,7 +295,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
         router.push("/dashboard");
     };
 
-    // Auto-Save Draft Logic
     useEffect(() => {
         if (!initialPlan && plan && plan.blocks.length > 0) {
             const draft = JSON.stringify(plan);
@@ -312,7 +303,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
         }
     }, [plan, initialPlan]);
 
-    // Recover Draft on Mount
     useEffect(() => {
         if (!initialPlan) {
             const savedDraft = localStorage.getItem("aquaflow_draft_plan");
@@ -320,7 +310,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
 
             if (savedDraft && savedTime) {
                 const diffMinutes = (new Date().getTime() - new Date(savedTime).getTime()) / 1000 / 60;
-                // If draft is less than 24 hours old, load it
                 if (diffMinutes < 1440) {
                     try {
                         setPlan(JSON.parse(savedDraft));
@@ -347,9 +336,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                     {initialPlan ? t.editor.editPlan : t.editor.newPlan}
                                 </h1>
 
-                                {/* Header Controls */}
                                 <div className="flex flex-wrap items-center gap-3 mt-1">
-                                    {/* Group Selector */}
                                     <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded px-2 py-1">
                                         <label className="text-[10px] text-muted-foreground">组别</label>
                                         <select
@@ -366,7 +353,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                         </select>
                                     </div>
 
-                                    {/* Time Selector */}
                                     <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded px-2 py-1">
                                         <div className="flex items-center gap-1">
                                             <span className="text-[10px] text-muted-foreground">开始</span>
@@ -462,7 +448,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                         </div>
                     </div>
 
-                    {/* Mode Toggle Tabs */}
                     <div className="flex items-center gap-4 border-b border-white/10 mb-6">
                         <button
                             onClick={() => setEditorMode("text")}
@@ -500,35 +485,22 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                     AI 将会自动读取内容并提供建议。
                                 </p>
                             </div>
-                            <PhotoPlanUpload
-                                currentUrl={plan.imageUrl}
-                                onUpload={(url) => {
-                                    setPlan({ ...plan, imageUrl: url });
-                                    // Trigger AI Analysis
-                                    setIsAnalyzing(true);
-                                    fetch('/api/ai/analyze-plan', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ imageUrl: url })
-                                    })
-                                        .then(res => res.json())
-                                        .then(data => {
-                                            setAiAnalysis(data);
-                                            // Store analysis in plan for saving
-                                            setPlan(prev => ({
-                                                ...prev,
-                                                analysis: {
-                                                    imageUrl: url,
-                                                    ...data
-                                                }
-                                            }));
-                                        })
-                                        .catch(err => console.error("AI Error:", err))
-                                        .finally(() => setIsAnalyzing(false));
+
+                            <PhotoUpload 
+                                onFileSelect={(file) => {
+                                    if (file) {
+                                        // NOTE: In a real app, this would upload to Cloudflare R2 / S3
+                                        // For now, we utilize a local preview URL
+                                        const url = URL.createObjectURL(file);
+                                        setPlan(prev => ({ ...prev, imageUrl: url }));
+                                    } else {
+                                        setPlan(prev => ({ ...prev, imageUrl: "" }));
+                                    }
                                 }}
+                                label="上传计划照片"
+                                description="AI 将会自动分析照片中的训练内容"
                             />
 
-                            {/* AI Analysis Result */}
                             {(isAnalyzing || aiAnalysis) && (
                                 <div className="mt-6 border-t border-white/10 pt-6 animate-in fade-in slide-in-from-bottom-4">
                                     <div className="flex items-center gap-2 mb-4">
@@ -540,7 +512,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
 
                                     {aiAnalysis && (
                                         <div className="space-y-4">
-                                            {/* Summary */}
                                             {aiAnalysis.summary && (
                                                 <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-sm text-blue-200">
                                                     <span className="font-bold block mb-1 text-blue-100">💡 摘要</span>
@@ -548,7 +519,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                                 </div>
                                             )}
 
-                                            {/* Safety Alerts */}
                                             {aiAnalysis.safetyAlerts?.map((alert, idx) => (
                                                 <div key={idx} className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-sm text-red-200 flex gap-2">
                                                     <span>⚠️</span>
@@ -556,7 +526,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                                 </div>
                                             ))}
 
-                                            {/* Creative Suggestions */}
                                             {aiAnalysis.suggestions && aiAnalysis.suggestions.length > 0 && (
                                                 <div className="space-y-2">
                                                     <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">✨ 创意建议 (Creative Drills)</h4>
@@ -575,12 +544,9 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                     )}
                                 </div>
                             )}
-
-
                         </div>
                     ) : (
                         <>
-                            {/* Quick Add Training Blocks */}
                             <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
                                 <h3 className="text-xs font-bold text-white/70 mb-3">快速添加训练块</h3>
                                 <div className="flex flex-wrap gap-2">
@@ -660,11 +626,9 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                 </div>
                             </div>
 
-                            {/* Blocks List */}
                             <div className="space-y-8">
                                 {plan.blocks?.map((block, bIndex) => (
                                     <div key={block.id} className="relative group/block">
-                                        {/* Block Header */}
                                         <div className="flex items-center gap-4 mb-4 bg-secondary/10 p-3 rounded-xl border border-white/5">
                                             <div className="bg-primary/20 p-2 rounded-lg">
                                                 <Layers className="w-5 h-5 text-primary" />
@@ -713,13 +677,10 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                             </button>
                                         </div>
 
-                                        {/* Items Container */}
                                         <div className={`space-y-3 pl-4 border-l-2 ${block.rounds > 1 ? "border-primary/50" : "border-white/5"}`}>
                                             {block.items.map((item, iIndex) => (
                                                 <div key={item.id} className="bg-card/40 border border-border rounded-xl p-4 hover:bg-card/60 transition-all relative group/item">
                                                     <div className="grid grid-cols-12 gap-4 items-start">
-
-                                                        {/* Repeats x Distance */}
                                                         <div className="col-span-3 flex items-center gap-2">
                                                             <input
                                                                 type="number"
@@ -740,7 +701,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                                             />
                                                             <span className="text-xs text-muted-foreground">m</span>
 
-                                                            {/* Distance Presets */}
                                                             <select
                                                                 className="w-4 bg-transparent outline-none text-muted-foreground hover:text-white cursor-pointer"
                                                                 onChange={(e) => updateItem(block.id, item.id, { distance: parseInt(e.target.value) })}
@@ -755,7 +715,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                                             </select>
                                                         </div>
 
-                                                        {/* Stroke & Interval */}
                                                         <div className="col-span-3 flex flex-col gap-2">
                                                             <select
                                                                 value={item.stroke}
@@ -765,7 +724,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                                                 {STROKES_KEYS.map(s => <option key={s} value={s}>{STROKES_MAP[s]}</option>)}
                                                             </select>
 
-                                                            {/* Alternate Stroke (交换泳姿) */}
                                                             <div className="flex items-center gap-1">
                                                                 <span className="text-[10px] text-purple-400">↩</span>
                                                                 <select
@@ -777,7 +735,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                                                     {STROKES_KEYS.map(s => <option key={s} value={s}>{STROKES_MAP[s]}</option>)}
                                                                 </select>
                                                             </div>
-                                                            {/* Interval Toggle */}
                                                             <div className="flex items-center gap-1 bg-black/20 rounded px-2 py-1 group/interval hover:bg-black/40 transition-colors cursor-pointer">
                                                                 <button
                                                                     onClick={() => updateItem(block.id, item.id, { intervalMode: item.intervalMode === 'Rest' ? 'Interval' : 'Rest' })}
@@ -802,9 +759,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                                             </div>
                                                         </div>
 
-                                                        {/* Description */}
                                                         <div className="col-span-5 px-2">
-                                                            {/* Segments Toggle */}
                                                             {(!item.segments || item.segments.length === 0) ? (
                                                                 <input
                                                                     value={item.description}
@@ -848,7 +803,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                                                 {(item.segments && item.segments.length > 0) ? "添加分段" : "拆分动作 (混合)"}
                                                             </button>
 
-                                                            {/* Equipment Selection */}
                                                             <div className="flex flex-wrap gap-1 mt-2">
                                                                 {EQUIPMENT.map(eq => {
                                                                     const isSelected = item.equipment?.includes(eq);
@@ -870,7 +824,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                                             </div>
                                                         </div>
 
-                                                        {/* Delete Item */}
                                                         <div className="col-span-1 flex justify-end">
                                                             <button onClick={() => deleteItem(block.id, item.id)} className="text-white/10 hover:text-red-500">
                                                                 <Trash2 className="w-4 h-4" />
@@ -890,9 +843,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                     </div>
                                 ))}
 
-                                {/* Batch Notes Section - Collapsible Bottom Sheet Style */}
                                 <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end pointer-events-none">
-                                    {/* Toggle Button */}
                                     <button
                                         onClick={() => setBatchNoteOpen(!batchNoteOpen)}
                                         className="pointer-events-auto bg-yellow-500 text-black p-4 rounded-full shadow-[0_0_20px_rgba(234,179,8,0.4)] hover:scale-110 transition-transform flex items-center justify-center relative"
@@ -906,8 +857,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                         )}
                                     </button>
 
-                                    {/* Collapsible Content */}
-                                    {/* Collapsible Content */}
                                     <div className={cn(
                                         "pointer-events-auto mt-4 w-72 bg-[#0f172a] border border-yellow-500/30 rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 origin-bottom-right",
                                         batchNoteOpen ? "scale-100 opacity-100 translate-y-0" : "scale-0 opacity-0 translate-y-12 h-0"
@@ -927,7 +876,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                                 给队员的悄悄话 (选人 → 写内容 → 添加)
                                             </p>
 
-                                            {/* Swimmer Selector */}
                                             <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto no-scrollbar">
                                                 {swimmers.length === 0 && (
                                                     <div className="w-full text-center py-4 bg-white/5 rounded-lg border border-dashed border-white/10">
@@ -954,7 +902,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                                 ))}
                                             </div>
 
-                                            {/* Note Input */}
                                             <div className="flex gap-2">
                                                 <input
                                                     type="text"
@@ -981,7 +928,6 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                 </div>
             </div >
 
-            {/* Library Sidebar */}
             {
                 isLibraryOpen && (
                     <WorkoutLibrary
@@ -993,4 +939,3 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
         </>
     );
 }
-
