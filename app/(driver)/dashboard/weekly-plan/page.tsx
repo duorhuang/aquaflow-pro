@@ -54,8 +54,8 @@ export default function WeeklyPlanPage() {
                     {
                         id: Math.random().toString(36).substring(7),
                         isNew: true,
-                        label: "周三", 
-                        date: new Date().toISOString().split('T')[0],
+                        label: "周一", 
+                        date: weekStart, // Default to Monday of week
                         imageData: base64,
                         imageType: file.type,
                         notes: "",
@@ -182,7 +182,9 @@ export default function WeeklyPlanPage() {
                         <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" multiple className="hidden" />
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {sessions.map((s, idx) => (
+                            {[...sessions].sort((a, b) => a.date.localeCompare(b.date) || a.sortOrder - b.sortOrder).map((s) => {
+                                const idx = sessions.findIndex(orig => orig.id === s.id);
+                                return (
                                 <div key={s.id} className="relative bg-black/40 border border-white/10 rounded-xl p-3 group">
                                     <button onClick={() => removeSession(s.id, s.isNew)} className="absolute top-2 right-2 p-1.5 bg-red-500/80 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                         <Trash2 className="w-4 h-4" />
@@ -211,7 +213,7 @@ export default function WeeklyPlanPage() {
                                         />
                                     </div>
                                 </div>
-                            ))}
+                            )})}
 
                             {/* Add More Button */}
                             <button onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center justify-center border-2 border-dashed border-white/20 rounded-xl p-8 hover:bg-white/5 hover:border-purple-500/50 transition-all text-muted-foreground hover:text-white">

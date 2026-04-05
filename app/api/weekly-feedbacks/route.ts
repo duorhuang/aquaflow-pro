@@ -107,3 +107,28 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: error.message || "Internal Error" }, { status: 500 });
     }
 }
+
+export async function PATCH(req: Request) {
+    try {
+        const body = await req.json();
+        const { id, coachReply } = body;
+
+        if (!id || !coachReply) {
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        }
+
+        const updated = await (db.weeklyFeedbacks as any).update({
+            where: { id },
+            data: {
+                coachReply,
+                isReplied: true,
+                repliedAt: new Date().toISOString()
+            }
+        });
+
+        return NextResponse.json(updated);
+    } catch (error: any) {
+        console.error("PATCH weekly feedback error:", error);
+        return NextResponse.json({ error: error.message || "Internal Error" }, { status: 500 });
+    }
+}

@@ -56,8 +56,8 @@ export default function TargetedFeedbacksPage() {
                     <Target className="w-6 h-6 text-orange-500" />
                 </div>
                 <div>
-                    <h1 className="text-2xl font-bold text-white">教练发起：专项反馈</h1>
-                    <p className="text-sm text-muted-foreground">点名队员回答特定问题（可选特定队员或全队）</p>
+                    <h1 className="text-2xl font-bold text-white">🎯 训练反馈管理</h1>
+                    <p className="text-sm text-muted-foreground">向队员发起专项训练问卷，查看回复（可选特定队员或全队）</p>
                 </div>
             </div>
 

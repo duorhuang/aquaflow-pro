@@ -225,6 +225,9 @@ model WeeklyFeedback {
   summary       String?  // Overall weekly summary text
   isSubmitted   Boolean  @default(false)
   submittedAt   String?  // ISO date when submitted
+  coachReply    String?  // Coach's reply to the weekly summary
+  repliedAt     String?  // ISO date when coach replied
+  isReplied     Boolean  @default(false)
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

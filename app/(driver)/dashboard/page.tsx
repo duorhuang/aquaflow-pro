@@ -78,8 +78,8 @@ export default function DashboardPage() {
                             <span className="text-xs font-bold bg-primary/20 text-primary px-2 py-1 rounded-full group-hover:bg-white/20 transition-colors">NEW</span>
                         </div>
                         <div className="mt-4">
-                            <h3 className="text-lg font-bold text-white mb-1">训练反馈</h3>
-                            <p className="text-xs text-muted-foreground">查看队员每日反思与状态</p>
+                            <h3 className="text-lg font-bold text-white mb-1">📥 队员反馈收件箱</h3>
+                            <p className="text-xs text-muted-foreground">查看队员每日反思与周总结，写评语</p>
                         </div>
                     </Link>
                 </div>
@@ -140,9 +140,9 @@ export default function DashboardPage() {
                             <div className="bg-card/30 border border-border rounded-xl p-4 hover:bg-card/50 transition-all cursor-pointer">
                                 <p className="text-sm font-medium text-white flex items-center gap-2">
                                     <Send className="w-4 h-4 text-orange-400" />
-                                    专项反馈
+                                    🎯 训练反馈
                                 </p>
-                                <p className="text-xs text-muted-foreground mt-1">查看指定反馈</p>
+                                <p className="text-xs text-muted-foreground mt-1">发起专项问卷·查看回复</p>
                             </div>
                         </Link>
                     </div>

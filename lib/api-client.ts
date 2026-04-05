@@ -88,6 +88,7 @@ export const api = {
         getBySwimmerAndWeek: (swimmerId: string, weekStart: string) =>
             fetchAPI<any>(`/weekly-feedbacks?swimmerId=${swimmerId}&weekStart=${weekStart}`),
         save: (data: any) => fetchAPI<any>('/weekly-feedbacks', { method: 'POST', body: JSON.stringify(data) }),
+        reply: (id: string, coachReply: string) => fetchAPI<any>('/weekly-feedbacks', { method: 'PATCH', body: JSON.stringify({ id, coachReply }) }),
     },
     feedbackReminders: {
         getAll: (withResponses?: boolean) =>

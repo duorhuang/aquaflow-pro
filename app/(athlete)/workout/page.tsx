@@ -1,14 +1,14 @@
 "use client";
 
-import { FeedbackForm } from "@/components/athlete/FeedbackForm";
 import { AttendanceCalendar } from "@/components/athlete/AttendanceCalendar";
 import { PerformanceList } from "@/components/athlete/PerformanceTracker";
 import { TrainingHistory } from "@/components/athlete/TrainingHistory";
 import { BlockFeedbackPanel } from "@/components/athlete/BlockFeedbackPanel";
 import { WeeklyFeedbackForm } from "@/components/athlete/WeeklyFeedbackForm";
 import { TargetedFeedbackForm } from "@/components/athlete/TargetedFeedbackForm";
+import { CoachReplyPanel } from "@/components/athlete/CoachReplyPanel";
 import { api } from "@/lib/api-client";
-import { LogOut, Calendar, FolderOpen, Activity, History, Quote, MessageSquare, ArrowRightLeft } from "lucide-react";
+import { LogOut, Calendar, FolderOpen, Activity, History, Quote, MessageSquare, ArrowRightLeft, Target, ClipboardList, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
@@ -26,8 +26,9 @@ export default function AthleteWorkoutPage() {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [currentUser, setCurrentUser] = useState<Swimmer | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'plan' | 'weekly' | 'diary' | 'feedback' | 'history' | 'performance' | 'status' | 'stats'>('plan');
+    const [activeTab, setActiveTab] = useState<'plan' | 'weekly' | 'memberFeedback' | 'trainingFeedback' | 'history' | 'performance' | 'status' | 'stats'>('plan');
     const [weeklyPlans, setWeeklyPlans] = useState<any[]>([]);
+    const [pendingReminders, setPendingReminders] = useState(0);
 
     // Get current week Monday
     const getCurrentWeekMonday = () => {
@@ -65,6 +66,9 @@ export default function AthleteWorkoutPage() {
 
         // Load weekly plans
         loadWeeklyPlans();
+
+        // Load pending reminder count for badge
+        loadPendingReminders(storedId);
     }, [swimmers, router]);
 
     const loadWeeklyPlans = async () => {
@@ -73,6 +77,16 @@ export default function AthleteWorkoutPage() {
             setWeeklyPlans(plans.filter((p: any) => p.isPublished));
         } catch (e) {
             console.error("Failed to load weekly plans", e);
+        }
+    };
+
+    const loadPendingReminders = async (swimmerId: string) => {
+        try {
+            const res = await api.feedbackReminders.getForSwimmer(swimmerId);
+            const pending = res.filter((r: any) => !r.isResponded);
+            setPendingReminders(pending.length);
+        } catch (e) {
+            console.error("Failed to load reminders count", e);
         }
     };
 
@@ -234,26 +248,31 @@ export default function AthleteWorkoutPage() {
                         )}
                     </button>
                     <button
-                        onClick={() => setActiveTab('diary')}
+                        onClick={() => setActiveTab('memberFeedback')}
                         className={cn(
                             "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all",
-                            activeTab === 'diary'
+                            activeTab === 'memberFeedback'
                                 ? "bg-primary text-primary-foreground shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        📝 训练日记 (打卡)
+                        📝 队员反馈
                     </button>
                     <button
-                        onClick={() => setActiveTab('feedback')}
+                        onClick={() => setActiveTab('trainingFeedback')}
                         className={cn(
-                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all",
-                            activeTab === 'feedback'
+                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all relative",
+                            activeTab === 'trainingFeedback'
                                 ? "bg-orange-500 text-white shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        💬 教练反馈
+                        🎯 训练反馈
+                        {pendingReminders > 0 && (
+                            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-background animate-pulse">
+                                {pendingReminders}
+                            </span>
+                        )}
                     </button>
                     <button
                         onClick={() => setActiveTab('history')}
@@ -431,8 +450,22 @@ export default function AthleteWorkoutPage() {
                                     ))}
                                 </div>
 
-                                {/* Check-in */}
-                                <FeedbackForm swimmerId={currentUser.id} planId={selectedPlan.id} />
+                                {/* Guide to Member Feedback */}
+                                <button
+                                    onClick={() => setActiveTab('memberFeedback')}
+                                    className="w-full bg-gradient-to-r from-primary/15 to-blue-500/15 border border-primary/25 rounded-2xl p-5 flex items-center justify-between group hover:border-primary/50 transition-all"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                                            <ClipboardList className="w-5 h-5 text-primary" />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="text-sm font-bold text-white">训练结束了？去打卡 →</p>
+                                            <p className="text-xs text-muted-foreground">记录今日 RPE、酸痛和训练反思</p>
+                                        </div>
+                                    </div>
+                                    <ArrowRight className="w-5 h-5 text-primary opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                </button>
                             </>
                         ) : (
                             <div className="text-center py-12 bg-card/30 border border-dashed border-border rounded-xl">
@@ -496,20 +529,51 @@ export default function AthleteWorkoutPage() {
                     </div>
                 )}
 
-                {/* Tab Content: Diary (Weekly Feedback Form) */}
-                {activeTab === 'diary' && currentUser && (
+                {/* Tab Content: 队员反馈 (Member Feedback — daily diary + coach replies) */}
+                {activeTab === 'memberFeedback' && currentUser && (
                     <div className="space-y-6">
-                        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                            📝 训练日记
-                            <span className="text-xs text-muted-foreground font-normal">{currentWeekStart} 周</span>
-                        </h2>
+                        {/* Guide Card */}
+                        <div className="bg-gradient-to-r from-primary/10 to-blue-500/10 border border-primary/20 rounded-2xl p-5">
+                            <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-none mt-0.5">
+                                    <ClipboardList className="w-5 h-5 text-primary" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-bold text-white mb-1">📝 队员反馈 — 每日训练打卡</h3>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                        每天训练后，展开当天的行，记录你的 RPE（疲劳度）、酸痛感和训练反思。
+                                        <span className="text-primary font-medium"> 周末提交周总结，教练会收到并给予批语。</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         <WeeklyFeedbackForm swimmerId={currentUser.id} weekStart={currentWeekStart} />
+
+                        {/* Coach Replies Section */}
+                        <CoachReplyPanel swimmerId={currentUser.id} />
                     </div>
                 )}
 
-                {/* Tab Content: Specialized Feedback Notifications */}
-                {activeTab === 'feedback' && currentUser && (
+                {/* Tab Content: 训练反馈 (Coach-Initiated Training Feedback) */}
+                {activeTab === 'trainingFeedback' && currentUser && (
                     <div className="space-y-6">
+                        {/* Guide Card */}
+                        <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-2xl p-5">
+                            <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center flex-none mt-0.5">
+                                    <Target className="w-5 h-5 text-orange-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-bold text-white mb-1">🎯 训练反馈 — 教练发起的问卷</h3>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                        教练会不定期发起专项提问（例如：技术改进、身体感受等）。
+                                        <span className="text-orange-400 font-medium"> 请尽快回答，教练将即时查看。</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         <TargetedFeedbackForm swimmerId={currentUser.id} />
                     </div>
                 )}

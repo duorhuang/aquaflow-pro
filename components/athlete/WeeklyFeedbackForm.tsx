@@ -25,7 +25,12 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
         soreness: number;
         reflection: string;
     }>>([]);
-    const [expandedDay, setExpandedDay] = useState<number | null>(null);
+    const [expandedDay, setExpandedDay] = useState<number | null>(() => {
+        // Auto-expand today's entry for quick check-in
+        const today = new Date().getDay();
+        // getDay(): 0=Sun, 1=Mon... Convert to 0-indexed from Monday
+        return today === 0 ? 6 : today - 1;
+    });
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -157,8 +162,8 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header */}
             <div>
-                <h2 className="text-2xl font-bold text-white mb-2">我的周总结</h2>
-                <p className="text-sm text-muted-foreground">每天记一点感受，周末统一发送给教练。教练只能看到有内容的评价。</p>
+                <h2 className="text-2xl font-bold text-white mb-2">本周训练打卡</h2>
+                <p className="text-sm text-muted-foreground">每天训练后记录感受（点击展开当天），周末统一提交给教练。教练只能看到有内容的评价。</p>
             </div>
 
             {/* Daily ACCORDION */}
