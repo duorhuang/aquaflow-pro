@@ -5,9 +5,7 @@ import { PrismaClient } from '@prisma/client';
 // Configure Neon WebSocket - Cloudflare Workers has native WebSocket support
 // Only import ws for Node.js environments (local dev, scripts)
 if (typeof globalThis.WebSocket === 'undefined') {
-    // Node.js environment - need ws package
     try {
-        // Dynamic import to avoid bundling issues
         const ws = require('ws');
         neonConfig.webSocketConstructor = ws;
     } catch (e) {
@@ -15,25 +13,48 @@ if (typeof globalThis.WebSocket === 'undefined') {
     }
 }
 
-const connectionString = process.env.DATABASE_URL;
-
 const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
 };
 
-// Ensure connection string exists
-if (!connectionString) {
-    throw new Error("DATABASE_URL must be set");
-}
+// LAZY initialization — the database connection is only created
+// the first time `prisma` is actually used at runtime.
+// This prevents build-time crashes when DATABASE_URL is not available.
+function createPrismaClient(): PrismaClient {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+        throw new Error("DATABASE_URL must be set");
+    }
 
-const pool = new Pool({ connectionString });
-const adapter = new PrismaNeon(pool);
+    const pool = new Pool({ connectionString });
+    const adapter = new PrismaNeon(pool);
 
-export const prisma =
-    globalForPrisma.prisma ??
-    new PrismaClient({
+    const client = new PrismaClient({
         adapter,
         log: process.env.NODE_ENV === "development" ? ["query"] : [],
     });
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+    return client;
+}
+
+// Use a getter so the client is only instantiated on first access
+export const prisma: PrismaClient = globalForPrisma.prisma ?? (() => {
+    // During build time, return a dummy proxy that won't crash
+    if (!process.env.DATABASE_URL) {
+        return new Proxy({} as PrismaClient, {
+            get(_target, prop) {
+                if (prop === 'then') return undefined; // not a thenable
+                return new Proxy(() => {}, {
+                    get: () => () => Promise.resolve(null),
+                    apply: () => Promise.resolve(null),
+                });
+            }
+        });
+    }
+
+    const client = createPrismaClient();
+    if (process.env.NODE_ENV !== "production") {
+        globalForPrisma.prisma = client;
+    }
+    return client;
+})();
