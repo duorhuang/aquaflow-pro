@@ -37,28 +37,26 @@ function createPrismaClient(): PrismaClient {
     return client;
 }
 
-// A truly lazy proxy so that PrismaClient is only instantiated 
-// when the very first query is made (at request time, not module import time).
-// This is critical for Cloudflare Workers because `process.env` might only
-// be fully populated by the adapter when the request handler executes.
+// Use a Proxy so the client is only instantiated on first access (e.g. inside a request handler)
+// This is critical for Cloudflare Workers where `process.env` is not populated at the global module scope.
 export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
     get(_target, prop) {
-        if (prop === 'then') return undefined;
+        if (prop === 'then') return undefined; // not a thenable
 
-        // If at build time we lack DATABASE_URL, return the safe dummy proxy
+        // During build time, return a dummy proxy that won't crash
         if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes("dummy")) {
             return new Proxy(() => {}, {
-                get: () => () => Promise.resolve([]),
-                apply: () => Promise.resolve([]),
+                get: () => () => Promise.resolve(null),
+                apply: () => Promise.resolve(null),
             });
         }
 
-        // At runtime, instantiate the client if it hasn't been instantiated yet
         if (!globalForPrisma.prisma) {
             globalForPrisma.prisma = createPrismaClient();
         }
 
-        // Delegate to the real Prisma client
-        return (globalForPrisma.prisma as any)[prop];
+        const client = globalForPrisma.prisma as any;
+        const value = client[prop];
+        return typeof value === 'function' ? value.bind(client) : value;
     }
 });
