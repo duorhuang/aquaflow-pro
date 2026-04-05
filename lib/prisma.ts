@@ -40,7 +40,7 @@ function createPrismaClient(): PrismaClient {
 // Use a getter so the client is only instantiated on first access
 export const prisma: PrismaClient = globalForPrisma.prisma ?? (() => {
     // During build time, return a dummy proxy that won't crash
-    if (!process.env.DATABASE_URL) {
+    if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes("dummy")) {
         return new Proxy({} as PrismaClient, {
             get(_target, prop) {
                 if (prop === 'then') return undefined; // not a thenable
