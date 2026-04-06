@@ -16,9 +16,8 @@ export async function GET(req: Request) {
         });
 
         if (swimmerId) {
-            // Filter in JS for maximum compatibility with Json fields in Edge
             reminders = (reminders || []).filter((r: any) => {
-                if (!r.targetSwimmerIds) return true; // Targets everyone
+                if (!r.targetSwimmerIds) return true;
                 const targets = Array.isArray(r.targetSwimmerIds) ? r.targetSwimmerIds : [];
                 return targets.includes(swimmerId);
             }).map((r: any) => ({
@@ -29,7 +28,7 @@ export async function GET(req: Request) {
 
         return NextResponse.json(reminders || []);
     } catch (error: any) {
-        console.error("GET reminders error (returning empty):", error);
+        console.error("GET reminders error:", error);
         return NextResponse.json([]);
     }
 }
@@ -37,34 +36,42 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const prisma = getPrisma();
-        const data = await req.json();
+        const body = await req.json();
         
-        // Handle response submission (targetedFeedback)
-        if (data.reminderId && data.swimmerId && data.content) {
+        // 1. Handle response submission (targetedFeedback)
+        if (body.reminderId && body.swimmerId && body.content) {
             const response = await prisma.targetedFeedback.create({
                 data: {
-                    reminderId: data.reminderId,
-                    swimmerId: data.swimmerId,
-                    content: data.content,
-                    rpe: Number(data.rpe) || 0,
-                    soreness: Number(data.soreness) || 0
+                    reminderId: body.reminderId,
+                    swimmerId: body.swimmerId,
+                    content: body.content,
+                    rpe: Number(body.rpe) || 0,
+                    soreness: Number(body.soreness) || 0
                 }
             });
             return NextResponse.json(response);
         }
 
-        // Handle reminder creation (coach)
+        // 2. Handle reminder creation (coach)
+        // FORCE FLATTENING: Explicitly pull message and IDs regardless of nesting level
+        const message = body.message || (body.data && body.data.message);
+        const targetSwimmerIds = body.targetSwimmerIds || (body.data && body.data.targetSwimmerIds);
+
+        if (!message) {
+            return NextResponse.json({ error: "Missing 'message' in request body." }, { status: 400 });
+        }
+
         const reminder = await prisma.feedbackReminder.create({
             data: {
-                message: data.message,
-                targetSwimmerIds: Array.isArray(data.targetSwimmerIds) ? data.targetSwimmerIds : null,
-                periodStart: data.periodStart || new Date().toISOString().split('T')[0],
-                periodEnd: data.periodEnd || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+                message: String(message),
+                targetSwimmerIds: Array.isArray(targetSwimmerIds) ? targetSwimmerIds : null,
+                periodStart: body.periodStart || new Date().toISOString().split('T')[0],
+                periodEnd: body.periodEnd || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
             }
         });
         return NextResponse.json(reminder);
     } catch (error: any) {
-        console.error("POST reminder/response error:", error);
+        console.error("POST feedback-reminders error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

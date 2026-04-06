@@ -12,7 +12,7 @@ export async function GET() {
         });
         return NextResponse.json(feedbacks || []);
     } catch (error: any) {
-        console.error('Failed to fetch feedbacks (returning empty):', error);
+        console.error('Failed to fetch feedbacks:', error);
         return NextResponse.json([]);
     }
 }
@@ -20,12 +20,14 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const prisma = getPrisma();
-        const data = await request.json();
+        const body = await request.json();
+        const data = body.data || body;
+        
         const feedback = await prisma.feedback.create({
             data: {
-                swimmerId: data.swimmerId,
+                swimmerId: String(data.swimmerId),
                 planId: data.planId,
-                date: data.date,
+                date: String(data.date),
                 rpe: Number(data.rpe) || 0,
                 soreness: Number(data.soreness) || 0,
                 comments: data.comments || '',
@@ -37,6 +39,6 @@ export async function POST(request: Request) {
         return NextResponse.json(feedback);
     } catch (error: any) {
         console.error('Failed to submit feedback:', error);
-        return NextResponse.json({ error: error?.message || 'Failed to submit feedback' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed' }, { status: 500 });
     }
 }

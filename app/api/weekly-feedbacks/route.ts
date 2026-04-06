@@ -51,13 +51,14 @@ export async function POST(req: Request) {
     try {
         const prisma = getPrisma();
         const body = await req.json();
-        const { swimmerId, weekStart, summary, dailyFeedbacks, isSubmitted = true } = body;
+        const data = body.data || body;
+        
+        const { swimmerId, weekStart, summary, dailyFeedbacks, isSubmitted = true } = data;
 
         if (!swimmerId || !weekStart) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
-        // 1. Perform everything in a single transaction
         const result = await prisma.$transaction(async (tx) => {
             const weeklyFeedback = await tx.weeklyFeedback.upsert({
                 where: {
@@ -78,7 +79,7 @@ export async function POST(req: Request) {
                 }
             });
 
-            if (dailyFeedbacks && dailyFeedbacks.length > 0) {
+            if (dailyFeedbacks && Array.isArray(dailyFeedbacks)) {
                 await Promise.all(
                     dailyFeedbacks.map((df: any) => {
                         if (!df.date) return Promise.resolve();
@@ -120,25 +121,26 @@ export async function PATCH(req: Request) {
     try {
         const prisma = getPrisma();
         const body = await req.json();
-        const { id, coachReply, readAt } = body;
+        const data = body.data || body;
+        const { id, coachReply, readAt } = data;
 
         if (!id) {
             return NextResponse.json({ error: "Missing required field: id" }, { status: 400 });
         }
 
-        const data: any = {};
+        const updateData: any = {};
         if (coachReply !== undefined) {
-            data.coachReply = coachReply;
-            data.isReplied = true;
-            data.repliedAt = new Date().toISOString();
+            updateData.coachReply = coachReply;
+            updateData.isReplied = true;
+            updateData.repliedAt = new Date().toISOString();
         }
         if (readAt !== undefined) {
-            data.readAt = readAt ? new Date().toISOString() : null;
+            updateData.readAt = readAt ? new Date().toISOString() : null;
         }
 
         const updated = await prisma.weeklyFeedback.update({
             where: { id },
-            data
+            data: updateData
         });
 
         return NextResponse.json(updated);

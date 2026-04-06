@@ -1,10 +1,9 @@
-import { Pool } from '@neondatabase/serverless';
-import { PrismaNeon } from '@prisma/adapter-neon';
+import { neon } from '@neondatabase/serverless';
+import { PrismaNeonHTTP } from '@prisma/adapter-neon';
 import { PrismaClient } from '@prisma/client';
 
 /**
- * Global cache to ensure we only have ONE Prisma instance per worker.
- * This is critical for connection pooling and performance.
+ * Global cache for the Prisma instance.
  */
 const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
@@ -12,37 +11,36 @@ const globalForPrisma = globalThis as unknown as {
 
 /**
  * getPrisma() - The ULTIMATE stable way to get a Prisma instance in Cloudflare Edge.
- * It strictly avoids Node.js-only modules like 'ws' and follows Neon + Prisma best practices.
+ * This version uses HTTPS (neon-http) which is significantly more stable
+ * in Serverless/Edge environments than WebSockets.
  */
 export function getPrisma(): PrismaClient {
     // 1. Return cached instance if available
     if (globalForPrisma.prisma) return globalForPrisma.prisma;
 
     // 2. Resolve Connection String
-    // In Cloudflare Pages/Workers using OpenNext, environment variables are in process.env
-    let connectionString = process.env.DATABASE_URL;
+    let connectionString = process.env.DATABASE_URL || '';
+    
+    // Clean potential corruption
+    const match = connectionString.match(/(postgresql?:\/\/[^\s"']+)/);
+    if (match) connectionString = match[1];
 
-    // Handle string corruption or dummy values
-    if (connectionString) {
-        const match = connectionString.match(/(postgresql?:\/\/[^\s"']+)/);
-        if (match) connectionString = match[1];
-    }
-
-    // 3. Early exit if no connection string (safety)
+    // 3. Early safety exit
     if (!connectionString || connectionString.includes('dummy')) {
-        // Basic dummy client for build-time safety
         if (process.env.NEXT_PHASE === 'phase-production-build') {
              return new PrismaClient(); 
         }
     }
 
-    // 4. Create and Cache the Client
-    // Cloudflare Edge already has global WebSocket, Neon uses it automatically.
-    const pool = new Pool({ connectionString: connectionString || '' });
-    const adapter = new PrismaNeon(pool);
-    const client = new PrismaClient({ adapter });
+    // 4. Create Client using the HTTP Adapter (Optimized for Edge)
+    const sql = neon(connectionString);
+    const adapter = new PrismaNeonHTTP(sql);
+    const client = new PrismaClient({ 
+        adapter,
+        log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']
+    });
 
-    // In dev, cache to avoid HMR exhaustion. In prod, the Worker is short-lived.
+    // 5. Cache in non-production
     if (process.env.NODE_ENV !== 'production') {
         globalForPrisma.prisma = client;
     }
@@ -51,6 +49,6 @@ export function getPrisma(): PrismaClient {
 }
 
 /**
- * @deprecated Use getPrisma() directly inside your route handlers.
+ * @deprecated Use getPrisma() inside your route handlers.
  */
 export const prisma = {} as PrismaClient;

@@ -12,7 +12,7 @@ export async function GET() {
         });
         return NextResponse.json(attendance || []);
     } catch (error: any) {
-        console.error('Failed to fetch attendance (returning empty):', error);
+        console.error('Failed to fetch attendance:', error);
         return NextResponse.json([]);
     }
 }
@@ -20,19 +20,21 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const prisma = getPrisma();
-        const data = await request.json();
+        const body = await request.json();
+        const data = body.data || body;
+        
         const record = await prisma.attendanceRecord.create({
             data: {
-                date: data.date,
-                swimmerId: data.swimmerId,
-                status: data.status,
+                date: String(data.date),
+                swimmerId: String(data.swimmerId),
+                status: String(data.status || 'Present'),
                 timestamp: data.timestamp || new Date().toISOString()
             }
         });
         return NextResponse.json(record);
     } catch (error: any) {
         console.error('Failed to record attendance:', error);
-        return NextResponse.json({ error: error?.message || 'Failed to record attendance' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to record attendance' }, { status: 500 });
     }
 }
 

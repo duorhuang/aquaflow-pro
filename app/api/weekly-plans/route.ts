@@ -27,7 +27,7 @@ export async function GET(req: Request) {
 
         return NextResponse.json(plans || []);
     } catch (error: any) {
-        console.error("GET weekly plans error (returning empty):", error);
+        console.error("GET weekly plans error:", error);
         return NextResponse.json([]);
     }
 }
@@ -35,21 +35,23 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const prisma = getPrisma();
-        const data = await req.json();
+        const body = await req.json();
+        const data = body.data || body;
+        
         const plan = await prisma.weeklyPlan.create({
             data: {
-                weekStart: data.weekStart,
-                weekEnd: data.weekEnd,
-                group: data.group,
-                title: data.title,
+                weekStart: String(data.weekStart),
+                weekEnd: String(data.weekEnd),
+                group: String(data.group),
+                title: String(data.title),
                 coachNotes: data.coachNotes,
-                isPublished: data.isPublished || false
+                isPublished: Boolean(data.isPublished)
             }
         });
         return NextResponse.json(plan);
     } catch (error: any) {
         console.error("POST weekly plan error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed' }, { status: 500 });
     }
 }
 
@@ -60,7 +62,9 @@ export async function PUT(req: Request) {
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
-        const data = await req.json();
+        const body = await req.json();
+        const data = body.data || body;
+
         const plan = await prisma.weeklyPlan.update({
             where: { id },
             data: {
@@ -75,7 +79,7 @@ export async function PUT(req: Request) {
         return NextResponse.json(plan);
     } catch (error: any) {
         console.error("PUT weekly plan error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed' }, { status: 500 });
     }
 }
 
@@ -90,6 +94,6 @@ export async function DELETE(req: Request) {
         return NextResponse.json({ success: true });
     } catch (error: any) {
         console.error("DELETE weekly plan error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed' }, { status: 500 });
     }
 }

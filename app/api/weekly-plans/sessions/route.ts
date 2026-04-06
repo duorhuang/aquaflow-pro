@@ -6,12 +6,14 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
     try {
         const prisma = getPrisma();
-        const data = await req.json();
+        const body = await req.json();
+        const data = body.data || body;
+
         const session = await prisma.dailySession.create({
             data: {
-                weeklyPlanId: data.weeklyPlanId,
-                label: data.label,
-                date: data.date,
+                weeklyPlanId: String(data.weeklyPlanId),
+                label: String(data.label),
+                date: String(data.date),
                 imageData: data.imageData,
                 imageType: data.imageType,
                 notes: data.notes,
@@ -21,7 +23,7 @@ export async function POST(req: Request) {
         return NextResponse.json(session);
     } catch (error: any) {
         console.error("POST session error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed' }, { status: 500 });
     }
 }
 
@@ -32,7 +34,9 @@ export async function PUT(req: Request) {
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
-        const data = await req.json();
+        const body = await req.json();
+        const data = body.data || body;
+
         const session = await prisma.dailySession.update({
             where: { id },
             data: {
@@ -47,7 +51,7 @@ export async function PUT(req: Request) {
         return NextResponse.json(session);
     } catch (error: any) {
         console.error("PUT session error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed' }, { status: 500 });
     }
 }
 
@@ -62,6 +66,6 @@ export async function DELETE(req: Request) {
         return NextResponse.json({ success: true });
     } catch (error: any) {
         console.error("DELETE session error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed' }, { status: 500 });
     }
 }
