@@ -1,23 +1,37 @@
-
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        const feedbacks = await db.feedbacks.findMany();
-        return NextResponse.json(feedbacks);
+        const feedbacks = await prisma.feedback.findMany({
+            include: { swimmer: true },
+            orderBy: { createdAt: 'desc' }
+        });
+        return NextResponse.json(feedbacks || []);
     } catch (error: any) {
-        console.error('Failed to fetch feedbacks:', error);
-        return NextResponse.json({ error: error?.message || 'Failed to fetch feedbacks' }, { status: 500 });
+        console.error('Failed to fetch feedbacks (returning empty):', error);
+        return NextResponse.json([]);
     }
 }
 
 export async function POST(request: Request) {
     try {
         const data = await request.json();
-        const feedback = await db.feedbacks.create(data);
+        const feedback = await prisma.feedback.create({
+            data: {
+                swimmerId: data.swimmerId,
+                planId: data.planId,
+                date: data.date,
+                rpe: Number(data.rpe) || 0,
+                soreness: Number(data.soreness) || 0,
+                comments: data.comments || '',
+                timestamp: data.timestamp || new Date().toISOString(),
+                goodPoints: data.goodPoints,
+                improvementAreas: data.improvementAreas
+            }
+        });
         return NextResponse.json(feedback);
     } catch (error: any) {
         console.error('Failed to submit feedback:', error);

@@ -1,23 +1,39 @@
-
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        const plans = await db.plans.findMany();
-        return NextResponse.json(plans);
+        const plans = await prisma.trainingPlan.findMany({
+            orderBy: { date: 'desc' }
+        });
+        return NextResponse.json(plans || []);
     } catch (error: any) {
-        console.error('Failed to fetch plans:', error);
-        return NextResponse.json({ error: error?.message || 'Failed to fetch plans' }, { status: 500 });
+        console.error('Failed to fetch plans (returning empty):', error);
+        return NextResponse.json([]);
     }
 }
 
 export async function POST(request: Request) {
     try {
         const data = await request.json();
-        const plan = await db.plans.create(data);
+        const plan = await prisma.trainingPlan.create({
+            data: {
+                date: data.date,
+                startTime: data.startTime,
+                endTime: data.endTime,
+                group: data.group,
+                blocks: data.blocks || [],
+                totalDistance: Number(data.totalDistance) || 0,
+                focus: data.focus || '',
+                status: data.status || 'Active',
+                coachNotes: data.coachNotes,
+                targetedNotes: data.targetedNotes || {},
+                imageUrl: data.imageUrl,
+                isStarred: data.isStarred || false
+            }
+        });
         return NextResponse.json(plan);
     } catch (error: any) {
         console.error('Failed to create plan:', error);
@@ -29,11 +45,26 @@ export async function PUT(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
-        const data = await request.json();
-
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
-        const plan = await db.plans.update(id, data);
+        const data = await request.json();
+        const plan = await prisma.trainingPlan.update({
+            where: { id },
+            data: {
+                date: data.date,
+                startTime: data.startTime,
+                endTime: data.endTime,
+                group: data.group,
+                blocks: data.blocks,
+                totalDistance: data.totalDistance !== undefined ? Number(data.totalDistance) : undefined,
+                focus: data.focus,
+                status: data.status,
+                coachNotes: data.coachNotes,
+                targetedNotes: data.targetedNotes,
+                imageUrl: data.imageUrl,
+                isStarred: data.isStarred
+            }
+        });
         return NextResponse.json(plan);
     } catch (error: any) {
         console.error('Failed to update plan:', error);
@@ -45,10 +76,9 @@ export async function DELETE(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
-
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
-        await db.plans.delete(id);
+        await prisma.trainingPlan.delete({ where: { id } });
         return NextResponse.json({ success: true });
     } catch (error: any) {
         console.error('Failed to delete plan:', error);

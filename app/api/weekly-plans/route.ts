@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +10,7 @@ export async function GET(req: Request) {
         const id = searchParams.get('id');
 
         if (id) {
-            const plan = await db.weeklyPlans.findUnique({
+            const plan = await prisma.weeklyPlan.findUnique({
                 where: { id },
                 include: { sessions: { orderBy: { sortOrder: 'asc' } } }
             });
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
         }
 
         const where = group ? { group } : {};
-        const plans = await db.weeklyPlans.findMany({
+        const plans = await prisma.weeklyPlan.findMany({
             where,
             include: { sessions: { orderBy: { sortOrder: 'asc' } } },
             orderBy: { weekStart: 'desc' }
@@ -34,13 +34,15 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const data = await req.json();
-        const plan = await (db.weeklyPlans as any).create({
-            weekStart: data.weekStart,
-            weekEnd: data.weekEnd,
-            group: data.group,
-            title: data.title,
-            coachNotes: data.coachNotes,
-            isPublished: data.isPublished || false
+        const plan = await prisma.weeklyPlan.create({
+            data: {
+                weekStart: data.weekStart,
+                weekEnd: data.weekEnd,
+                group: data.group,
+                title: data.title,
+                coachNotes: data.coachNotes,
+                isPublished: data.isPublished || false
+            }
         });
         return NextResponse.json(plan);
     } catch (error: any) {
@@ -56,13 +58,16 @@ export async function PUT(req: Request) {
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
         const data = await req.json();
-        const plan = await (db.weeklyPlans as any).update(id, {
-            weekStart: data.weekStart,
-            weekEnd: data.weekEnd,
-            group: data.group,
-            title: data.title,
-            coachNotes: data.coachNotes,
-            isPublished: data.isPublished
+        const plan = await prisma.weeklyPlan.update({
+            where: { id },
+            data: {
+                weekStart: data.weekStart,
+                weekEnd: data.weekEnd,
+                group: data.group,
+                title: data.title,
+                coachNotes: data.coachNotes,
+                isPublished: data.isPublished
+            }
         });
         return NextResponse.json(plan);
     } catch (error: any) {
@@ -77,7 +82,7 @@ export async function DELETE(req: Request) {
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
-        await (db.weeklyPlans as any).delete(id);
+        await prisma.weeklyPlan.delete({ where: { id } });
         return NextResponse.json({ success: true });
     } catch (error: any) {
         console.error("DELETE weekly plan error:", error);

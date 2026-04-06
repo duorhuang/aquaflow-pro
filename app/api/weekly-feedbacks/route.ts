@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -72,9 +71,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Cannot submit empty feedback." }, { status: 400 });
         }
 
-        // 2. Perform everything in a single transaction for atomicity and speed
+        // 2. Perform everything in a single transaction
         const result = await prisma.$transaction(async (tx) => {
-            // Upsert the main weekly feedback record
             const weeklyFeedback = await tx.weeklyFeedback.upsert({
                 where: {
                     swimmerId_weekStart: { swimmerId, weekStart }
@@ -94,7 +92,6 @@ export async function POST(req: Request) {
                 }
             });
 
-            // Upsert all daily feedbacks in parallel within the transaction
             if (dailyFeedbacks && dailyFeedbacks.length > 0) {
                 await Promise.all(
                     dailyFeedbacks.map((df: any) => {
@@ -126,7 +123,6 @@ export async function POST(req: Request) {
             return weeklyFeedback;
         });
 
-        console.log(`✅ Successfully saved feedback for ${swimmerId}`);
         return NextResponse.json(result);
     } catch (error: any) {
         console.error("❌ POST weekly feedback error:", error);
@@ -153,7 +149,10 @@ export async function PATCH(req: Request) {
             data.readAt = readAt ? new Date().toISOString() : null;
         }
 
-        const updated = await (db.weeklyFeedbacks as any).update(id, data);
+        const updated = await prisma.weeklyFeedback.update({
+            where: { id },
+            data
+        });
 
         return NextResponse.json(updated);
     } catch (error: any) {
