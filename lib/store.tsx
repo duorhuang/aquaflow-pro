@@ -18,7 +18,8 @@ interface StoreContextType {
     updatePlan: (id: string, updates: Partial<TrainingPlan>) => void;
     deletePlan: (id: string) => void;
     submitFeedback: (feedback: Feedback) => void;
-    markAttendance: (swimmerId: string) => void;
+    markAttendance: (swimmerId: string, date?: string) => void;
+    unmarkAttendance: (swimmerId: string, date: string) => void;
     adjustXP: (swimmerId: string, amount: number) => void;
     addSwimmer: (swimmer: Swimmer) => void;
     updateSwimmer: (id: string, updates: Partial<Swimmer>) => void;
@@ -185,18 +186,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return groupPlans.length > 0 ? groupPlans[0].date : null;
     };
 
-    const markAttendance = async (swimmerId: string) => {
-        const today = new Date();
-        const todayStr = getLocalDateISOString(today);
+    const markAttendance = async (swimmerId: string, date?: string) => {
+        const targetDate = date || getLocalDateISOString(new Date());
 
-        if (attendance.some(a => a.swimmerId === swimmerId && a.date === todayStr)) return;
+        if (attendance.some(a => a.swimmerId === swimmerId && a.date === targetDate)) return;
 
         const newRecord: AttendanceRecord = {
             id: uid(),
-            date: todayStr,
+            date: targetDate,
             swimmerId,
             status: "Present",
-            timestamp: today.toISOString()
+            timestamp: new Date().toISOString()
         };
 
         setAttendance((prev) => [...prev, newRecord]);
@@ -204,29 +204,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             await api.attendance.create(newRecord);
         } catch (e) { console.error("Sync error", e); }
 
-        // Update Swimmer Stats logic (XP, Streak) remains local for UI speed, 
-        // but we should ideally update swimmer object in DB too.
-        // For now, let's keep complex XP logic locally calculated 
-        // and just sync the swimmer object update.
-
+        // Update Swimmer Stats logic (XP, Streak)
         let updatedSwimmer: Swimmer | undefined;
 
         setSwimmers(prevSwimmers => prevSwimmers.map(s => {
             if (s.id !== swimmerId) return s;
 
-            // ... (keep existing streak logic)
-            // STREAK LOGIC v2: Based on PLANS
             let newStreak = s.currentStreak || 0;
             const lastCheckIn = s.lastCheckIn;
 
             if (lastCheckIn) {
-                const prevPlanDate = getPreviousPlanDate(s.group, todayStr);
+                const prevPlanDate = getPreviousPlanDate(s.group, targetDate);
                 if (prevPlanDate) {
                     const isConsecutivePlan = lastCheckIn === prevPlanDate;
                     if (isConsecutivePlan) {
                         newStreak += 1;
                     } else {
-                        const d1 = new Date(todayStr);
+                        const d1 = new Date(targetDate);
                         const d2 = new Date(lastCheckIn);
                         const diffTime = Math.abs(d1.getTime() - d2.getTime());
                         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -251,7 +245,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
             updatedSwimmer = {
                 ...s,
-                lastCheckIn: todayStr,
+                lastCheckIn: targetDate,
                 currentStreak: newStreak,
                 xp: newXP,
                 level: newLevel
@@ -263,6 +257,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             try {
                 await api.swimmers.update(updatedSwimmer.id, updatedSwimmer);
             } catch (e) { console.error("Sync swimmer error", e); }
+        }
+    };
+
+    const unmarkAttendance = async (swimmerId: string, date: string) => {
+        const record = attendance.find(a => a.swimmerId === swimmerId && a.date === date);
+        if (!record) return;
+
+        // Optimistic remove
+        setAttendance(prev => prev.filter(a => a.id !== record.id));
+        try {
+            await api.attendance.delete(record.id);
+        } catch (e) {
+            console.error("Failed to unmark attendance", e);
+            // Revert on failure
+            setAttendance(prev => [...prev, record]);
         }
     };
 
@@ -467,7 +476,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             plans, swimmers, feedbacks, attendance, performances,
             addPlan, updatePlan, deletePlan, starPlan, getVisiblePlans,
             addSwimmer, updateSwimmer, deleteSwimmer,
-            submitFeedback, markAttendance, adjustXP, getSwimmerArgs,
+            submitFeedback, markAttendance, unmarkAttendance, adjustXP, getSwimmerArgs,
             hydrateMockData,
             addPerformance, getSwimmerPerformances, getSwimmerPBs,
             templates, addTemplate, deleteTemplate,

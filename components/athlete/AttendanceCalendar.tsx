@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Check, Calendar as CalendarIcon } from "lucide-react";
 
 export function AttendanceCalendar({ swimmerId }: { swimmerId: string }) {
-    const { attendance, markAttendance } = useStore();
+    const { attendance } = useStore();
     const today = new Date();
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
@@ -19,13 +19,7 @@ export function AttendanceCalendar({ swimmerId }: { swimmerId: string }) {
     const todayStr = today.toISOString().split('T')[0];
     const hasCheckedInToday = attendance.some(a => a.swimmerId === swimmerId && a.date === todayStr);
 
-    const handleCheckIn = () => {
-        markAttendance(swimmerId);
-    };
-
     const getDayStatus = (day: number) => {
-        const dateStr = new Date(currentYear, currentMonth, day).toISOString().split('T')[0]; // Note: this might be off by timezone if not careful, but simpler:
-        // Better: Construct string manually to match 'YYYY-MM-DD'
         const d = new Date(currentYear, currentMonth, day);
         const yyyy = d.getFullYear();
         const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -41,30 +35,27 @@ export function AttendanceCalendar({ swimmerId }: { swimmerId: string }) {
                 <div>
                     <h2 className="text-lg font-bold text-white flex items-center gap-2">
                         <CalendarIcon className="w-5 h-5 text-primary" />
-                        Training Log
+                        训练出勤
                     </h2>
                     <p className="text-xs text-muted-foreground">
-                        {today.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+                        {today.toLocaleString('zh-CN', { month: 'long', year: 'numeric' })}
                     </p>
                 </div>
-                {!hasCheckedInToday ? (
-                    <button
-                        onClick={handleCheckIn}
-                        className="bg-primary text-primary-foreground px-4 py-2 rounded-xl font-bold text-sm hover:brightness-110 transition-all shadow-lg animate-pulse"
-                    >
-                        Check In
-                    </button>
-                ) : (
+                {hasCheckedInToday ? (
                     <div className="bg-green-500/20 text-green-400 px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 border border-green-500/50">
                         <Check className="w-4 h-4" />
-                        Done
+                        今日已到
+                    </div>
+                ) : (
+                    <div className="bg-secondary/30 text-muted-foreground px-4 py-2 rounded-xl font-bold text-sm">
+                        今日未到
                     </div>
                 )}
             </div>
 
             {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-2 text-center">
-                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+                {['日', '一', '二', '三', '四', '五', '六'].map(d => (
                     <div key={d} className="text-xs font-bold text-muted-foreground py-2">{d}</div>
                 ))}
 
@@ -100,11 +91,14 @@ export function AttendanceCalendar({ swimmerId }: { swimmerId: string }) {
             </div>
 
             <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-                <span>Total Sessions: {attendance.filter(a => a.swimmerId === swimmerId && new Date(a.date).getMonth() === currentMonth).length}</span>
+                <span>本月训练: {attendance.filter(a => a.swimmerId === swimmerId && new Date(a.date).getMonth() === currentMonth).length} 次</span>
                 <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-primary" /> Attended
+                    <span className="w-2 h-2 rounded-full bg-primary" /> 已到场
                 </span>
             </div>
+
+            <p className="text-[10px] text-muted-foreground/60 text-center">出勤由教练统一管理</p>
         </div>
     );
 }
+

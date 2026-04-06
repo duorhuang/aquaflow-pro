@@ -20,7 +20,8 @@ export const db = Object.assign(prisma, {
     },
     attendance: {
         findMany: (args?: any) => prisma.attendanceRecord.findMany(args),
-        create: (data: any) => prisma.attendanceRecord.create({ data })
+        create: (data: any) => prisma.attendanceRecord.create({ data }),
+        delete: (id: string) => prisma.attendanceRecord.delete({ where: { id } })
     },
     performances: {
         findMany: (args?: any) => prisma.performanceRecord.findMany(args),

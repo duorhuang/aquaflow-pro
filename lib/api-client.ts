@@ -62,6 +62,9 @@ export const api = {
             method: 'POST',
             body: JSON.stringify(data),
         }),
+        delete: (id: string) => fetchAPI<void>(`/attendance?id=${id}`, {
+            method: 'DELETE',
+        }),
     },
     performances: {
         getAll: () => fetchAPI<any[]>('/performances'),

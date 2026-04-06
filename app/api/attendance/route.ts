@@ -24,3 +24,18 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: error?.message || 'Failed to record attendance' }, { status: 500 });
     }
 }
+
+export async function DELETE(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+        if (!id) {
+            return NextResponse.json({ error: 'Missing id parameter' }, { status: 400 });
+        }
+        await db.attendance.delete(id);
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        console.error('Failed to delete attendance:', error);
+        return NextResponse.json({ error: error?.message || 'Failed to delete attendance' }, { status: 500 });
+    }
+}

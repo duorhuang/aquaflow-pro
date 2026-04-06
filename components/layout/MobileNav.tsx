@@ -1,17 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu, X, Waves, LayoutDashboard, Users, Calendar, Settings, LogOut, PlusCircle } from "lucide-react";
+import { Menu, X, Waves, LayoutDashboard, Users, Calendar, Settings, LogOut, PlusCircle, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Quick Plan", href: "/dashboard/quick-plan", icon: PlusCircle }, // New Feature
-    { label: "Athletes", href: "/dashboard/athletes", icon: Users },
+    { label: "仪表盘", href: "/dashboard", icon: LayoutDashboard },
+    { label: "快速计划", href: "/dashboard/quick-plan", icon: PlusCircle },
+    { label: "运动员", href: "/dashboard/athletes", icon: Users },
+    { label: "出勤管理", href: "/dashboard/attendance", icon: UserCheck },
     { label: "Schedule", href: "/dashboard/schedule", icon: Calendar },
-    { label: "Settings", href: "/settings", icon: Settings },
+    { label: "设置", href: "/settings", icon: Settings },
 ];
 
 export function MobileNav() {

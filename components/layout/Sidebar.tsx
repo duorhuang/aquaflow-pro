@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, Calendar, Settings, LogOut, Waves } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, Settings, LogOut, Waves, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n";
@@ -10,6 +10,7 @@ import { LanguageToggle } from "@/components/common/LanguageToggle";
 const SIDEBAR_ITEMS = [
     { label: "dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "athlete", href: "/dashboard/athletes", icon: Users },
+    { label: "attendance", href: "/dashboard/attendance", icon: UserCheck },
     { label: "schedule", href: "/dashboard/schedule", icon: Calendar },
     { label: "settings", href: "/settings", icon: Settings },
 ];
@@ -37,8 +38,9 @@ export function Sidebar() {
                     const isActive = pathname === item.href;
                     const label = item.label === 'dashboard' ? t.common.dashboard :
                         item.label === 'athlete' ? t.common.athlete :
-                            item.label === 'settings' ? t.common.settings :
-                                "Schedule";
+                            item.label === 'attendance' ? '出勤管理' :
+                                item.label === 'settings' ? t.common.settings :
+                                    "Schedule";
 
                     return (
                         <Link
