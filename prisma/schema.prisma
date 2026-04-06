@@ -9,7 +9,6 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 model Swimmer {
@@ -228,6 +227,7 @@ model WeeklyFeedback {
   coachReply    String?  // Coach's reply to the weekly summary
   repliedAt     String?  // ISO date when coach replied
   isReplied     Boolean  @default(false)
+  readAt        DateTime? // When the coach read the feedback
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

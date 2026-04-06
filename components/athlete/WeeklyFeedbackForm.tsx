@@ -89,8 +89,17 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
     const handleSave = async (submitContent: boolean = false) => {
         setIsSaving(true);
         setSaveStatus(null);
+
+        // Optimistic UI: Immediately show "Sent" state if submitting, 
+        // to make the app feel instant.
+        const prevSubmitted = isSubmitted;
+        if (submitContent) {
+            setIsSubmitted(true);
+            setSaveStatus("正在同步至云端...");
+        }
+
         try {
-            // ONLY ALLOW SUBMISSION IF THERE IS ACTUAL CONTENT
+            // Content validation
             let hasContent = false;
             if (summary && summary.trim().length > 0) hasContent = true;
             dailyFeedbacks.forEach(df => {
@@ -99,6 +108,7 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
 
             if (submitContent && !hasContent) {
                 setSaveStatus("错误：未填写任何内容，无法提交！请填写反馈。");
+                setIsSubmitted(prevSubmitted); // Rollback
                 setIsSaving(false);
                 return;
             }
@@ -113,30 +123,34 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
             
             if (res && res.skipped) {
                 setSaveStatus(res.message);
+                if (submitContent) setIsSubmitted(prevSubmitted); // Rollback if skipped
             } else if (submitContent) {
-                setIsSubmitted(true);
-                setSaveStatus("提交成功！教练已收到您的本周总结。");
+                setSaveStatus("✨ 提交成功！教练已收到您的本周总结。");
+                markAttendance(swimmerId);
+            } else {
+                setSaveStatus("✅ 草稿已保存。今日已自动为你打卡！");
                 
                 // Smart auto-attendance
-                markAttendance(swimmerId);
-                
-            } else {
-                setSaveStatus("草稿已局部保存。今日已自动为你打卡！");
-                
-                // Also smart auto-attendance for saving drafts if they wrote something for today
                 const todayStr = new Date().toISOString().split('T')[0];
                 const todayFeedback = dailyFeedbacks.find(d => d.date === todayStr);
                 if (todayFeedback && todayFeedback.reflection && todayFeedback.reflection.trim().length > 0) {
                     markAttendance(swimmerId);
                 }
             }
-        } catch (e) {
-            console.error(e);
-            setSaveStatus("保存失败，请检查网络。");
+        } catch (e: any) {
+            console.error("📋 Feedback Sync Error:", e);
+            if (submitContent) setIsSubmitted(prevSubmitted); // Rollback on actual error
+            
+            // Detailed Professional Error Handling
+            const errorMsg = e.status === 413 || e.message?.includes("too large")
+                ? "提交失败：反馈内容过大（请减少文字量或图片量）。"
+                : "连接超时：数据已暂存在本地，请检查网络后重试。";
+            
+            setSaveStatus(`❌ ${errorMsg}`);
         } finally {
             setIsSaving(false);
             if (!submitContent) {
-                setTimeout(() => setSaveStatus(null), 3000);
+                setTimeout(() => setSaveStatus(null), 4000);
             }
         }
     };

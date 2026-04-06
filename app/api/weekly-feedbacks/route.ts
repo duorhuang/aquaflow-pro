@@ -137,24 +137,27 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
     try {
         const body = await req.json();
-        const { id, coachReply } = body;
+        const { id, coachReply, readAt } = body;
 
-        if (!id || !coachReply) {
-            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        if (!id) {
+            return NextResponse.json({ error: "Missing required field: id" }, { status: 400 });
         }
 
-        const updated = await (db.weeklyFeedbacks as any).update({
-            where: { id },
-            data: {
-                coachReply,
-                isReplied: true,
-                repliedAt: new Date().toISOString()
-            }
-        });
+        const data: any = {};
+        if (coachReply !== undefined) {
+            data.coachReply = coachReply;
+            data.isReplied = true;
+            data.repliedAt = new Date().toISOString();
+        }
+        if (readAt !== undefined) {
+            data.readAt = readAt ? new Date().toISOString() : null;
+        }
+
+        const updated = await (db.weeklyFeedbacks as any).update(id, data);
 
         return NextResponse.json(updated);
     } catch (error: any) {
-        console.error("PATCH weekly feedback error:", error);
+        console.error("📋 PATCH weekly feedback error:", error);
         return NextResponse.json({ error: error.message || "Internal Error" }, { status: 500 });
     }
 }
