@@ -19,31 +19,31 @@ export const db = Object.assign(prisma, {
         create: (data: any) => prisma.feedback.create({ data })
     },
     attendance: {
-        findMany: (args?: any) => prisma.attendanceRecord.findMany(args),
+        findMany: (args?: any) => prisma.attendanceRecord.findMany(args || {}),
         create: (data: any) => prisma.attendanceRecord.create({ data }),
         delete: (id: string) => prisma.attendanceRecord.delete({ where: { id } })
     },
     performances: {
-        findMany: (args?: any) => prisma.performanceRecord.findMany(args),
+        findMany: (args?: any) => prisma.performanceRecord.findMany(args || {}),
         create: (data: any) => prisma.performanceRecord.create({ data }),
         update: (id: string, data: any) => prisma.performanceRecord.update({ where: { id }, data }),
         delete: (id: string) => prisma.performanceRecord.delete({ where: { id } })
     },
     weeklyPlans: {
-        findMany: (args?: any) => prisma.weeklyPlan.findMany(args),
+        findMany: (args?: any) => prisma.weeklyPlan.findMany(args || {}),
         findUnique: (args: any) => prisma.weeklyPlan.findUnique(args),
         create: (data: any) => prisma.weeklyPlan.create({ data }),
         update: (id: string, data: any) => prisma.weeklyPlan.update({ where: { id }, data }),
         delete: (id: string) => prisma.weeklyPlan.delete({ where: { id } })
     },
     dailySessions: {
-        findMany: (args?: any) => prisma.dailySession.findMany(args),
+        findMany: (args?: any) => prisma.dailySession.findMany(args || {}),
         create: (data: any) => prisma.dailySession.create({ data }),
         update: (id: string, data: any) => prisma.dailySession.update({ where: { id }, data }),
         delete: (id: string) => prisma.dailySession.delete({ where: { id } })
     },
     weeklyFeedbacks: {
-        findMany: (args?: any) => prisma.weeklyFeedback.findMany(args),
+        findMany: (args?: any) => prisma.weeklyFeedback.findMany(args || {}),
         findUnique: (args: any) => prisma.weeklyFeedback.findUnique(args),
         upsert: (args: any) => prisma.weeklyFeedback.upsert(args),
         create: (data: any) => prisma.weeklyFeedback.create({ data }),
@@ -53,7 +53,7 @@ export const db = Object.assign(prisma, {
         upsert: (args: any) => prisma.dailyFeedback.upsert(args)
     },
     feedbackReminders: {
-        findMany: (args?: any) => prisma.feedbackReminder.findMany(args),
+        findMany: (args?: any) => prisma.feedbackReminder.findMany(args || {}),
         create: (data: any) => prisma.feedbackReminder.create({ data })
     },
     targetedFeedbacks: {

@@ -138,33 +138,38 @@ export default function AthleteWorkoutPage() {
 
     // Calculate monthly stats
     const getMonthlyStats = () => {
-        if (!currentUser) return { totalDistance: 0, trainingDays: 0, completionRate: 0 };
+        try {
+            if (!currentUser) return { totalDistance: 0, trainingDays: 0, completionRate: 0 };
 
-        const now = new Date();
-        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-        const monthPlans = plans.filter(p => {
-            const planDate = new Date(p.date);
-            return planDate >= firstDay &&
-                planDate <= now &&
-                p.group === currentUser.group;
-        });
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const monthPlans = (plans || []).filter(p => {
+                const planDate = new Date(p.date);
+                return planDate >= firstDay &&
+                    planDate <= now &&
+                    p.group === currentUser.group;
+            });
 
-        const totalDistance = monthPlans.reduce((sum, p) => sum + p.totalDistance, 0);
-        const trainingDays = monthPlans.length;
+            const totalDistance = monthPlans.reduce((sum, p) => sum + (p.totalDistance || 0), 0);
+            const trainingDays = monthPlans.length;
 
-        // Calculate completion rate from attendance
-        const monthAttendance = attendance.filter(a => {
-            const attDate = new Date(a.date);
-            return attDate >= firstDay &&
-                attDate <= now &&
-                a.swimmerId === currentUser.id;
-        });
+            // Calculate completion rate from attendance
+            const monthAttendance = (attendance || []).filter(a => {
+                const attDate = new Date(a.date);
+                return attDate >= firstDay &&
+                    attDate <= now &&
+                    a.swimmerId === currentUser.id;
+            });
 
-        const completionRate = trainingDays > 0
-            ? Math.round((monthAttendance.length / trainingDays) * 100)
-            : 0;
+            const completionRate = trainingDays > 0
+                ? Math.round((monthAttendance.length / trainingDays) * 100)
+                : 0;
 
-        return { totalDistance, trainingDays, completionRate };
+            return { totalDistance, trainingDays, completionRate };
+        } catch (e) {
+            console.error("Stats calculation error", e);
+            return { totalDistance: 0, trainingDays: 0, completionRate: 0 };
+        }
     };
 
     if (isLoading) {
@@ -178,7 +183,7 @@ export default function AthleteWorkoutPage() {
     if (!currentUser) return null;
 
     const selectedPlan = getSelectedDatePlan();
-    const myNote = selectedPlan?.targetedNotes?.[currentUser.id];
+    const myNote = (selectedPlan?.targetedNotes && currentUser) ? selectedPlan.targetedNotes[currentUser.id] : null;
     const monthlyStats = getMonthlyStats();
     const next7Days = getNext7Days();
 

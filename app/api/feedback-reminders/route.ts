@@ -66,8 +66,8 @@ export async function POST(req: Request) {
         const reminder = await (db.feedbackReminders as any).create({
             message: data.message,
             targetSwimmerIds: data.targetSwimmerIds,
-            periodStart: new Date().toISOString().split('T')[0],
-            periodEnd: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+            periodStart: data.periodStart || new Date().toISOString().split('T')[0],
+            periodEnd: data.periodEnd || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         });
         return NextResponse.json(reminder);
     } catch (error: any) {

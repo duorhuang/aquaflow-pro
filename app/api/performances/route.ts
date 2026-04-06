@@ -9,8 +9,8 @@ export async function GET() {
         const performances = await db.performances.findMany();
         return NextResponse.json(performances);
     } catch (error: any) {
-        console.error('Failed to fetch performances:', error);
-        return NextResponse.json({ error: error?.message || 'Failed to fetch performances' }, { status: 500 });
+        console.error('Failed to fetch performances (returning empty):', error);
+        return NextResponse.json([]);
     }
 }
 
