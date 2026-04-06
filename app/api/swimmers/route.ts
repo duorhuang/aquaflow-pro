@@ -31,8 +31,15 @@ export async function POST(request: Request) {
         return NextResponse.json(swimmer);
     } catch (error: any) {
         console.error('Failed to create swimmer:', error);
+        let errorMsg = error.message || 'Failed to create swimmer';
+        
+        // P2002 is Prisma's unique constraint violation code
+        if (error.code === 'P2002') {
+            errorMsg = '该用户名已被其他队员占用，请尝试更换另一个用户名。';
+        }
+        
         return NextResponse.json(
-            { error: error.message || 'Failed to create swimmer' },
+            { error: errorMsg },
             { status: 500 }
         );
     }
@@ -52,8 +59,14 @@ export async function PUT(request: Request) {
         return NextResponse.json(swimmer);
     } catch (error: any) {
         console.error('Failed to update swimmer:', error);
+        
+        let errorMsg = error.message || 'Failed to update swimmer';
+        if (error.code === 'P2002') {
+            errorMsg = '该用户名已被其他队员占用，请尝试更换另一个用户名。';
+        }
+        
         return NextResponse.json(
-            { error: error.message || 'Failed to update swimmer' },
+            { error: errorMsg },
             { status: 500 }
         );
     }
