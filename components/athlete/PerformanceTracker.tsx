@@ -305,18 +305,18 @@ export function PerformanceList({ swimmerId }: PerformanceListProps) {
                                         <div className="flex items-center gap-1">
                                             <button 
                                                 onClick={() => setEditingPerformance(perf)}
-                                                className="p-1 rounded-md text-primary hover:bg-primary/20 transition-all opacity-50 hover:opacity-100"
+                                                className="p-1.5 rounded-lg text-primary bg-primary/10 hover:bg-primary/20 transition-all border border-primary/20"
                                                 title="修改"
                                             >
-                                                <Edit2 className="w-3 h-3" />
+                                                <Edit2 className="w-3.5 h-3.5" />
                                             </button>
                                             <button 
                                                 onClick={() => handleDelete(perf.id)}
                                                 disabled={isDeleting === perf.id}
-                                                className="p-1 rounded-md text-red-400 hover:bg-red-500/20 transition-all opacity-50 hover:opacity-100 disabled:opacity-30"
+                                                className="p-1.5 rounded-lg text-red-400 bg-red-400/10 hover:bg-red-500/20 transition-all border border-red-500/20 disabled:opacity-30"
                                                 title="删除"
                                             >
-                                                <Trash2 className="w-3 h-3" />
+                                                <Trash2 className="w-3.5 h-3.5" />
                                             </button>
                                         </div>
                                     </div>

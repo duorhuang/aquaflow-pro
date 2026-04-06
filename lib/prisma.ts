@@ -76,12 +76,31 @@ export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
 
         connectionString = extractConnectionString(connectionString);
 
-        // During build time, return a dummy proxy that won't crash
+        // Only use dummy proxy IF we are explicitly in a restricted build environment
+        const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build';
+        
         if (!connectionString || connectionString.includes("dummy")) {
-            return new Proxy(() => {}, {
-                get: () => () => Promise.resolve(null),
-                apply: () => Promise.resolve(null),
-            });
+            if (isBuildTime) {
+                console.log("🛠️ Prisma: Build-time dummy proxy active.");
+                return new Proxy(() => {}, {
+                    get: (_t, p) => {
+                        if (p === 'then') return undefined;
+                        return () => Promise.resolve([]); // Return empty array instead of null for safety
+                    },
+                    apply: () => Promise.resolve([]),
+                });
+            } else {
+                // If we're at runtime and connection string is missing, this is a CRITICAL configuration error
+                console.error("❌ Prisma Error: DATABASE_URL is missing at runtime!");
+                // Instead of returning null, we should probably throw or return a proxy that throws on execute
+                return new Proxy(() => {}, {
+                    get: (_t, p) => {
+                        if (p === 'then') return undefined;
+                        return () => { throw new Error("DATABASE_URL is missing! Please check your environment variables."); };
+                    },
+                    apply: () => { throw new Error("DATABASE_URL is missing!"); }
+                });
+            }
         }
 
         if (!globalForPrisma.prisma) {

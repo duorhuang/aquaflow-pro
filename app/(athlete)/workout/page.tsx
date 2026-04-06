@@ -510,10 +510,18 @@ export default function AthleteWorkoutPage() {
                 {/* Tab Content: Weekly Training */}
                 {activeTab === 'weekly' && currentUser && (
                     <div className="space-y-4">
-                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                            <FolderOpen className="w-5 h-5 text-purple-400" />
-                            本周训练计划
-                        </h2>
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                                <FolderOpen className="w-5 h-5 text-purple-400" />
+                                本周训练计划
+                            </h2>
+                            {isLoading && (
+                                <div className="flex items-center gap-2 text-[10px] text-muted-foreground animate-pulse">
+                                    <div className="w-2 h-2 bg-purple-500 rounded-full" />
+                                    同步中...
+                                </div>
+                            )}
+                        </div>
 
                         {weeklyPlans.length > 0 ? (
                             weeklyPlans.map((plan: any) => (

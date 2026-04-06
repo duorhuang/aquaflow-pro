@@ -7,15 +7,13 @@ export async function POST(req: Request) {
     try {
         const data = await req.json();
         const session = await (db.dailySessions as any).create({
-            data: {
-                weeklyPlanId: data.weeklyPlanId,
-                label: data.label,
-                date: data.date,
-                imageData: data.imageData,
-                imageType: data.imageType,
-                notes: data.notes,
-                sortOrder: data.sortOrder || 0
-            }
+            weeklyPlanId: data.weeklyPlanId,
+            label: data.label,
+            date: data.date,
+            imageData: data.imageData,
+            imageType: data.imageType,
+            notes: data.notes,
+            sortOrder: data.sortOrder || 0
         });
         return NextResponse.json(session);
     } catch (error: any) {

@@ -38,7 +38,7 @@ export const db = Object.assign(prisma, {
     },
     dailySessions: {
         findMany: (args?: any) => prisma.dailySession.findMany(args),
-        create: (args: any) => prisma.dailySession.create(args),
+        create: (data: any) => prisma.dailySession.create({ data }),
         update: (id: string, data: any) => prisma.dailySession.update({ where: { id }, data }),
         delete: (id: string) => prisma.dailySession.delete({ where: { id } })
     },

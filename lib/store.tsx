@@ -84,11 +84,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                     api.performances.getAll()
                 ]);
 
-                setPlans(fetchedPlans);
-                setSwimmers(fetchedSwimmers);
-                setFeedbacks(fetchedFeedbacks);
-                setAttendance(fetchedAttendance);
-                setPerformances(fetchedPerformances);
+                setPlans(fetchedPlans || []);
+                setSwimmers(fetchedSwimmers || []);
+                setFeedbacks(fetchedFeedbacks || []);
+                setAttendance(fetchedAttendance || []);
+                setPerformances(fetchedPerformances || []);
 
                 // Load templates from localStorage
                 const savedTemplates = localStorage.getItem("aquaflow_templates");
@@ -124,11 +124,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                     api.performances.getAll()
                 ]);
 
-                setPlans(plans);
-                setSwimmers(swimmers);
-                setFeedbacks(feedbacks);
-                setAttendance(attendance);
-                setPerformances(performances);
+                setPlans(plans || []);
+                setSwimmers(swimmers || []);
+                setFeedbacks(feedbacks || []);
+                setAttendance(attendance || []);
+                setPerformances(performances || []);
             } catch (error) {
                 console.error("Auto-sync failed:", error);
             }
@@ -340,9 +340,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
 
     const deletePerformance = async (id: string) => {
+        const perfToDelete = performances.find(p => p.id === id);
+        if (!perfToDelete) return;
+
         recordMutation();
         setPerformances(prev => prev.filter(p => p.id !== id));
-        try { await api.performances.delete(id); } catch (e) { }
+        
+        try { 
+            await api.performances.delete(id); 
+        } catch (e) { 
+            console.error("Failed to delete performance from server, rolling back:", e);
+            // Rollback UI state
+            setPerformances(prev => [perfToDelete, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            alert("❌ 删除成绩失败，请检查网络。");
+        }
     };
 
     const addTemplate = (block: TrainingBlock, name: string, category: BlockTemplate['category']) => {

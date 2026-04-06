@@ -67,7 +67,7 @@ export default function WeeklyPlanPage() {
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx?.drawImage(img, 0, 0, width, height);
-                    resolve(canvas.toDataURL('image/jpeg', 0.7)); // 70% quality is usually enough for plans
+                    resolve(canvas.toDataURL('image/jpeg', 0.6)); // 60% quality is optimal balance.
                 };
                 img.src = e.target?.result as string;
             };
@@ -79,8 +79,9 @@ export default function WeeklyPlanPage() {
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
 
-        // Dynamic scaling: if many files are uploaded, scale them down further to prevent request timeouts/payload issues
-        const targetDim = files.length > 4 ? 800 : 1200;
+        // Strict scaling for Cloudflare body-size limits (1MB)
+        // If multiple images are uploaded, we stay very conservative.
+        const targetDim = files.length > 2 ? 1000 : 1200;
 
         for (const file of files) {
             const base64 = await compressImage(file, targetDim);
@@ -158,8 +159,14 @@ export default function WeeklyPlanPage() {
             loadPlans();
             if (!selectedPlanId) setSelectedPlanId(planId);
         } catch (e: any) {
-            console.error("Save error:", e);
-            alert(`发布失败：${e.message || "服务器连接超时或数据过大"}\n请尝试减少照片数量或压缩后再试。`);
+            console.error("📋 Publish Error:", e);
+            // Distinguish between payload issues and network issues
+            const isPayloadTooLarge = e.message?.includes("too large") || e.status === 413;
+            const errorMsg = isPayloadTooLarge 
+                ? "照片体积过大（Cloudflare 限制 1MB）。请尝试分批上传，或减少单张照片的分辨率。"
+                : `同步失败：${e.message || "服务器连接超时"}\n请检查网络并重试。`;
+            
+            alert(errorMsg);
         } finally {
             setSaving(false);
             setPublishProgress(null);

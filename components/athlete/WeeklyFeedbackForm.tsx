@@ -107,7 +107,8 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                 swimmerId,
                 weekStart,
                 summary,
-                dailyFeedbacks
+                dailyFeedbacks,
+                isSubmitted: submitContent
             });
             
             if (res && res.skipped) {
