@@ -54,38 +54,33 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const loadData = async () => {
             try {
-                // Load plans
-                const plans = await api.plans.getAll();
-                setPlans(plans);
+                // Fetch all data in parallel for much faster initial load times
+                const [
+                    fetchedPlans,
+                    fetchedSwimmers,
+                    fetchedFeedbacks,
+                    fetchedAttendance,
+                    fetchedPerformances
+                ] = await Promise.all([
+                    api.plans.getAll(),
+                    api.swimmers.getAll(),
+                    api.feedbacks.getAll(),
+                    api.attendance.getAll(),
+                    api.performances.getAll()
+                ]);
 
-                // Load swimmers
-                const swimmers = await api.swimmers.getAll();
-                if (swimmers.length === 0) {
-                    // Do not seed mock data automatically
-                    setSwimmers([]);
-                } else {
-                    setSwimmers(swimmers);
-                }
+                setPlans(fetchedPlans);
+                setSwimmers(fetchedSwimmers);
+                setFeedbacks(fetchedFeedbacks);
+                setAttendance(fetchedAttendance);
+                setPerformances(fetchedPerformances);
 
                 // Load templates from localStorage and merge with defaults
                 const savedTemplates = localStorage.getItem("aquaflow_templates");
                 const userTemplates = savedTemplates ? JSON.parse(savedTemplates) : [];
-                // Merge: user templates + default templates (avoid duplicates)
                 const defaultIds = new Set(DEFAULT_TEMPLATES.map(t => t.templateId));
                 const uniqueUserTemplates = userTemplates.filter((t: BlockTemplate) => !defaultIds.has(t.templateId));
                 setTemplates([...uniqueUserTemplates, ...DEFAULT_TEMPLATES]);
-
-                // Load feedbacks
-                const feedbacks = await api.feedbacks.getAll();
-                setFeedbacks(feedbacks);
-
-                // Load attendance
-                const attendance = await api.attendance.getAll();
-                setAttendance(attendance);
-
-                // Load performances
-                const performances = await api.performances.getAll();
-                setPerformances(performances);
 
             } catch (error) {
                 console.error("Failed to load data from API:", error);
