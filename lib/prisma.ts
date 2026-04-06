@@ -3,44 +3,31 @@ import { PrismaNeonHTTP } from '@prisma/adapter-neon';
 import { PrismaClient } from '@prisma/client';
 
 /**
- * Global cache for the Prisma instance.
+ * V5-ULTRA PREVIEW: This client is stateless and uses HTTPS, 
+ * making it the most robust option for Cloudflare Edge.
  */
 const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
 };
 
-/**
- * getPrisma() - The ULTIMATE stable way to get a Prisma instance in Cloudflare Edge.
- * This version uses HTTPS (neon-http) which is significantly more stable
- * in Serverless/Edge environments than WebSockets.
- */
 export function getPrisma(): PrismaClient {
-    // 1. Return cached instance if available
     if (globalForPrisma.prisma) return globalForPrisma.prisma;
 
-    // 2. Resolve Connection String
     let connectionString = process.env.DATABASE_URL || '';
-    
-    // Clean potential corruption
     const match = connectionString.match(/(postgresql?:\/\/[^\s"']+)/);
     if (match) connectionString = match[1];
 
-    // 3. Early safety exit
     if (!connectionString || connectionString.includes('dummy')) {
         if (process.env.NEXT_PHASE === 'phase-production-build') {
              return new PrismaClient(); 
         }
     }
 
-    // 4. Create Client using the HTTP Adapter (Optimized for Edge)
+    // neon() creates an HTTPS stateless client
     const sql = neon(connectionString);
     const adapter = new PrismaNeonHTTP(sql);
-    const client = new PrismaClient({ 
-        adapter,
-        log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']
-    });
+    const client = new PrismaClient({ adapter });
 
-    // 5. Cache in non-production
     if (process.env.NODE_ENV !== 'production') {
         globalForPrisma.prisma = client;
     }
@@ -49,6 +36,13 @@ export function getPrisma(): PrismaClient {
 }
 
 /**
- * @deprecated Use getPrisma() inside your route handlers.
+ * helper to flatten incoming request bodies that might be wrapped in "data"
  */
+export function flattenPayload(body: any): any {
+    if (body && body.data && typeof body.data === 'object' && !Array.isArray(body.data)) {
+        return { ...body, ...body.data };
+    }
+    return body;
+}
+
 export const prisma = {} as PrismaClient;

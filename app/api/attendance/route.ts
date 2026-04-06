@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/prisma';
+import { getPrisma, flattenPayload } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,18 +10,17 @@ export async function GET() {
             include: { swimmer: true },
             orderBy: { date: 'desc' }
         });
-        return NextResponse.json(attendance || []);
+        return NextResponse.json({ data: attendance || [], _build: "V5-ULTRA" });
     } catch (error: any) {
         console.error('Failed to fetch attendance:', error);
-        return NextResponse.json([]);
+        return NextResponse.json({ data: [], _build: "V5-ULTRA" });
     }
 }
 
 export async function POST(request: Request) {
     try {
         const prisma = getPrisma();
-        const body = await request.json();
-        const data = body.data || body;
+        const data = flattenPayload(await request.json());
         
         const record = await prisma.attendanceRecord.create({
             data: {
@@ -31,10 +30,10 @@ export async function POST(request: Request) {
                 timestamp: data.timestamp || new Date().toISOString()
             }
         });
-        return NextResponse.json(record);
+        return NextResponse.json({ ...record, _build: "V5-ULTRA" });
     } catch (error: any) {
         console.error('Failed to record attendance:', error);
-        return NextResponse.json({ error: 'Failed to record attendance' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed', _build: "V5-ULTRA" }, { status: 500 });
     }
 }
 
@@ -46,9 +45,9 @@ export async function DELETE(request: Request) {
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
         await prisma.attendanceRecord.delete({ where: { id } });
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, _build: "V5-ULTRA" });
     } catch (error: any) {
         console.error('Failed to delete attendance:', error);
-        return NextResponse.json({ error: 'Failed to delete record' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed', _build: "V5-ULTRA" }, { status: 500 });
     }
 }

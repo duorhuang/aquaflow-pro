@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/prisma';
+import { getPrisma, flattenPayload } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +23,7 @@ export async function GET(req: Request) {
                     swimmer: true 
                 }
             });
-            return NextResponse.json(feedback || null);
+            return NextResponse.json({ data: feedback || null, _build: "V5-ULTRA" });
         }
 
         if (submittedOnly) {
@@ -37,26 +37,25 @@ export async function GET(req: Request) {
                 },
                 orderBy: { submittedAt: 'desc' }
             });
-            return NextResponse.json(feedbacks || []);
+            return NextResponse.json({ data: feedbacks || [], _build: "V5-ULTRA" });
         }
 
-        return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
+        return NextResponse.json({ error: 'Invalid parameters', _build: "V5-ULTRA" }, { status: 400 });
     } catch (error: any) {
         console.error("❌ GET weekly feedbacks error:", error);
-        return NextResponse.json([]);
+        return NextResponse.json({ data: [], _build: "V5-ULTRA" });
     }
 }
 
 export async function POST(req: Request) {
     try {
         const prisma = getPrisma();
-        const body = await req.json();
-        const data = body.data || body;
+        const data = flattenPayload(await req.json());
         
         const { swimmerId, weekStart, summary, dailyFeedbacks, isSubmitted = true } = data;
 
         if (!swimmerId || !weekStart) {
-            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+            return NextResponse.json({ error: "Missing required fields", _build: "V5-ULTRA" }, { status: 400 });
         }
 
         const result = await prisma.$transaction(async (tx) => {
@@ -110,18 +109,17 @@ export async function POST(req: Request) {
             return weeklyFeedback;
         });
 
-        return NextResponse.json(result);
+        return NextResponse.json({ ...result, _build: "V5-ULTRA" });
     } catch (error: any) {
         console.error("❌ POST weekly feedback error:", error);
-        return NextResponse.json({ error: error.message || "Internal Error" }, { status: 500 });
+        return NextResponse.json({ error: error.message || "Internal Error", _build: "V5-ULTRA" }, { status: 500 });
     }
 }
 
 export async function PATCH(req: Request) {
     try {
         const prisma = getPrisma();
-        const body = await req.json();
-        const data = body.data || body;
+        const data = flattenPayload(await req.json());
         const { id, coachReply, readAt } = data;
 
         if (!id) {
@@ -143,9 +141,9 @@ export async function PATCH(req: Request) {
             data: updateData
         });
 
-        return NextResponse.json(updated);
+        return NextResponse.json({ ...updated, _build: "V5-ULTRA" });
     } catch (error: any) {
         console.error("📋 PATCH weekly feedback error:", error);
-        return NextResponse.json({ error: error.message || "Internal Error" }, { status: 500 });
+        return NextResponse.json({ error: error.message, _build: "V5-ULTRA" }, { status: 500 });
     }
 }

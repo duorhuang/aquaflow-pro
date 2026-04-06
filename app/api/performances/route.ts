@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/prisma';
+import { getPrisma, flattenPayload } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,18 +10,17 @@ export async function GET() {
             include: { swimmer: true },
             orderBy: { date: 'desc' }
         });
-        return NextResponse.json(performances || []);
+        return NextResponse.json({ data: performances || [], _build: "V5-ULTRA" });
     } catch (error: any) {
         console.error('Failed to fetch performances:', error);
-        return NextResponse.json([]);
+        return NextResponse.json({ data: [], _build: "V5-ULTRA" });
     }
 }
 
 export async function POST(request: Request) {
     try {
         const prisma = getPrisma();
-        const body = await request.json();
-        const data = body.data || body;
+        const data = flattenPayload(await request.json());
 
         const record = await prisma.performanceRecord.create({
             data: {
@@ -34,10 +33,10 @@ export async function POST(request: Request) {
                 notes: data.notes
             }
         });
-        return NextResponse.json(record);
+        return NextResponse.json({ ...record, _build: "V5-ULTRA" });
     } catch (error: any) {
         console.error('Failed to record performance:', error);
-        return NextResponse.json({ error: 'Failed to record performance' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed', _build: "V5-ULTRA" }, { status: 500 });
     }
 }
 
@@ -48,8 +47,7 @@ export async function PUT(request: Request) {
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
         
-        const body = await request.json();
-        const data = body.data || body;
+        const data = flattenPayload(await request.json());
 
         const record = await prisma.performanceRecord.update({
             where: { id },
@@ -62,10 +60,10 @@ export async function PUT(request: Request) {
                 notes: data.notes
             }
         });
-        return NextResponse.json(record);
+        return NextResponse.json({ ...record, _build: "V5-ULTRA" });
     } catch (error: any) {
         console.error('Failed to update performance:', error);
-        return NextResponse.json({ error: 'Failed to update performance' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed', _build: "V5-ULTRA" }, { status: 500 });
     }
 }
 
@@ -77,9 +75,9 @@ export async function DELETE(request: Request) {
         if (!id) return NextResponse.json({ error: 'Missing id parameter' }, { status: 400 });
 
         await prisma.performanceRecord.delete({ where: { id } });
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, _build: "V5-ULTRA" });
     } catch (error: any) {
         console.error('Failed to delete performance:', error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed', _build: "V5-ULTRA" }, { status: 500 });
     }
 }
