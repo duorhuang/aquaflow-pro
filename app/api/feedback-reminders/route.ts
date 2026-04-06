@@ -63,7 +63,7 @@ export async function POST(req: Request) {
         }
 
         // Handle reminder creation (coach)
-        const reminder = await (db.feedbackReminders as any).create({
+        const reminder = await db.feedbackReminders.create({
             message: data.message,
             targetSwimmerIds: data.targetSwimmerIds,
             periodStart: data.periodStart || new Date().toISOString().split('T')[0],

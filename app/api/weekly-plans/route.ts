@@ -10,7 +10,7 @@ export async function GET(req: Request) {
         const id = searchParams.get('id');
 
         if (id) {
-            const plan = await (db.weeklyPlans as any).findUnique({
+            const plan = await db.weeklyPlans.findUnique({
                 where: { id },
                 include: { sessions: { orderBy: { sortOrder: 'asc' } } }
             });
@@ -18,16 +18,16 @@ export async function GET(req: Request) {
         }
 
         const where = group ? { group } : {};
-        const plans = await (db.weeklyPlans as any).findMany({
+        const plans = await db.weeklyPlans.findMany({
             where,
             include: { sessions: { orderBy: { sortOrder: 'asc' } } },
             orderBy: { weekStart: 'desc' }
         });
 
-        return NextResponse.json(plans);
+        return NextResponse.json(plans || []);
     } catch (error: any) {
-        console.error("GET weekly plans error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error("GET weekly plans error (returning empty):", error);
+        return NextResponse.json([]);
     }
 }
 

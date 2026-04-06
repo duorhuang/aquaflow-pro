@@ -175,12 +175,35 @@ export default function AthleteWorkoutPage() {
     if (isLoading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
-                <p className="text-muted-foreground animate-pulse">Loading...</p>
+                <div className="text-center group">
+                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground animate-pulse font-mono text-xs uppercase tracking-widest">
+                        Synchronizing AquaFlow Stats...
+                    </p>
+                </div>
             </div>
         );
     }
 
-    if (!currentUser) return null;
+    if (!currentUser) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center">
+                <div className="space-y-4 max-w-xs">
+                    <div className="w-16 h-16 bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                        <LogOut className="w-8 h-8 text-red-500" />
+                    </div>
+                    <h2 className="text-xl font-bold text-white">Session Expired</h2>
+                    <p className="text-sm text-muted-foreground">无法识别您的队员身份，请尝试重新登录程序。</p>
+                    <button 
+                        onClick={() => router.push('/login')}
+                        className="w-full bg-primary text-white py-3 rounded-xl font-bold"
+                    >
+                        返回登录页
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     const selectedPlan = getSelectedDatePlan();
     const myNote = (selectedPlan?.targetedNotes && currentUser) ? selectedPlan.targetedNotes[currentUser.id] : null;
@@ -324,6 +347,14 @@ export default function AthleteWorkoutPage() {
                         我的统计
                     </button>
                 </div>
+
+                {/* EMERGENCY DATA ALERT - ONLY SHOWS IF CRITICAL ARRAYS ARE MISSING */}
+                {(!plans || plans.length === 0) && activeTab === 'plan' && (
+                    <div className="mt-4 bg-orange-500/10 border border-orange-500/20 p-4 rounded-2xl flex items-center gap-3 animate-pulse">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full" />
+                        <p className="text-[11px] text-orange-200">系统数据暂时离线，请刷新重试或联系教练检查网络。</p>
+                    </div>
+                )}
 
                 {/* Tab Content: Training Plan */}
                 {activeTab === 'plan' && (
