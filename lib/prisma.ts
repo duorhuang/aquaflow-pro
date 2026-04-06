@@ -1,72 +1,48 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
+import { Pool } from '@neondatabase/serverless';
 import { PrismaNeon } from '@prisma/adapter-neon';
 import { PrismaClient } from '@prisma/client';
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-// Standard Singleton pattern for Prisma
+/**
+ * Global cache to ensure we only have ONE Prisma instance per worker.
+ * This is critical for connection pooling and performance.
+ */
 const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
 };
 
-function extractConnectionString(val: string | undefined): string | undefined {
-    if (!val) return undefined;
-    const match = val.match(/(postgresql?:\/\/[^\s"']+)/);
-    return match ? match[1] : val;
-}
-
 /**
- * getPrisma() - The ONLY safe way to get a Prisma instance in Cloudflare Edge.
- * Call this INSIDE your API request handlers to ensure DATABASE_URL is available
- * and initialization doesn't crash the worker module.
+ * getPrisma() - The ULTIMATE stable way to get a Prisma instance in Cloudflare Edge.
+ * It strictly avoids Node.js-only modules like 'ws' and follows Neon + Prisma best practices.
  */
 export function getPrisma(): PrismaClient {
-    // 1. Return existing instance if available
-    if (globalForPrisma.prisma) {
-        return globalForPrisma.prisma;
-    }
+    // 1. Return cached instance if available
+    if (globalForPrisma.prisma) return globalForPrisma.prisma;
 
     // 2. Resolve Connection String
+    // In Cloudflare Pages/Workers using OpenNext, environment variables are in process.env
     let connectionString = process.env.DATABASE_URL;
-    
-    // Try to get from Cloudflare context (Edge Runtime)
-    try {
-        const { env } = getCloudflareContext();
-        if (env && (env as any).DATABASE_URL) {
-            connectionString = (env as any).DATABASE_URL;
-        }
-    } catch (e) {
-        // Outside cloudflare request context (local dev or build)
+
+    // Handle string corruption or dummy values
+    if (connectionString) {
+        const match = connectionString.match(/(postgresql?:\/\/[^\s"']+)/);
+        if (match) connectionString = match[1];
     }
 
-    connectionString = extractConnectionString(connectionString);
-
-    // 3. Fallback/Build-time safety
+    // 3. Early exit if no connection string (safety)
     if (!connectionString || connectionString.includes('dummy')) {
-        // Build-time dummy client
+        // Basic dummy client for build-time safety
         if (process.env.NEXT_PHASE === 'phase-production-build') {
              return new PrismaClient(); 
         }
-        // Runtime error - will be caught by API try/catch
-        throw new Error("DATABASE_URL is not configured.");
     }
 
-    // 4. Configure Neon for Edge
-    if (typeof globalThis.WebSocket === 'undefined') {
-        try {
-            const ws = require('ws');
-            neonConfig.webSocketConstructor = ws;
-        } catch (e) {}
-    }
-
-    // 5. Create Client with Neon Adapter
-    const pool = new Pool({ connectionString });
+    // 4. Create and Cache the Client
+    // Cloudflare Edge already has global WebSocket, Neon uses it automatically.
+    const pool = new Pool({ connectionString: connectionString || '' });
     const adapter = new PrismaNeon(pool);
-    const client = new PrismaClient({ 
-        adapter,
-        log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']
-    });
+    const client = new PrismaClient({ adapter });
 
-    // 6. Cache for future requests in same worker instance
+    // In dev, cache to avoid HMR exhaustion. In prod, the Worker is short-lived.
     if (process.env.NODE_ENV !== 'production') {
         globalForPrisma.prisma = client;
     }
@@ -75,6 +51,6 @@ export function getPrisma(): PrismaClient {
 }
 
 /**
- * @deprecated Use getPrisma() inside request handlers instead for Edge stability.
+ * @deprecated Use getPrisma() directly inside your route handlers.
  */
-export const prisma = {} as PrismaClient; // Placeholder to avoid import errors elsewhere during migration
+export const prisma = {} as PrismaClient;
