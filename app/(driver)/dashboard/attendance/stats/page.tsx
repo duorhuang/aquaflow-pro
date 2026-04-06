@@ -33,20 +33,27 @@ export default function AttendanceStatsPage() {
     // Calculate stats per swimmer
     const swimmerStats = useMemo(() => {
         // Unique active person-days for summary
-        const activePairs = new Set();
+        const activePairs = new Set<string>();
         monthlyAttendance.forEach(r => activePairs.add(`${r.swimmerId}-${r.date}`));
         const uniqueActiveCount = activePairs.size;
 
+        // Days where training actually happened (at least 1 person present)
+        const trainingDays = Array.from(new Set(monthlyAttendance.map(r => r.date))).sort();
+        const totalTrainingSessions = trainingDays.length;
+
         const stats = swimmers.map(s => {
             const attendedDays = daysArray.filter(d => isPresent(s.id, d)).length;
+            const percent = totalTrainingSessions > 0 
+                ? (attendedDays / totalTrainingSessions * 100).toFixed(1)
+                : "0";
             return {
                 ...s,
                 attendedDays,
-                percent: daysInMonth > 0 ? (attendedDays / daysInMonth * 100).toFixed(1) : "0"
+                percent
             };
         }).sort((a, b) => b.attendedDays - a.attendedDays);
 
-        return { stats, uniqueActiveCount };
+        return { stats, uniqueActiveCount, totalTrainingSessions };
     }, [swimmers, monthlyAttendance, daysArray]);
 
     const changeMonth = (offset: number) => {
@@ -112,7 +119,7 @@ export default function AttendanceStatsPage() {
                     <p className="text-purple-400 text-sm font-medium mb-1">全勤人数</p>
                     <div className="flex items-baseline gap-2">
                         <span className="text-3xl font-bold text-white">
-                            {swimmerStats.stats.filter(s => s.attendedDays === daysInMonth).length}
+                            {swimmerStats.stats.filter(s => s.attendedDays >= swimmerStats.totalTrainingSessions && swimmerStats.totalTrainingSessions > 0).length}
                         </span>
                         <span className="text-purple-400 text-xs font-bold">人</span>
                     </div>

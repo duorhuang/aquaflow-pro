@@ -45,12 +45,16 @@ function createPrismaClient(): PrismaClient {
         throw new Error("DATABASE_URL must be set");
     }
 
-    const pool = new Pool({ connectionString });
+    const pool = new Pool({ 
+        connectionString,
+        connectionTimeoutMillis: 10000, // 10s timeout for China-to-US connections
+        max: 10, // Limit concurrent connections
+    });
     const adapter = new PrismaNeon(pool);
 
     const client = new PrismaClient({
         adapter,
-        log: process.env.NODE_ENV === "development" ? ["query"] : [],
+        log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
     });
 
     return client;

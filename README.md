@@ -1,36 +1,22 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌊 AquaFlow Pro - 游泳队管理系统
 
-## Getting Started
+专业游泳队训练管理系统 | Professional Swimming Team Management System
 
-First, run the development server:
+## 🌐 官方访问链接 (Production URL)
+- **正式域名 (免梯子直连)**: [https://sw.sportsflow.best](https://sw.sportsflow.best)
+- **备用构建域名**: [https://aquaflow-pro.pages.dev](https://aquaflow-pro.pages.dev)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 📋 项目状态公告 (Project Status)
+- **云端托管**: 已全面切换至 **Cloudflare Pages** 高速边缘分发，针对中国大陆网络进行专项优化。
+- **数据库状态**: 使用 **Neon Serverless Postgres**。初次访问时，如果数据库处于休眠状态，可能会有 10-15 秒的唤醒延迟。
+- **免 VPN 访问**: 已通过 Cloudflare HTTPS Proxy 优化，确保中国大陆用户无需开启 VPN 即可流畅使用。
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ 核心优化记录 (Latest Maintenance)
+- **[2026-04-06]**:
+    - 修复了考勤打卡状态在弱网下的“闪回”问题 (Doody Bug)。
+    - 增加了周计划发布的大图压缩逻辑 (800px)，防止上传超时。
+    - 增加了运动员端考勤状态实时显示徽章。
+    - 增加了教练端考勤月度统计报表。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📞 运维说明
+本项目已由 AI 助手 Antigravity 完成全链路稳定性加固。如遇访问缓慢，请等待“数据库唤醒”提示消失后再进行操作。

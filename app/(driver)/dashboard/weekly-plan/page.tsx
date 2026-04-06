@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api-client";
+import { useStore } from "@/lib/store";
 import { Save, Plus, Trash2, Image as ImageIcon, CheckCircle, Upload } from "lucide-react";
 
 export default function WeeklyPlanPage() {
@@ -11,6 +12,7 @@ export default function WeeklyPlanPage() {
     const [title, setTitle] = useState("");
     const [coachNotes, setCoachNotes] = useState("");
     const [sessions, setSessions] = useState<any[]>([]);
+    const { recordMutation } = useStore();
     
     const [saving, setSaving] = useState(false);
     const [loadedPlans, setLoadedPlans] = useState<any[]>([]);
@@ -102,9 +104,12 @@ export default function WeeklyPlanPage() {
     const [publishProgress, setPublishProgress] = useState<{current: number, total: number} | null>(null);
 
     const handleSave = async () => {
+        if (saving) return;
         setSaving(true);
+        recordMutation(); // Lock background sync for 15s
         setPublishProgress(null);
         try {
+            console.log("Starting publish process...");
             let planId = selectedPlanId;
             if (!planId) {
                 const newPlan = await api.weeklyPlans.create({
@@ -152,9 +157,9 @@ export default function WeeklyPlanPage() {
             alert("计划发布成功！");
             loadPlans();
             if (!selectedPlanId) setSelectedPlanId(planId);
-        } catch (e) {
-            console.error(e);
-            alert("发布失败：服务器连接超时或数据过大。请尝试减少照片数量或压缩后再试。");
+        } catch (e: any) {
+            console.error("Save error:", e);
+            alert(`发布失败：${e.message || "服务器连接超时或数据过大"}\n请尝试减少照片数量或压缩后再试。`);
         } finally {
             setSaving(false);
             setPublishProgress(null);

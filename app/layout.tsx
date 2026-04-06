@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n";
 import { StoreProvider } from "@/lib/store";
+import { DbStatus } from "@/components/DbStatus";
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +40,7 @@ export default function RootLayout({
       <body className="antialiased" suppressHydrationWarning={true}>
         <LanguageProvider>
           <StoreProvider>
+            <DbStatus />
             {children}
           </StoreProvider>
         </LanguageProvider>
