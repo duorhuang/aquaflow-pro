@@ -76,6 +76,14 @@ export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
 
         const client = globalForPrisma.prisma as any;
         const value = client[prop];
-        return typeof value === 'function' ? value.bind(client) : value;
+        if (value !== undefined) {
+            return typeof value === 'function' ? value.bind(client) : value;
+        }
+        
+        // Fallback to the target object (for Object.assign used in db.ts)
+        return Reflect.get(_target, prop);
+    },
+    set(target, prop, value) {
+        return Reflect.set(target, prop, value);
     }
 });
