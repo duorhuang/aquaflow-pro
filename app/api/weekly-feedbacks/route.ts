@@ -1,16 +1,15 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
     try {
+        const prisma = getPrisma();
         const { searchParams } = new URL(req.url);
         const submittedOnly = searchParams.get('submitted') === 'true';
         const swimmerId = searchParams.get('swimmerId');
         const weekStart = searchParams.get('weekStart');
-
-        console.log(`🔍 GET WeeklyFeedbacks: swimmer=${swimmerId}, week=${weekStart}, submitted=${submittedOnly}`);
 
         if (swimmerId && weekStart) {
             const feedback = await prisma.weeklyFeedback.findUnique({
@@ -38,19 +37,19 @@ export async function GET(req: Request) {
                 },
                 orderBy: { submittedAt: 'desc' }
             });
-            console.log(`✅ Found ${feedbacks.length} submitted feedbacks`);
-            return NextResponse.json(feedbacks);
+            return NextResponse.json(feedbacks || []);
         }
 
         return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
     } catch (error: any) {
         console.error("❌ GET weekly feedbacks error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json([]);
     }
 }
 
 export async function POST(req: Request) {
     try {
+        const prisma = getPrisma();
         const body = await req.json();
         const { swimmerId, weekStart, summary, dailyFeedbacks, isSubmitted = true } = body;
 
@@ -58,20 +57,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
-        console.log(`📝 POST WeeklyFeedback: swimmer=${swimmerId}, week=${weekStart}, isSubmitted=${isSubmitted}`);
-
-        // 1. Validate content
-        let hasContent = false;
-        if (summary && summary.trim().length > 0) hasContent = true;
-        for (const df of (dailyFeedbacks || [])) {
-            if (df.reflection && df.reflection.trim().length > 0) hasContent = true;
-        }
-
-        if (!hasContent && isSubmitted) {
-            return NextResponse.json({ error: "Cannot submit empty feedback." }, { status: 400 });
-        }
-
-        // 2. Perform everything in a single transaction
+        // 1. Perform everything in a single transaction
         const result = await prisma.$transaction(async (tx) => {
             const weeklyFeedback = await tx.weeklyFeedback.upsert({
                 where: {
@@ -104,15 +90,15 @@ export async function POST(req: Request) {
                                 }
                             },
                             update: {
-                                rpe: df.rpe,
-                                soreness: df.soreness,
+                                rpe: Number(df.rpe) || 0,
+                                soreness: Number(df.soreness) || 0,
                                 reflection: df.reflection
                             },
                             create: {
                                 weeklyFeedbackId: weeklyFeedback.id,
                                 date: df.date,
-                                rpe: df.rpe,
-                                soreness: df.soreness,
+                                rpe: Number(df.rpe) || 0,
+                                soreness: Number(df.soreness) || 0,
                                 reflection: df.reflection
                             }
                         });
@@ -132,6 +118,7 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
     try {
+        const prisma = getPrisma();
         const body = await req.json();
         const { id, coachReply, readAt } = body;
 

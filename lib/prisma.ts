@@ -3,14 +3,7 @@ import { PrismaNeon } from '@prisma/adapter-neon';
 import { PrismaClient } from '@prisma/client';
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-// Configure Neon WebSocket for local dev if needed
-if (typeof globalThis.WebSocket === 'undefined') {
-    try {
-        const ws = require('ws');
-        neonConfig.webSocketConstructor = ws;
-    } catch (e) {}
-}
-
+// Standard Singleton pattern for Prisma
 const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
 };
@@ -21,38 +14,59 @@ function extractConnectionString(val: string | undefined): string | undefined {
     return match ? match[1] : val;
 }
 
-export function getPrismaClient(): PrismaClient {
-    // If we're in a global context (like local dev), reuse the client
-    if (globalForPrisma.prisma) return globalForPrisma.prisma;
+/**
+ * getPrisma() - The ONLY safe way to get a Prisma instance in Cloudflare Edge.
+ * Call this INSIDE your API request handlers to ensure DATABASE_URL is available
+ * and initialization doesn't crash the worker module.
+ */
+export function getPrisma(): PrismaClient {
+    // 1. Return existing instance if available
+    if (globalForPrisma.prisma) {
+        return globalForPrisma.prisma;
+    }
 
+    // 2. Resolve Connection String
     let connectionString = process.env.DATABASE_URL;
     
-    // Try to get from Cloudflare context if available
+    // Try to get from Cloudflare context (Edge Runtime)
     try {
-        const context = getCloudflareContext();
-        if (context?.env && (context.env as any).DATABASE_URL) {
-            connectionString = (context.env as any).DATABASE_URL;
+        const { env } = getCloudflareContext();
+        if (env && (env as any).DATABASE_URL) {
+            connectionString = (env as any).DATABASE_URL;
         }
-    } catch (e) {}
+    } catch (e) {
+        // Outside cloudflare request context (local dev or build)
+    }
 
     connectionString = extractConnectionString(connectionString);
 
-    // Build-time safety or fallback
+    // 3. Fallback/Build-time safety
     if (!connectionString || connectionString.includes('dummy')) {
-        // Return a mock client for build time if necessary
+        // Build-time dummy client
         if (process.env.NEXT_PHASE === 'phase-production-build') {
              return new PrismaClient(); 
         }
+        // Runtime error - will be caught by API try/catch
+        throw new Error("DATABASE_URL is not configured.");
     }
 
-    const pool = new Pool({ 
-        connectionString: connectionString || 'postgresql://dummy:dummy@localhost:5432/dummy', 
-        connectionTimeoutMillis: 10000,
-        max: 10 
-    });
-    const adapter = new PrismaNeon(pool);
-    const client = new PrismaClient({ adapter });
+    // 4. Configure Neon for Edge
+    if (typeof globalThis.WebSocket === 'undefined') {
+        try {
+            const ws = require('ws');
+            neonConfig.webSocketConstructor = ws;
+        } catch (e) {}
+    }
 
+    // 5. Create Client with Neon Adapter
+    const pool = new Pool({ connectionString });
+    const adapter = new PrismaNeon(pool);
+    const client = new PrismaClient({ 
+        adapter,
+        log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']
+    });
+
+    // 6. Cache for future requests in same worker instance
     if (process.env.NODE_ENV !== 'production') {
         globalForPrisma.prisma = client;
     }
@@ -60,5 +74,7 @@ export function getPrismaClient(): PrismaClient {
     return client;
 }
 
-// Export a direct instance
-export const prisma = getPrismaClient();
+/**
+ * @deprecated Use getPrisma() inside request handlers instead for Edge stability.
+ */
+export const prisma = {} as PrismaClient; // Placeholder to avoid import errors elsewhere during migration

@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 // Force dynamic rendering - don't try to connect to DB at build time
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        const swimmers = await prisma.swimmer.findMany();
+        const prisma = getPrisma();
+        const swimmers = await prisma.swimmer.findMany({
+            orderBy: { name: 'asc' }
+        });
         return NextResponse.json(swimmers || []);
     } catch (error: any) {
         console.error('Failed to fetch swimmers (returning empty):', error);
@@ -16,6 +19,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
+        const prisma = getPrisma();
         const data = await request.json();
         const swimmer = await prisma.swimmer.create({
             data: {
@@ -45,6 +49,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
     try {
+        const prisma = getPrisma();
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
@@ -76,6 +81,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
     try {
+        const prisma = getPrisma();
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });

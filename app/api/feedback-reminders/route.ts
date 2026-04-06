@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
     try {
+        const prisma = getPrisma();
         const { searchParams } = new URL(req.url);
         const swimmerId = searchParams.get('swimmerId');
         const withResponses = searchParams.get('withResponses') === 'true';
@@ -35,6 +36,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
     try {
+        const prisma = getPrisma();
         const data = await req.json();
         
         // Handle response submission (targetedFeedback)

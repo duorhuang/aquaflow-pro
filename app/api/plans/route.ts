@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
+        const prisma = getPrisma();
         const plans = await prisma.trainingPlan.findMany({
             orderBy: { date: 'desc' }
         });
@@ -17,6 +18,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
+        const prisma = getPrisma();
         const data = await request.json();
         const plan = await prisma.trainingPlan.create({
             data: {
@@ -43,6 +45,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
     try {
+        const prisma = getPrisma();
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
@@ -74,6 +77,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
     try {
+        const prisma = getPrisma();
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });

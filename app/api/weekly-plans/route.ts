@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
     try {
+        const prisma = getPrisma();
         const { searchParams } = new URL(req.url);
         const group = searchParams.get('group');
         const id = searchParams.get('id');
@@ -33,6 +34,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
     try {
+        const prisma = getPrisma();
         const data = await req.json();
         const plan = await prisma.weeklyPlan.create({
             data: {
@@ -53,6 +55,7 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
     try {
+        const prisma = getPrisma();
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
@@ -78,6 +81,7 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
     try {
+        const prisma = getPrisma();
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });

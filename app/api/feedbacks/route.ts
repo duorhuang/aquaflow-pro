@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
+        const prisma = getPrisma();
         const feedbacks = await prisma.feedback.findMany({
             include: { swimmer: true },
             orderBy: { createdAt: 'desc' }
@@ -18,6 +19,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
+        const prisma = getPrisma();
         const data = await request.json();
         const feedback = await prisma.feedback.create({
             data: {
