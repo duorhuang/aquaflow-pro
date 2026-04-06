@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { SwimEvent, PerformanceRecord } from "@/types";
-import { Plus, X, Trophy } from "lucide-react";
+import { Plus, X, Trophy, Trash2, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PerformanceChart } from "./PerformanceChart";
 
@@ -35,18 +35,19 @@ const EVENT_LABELS: Record<SwimEvent, string> = {
     "400IM": "400m 混合泳"
 };
 
-interface AddPerformanceFormProps {
+interface PerformanceFormProps {
     swimmerId: string;
     onClose: () => void;
+    initialData?: PerformanceRecord;
 }
 
-export function AddPerformanceForm({ swimmerId, onClose }: AddPerformanceFormProps) {
-    const { addPerformance } = useStore();
-    const [event, setEvent] = useState<SwimEvent>("50Free");
-    const [time, setTime] = useState("");
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-    const [meetName, setMeetName] = useState("");
-    const [notes, setNotes] = useState("");
+export function PerformanceForm({ swimmerId, onClose, initialData }: PerformanceFormProps) {
+    const { addPerformance, updatePerformance } = useStore();
+    const [event, setEvent] = useState<SwimEvent>(initialData?.event || "50Free");
+    const [time, setTime] = useState(initialData?.time || "");
+    const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
+    const [meetName, setMeetName] = useState(initialData?.meetName || "");
+    const [notes, setNotes] = useState(initialData?.notes || "");
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -56,18 +57,25 @@ export function AddPerformanceForm({ swimmerId, onClose }: AddPerformanceFormPro
             return;
         }
 
-        const performance: PerformanceRecord = {
-            id: Math.random().toString(36).substr(2, 9),
+        const performanceData = {
             swimmerId,
             event,
             time: time.trim(),
             date,
-            isPB: false, // Will be calculated by store
             meetName: meetName.trim() || undefined,
             notes: notes.trim() || undefined
         };
 
-        addPerformance(performance);
+        if (initialData) {
+            updatePerformance(initialData.id, performanceData);
+        } else {
+            const newPerformance: PerformanceRecord = {
+                id: Math.random().toString(32).substr(2, 9),
+                isPB: false,
+                ...performanceData
+            };
+            addPerformance(newPerformance);
+        }
         onClose();
     };
 
@@ -77,7 +85,7 @@ export function AddPerformanceForm({ swimmerId, onClose }: AddPerformanceFormPro
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xl font-bold text-white flex items-center gap-2">
                         <Trophy className="w-5 h-5 text-primary" />
-                        添加成绩
+                        {initialData ? "修改成绩" : "添加成绩"}
                     </h3>
                     <button
                         onClick={onClose}
@@ -88,29 +96,21 @@ export function AddPerformanceForm({ swimmerId, onClose }: AddPerformanceFormPro
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Event Selector */}
                     <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-2">
-                            项目
-                        </label>
+                        <label className="block text-sm font-medium text-muted-foreground mb-2">项目</label>
                         <select
                             value={event}
                             onChange={(e) => setEvent(e.target.value as SwimEvent)}
                             className="w-full bg-black/40 rounded-xl px-4 py-2 text-white border border-white/10 focus:border-primary/50 outline-none"
                         >
                             {SWIM_EVENTS.map(evt => (
-                                <option key={evt} value={evt}>
-                                    {EVENT_LABELS[evt]}
-                                </option>
+                                <option key={evt} value={evt}>{EVENT_LABELS[evt]}</option>
                             ))}
                         </select>
                     </div>
 
-                    {/* Time Input */}
                     <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-2">
-                            成绩时间 (秒)
-                        </label>
+                        <label className="block text-sm font-medium text-muted-foreground mb-2">成绩时间 (秒)</label>
                         <input
                             type="text"
                             value={time}
@@ -119,16 +119,11 @@ export function AddPerformanceForm({ swimmerId, onClose }: AddPerformanceFormPro
                             className="w-full bg-black/40 rounded-xl px-4 py-2 text-white border border-white/10 focus:border-primary/50 outline-none"
                             required
                         />
-                        <p className="text-xs text-muted-foreground mt-1">
-                            请输入总秒数，例如 1:02.5 = 62.5
-                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">请输入总秒数，例如 1:02.5 = 62.5</p>
                     </div>
 
-                    {/* Date */}
                     <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-2">
-                            日期
-                        </label>
+                        <label className="block text-sm font-medium text-muted-foreground mb-2">日期</label>
                         <input
                             type="date"
                             value={date}
@@ -138,11 +133,8 @@ export function AddPerformanceForm({ swimmerId, onClose }: AddPerformanceFormPro
                         />
                     </div>
 
-                    {/* Meet Name (Optional) */}
                     <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-2">
-                            比赛名称 (可选)
-                        </label>
+                        <label className="block text-sm font-medium text-muted-foreground mb-2">比赛名称 (可选)</label>
                         <input
                             type="text"
                             value={meetName}
@@ -152,26 +144,21 @@ export function AddPerformanceForm({ swimmerId, onClose }: AddPerformanceFormPro
                         />
                     </div>
 
-                    {/* Notes (Optional) */}
                     <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-2">
-                            备注 (可选)
-                        </label>
+                        <label className="block text-sm font-medium text-muted-foreground mb-2">备注 (可选)</label>
                         <textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            placeholder="例如: 感觉很好，出发反应快"
-                            className="w-full bg-black/40 rounded-xl px-4 py-2 text-white border border-white/10 focus:border-primary/50 outline-none resize-none"
-                            rows={2}
+                            placeholder="当时感觉如何？..."
+                            className="w-full bg-black/40 rounded-xl px-4 py-2 text-white border border-white/10 focus:border-primary/50 outline-none h-20 resize-none"
                         />
                     </div>
 
-                    {/* Buttons */}
-                    <div className="flex gap-3 pt-4">
+                    <div className="flex gap-3 pt-2">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-4 py-2 rounded-xl bg-white/5 text-white hover:bg-white/10 transition-colors"
+                            className="flex-1 px-4 py-2 rounded-xl bg-white/5 text-white font-bold hover:bg-white/10 transition-all"
                         >
                             取消
                         </button>
@@ -180,7 +167,7 @@ export function AddPerformanceForm({ swimmerId, onClose }: AddPerformanceFormPro
                             className="flex-1 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-bold hover:brightness-110 transition-all flex items-center justify-center gap-2"
                         >
                             <Plus className="w-4 h-4" />
-                            添加成绩
+                            {initialData ? "保存修改" : "添加成绩"}
                         </button>
                     </div>
                 </form>
@@ -189,14 +176,27 @@ export function AddPerformanceForm({ swimmerId, onClose }: AddPerformanceFormPro
     );
 }
 
+export function AddPerformanceForm({ swimmerId, onClose }: { swimmerId: string; onClose: () => void }) {
+    return <PerformanceForm swimmerId={swimmerId} onClose={onClose} />;
+}
+
 interface PerformanceListProps {
     swimmerId: string;
 }
 
 export function PerformanceList({ swimmerId }: PerformanceListProps) {
-    const { getSwimmerPerformances, getSwimmerPBs } = useStore();
+    const { getSwimmerPerformances, getSwimmerPBs, deletePerformance } = useStore();
     const [showAddForm, setShowAddForm] = useState(false);
+    const [editingPerformance, setEditingPerformance] = useState<PerformanceRecord | null>(null);
     const [selectedEvent, setSelectedEvent] = useState<SwimEvent | "all">("all");
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("确定要删除这条成绩记录吗？")) return;
+        setIsDeleting(id);
+        await deletePerformance(id);
+        setIsDeleting(null);
+    };
 
     const performances = getSwimmerPerformances(swimmerId);
     const pbs = getSwimmerPBs(swimmerId);
@@ -300,7 +300,26 @@ export function PerformanceList({ swimmerId }: PerformanceListProps) {
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-xs text-muted-foreground">{perf.date}</p>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <p className="text-xs text-muted-foreground">{perf.date}</p>
+                                        <div className="flex items-center gap-1">
+                                            <button 
+                                                onClick={() => setEditingPerformance(perf)}
+                                                className="p-1 rounded-md text-primary hover:bg-primary/20 transition-all opacity-50 hover:opacity-100"
+                                                title="修改"
+                                            >
+                                                <Edit2 className="w-3 h-3" />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDelete(perf.id)}
+                                                disabled={isDeleting === perf.id}
+                                                className="p-1 rounded-md text-red-400 hover:bg-red-500/20 transition-all opacity-50 hover:opacity-100 disabled:opacity-30"
+                                                title="删除"
+                                            >
+                                                <Trash2 className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    </div>
                                     {perf.meetName && (
                                         <p className="text-xs text-muted-foreground mt-1">
                                             📍 {perf.meetName}
@@ -336,6 +355,15 @@ export function PerformanceList({ swimmerId }: PerformanceListProps) {
                 <AddPerformanceForm
                     swimmerId={swimmerId}
                     onClose={() => setShowAddForm(false)}
+                />
+            )}
+
+            {/* Edit Form Modal */}
+            {editingPerformance && (
+                <PerformanceForm
+                    swimmerId={swimmerId}
+                    initialData={editingPerformance}
+                    onClose={() => setEditingPerformance(null)}
                 />
             )}
         </div>

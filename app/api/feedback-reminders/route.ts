@@ -53,25 +53,21 @@ export async function POST(req: Request) {
         // Handle response submission
         if (data.reminderId && data.swimmerId && data.content) {
             const response = await (db.targetedFeedbacks as any).create({
-                data: {
-                    reminderId: data.reminderId,
-                    swimmerId: data.swimmerId,
-                    content: data.content,
-                    rpe: data.rpe,
-                    soreness: data.soreness
-                }
+                reminderId: data.reminderId,
+                swimmerId: data.swimmerId,
+                content: data.content,
+                rpe: data.rpe,
+                soreness: data.soreness
             });
             return NextResponse.json(response);
         }
 
         // Handle reminder creation (coach)
         const reminder = await (db.feedbackReminders as any).create({
-            data: {
-                message: data.message,
-                targetSwimmerIds: data.targetSwimmerIds,
-                periodStart: new Date().toISOString().split('T')[0],
-                periodEnd: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-            }
+            message: data.message,
+            targetSwimmerIds: data.targetSwimmerIds,
+            periodStart: new Date().toISOString().split('T')[0],
+            periodEnd: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         });
         return NextResponse.json(reminder);
     } catch (error: any) {

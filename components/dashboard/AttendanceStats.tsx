@@ -3,7 +3,8 @@
 import { useStore } from "@/lib/store";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { CalendarCheck } from "lucide-react";
+import { CalendarCheck, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export function AttendanceStats() {
     const { t } = useLanguage();
@@ -81,6 +82,13 @@ export function AttendanceStats() {
                     <div className="text-[10px] text-muted-foreground uppercase">Total Check-ins</div>
                 </div>
             </div>
+
+            <Link href="/dashboard/attendance/stats">
+                <button className="w-full mt-2 py-2 px-4 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-primary flex items-center justify-center gap-2 hover:bg-primary hover:text-black transition-all group">
+                    查看完整出勤报表 📊
+                    <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </button>
+            </Link>
         </div>
     );
 }

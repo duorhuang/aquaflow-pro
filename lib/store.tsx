@@ -9,6 +9,7 @@ import { api } from "./api-client";
 const uid = () => Math.random().toString(36).substr(2, 9);
 
 interface StoreContextType {
+    isLoaded: boolean;
     plans: TrainingPlan[];
     swimmers: Swimmer[];
     feedbacks: Feedback[];
@@ -20,6 +21,8 @@ interface StoreContextType {
     submitFeedback: (feedback: Feedback) => void;
     markAttendance: (swimmerId: string, date?: string) => void;
     unmarkAttendance: (swimmerId: string, date: string) => void;
+    batchMarkAttendance: (swimmerIds: string[], date: string) => Promise<void>;
+    batchUnmarkAttendance: (swimmerIds: string[], date: string) => Promise<void>;
     adjustXP: (swimmerId: string, amount: number) => void;
     addSwimmer: (swimmer: Swimmer) => void;
     updateSwimmer: (id: string, updates: Partial<Swimmer>) => void;
@@ -29,6 +32,8 @@ interface StoreContextType {
     starPlan: (id: string) => void;
     getVisiblePlans: () => TrainingPlan[];
     addPerformance: (performance: PerformanceRecord) => void;
+    updatePerformance: (id: string, updates: Partial<PerformanceRecord>) => void;
+    deletePerformance: (id: string) => void;
     getSwimmerPerformances: (swimmerId: string) => PerformanceRecord[];
     getSwimmerPBs: (swimmerId: string) => Record<string, PerformanceRecord>;
     // Templates
@@ -48,7 +53,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const [performances, setPerformances] = useState<PerformanceRecord[]>([]);
     const [templates, setTemplates] = useState<BlockTemplate[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
+    const lastMutationRef = React.useRef<number>(0);
 
+    const recordMutation = () => {
+        lastMutationRef.current = Date.now();
+    };
 
     // Load from LocalStorage on mount
     // Load from API on mount
@@ -96,6 +105,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         // This ensures data stays in sync across devices with different network environments
         const AUTO_SYNC_INTERVAL = 30000; // 30 seconds
         const syncInterval = setInterval(async () => {
+            // Mutation Guard: Skip sync if a user action happened recently (within 10s)
+            // to prevent the UI from flickering back to old state while server is still writing
+            if (Date.now() - lastMutationRef.current < 10000) {
+                console.log("Mutation guard active, skipping sync...");
+                return;
+            }
+
             try {
                 // Silently refresh data in the background
                 const [plans, swimmers, feedbacks, attendance, performances] = await Promise.all([
@@ -136,6 +152,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
 
     const addPlan = async (plan: TrainingPlan) => {
+        recordMutation();
         // Optimistic update
         setPlans((prev) => [plan, ...prev]);
         try {
@@ -146,6 +163,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
 
     const updatePlan = async (id: string, updates: Partial<TrainingPlan>) => {
+        recordMutation();
         setPlans((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)));
         try {
             const currentPlan = plans.find(p => p.id === id);
@@ -158,6 +176,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
 
     const deletePlan = async (id: string) => {
+        recordMutation();
         setPlans((prev) => prev.filter((p) => p.id !== id));
         try {
             await api.plans.delete(id);
@@ -167,7 +186,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
 
     const submitFeedback = async (fb: Feedback) => {
+        recordMutation();
         setFeedbacks((prev) => [...prev, fb]);
+        
+        // Reward XP for writing feedback (+20 XP)
+        adjustXP(fb.swimmerId, 20);
+
         try {
             await api.feedbacks.create(fb);
         } catch (e) {
@@ -200,9 +224,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         };
 
         setAttendance((prev) => [...prev, newRecord]);
+        recordMutation();
+        
+        // Reward XP for attendance (+10 XP)
+        adjustXP(swimmerId, 10);
+
         try {
-            await api.attendance.create(newRecord);
-        } catch (e) { console.error("Sync error", e); }
+            const dbRecord = await api.attendance.create({
+                date: newRecord.date,
+                swimmerId: newRecord.swimmerId,
+                status: newRecord.status,
+                timestamp: newRecord.timestamp
+            });
+            // Update the optimistic ID to the real database ID
+            if (dbRecord && dbRecord.id) {
+                setAttendance(prev => prev.map(a => a.id === newRecord.id ? { ...a, id: dbRecord.id } : a));
+            }
+        } catch (e) {
+            console.error("Sync error", e);
+            // Revert optimistic if error
+            setAttendance(prev => prev.filter(a => a.id !== newRecord.id));
+        }
 
         // Update Swimmer Stats logic (XP, Streak)
         let updatedSwimmer: Swimmer | undefined;
@@ -261,17 +303,56 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
 
     const unmarkAttendance = async (swimmerId: string, date: string) => {
-        const record = attendance.find(a => a.swimmerId === swimmerId && a.date === date);
-        if (!record) return;
+        // Since double clicking can create multiple records if network is slow, delete all matching records
+        const records = attendance.filter(a => a.swimmerId === swimmerId && a.date === date);
+        if (records.length === 0) return;
 
         // Optimistic remove
-        setAttendance(prev => prev.filter(a => a.id !== record.id));
+        recordMutation();
+        setAttendance(prev => prev.filter(a => !(a.swimmerId === swimmerId && a.date === date)));
         try {
-            await api.attendance.delete(record.id);
+            await Promise.all(records.map(record => api.attendance.delete(record.id)));
         } catch (e) {
             console.error("Failed to unmark attendance", e);
             // Revert on failure
-            setAttendance(prev => [...prev, record]);
+            setAttendance(prev => [...prev, ...records]);
+        }
+    };
+
+    const batchMarkAttendance = async (swimmerIds: string[], date: string) => {
+        const timestamp = new Date().toISOString();
+        const newRecords = swimmerIds.map(id => ({
+            id: uid(),
+            date,
+            swimmerId: id,
+            status: "Present" as const,
+            timestamp
+        }));
+
+        setAttendance(prev => [...prev, ...newRecords]);
+        recordMutation();
+        
+        // Reward XP for all swimmers in batch (+10 XP each)
+        swimmerIds.forEach(id => adjustXP(id, 10));
+
+        try {
+            await Promise.all(newRecords.map(r => api.attendance.create(r)));
+        } catch (e) {
+            console.error("Batch mark failed", e);
+        }
+    };
+
+    const batchUnmarkAttendance = async (swimmerIds: string[], date: string) => {
+        const idsSet = new Set(swimmerIds);
+        const recordsToRemove = attendance.filter(a => idsSet.has(a.swimmerId) && a.date === date);
+        
+        setAttendance(prev => prev.filter(a => !(idsSet.has(a.swimmerId) && a.date === date)));
+        recordMutation();
+        try {
+            await Promise.all(recordsToRemove.map(r => api.attendance.delete(r.id)));
+        } catch (e) {
+            console.error("Batch unmark failed", e);
+            setAttendance(prev => [...prev, ...recordsToRemove]);
         }
     };
 
@@ -314,6 +395,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
 
     const adjustXP = async (swimmerId: string, amount: number) => {
+        recordMutation();
         let updatedSwimmer: Swimmer | undefined;
         setSwimmers(prev => prev.map(s => {
             if (s.id !== swimmerId) return s;
@@ -329,6 +411,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     const addSwimmer = async (swimmer: Swimmer) => {
         // 1. Optimistic Add
+        recordMutation();
         setSwimmers((prev) => [...prev, swimmer]);
         try {
             // 2. Server Call
@@ -347,6 +430,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
 
     const updateSwimmer = async (id: string, updates: Partial<Swimmer>) => {
+        recordMutation();
         const oldSwimmer = swimmers.find(s => s.id === id);
         setSwimmers((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
         try {
@@ -362,6 +446,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
 
     const deleteSwimmer = async (id: string) => {
+        recordMutation();
         const oldSwimmer = swimmers.find(s => s.id === id);
         setSwimmers((prev) => prev.filter((s) => s.id !== id));
         try {
@@ -413,6 +498,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
         setPerformances(prev => [...prev, newPerformance]);
         try { await api.performances.create(newPerformance); } catch (e) { }
+    };
+
+    const updatePerformance = async (id: string, updates: Partial<PerformanceRecord>) => {
+        setPerformances(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+        try { await api.performances.update(id, updates); } catch (e) { console.error("Failed to update performance", e); }
+    };
+
+    const deletePerformance = async (id: string) => {
+        setPerformances(prev => prev.filter(p => p.id !== id));
+        try { await api.performances.delete(id); } catch (e) { console.error("Failed to delete performance", e); }
     };
 
     const getSwimmerPerformances = (swimmerId: string): PerformanceRecord[] => {
@@ -473,12 +568,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <StoreContext.Provider value={{
+            isLoaded,
             plans, swimmers, feedbacks, attendance, performances,
             addPlan, updatePlan, deletePlan, starPlan, getVisiblePlans,
             addSwimmer, updateSwimmer, deleteSwimmer,
-            submitFeedback, markAttendance, unmarkAttendance, adjustXP, getSwimmerArgs,
+            submitFeedback, markAttendance, unmarkAttendance, batchMarkAttendance, batchUnmarkAttendance, adjustXP, getSwimmerArgs,
             hydrateMockData,
-            addPerformance, getSwimmerPerformances, getSwimmerPBs,
+            addPerformance, updatePerformance, deletePerformance, getSwimmerPerformances, getSwimmerPBs,
             templates, addTemplate, deleteTemplate,
             clearData
         }}>

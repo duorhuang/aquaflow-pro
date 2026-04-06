@@ -361,6 +361,36 @@ export default function AthleteWorkoutPage() {
                             </div>
                         )}
 
+                        {/* Today's Attendance Status Badge for Athletes */}
+                        {(() => {
+                            const today = getLocalDateISOString(new Date());
+                            const checkedIn = attendance.some(a => a.swimmerId === currentUser.id && a.date === today);
+                            return (
+                                <div className={cn(
+                                    "flex items-center justify-between p-4 rounded-2xl border transition-all animate-in fade-in zoom-in duration-500",
+                                    checkedIn 
+                                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" 
+                                        : "bg-orange-500/10 border-orange-500/30 text-orange-400"
+                                )}>
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn(
+                                            "p-2 rounded-xl",
+                                            checkedIn ? "bg-emerald-500/20" : "bg-orange-500/20"
+                                        )}>
+                                            <Activity className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold opacity-70">今日考勤状态</p>
+                                            <p className="text-sm font-bold">{checkedIn ? "今日已到场打卡 ✅" : "今日尚未打卡 ⏳"}</p>
+                                        </div>
+                                    </div>
+                                    {!checkedIn && (
+                                        <p className="text-[10px] bg-orange-400 text-black px-2 py-0.5 rounded-full font-bold">待处理</p>
+                                    )}
+                                </div>
+                            );
+                        })()}
+
                         {/* Plan Display */}
                         {selectedPlan ? (
                             <>

@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
     const { t } = useLanguage();
-    const { getVisiblePlans } = useStore();
+    const { getVisiblePlans, isLoaded } = useStore();
     const router = useRouter();
 
     // Get visible plans (active < 14 days OR starred) and sort
@@ -32,6 +32,19 @@ export default function DashboardPage() {
         <div className="min-h-screen bg-background p-4 md:p-8">
             {/* Header */}
             <header className="mb-8">
+                {/* Database Cold Start Warning */}
+                {!isLoaded && (
+                    <div className="mb-6 p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-between animate-pulse">
+                        <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+                            <div>
+                                <p className="text-sm font-bold text-indigo-400">正在连接云端数据库...</p>
+                                <p className="text-xs text-indigo-300/70">首次启动可能需要 15-20 秒，请稍候。</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h1 className="text-3xl font-bold text-white mb-1">

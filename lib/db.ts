@@ -25,7 +25,9 @@ export const db = Object.assign(prisma, {
     },
     performances: {
         findMany: (args?: any) => prisma.performanceRecord.findMany(args),
-        create: (data: any) => prisma.performanceRecord.create({ data })
+        create: (data: any) => prisma.performanceRecord.create({ data }),
+        update: (id: string, data: any) => prisma.performanceRecord.update({ where: { id }, data }),
+        delete: (id: string) => prisma.performanceRecord.delete({ where: { id } })
     },
     weeklyPlans: {
         findMany: (args?: any) => prisma.weeklyPlan.findMany(args),

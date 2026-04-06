@@ -43,32 +43,67 @@ export default function WeeklyPlanPage() {
         }
     };
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
-        files.forEach((file) => {
+    const compressImage = (file: File, maxDim = 1200): Promise<string> => {
+        return new Promise((resolve) => {
             const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64 = reader.result as string;
-                setSessions(prev => [
-                    ...prev,
-                    {
-                        id: Math.random().toString(36).substring(7),
-                        isNew: true,
-                        label: "周一", 
-                        date: weekStart, // Default to Monday of week
-                        imageData: base64,
-                        imageType: file.type,
-                        notes: "",
-                        sortOrder: prev.length
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > height && width > maxDim) {
+                        height *= maxDim / width;
+                        width = maxDim;
+                    } else if (height > maxDim) {
+                        width *= maxDim / height;
+                        height = maxDim;
                     }
-                ]);
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx?.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.7)); // 70% quality is usually enough for plans
+                };
+                img.src = e.target?.result as string;
             };
-            if (file) reader.readAsDataURL(file);
+            reader.readAsDataURL(file);
         });
     };
 
-    const handleSave = async (publish: boolean) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        // Dynamic scaling: if many files are uploaded, scale them down further to prevent request timeouts/payload issues
+        const targetDim = files.length > 4 ? 800 : 1200;
+
+        for (const file of files) {
+            const base64 = await compressImage(file, targetDim);
+            setSessions(prev => [
+                ...prev,
+                {
+                    id: Math.random().toString(36).substring(7),
+                    isNew: true,
+                    label: "训练日", 
+                    date: weekStart, // Default to Monday of week
+                    imageData: base64,
+                    imageType: "image/jpeg",
+                    notes: "",
+                    sortOrder: prev.length
+                }
+            ]);
+        }
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    const [publishProgress, setPublishProgress] = useState<{current: number, total: number} | null>(null);
+
+    const handleSave = async () => {
         setSaving(true);
+        setPublishProgress(null);
         try {
             let planId = selectedPlanId;
             if (!planId) {
@@ -78,40 +113,51 @@ export default function WeeklyPlanPage() {
                     group,
                     title,
                     coachNotes,
-                    isPublished: publish
+                    isPublished: true
                 });
                 planId = newPlan.id;
             } else {
                 await api.weeklyPlans.update(planId, {
-                    weekStart, weekEnd, group, title, coachNotes, isPublished: publish
+                    weekStart, weekEnd, group, title, coachNotes, isPublished: true
                 });
             }
 
-            // Save sessions
-            for (const s of sessions) {
-                if (s.isNew) {
-                    await api.weeklyPlans.addSession({
-                        weeklyPlanId: planId,
-                        label: s.label,
-                        date: s.date,
-                        imageData: s.imageData,
-                        imageType: s.imageType,
-                        notes: s.notes,
-                        sortOrder: s.sortOrder
-                    });
-                } else if (s.isUpdated) {
-                    await api.weeklyPlans.updateSession(s.id, s);
+            // Save sessions one by one or in small batches
+            const totalSessions = sessions.length;
+            setPublishProgress({ current: 0, total: totalSessions });
+
+            for (let i = 0; i < sessions.length; i++) {
+                const s = sessions[i];
+                try {
+                    if (s.isNew) {
+                        await api.weeklyPlans.addSession({
+                            weeklyPlanId: planId,
+                            label: s.label,
+                            date: s.date,
+                            imageData: s.imageData,
+                            imageType: s.imageType,
+                            notes: s.notes,
+                            sortOrder: s.sortOrder
+                        });
+                    } else if (s.isUpdated) {
+                        await api.weeklyPlans.updateSession(s.id, s);
+                    }
+                } catch (sessionErr) {
+                    console.error("Failed to save session", s.label, sessionErr);
+                    // Continue with other sessions but maybe mark as partial fail
                 }
+                setPublishProgress({ current: i + 1, total: totalSessions });
             }
             
-            alert(publish ? "计划已发布！" : "草稿已保存！");
+            alert("计划发布成功！");
             loadPlans();
             if (!selectedPlanId) setSelectedPlanId(planId);
         } catch (e) {
             console.error(e);
-            alert("保存失败");
+            alert("发布失败：服务器连接超时或数据过大。请尝试减少照片数量或压缩后再试。");
         } finally {
             setSaving(false);
+            setPublishProgress(null);
         }
     };
 
@@ -138,9 +184,25 @@ export default function WeeklyPlanPage() {
     };
 
     const createNew = () => {
+        console.log("Creating new plan...");
         setSelectedPlanId(null);
         setSessions([]);
         setCoachNotes("");
+        setGroup("Advanced");
+        
+        // Reset to current week
+        const monday = new Date();
+        const day = monday.getDay();
+        const diffToMonday = monday.getDate() - day + (day === 0 ? -6 : 1);
+        monday.setDate(diffToMonday);
+        const startStr = monday.toISOString().split('T')[0];
+        setWeekStart(startStr);
+        
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        setWeekEnd(sunday.toISOString().split('T')[0]);
+        
+        setTitle(`${startStr} 周训练`);
     };
 
     return (
@@ -224,12 +286,22 @@ export default function WeeklyPlanPage() {
 
                     </div>
 
-                    <div className="flex gap-4">
-                        <button onClick={() => handleSave(false)} disabled={saving} className="flex-1 bg-secondary text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2">
-                            <Save className="w-4 h-4" /> 保存草稿
-                        </button>
-                        <button onClick={() => handleSave(true)} disabled={saving} className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2">
-                            <CheckCircle className="w-4 h-4" /> 发布给队员
+                    <div className="flex flex-col gap-4 w-full">
+                        {saving && publishProgress && (
+                            <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden mb-1">
+                                <div 
+                                    className="bg-primary h-full transition-all duration-300"
+                                    style={{ width: `${(publishProgress.current / publishProgress.total) * 100}%` }}
+                                />
+                            </div>
+                        )}
+                        {saving && publishProgress && (
+                            <p className="text-[10px] text-primary text-center font-bold mb-2">
+                                正在发布照片: {publishProgress.current} / {publishProgress.total} (请勿关闭页面)
+                            </p>
+                        )}
+                        <button onClick={handleSave} disabled={saving} className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 active:scale-95 transition-all">
+                            <CheckCircle className="w-4 h-4" /> {saving ? "正在同步数据..." : "发布计划"}
                         </button>
                     </div>
                 </div>

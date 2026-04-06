@@ -14,10 +14,12 @@ import {
     ChevronLeft,
     ChevronRight,
     BarChart3,
+    TrendingUp,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function CoachAttendancePage() {
-    const { swimmers, attendance, markAttendance, unmarkAttendance } = useStore();
+    const { swimmers, attendance, markAttendance, unmarkAttendance, batchMarkAttendance, batchUnmarkAttendance } = useStore();
 
     // Date navigation
     const [selectedDate, setSelectedDate] = useState(() => getLocalDateISOString(new Date()));
@@ -59,18 +61,16 @@ export default function CoachAttendancePage() {
 
     // Select all / deselect all
     const handleSelectAll = async () => {
-        for (const s of filteredSwimmers) {
-            if (!isPresent(s.id)) {
-                await markAttendance(s.id, selectedDate);
-            }
+        const toMark = filteredSwimmers.filter(s => !isPresent(s.id)).map(s => s.id);
+        if (toMark.length > 0) {
+            await batchMarkAttendance(toMark, selectedDate);
         }
     };
 
     const handleDeselectAll = async () => {
-        for (const s of filteredSwimmers) {
-            if (isPresent(s.id)) {
-                await unmarkAttendance(s.id, selectedDate);
-            }
+        const toUnmark = filteredSwimmers.filter(s => isPresent(s.id)).map(s => s.id);
+        if (toUnmark.length > 0) {
+            await batchUnmarkAttendance(toUnmark, selectedDate);
         }
     };
 
@@ -97,6 +97,14 @@ export default function CoachAttendancePage() {
                 <div>
                     <h1 className="text-2xl font-bold text-white">出勤管理</h1>
                     <p className="text-sm text-muted-foreground">管理队员训练出勤打卡，查看统计数据</p>
+                </div>
+                <div className="ml-auto">
+                    <Link href="/dashboard/attendance/stats">
+                        <button className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 text-primary rounded-xl font-bold text-sm hover:bg-primary hover:text-white transition-all">
+                            <TrendingUp className="w-4 h-4" />
+                            查看统计报表
+                        </button>
+                    </Link>
                 </div>
             </div>
 
