@@ -31,17 +31,8 @@ export async function POST(request: Request) {
         return NextResponse.json(swimmer);
     } catch (error: any) {
         console.error('Failed to create swimmer:', error);
-        
-        let dbUrlSnippet = 'unknown';
-        try {
-            const { getCloudflareContext } = require('@opennextjs/cloudflare');
-            const { env } = getCloudflareContext();
-            const url = (env as any).DATABASE_URL || process.env.DATABASE_URL || '';
-            dbUrlSnippet = url.substring(0, 15) + '... (length: ' + url.length + ')';
-        } catch(e) {}
-        
         return NextResponse.json(
-            { error: error.message || 'Failed to create swimmer', dbUrl: dbUrlSnippet },
+            { error: error.message || 'Failed to create swimmer' },
             { status: 500 }
         );
     }

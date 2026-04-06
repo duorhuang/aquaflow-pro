@@ -19,6 +19,12 @@ const globalForPrisma = globalThis as unknown as {
 
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
+function extractConnectionString(val: string | undefined): string | undefined {
+    if (!val) return undefined;
+    const match = val.match(/(postgresql?:\/\/[^\s"']+)/);
+    return match ? match[1] : val;
+}
+
 // LAZY initialization — the database connection is only created
 // the first time `prisma` is actually used at runtime.
 // This prevents build-time crashes when DATABASE_URL is not available.
@@ -32,6 +38,8 @@ function createPrismaClient(): PrismaClient {
     } catch (e) {
         // running outside cloudflare request context
     }
+    
+    connectionString = extractConnectionString(connectionString);
 
     if (!connectionString) {
         throw new Error("DATABASE_URL must be set");
@@ -61,6 +69,8 @@ export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
                 connectionString = (env as any).DATABASE_URL;
             }
         } catch (e) {}
+
+        connectionString = extractConnectionString(connectionString);
 
         // During build time, return a dummy proxy that won't crash
         if (!connectionString || connectionString.includes("dummy")) {
