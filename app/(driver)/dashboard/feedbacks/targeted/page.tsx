@@ -3,13 +3,16 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
-import { Send, Target, MessageSquare } from "lucide-react";
+import { Send, Target, MessageSquare, Calendar } from "lucide-react";
+import { getLocalDateISOString } from "@/lib/date-utils";
 
 export default function TargetedFeedbacksPage() {
     const { swimmers } = useStore();
     const [reminders, setReminders] = useState<any[]>([]);
     const [message, setMessage] = useState("");
     const [targetIds, setTargetIds] = useState<string[]>([]);
+    const [periodStart, setPeriodStart] = useState(getLocalDateISOString(new Date()));
+    const [periodEnd, setPeriodEnd] = useState(getLocalDateISOString(new Date()));
 
     useEffect(() => {
         load();
@@ -38,6 +41,8 @@ export default function TargetedFeedbacksPage() {
             await api.feedbackReminders.create({
                 message,
                 targetSwimmerIds: targetIds.length > 0 ? targetIds : null,
+                periodStart,
+                periodEnd
             });
             setMessage("");
             setTargetIds([]);
@@ -57,7 +62,7 @@ export default function TargetedFeedbacksPage() {
                 </div>
                 <div>
                     <h1 className="text-2xl font-bold text-white">🎯 训练反馈管理</h1>
-                    <p className="text-sm text-muted-foreground">向队员发起专项训练问卷，查看回复（可选特定队员或全队）</p>
+                    <p className="text-sm text-muted-foreground">向队员发起专项训练问卷，指定时间范围，查看回复（可选特定队员或全队）</p>
                 </div>
             </div>
 
@@ -70,9 +75,34 @@ export default function TargetedFeedbacksPage() {
                     className="w-full h-24 bg-black/40 border border-border rounded-xl p-4 text-white resize-none mb-4 focus:ring-1 focus:ring-orange-500 outline-none"
                 />
 
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label className="text-sm font-bold text-white block mb-2 flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-orange-400" /> 开始日期
+                        </label>
+                        <input
+                            type="date"
+                            value={periodStart}
+                            onChange={(e) => setPeriodStart(e.target.value)}
+                            className="w-full bg-black/40 border border-border rounded-xl p-3 text-white focus:ring-1 focus:ring-orange-500 outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-sm font-bold text-white block mb-2 flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-orange-400" /> 结束日期
+                        </label>
+                        <input
+                            type="date"
+                            value={periodEnd}
+                            onChange={(e) => setPeriodEnd(e.target.value)}
+                            className="w-full bg-black/40 border border-border rounded-xl p-3 text-white focus:ring-1 focus:ring-orange-500 outline-none"
+                        />
+                    </div>
+                </div>
+
                 <label className="text-sm font-bold text-white block mb-2">提问对象（至少选一个，或全不选代表全队）</label>
                 <div className="flex flex-wrap gap-2 mb-4">
-                    {swimmers.map(s => (
+                    {swimmers && swimmers.length > 0 ? swimmers.map(s => (
                         <button
                             key={s.id}
                             onClick={() => toggleTarget(s.id)}
@@ -80,7 +110,9 @@ export default function TargetedFeedbacksPage() {
                         >
                             {s.name}
                         </button>
-                    ))}
+                    )) : (
+                        <p className="text-sm text-muted-foreground italic">暂无队员数据，无法选择特定对象。</p>
+                    )}
                 </div>
 
                 <div className="flex justify-end">
@@ -100,7 +132,12 @@ export default function TargetedFeedbacksPage() {
                 {reminders.map(r => (
                     <div key={r.id} className="bg-card border border-border rounded-xl p-5">
                         <div className="mb-4">
-                            <span className="text-xs bg-white/10 px-2 py-1 rounded text-muted-foreground mb-2 inline-block">目标: {r.targetSwimmerIds ? "指定队员" : "全队"}</span>
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <span className="text-xs bg-white/10 px-2 py-1 rounded text-muted-foreground">目标: {r.targetSwimmerIds ? "指定队员" : "全队"}</span>
+                                <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" /> {r.periodStart} 至 {r.periodEnd}
+                                </span>
+                            </div>
                             <p className="text-white font-medium">Q: {r.message}</p>
                         </div>
                         
