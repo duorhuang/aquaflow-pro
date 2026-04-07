@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload } from '@/lib/prisma';
+import { getPrisma, flattenPayload, V7_FINGERPRINT } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,10 +10,10 @@ export async function GET() {
             include: { swimmer: true },
             orderBy: { createdAt: 'desc' }
         });
-        return NextResponse.json({ data: feedbacks || [], _build: "V5-ULTRA" });
+        return NextResponse.json(feedbacks || [], { headers: V7_FINGERPRINT });
     } catch (error: any) {
         console.error('Failed to fetch feedbacks:', error);
-        return NextResponse.json({ data: [], _build: "V5-ULTRA" });
+        return NextResponse.json([], { headers: V7_FINGERPRINT });
     }
 }
 
@@ -35,9 +35,9 @@ export async function POST(request: Request) {
                 improvementAreas: data.improvementAreas
             }
         });
-        return NextResponse.json({ ...feedback, _build: "V5-ULTRA" });
+        return NextResponse.json(feedback, { headers: V7_FINGERPRINT });
     } catch (error: any) {
         console.error('Failed to submit feedback:', error);
-        return NextResponse.json({ error: 'Failed', _build: "V5-ULTRA" }, { status: 500 });
+        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V7_FINGERPRINT });
     }
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload } from '@/lib/prisma';
+import { getPrisma, flattenPayload, V7_FINGERPRINT } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,13 +26,10 @@ export async function GET(req: Request) {
             }));
         }
 
-        return NextResponse.json({
-            data: reminders || [],
-            _build: "V6-STABLE"
-        });
+        return NextResponse.json(reminders || [], { headers: V7_FINGERPRINT });
     } catch (error: any) {
         console.error("GET reminders error:", error);
-        return NextResponse.json({ data: [], _build: "V6-STABLE" });
+        return NextResponse.json([], { headers: V7_FINGERPRINT });
     }
 }
 
@@ -52,12 +49,12 @@ export async function POST(req: Request) {
                     soreness: Number(body.soreness) || 0
                 }
             });
-            return NextResponse.json({ ...response, _build: "V6-STABLE" }, { status: 201 });
+            return NextResponse.json(response, { status: 201, headers: V7_FINGERPRINT });
         }
 
         // 2. Handle reminder creation (coach)
         if (!body.message) {
-            return NextResponse.json({ error: "Missing 'message' in request body.", _build: "V6-STABLE" }, { status: 400 });
+            return NextResponse.json({ error: "Missing 'message' in request body." }, { status: 400, headers: V7_FINGERPRINT });
         }
 
         const reminder = await prisma.feedbackReminder.create({
@@ -68,9 +65,9 @@ export async function POST(req: Request) {
                 periodEnd: body.periodEnd || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
             }
         });
-        return NextResponse.json({ ...reminder, _build: "V6-STABLE" }, { status: 201 });
+        return NextResponse.json(reminder, { status: 201, headers: V7_FINGERPRINT });
     } catch (error: any) {
         console.error("POST feedback-reminders error:", error);
-        return NextResponse.json({ error: error.message, _build: "V6-STABLE" }, { status: 500 });
+        return NextResponse.json({ error: error.message }, { status: 500, headers: V7_FINGERPRINT });
     }
 }

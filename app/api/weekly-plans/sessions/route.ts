@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload } from '@/lib/prisma';
+import { getPrisma, flattenPayload, V7_FINGERPRINT } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,10 +19,10 @@ export async function POST(req: Request) {
                 sortOrder: Number(data.sortOrder) || 0
             }
         });
-        return NextResponse.json({ ...session, _build: "V5-ULTRA" });
+        return NextResponse.json(session, { status: 201, headers: V7_FINGERPRINT });
     } catch (error: any) {
         console.error("POST session error:", error);
-        return NextResponse.json({ error: 'Failed', _build: "V5-ULTRA" }, { status: 500 });
+        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V7_FINGERPRINT });
     }
 }
 
@@ -46,10 +46,10 @@ export async function PUT(req: Request) {
                 sortOrder: data.sortOrder !== undefined ? Number(data.sortOrder) : undefined
             }
         });
-        return NextResponse.json({ ...session, _build: "V5-ULTRA" });
+        return NextResponse.json(session, { headers: V7_FINGERPRINT });
     } catch (error: any) {
         console.error("PUT session error:", error);
-        return NextResponse.json({ error: 'Failed', _build: "V5-ULTRA" }, { status: 500 });
+        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V7_FINGERPRINT });
     }
 }
 
@@ -61,9 +61,9 @@ export async function DELETE(req: Request) {
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
         await prisma.dailySession.delete({ where: { id } });
-        return NextResponse.json({ success: true, _build: "V5-ULTRA" });
+        return NextResponse.json({ success: true }, { headers: V7_FINGERPRINT });
     } catch (error: any) {
         console.error("DELETE session error:", error);
-        return NextResponse.json({ error: 'Failed', _build: "V5-ULTRA" }, { status: 500 });
+        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V7_FINGERPRINT });
     }
 }

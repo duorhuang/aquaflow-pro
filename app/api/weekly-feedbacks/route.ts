@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload } from '@/lib/prisma';
+import { getPrisma, flattenPayload, V7_FINGERPRINT } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +23,7 @@ export async function GET(req: Request) {
                     swimmer: true 
                 }
             });
-            return NextResponse.json({ data: feedback || null, _build: "V5-ULTRA" });
+            return NextResponse.json(feedback || null, { headers: V7_FINGERPRINT });
         }
 
         if (submittedOnly) {
@@ -37,25 +37,25 @@ export async function GET(req: Request) {
                 },
                 orderBy: { submittedAt: 'desc' }
             });
-            return NextResponse.json({ data: feedbacks || [], _build: "V5-ULTRA" });
+            return NextResponse.json(feedbacks || [], { headers: V7_FINGERPRINT });
         }
 
-        return NextResponse.json({ error: 'Invalid parameters', _build: "V5-ULTRA" }, { status: 400 });
+        return NextResponse.json({ error: 'Invalid parameters' }, { status: 400, headers: V7_FINGERPRINT });
     } catch (error: any) {
         console.error("❌ GET weekly feedbacks error:", error);
-        return NextResponse.json({ data: [], _build: "V5-ULTRA" });
+        return NextResponse.json([], { headers: V7_FINGERPRINT });
     }
 }
 
 export async function POST(req: Request) {
     try {
         const prisma = getPrisma();
-        const data = flattenPayload(await req.json());
+        const data = flattenPayload(await request.json());
         
         const { swimmerId, weekStart, summary, dailyFeedbacks, isSubmitted = true } = data;
 
         if (!swimmerId || !weekStart) {
-            return NextResponse.json({ error: "Missing required fields", _build: "V5-ULTRA" }, { status: 400 });
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400, headers: V7_FINGERPRINT });
         }
 
         const result = await prisma.$transaction(async (tx) => {
@@ -109,10 +109,10 @@ export async function POST(req: Request) {
             return weeklyFeedback;
         });
 
-        return NextResponse.json({ ...result, _build: "V5-ULTRA" });
+        return NextResponse.json(result, { headers: V7_FINGERPRINT });
     } catch (error: any) {
         console.error("❌ POST weekly feedback error:", error);
-        return NextResponse.json({ error: error.message || "Internal Error", _build: "V5-ULTRA" }, { status: 500 });
+        return NextResponse.json({ error: error.message || "Internal Error" }, { status: 500, headers: V7_FINGERPRINT });
     }
 }
 
@@ -123,7 +123,7 @@ export async function PATCH(req: Request) {
         const { id, coachReply, readAt } = data;
 
         if (!id) {
-            return NextResponse.json({ error: "Missing required field: id" }, { status: 400 });
+            return NextResponse.json({ error: "Missing required field: id" }, { status: 400, headers: V7_FINGERPRINT });
         }
 
         const updateData: any = {};
@@ -141,9 +141,9 @@ export async function PATCH(req: Request) {
             data: updateData
         });
 
-        return NextResponse.json({ ...updated, _build: "V5-ULTRA" });
+        return NextResponse.json(updated, { headers: V7_FINGERPRINT });
     } catch (error: any) {
         console.error("📋 PATCH weekly feedback error:", error);
-        return NextResponse.json({ error: error.message, _build: "V5-ULTRA" }, { status: 500 });
+        return NextResponse.json({ error: error.message }, { status: 500, headers: V7_FINGERPRINT });
     }
 }

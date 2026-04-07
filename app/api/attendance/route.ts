@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload } from '@/lib/prisma';
+import { getPrisma, flattenPayload, V7_FINGERPRINT } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,10 +10,10 @@ export async function GET() {
             include: { swimmer: true },
             orderBy: { date: 'desc' }
         });
-        return NextResponse.json({ data: attendance || [], _build: "V5-ULTRA" });
+        return NextResponse.json(attendance || [], { headers: V7_FINGERPRINT });
     } catch (error: any) {
         console.error('Failed to fetch attendance:', error);
-        return NextResponse.json({ data: [], _build: "V5-ULTRA" });
+        return NextResponse.json([], { headers: V7_FINGERPRINT });
     }
 }
 
@@ -30,10 +30,10 @@ export async function POST(request: Request) {
                 timestamp: data.timestamp || new Date().toISOString()
             }
         });
-        return NextResponse.json({ ...record, _build: "V5-ULTRA" });
+        return NextResponse.json(record, { headers: V7_FINGERPRINT });
     } catch (error: any) {
         console.error('Failed to record attendance:', error);
-        return NextResponse.json({ error: 'Failed', _build: "V5-ULTRA" }, { status: 500 });
+        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V7_FINGERPRINT });
     }
 }
 
@@ -45,9 +45,9 @@ export async function DELETE(request: Request) {
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
         await prisma.attendanceRecord.delete({ where: { id } });
-        return NextResponse.json({ success: true, _build: "V5-ULTRA" });
+        return NextResponse.json({ success: true }, { headers: V7_FINGERPRINT });
     } catch (error: any) {
         console.error('Failed to delete attendance:', error);
-        return NextResponse.json({ error: 'Failed', _build: "V5-ULTRA" }, { status: 500 });
+        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V7_FINGERPRINT });
     }
 }

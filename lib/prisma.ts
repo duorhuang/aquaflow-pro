@@ -3,45 +3,34 @@ import { PrismaNeonHTTP } from '@prisma/adapter-neon';
 import { PrismaClient } from '@prisma/client';
 
 /**
- * V6-STABLE: Enhanced Prisma Singleton with Deep Flattening.
- * This client is stateless and uses HTTPS (neon-http), 
- * making it the most robust option for Cloudflare Edge.
+ * V7-STABLE: The Definitive Production Engine.
+ * - Stateless HTTP for Cloudflare Edge.
+ * - Recursive Deep Flattening (Peel-and-Delete) to fix Prisma nesting bugs.
  */
 const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
 };
 
-/**
- * getPrisma() - The ULTIMATE stable way to get a Prisma instance in Cloudflare Edge.
- * Uses the stateless PrismaNeonHTTP adapter to avoid 1101/Worker exceptions.
- */
 export function getPrisma(): PrismaClient {
-    // 1. Return cached instance if available
     if (globalForPrisma.prisma) return globalForPrisma.prisma;
 
-    // 2. Resolve Connection String
     let connectionString = process.env.DATABASE_URL || '';
     const match = connectionString.match(/(postgresql?:\/\/[^\s"']+)/);
     if (match) connectionString = match[1];
 
-    // 3. Early safety exit for build-time
     if (!connectionString || connectionString.includes('dummy')) {
         if (process.env.NEXT_PHASE === 'phase-production-build') {
              return new PrismaClient(); 
         }
     }
 
-    // 4. Create Stateless HTTP Adapter
     const sql = neon(connectionString);
     const adapter = new PrismaNeonHTTP(sql);
-    
-    // 5. Initialize the Client
     const client = new PrismaClient({ 
         adapter,
         log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']
     });
 
-    // 6. Cache in non-production environments
     if (process.env.NODE_ENV !== 'production') {
         globalForPrisma.prisma = client;
     }
@@ -50,21 +39,31 @@ export function getPrisma(): PrismaClient {
 }
 
 /**
- * recursiveFlatten() - Definitively solves the persistent { data: { data: { ... } } } nesting bug.
- * It peels away all 'data' wrappers regardless of how deep they are nested by the frontend.
+ * flattenPayload() - RECURSIVE PEEL-AND-DELETE.
+ * Definitively solves the { data: { data: { ... } } } nesting bug by 
+ * spreading any object inside 'data' and then DELETING the 'data' key.
  */
 export function flattenPayload(obj: any): any {
     if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
     
-    // If the object has a 'data' property that is also an object, peel it and recurse.
+    // If the object has a 'data' property that is also an object, peel it and DELETE it.
     if (obj.data && typeof obj.data === 'object' && !Array.isArray(obj.data)) {
-        return flattenPayload({ ...obj, ...obj.data });
+        const { data, ...rest } = obj;
+        return flattenPayload({ ...rest, ...data });
     }
     
     return obj;
 }
 
 /**
- * @deprecated For backward compatibility, use the shim in lib/db.ts
+ * Fingerprint constant for consistent usage across API routes.
+ */
+export const V7_FINGERPRINT = {
+    'X-Build': 'V7-STABLE',
+    'Cache-Control': 'no-store, max-age=0'
+};
+
+/**
+ * @deprecated Use getPrisma() singleton
  */
 export const prisma = {} as PrismaClient;
