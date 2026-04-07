@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload, V7_FINGERPRINT } from '@/lib/prisma';
+import { getPrisma, flattenPayload, V10_FINGERPRINT } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,56 +8,50 @@ export async function GET(req: Request) {
         const prisma = getPrisma();
         const { searchParams } = new URL(req.url);
         const group = searchParams.get('group');
-        const id = searchParams.get('id');
+        const isPublished = searchParams.get('isPublished') === 'true';
 
-        if (id) {
-            const plan = await prisma.weeklyPlan.findUnique({
-                where: { id },
-                include: { sessions: { orderBy: { sortOrder: 'asc' } } }
-            });
-            return NextResponse.json(plan, { headers: V7_FINGERPRINT });
-        }
+        let where: any = {};
+        if (group) where.group = group;
+        if (searchParams.has('isPublished')) where.isPublished = isPublished;
 
-        const where = group ? { group } : {};
         const plans = await prisma.weeklyPlan.findMany({
             where,
-            include: { sessions: { orderBy: { sortOrder: 'asc' } } },
+            include: { sessions: true },
             orderBy: { weekStart: 'desc' }
         });
-
-        return NextResponse.json(plans || [], { headers: V7_FINGERPRINT });
+        return NextResponse.json(plans || [], { headers: V10_FINGERPRINT });
     } catch (error: any) {
-        console.error("GET weekly plans error:", error);
-        return NextResponse.json([], { headers: V7_FINGERPRINT });
+        console.error('Failed to fetch weekly plans:', error);
+        return NextResponse.json([], { headers: V10_FINGERPRINT });
     }
 }
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
     try {
         const prisma = getPrisma();
-        const data = flattenPayload(await req.json());
-        
+        const data = flattenPayload(await request.json());
+
         const plan = await prisma.weeklyPlan.create({
             data: {
                 weekStart: String(data.weekStart),
                 weekEnd: String(data.weekEnd),
                 group: String(data.group),
-                title: String(data.title),
+                title: data.title,
                 coachNotes: data.coachNotes,
                 isPublished: Boolean(data.isPublished)
             }
         });
-        return NextResponse.json(plan, { status: 201, headers: V7_FINGERPRINT });
+        return NextResponse.json(plan, { headers: V10_FINGERPRINT });
     } catch (error: any) {
-        console.error("POST weekly plan error:", error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V7_FINGERPRINT });
+        console.error('Failed to create weekly plan:', error);
+        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V10_FINGERPRINT });
     }
 }
 
-export async function PUT(req: Request) {
+export async function PUT(request: Request) {
     try {
         const prisma = getPrisma();
-        const { searchParams } = new URL(req.url);
+        const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
@@ -74,24 +68,24 @@ export async function PUT(req: Request) {
                 isPublished: data.isPublished
             }
         });
-        return NextResponse.json(plan, { headers: V7_FINGERPRINT });
+        return NextResponse.json(plan, { headers: V10_FINGERPRINT });
     } catch (error: any) {
-        console.error("PUT weekly plan error:", error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V7_FINGERPRINT });
+        console.error('Failed to update weekly plan:', error);
+        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V10_FINGERPRINT });
     }
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(request: Request) {
     try {
         const prisma = getPrisma();
-        const { searchParams } = new URL(req.url);
+        const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
         await prisma.weeklyPlan.delete({ where: { id } });
-        return NextResponse.json({ success: true }, { headers: V7_FINGERPRINT });
+        return NextResponse.json({ success: true }, { headers: V10_FINGERPRINT });
     } catch (error: any) {
-        console.error("DELETE weekly plan error:", error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V7_FINGERPRINT });
+        console.error('Failed to delete weekly plan:', error);
+        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V10_FINGERPRINT });
     }
 }
