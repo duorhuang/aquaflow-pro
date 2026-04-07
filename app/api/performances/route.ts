@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload, V7_FINGERPRINT } from '@/lib/prisma';
+import { getPrisma, flattenPayload, V11_FINGERPRINT } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,10 +10,10 @@ export async function GET() {
             include: { swimmer: true },
             orderBy: { date: 'desc' }
         });
-        return NextResponse.json(performances || [], { headers: V7_FINGERPRINT });
+        return NextResponse.json(performances || [], { headers: V11_FINGERPRINT });
     } catch (error: any) {
         console.error('Failed to fetch performances:', error);
-        return NextResponse.json([], { headers: V7_FINGERPRINT });
+        return NextResponse.json([], { headers: V11_FINGERPRINT });
     }
 }
 
@@ -33,10 +33,10 @@ export async function POST(request: Request) {
                 notes: data.notes
             }
         });
-        return NextResponse.json(record, { headers: V7_FINGERPRINT });
+        return NextResponse.json(record, { headers: V11_FINGERPRINT });
     } catch (error: any) {
         console.error('Failed to record performance:', error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V7_FINGERPRINT });
+        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V11_FINGERPRINT });
     }
 }
 
@@ -60,10 +60,10 @@ export async function PUT(request: Request) {
                 notes: data.notes
             }
         });
-        return NextResponse.json(record, { headers: V7_FINGERPRINT });
+        return NextResponse.json(record, { headers: V11_FINGERPRINT });
     } catch (error: any) {
         console.error('Failed to update performance:', error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V7_FINGERPRINT });
+        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V11_FINGERPRINT });
     }
 }
 
@@ -75,9 +75,9 @@ export async function DELETE(request: Request) {
         if (!id) return NextResponse.json({ error: 'Missing id parameter' }, { status: 400 });
 
         await prisma.performanceRecord.delete({ where: { id } });
-        return NextResponse.json({ success: true }, { headers: V7_FINGERPRINT });
+        return NextResponse.json({ success: true }, { headers: V11_FINGERPRINT });
     } catch (error: any) {
         console.error('Failed to delete performance:', error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V7_FINGERPRINT });
+        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V11_FINGERPRINT });
     }
 }

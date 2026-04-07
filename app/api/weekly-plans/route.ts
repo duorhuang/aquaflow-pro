@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload, V10_FINGERPRINT } from '@/lib/prisma';
+import { getPrisma, flattenPayload, V11_FINGERPRINT } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,10 +19,10 @@ export async function GET(req: Request) {
             include: { sessions: true },
             orderBy: { weekStart: 'desc' }
         });
-        return NextResponse.json(plans || [], { headers: V10_FINGERPRINT });
+        return NextResponse.json(plans || [], { headers: V11_FINGERPRINT });
     } catch (error: any) {
         console.error('Failed to fetch weekly plans:', error);
-        return NextResponse.json([], { headers: V10_FINGERPRINT });
+        return NextResponse.json([], { headers: V11_FINGERPRINT });
     }
 }
 
@@ -41,10 +41,10 @@ export async function POST(request: Request) {
                 isPublished: Boolean(data.isPublished)
             }
         });
-        return NextResponse.json(plan, { headers: V10_FINGERPRINT });
+        return NextResponse.json(plan, { headers: V11_FINGERPRINT });
     } catch (error: any) {
         console.error('Failed to create weekly plan:', error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V10_FINGERPRINT });
+        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V11_FINGERPRINT });
     }
 }
 
@@ -68,10 +68,10 @@ export async function PUT(request: Request) {
                 isPublished: data.isPublished
             }
         });
-        return NextResponse.json(plan, { headers: V10_FINGERPRINT });
+        return NextResponse.json(plan, { headers: V11_FINGERPRINT });
     } catch (error: any) {
         console.error('Failed to update weekly plan:', error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V10_FINGERPRINT });
+        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V11_FINGERPRINT });
     }
 }
 
@@ -83,9 +83,9 @@ export async function DELETE(request: Request) {
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
         await prisma.weeklyPlan.delete({ where: { id } });
-        return NextResponse.json({ success: true }, { headers: V10_FINGERPRINT });
+        return NextResponse.json({ success: true }, { headers: V11_FINGERPRINT });
     } catch (error: any) {
         console.error('Failed to delete weekly plan:', error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V10_FINGERPRINT });
+        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V11_FINGERPRINT });
     }
 }
