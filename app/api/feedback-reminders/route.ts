@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/prisma';
+import { getPrisma, flattenPayload } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,17 +26,20 @@ export async function GET(req: Request) {
             }));
         }
 
-        return NextResponse.json(reminders || []);
+        return NextResponse.json({
+            data: reminders || [],
+            _build: "V6-STABLE"
+        });
     } catch (error: any) {
         console.error("GET reminders error:", error);
-        return NextResponse.json([]);
+        return NextResponse.json({ data: [], _build: "V6-STABLE" });
     }
 }
 
 export async function POST(req: Request) {
     try {
         const prisma = getPrisma();
-        const body = await req.json();
+        const body = flattenPayload(await req.json());
         
         // 1. Handle response submission (targetedFeedback)
         if (body.reminderId && body.swimmerId && body.content) {
@@ -49,29 +52,25 @@ export async function POST(req: Request) {
                     soreness: Number(body.soreness) || 0
                 }
             });
-            return NextResponse.json(response);
+            return NextResponse.json({ ...response, _build: "V6-STABLE" }, { status: 201 });
         }
 
         // 2. Handle reminder creation (coach)
-        // FORCE FLATTENING: Explicitly pull message and IDs regardless of nesting level
-        const message = body.message || (body.data && body.data.message);
-        const targetSwimmerIds = body.targetSwimmerIds || (body.data && body.data.targetSwimmerIds);
-
-        if (!message) {
-            return NextResponse.json({ error: "Missing 'message' in request body." }, { status: 400 });
+        if (!body.message) {
+            return NextResponse.json({ error: "Missing 'message' in request body.", _build: "V6-STABLE" }, { status: 400 });
         }
 
         const reminder = await prisma.feedbackReminder.create({
             data: {
-                message: String(message),
-                targetSwimmerIds: Array.isArray(targetSwimmerIds) ? targetSwimmerIds : null,
+                message: String(body.message),
+                targetSwimmerIds: Array.isArray(body.targetSwimmerIds) ? body.targetSwimmerIds : null,
                 periodStart: body.periodStart || new Date().toISOString().split('T')[0],
                 periodEnd: body.periodEnd || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
             }
         });
-        return NextResponse.json(reminder);
+        return NextResponse.json({ ...reminder, _build: "V6-STABLE" }, { status: 201 });
     } catch (error: any) {
         console.error("POST feedback-reminders error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: error.message, _build: "V6-STABLE" }, { status: 500 });
     }
 }

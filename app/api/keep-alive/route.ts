@@ -1,23 +1,31 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { getPrisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-// This endpoint is called periodically (via cron or external ping)
-// to keep the Neon database warm and avoid cold start delays.
+/**
+ * KEEP-ALIVE: This endpoint is called periodically to keep 
+ * the Neon database warm and avoid cold start delays.
+ * 
+ * V6-STABLE Fixed Version.
+ */
 export async function GET() {
     try {
+        const prisma = getPrisma();
         // Simple query to keep the connection alive
-        const count = await db.swimmers.findMany({ take: 1 });
+        const count = await prisma.swimmer.findMany({ take: 1 });
         return NextResponse.json({ 
             status: 'ok', 
             timestamp: new Date().toISOString(),
-            swimmerCount: count.length
+            swimmerCount: count.length,
+            _build: "V6-STABLE"
         });
     } catch (error: any) {
+        console.error("Keep-alive error:", error.message);
         return NextResponse.json({ 
             status: 'error', 
-            error: error.message 
+            error: error.message,
+            _build: "V6-STABLE"
         }, { status: 500 });
     }
 }
