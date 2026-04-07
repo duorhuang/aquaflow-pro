@@ -3,14 +3,16 @@ import { PrismaNeonHTTP } from '@prisma/adapter-neon';
 import { PrismaClient } from '@prisma/client';
 
 /**
- * V7-STABLE: The Definitive Production Engine.
- * - Stateless HTTP for Cloudflare Edge.
- * - Recursive Deep Flattening (Peel-and-Delete) to fix Prisma nesting bugs.
+ * V8-ULTRA-PURE: The Definitive Stability Engine.
+ * This client is stateless and uses HTTPS (neon-http).
  */
 const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
 };
 
+/**
+ * getPrisma() - Lazy singleton implementation optimized for Cloudflare Edge.
+ */
 export function getPrisma(): PrismaClient {
     if (globalForPrisma.prisma) return globalForPrisma.prisma;
 
@@ -28,7 +30,7 @@ export function getPrisma(): PrismaClient {
     const adapter = new PrismaNeonHTTP(sql);
     const client = new PrismaClient({ 
         adapter,
-        log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']
+        log: process.env.NODE_ENV === 'development' ? ['query'] : ['error']
     });
 
     if (process.env.NODE_ENV !== 'production') {
@@ -39,31 +41,27 @@ export function getPrisma(): PrismaClient {
 }
 
 /**
- * flattenPayload() - RECURSIVE PEEL-AND-DELETE.
- * Definitively solves the { data: { data: { ... } } } nesting bug by 
- * spreading any object inside 'data' and then DELETING the 'data' key.
+ * flattenPayload() - ITERATIVE PEEL-AND-DELETE.
+ * Definitively solves the { data: { data: { ... } } } nesting bug.
  */
-export function flattenPayload(obj: any): any {
-    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
-    
-    // If the object has a 'data' property that is also an object, peel it and DELETE it.
-    if (obj.data && typeof obj.data === 'object' && !Array.isArray(obj.data)) {
-        const { data, ...rest } = obj;
-        return flattenPayload({ ...rest, ...data });
+export function flattenPayload(body: any): any {
+    let current = body;
+    while (current && current.data && typeof current.data === 'object' && !Array.isArray(current.data)) {
+        const { data, ...rest } = current;
+        current = { ...rest, ...data };
     }
-    
-    return obj;
+    return current;
 }
 
 /**
- * Fingerprint constant for consistent usage across API routes.
+ * Standard headers for stability.
  */
-export const V7_FINGERPRINT = {
-    'X-Build': 'V7-STABLE',
-    'Cache-Control': 'no-store, max-age=0'
+export const V8_FINGERPRINT = {
+    'X-Build': 'V8-ULTRA-PURE',
+    'Cache-Control': 'no-store'
 };
 
 /**
- * @deprecated Use getPrisma() singleton
+ * @deprecated Use getPrisma()
  */
 export const prisma = {} as PrismaClient;
