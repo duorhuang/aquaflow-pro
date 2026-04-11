@@ -41,6 +41,7 @@ model Swimmer {
   performances     PerformanceRecord[]
   blockFeedbacks   BlockFeedback[]
   weeklyFeedbacks  WeeklyFeedback[]
+  dailyFeedbacks   DailyFeedback[]
   targetedFeedbacks TargetedFeedback[]
 }
 
@@ -245,6 +246,7 @@ model WeeklyFeedback {
 model DailyFeedback {
   id               String   @id @default(cuid())
   weeklyFeedbackId String
+  swimmerId        String   // Added for robust identification
   date             String   // YYYY-MM-DD
   rpe              Int?     // 1-10 fatigue
   soreness         Int?     // 1-10 soreness
@@ -253,10 +255,12 @@ model DailyFeedback {
   createdAt        DateTime @default(now())
   
   weeklyFeedback   WeeklyFeedback @relation(fields: [weeklyFeedbackId], references: [id], onDelete: Cascade)
+  swimmer          Swimmer  @relation(fields: [swimmerId], references: [id], onDelete: Cascade)
   
   @@index([weeklyFeedbackId])
   @@index([date])
-  @@unique([weeklyFeedbackId, date])
+  @@index([swimmerId])
+  @@unique([swimmerId, date])
 }
 
 // Coach-initiated feedback reminder

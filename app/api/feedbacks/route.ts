@@ -1,24 +1,22 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload, V11_FINGERPRINT } from '@/lib/prisma';
+import { getPrisma, flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
+import { withApiHandler } from '@/lib/api-handler';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-    try {
+    return withApiHandler(async () => {
         const prisma = getPrisma();
         const feedbacks = await prisma.feedback.findMany({
             include: { swimmer: true },
             orderBy: { createdAt: 'desc' }
         });
-        return NextResponse.json(feedbacks || [], { headers: V11_FINGERPRINT });
-    } catch (error: any) {
-        console.error('Failed to fetch feedbacks:', error);
-        return NextResponse.json([], { headers: V11_FINGERPRINT });
-    }
+        return NextResponse.json(feedbacks || [], { headers: V12_FINGERPRINT });
+    });
 }
 
 export async function POST(request: Request) {
-    try {
+    return withApiHandler(async () => {
         const prisma = getPrisma();
         const data = flattenPayload(await request.json());
         
@@ -35,9 +33,6 @@ export async function POST(request: Request) {
                 improvementAreas: data.improvementAreas
             }
         });
-        return NextResponse.json(feedback, { headers: V11_FINGERPRINT });
-    } catch (error: any) {
-        console.error('Failed to submit feedback:', error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V11_FINGERPRINT });
-    }
+        return NextResponse.json(feedback, { headers: V12_FINGERPRINT });
+    });
 }

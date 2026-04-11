@@ -58,8 +58,8 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
     const { t } = useLanguage();
     const { addPlan, updatePlan, deletePlan, swimmers, addTemplate } = useStore();
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
-    const [editorMode, setEditorMode] = useState<"text" | "photo">("text");
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [aiAnalysis, setAiAnalysis] = useState<{ summary?: string; safetyAlerts?: string[]; suggestions?: any[] } | null>(null);
 
     // Initialize State
@@ -276,23 +276,33 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
         }
     };
 
-    const handleSave = () => {
-        const notesCount = Object.keys(plan.targetedNotes || {}).length;
+    const handleSave = async () => {
+        if (isSaving) return;
+        
+        setIsSaving(true);
+        try {
+            const notesCount = Object.keys(plan.targetedNotes || {}).length;
 
-        if (initialPlan) {
-            updatePlan(plan.id, plan);
-        } else {
-            addPlan(plan);
+            if (initialPlan) {
+                await updatePlan(plan.id, plan);
+            } else {
+                await addPlan(plan);
+            }
+
+            const message = `✅ 计划已保存！\n\n` +
+                `📅 日期: ${plan.date}\n` +
+                `👥 组别: ${plan.group === "Advanced" ? "高级组" : plan.group === "Intermediate" ? "中级组" : "初级组"}\n` +
+                `🏊 总距离: ${plan.totalDistance}m\n` +
+                `📝 备注: 已为 ${notesCount} 位队员添加备注`;
+
+            alert(message);
+            router.push("/dashboard");
+        } catch (error) {
+            console.error("Failed to save plan:", error);
+            alert("❌ 保存失败: 无法连接至服务器或数据库。请检查网络后重试。");
+        } finally {
+            setIsSaving(false);
         }
-
-        const message = `✅ 计划已保存！\n\n` +
-            `📅 日期: ${plan.date}\n` +
-            `👥 组别: ${plan.group === "Advanced" ? "高级组" : plan.group === "Intermediate" ? "中级组" : "初级组"}\n` +
-            `🏊 总距离: ${plan.totalDistance}m\n` +
-            `📝 备注: 已为 ${notesCount} 位队员添加备注`;
-
-        alert(message);
-        router.push("/dashboard");
     };
 
     useEffect(() => {
@@ -413,17 +423,18 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
 
                             <button
                                 onClick={handleSave}
+                                disabled={isSaving || isAnalyzing}
                                 className={cn(
                                     "flex items-center gap-2 px-4 md:px-6 py-2 rounded-full font-bold transition-all shadow-[0_0_15px_rgba(100,255,218,0.3)] text-xs md:text-sm",
-                                    isAnalyzing
+                                    (isSaving || isAnalyzing)
                                         ? "bg-yellow-500/80 text-white cursor-wait"
                                         : "bg-primary text-primary-foreground hover:brightness-110"
                                 )}
                             >
-                                {isAnalyzing ? (
+                                {(isSaving || isAnalyzing) ? (
                                     <>
                                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        {t.editor.publishPlan} (AI...)
+                                        {isSaving ? "正在保存..." : `${t.editor.publishPlan} (AI...)`}
                                     </>
                                 ) : (
                                     <>

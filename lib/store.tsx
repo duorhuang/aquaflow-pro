@@ -15,6 +15,7 @@ interface StoreContextType {
     feedbacks: Feedback[];
     attendance: AttendanceRecord[];
     performances: PerformanceRecord[];
+    weeklyPlans: any[];
     addPlan: (plan: TrainingPlan) => void;
     updatePlan: (id: string, updates: Partial<TrainingPlan>) => void;
     deletePlan: (id: string) => void;
@@ -55,6 +56,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
     const [performances, setPerformances] = useState<PerformanceRecord[]>([]);
     const [templates, setTemplates] = useState<BlockTemplate[]>([]);
+    const [weeklyPlans, setWeeklyPlans] = useState<any[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
     const [dbWaking, setDbWaking] = useState(false);
     const lastMutationRef = useRef<number>(0);
@@ -75,13 +77,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                     fetchedSwimmers,
                     fetchedFeedbacks,
                     fetchedAttendance,
-                    fetchedPerformances
+                    fetchedPerformances,
+                    fetchedWeeklyPlans
                 ] = await Promise.all([
                     api.plans.getAll(),
                     api.swimmers.getAll(),
                     api.feedbacks.getAll(),
                     api.attendance.getAll(),
-                    api.performances.getAll()
+                    api.performances.getAll(),
+                    api.weeklyPlans.getAll()
                 ]);
 
                 setPlans(fetchedPlans || []);
@@ -89,6 +93,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 setFeedbacks(fetchedFeedbacks || []);
                 setAttendance(fetchedAttendance || []);
                 setPerformances(fetchedPerformances || []);
+                setWeeklyPlans((fetchedWeeklyPlans || []).filter((p: any) => p.isPublished));
 
                 // Load templates from localStorage
                 const savedTemplates = localStorage.getItem("aquaflow_templates");
@@ -108,7 +113,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
         loadData();
 
-        // Auto-sync every 45s for stability
+        // Auto-sync every 30s for better real-time experience
         const syncInterval = setInterval(async () => {
             if (Date.now() - lastMutationRef.current < 15000) {
                 console.log("⏳ Sync deferred: Local mutation in progress...");
@@ -116,12 +121,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             }
 
             try {
-                const [plans, swimmers, feedbacks, attendance, performances] = await Promise.all([
+                const [plans, swimmers, feedbacks, attendance, performances, weeklyPlans] = await Promise.all([
                     api.plans.getAll(),
                     api.swimmers.getAll(),
                     api.feedbacks.getAll(),
                     api.attendance.getAll(),
-                    api.performances.getAll()
+                    api.performances.getAll(),
+                    api.weeklyPlans.getAll()
                 ]);
 
                 setPlans(plans || []);
@@ -129,10 +135,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 setFeedbacks(feedbacks || []);
                 setAttendance(attendance || []);
                 setPerformances(performances || []);
+                setWeeklyPlans((weeklyPlans || []).filter((p: any) => p.isPublished));
             } catch (error) {
                 console.error("Auto-sync failed:", error);
             }
-        }, 45000);
+        }, 30000);
 
         return () => clearInterval(syncInterval);
     }, []);
@@ -151,7 +158,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setPlans((prev) => [plan, ...prev]);
         try {
             await api.plans.create(plan);
-        } catch (e) { console.error("Sync error", e); }
+            console.log("✅ Plan synced to server");
+        } catch (e) { 
+            console.error("❌ Sync error (addPlan):", e);
+            throw e; // Propagate error so UI can show "Send Failed"
+        }
     };
 
     const updatePlan = async (id: string, updates: Partial<TrainingPlan>) => {
@@ -161,8 +172,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             const currentPlan = plans.find(p => p.id === id);
             if (currentPlan) {
                 await api.plans.update(id, { ...currentPlan, ...updates });
+                console.log("✅ Plan update synced");
             }
-        } catch (e) { console.error("Sync error", e); }
+        } catch (e) { 
+            console.error("❌ Sync error (updatePlan):", e);
+            throw e;
+        }
     };
 
     const deletePlan = async (id: string) => {
@@ -179,7 +194,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         adjustXP(fb.swimmerId, 20);
         try {
             await api.feedbacks.create(fb);
-        } catch (e) { console.error("Sync error", e); }
+            console.log("✅ Feedback synced");
+        } catch (e) { 
+            console.error("❌ Sync error (submitFeedback):", e);
+            throw e;
+        }
         markAttendance(fb.swimmerId);
     };
 
@@ -382,7 +401,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <StoreContext.Provider value={{
-            isLoaded, plans, swimmers, feedbacks, attendance, performances,
+            isLoaded, plans, swimmers, feedbacks, attendance, performances, weeklyPlans,
             addPlan, updatePlan, deletePlan, submitFeedback, markAttendance, unmarkAttendance,
             batchMarkAttendance, batchUnmarkAttendance, adjustXP, addSwimmer, updateSwimmer, deleteSwimmer,
             dbWaking, recordMutation, getSwimmerArgs: (id) => {

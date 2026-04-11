@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload, V11_FINGERPRINT } from '@/lib/prisma';
+import { getPrisma, flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
+import { withApiHandler } from '@/lib/api-handler';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-    try {
+    return withApiHandler(async () => {
         const prisma = getPrisma();
         const { searchParams } = new URL(req.url);
         const swimmerId = searchParams.get('swimmerId');
@@ -15,22 +16,19 @@ export async function GET(req: Request) {
                 where: { swimmerId_weekStart: { swimmerId, weekStart } },
                 include: { dailyFeedbacks: true, swimmer: true }
             });
-            return NextResponse.json(feedback, { headers: V11_FINGERPRINT });
+            return NextResponse.json(feedback, { headers: V12_FINGERPRINT });
         }
 
         const feedbacks = await prisma.weeklyFeedback.findMany({
             include: { dailyFeedbacks: true, swimmer: true },
             orderBy: { weekStart: 'desc' }
         });
-        return NextResponse.json(feedbacks || [], { headers: V11_FINGERPRINT });
-    } catch (error: any) {
-        console.error('Failed to fetch weekly feedbacks:', error);
-        return NextResponse.json([], { headers: V11_FINGERPRINT });
-    }
+        return NextResponse.json(feedbacks || [], { headers: V12_FINGERPRINT });
+    });
 }
 
 export async function POST(request: Request) {
-    try {
+    return withApiHandler(async () => {
         const prisma = getPrisma();
         const data = flattenPayload(await request.json());
         
@@ -47,9 +45,9 @@ export async function POST(request: Request) {
                 repliedAt: coachReply ? new Date().toISOString() : undefined,
                 dailyFeedbacks: dailyFeedbacks ? {
                     upsert: dailyFeedbacks.map((df: any) => ({
-                        where: { weeklyFeedbackId_date: { weeklyFeedbackId: 'temp', date: df.date } },
+                        where: { swimmerId_date: { swimmerId, date: df.date } }, // Uses the unique constraint on DailyFeedback
                         update: { rpe: df.rpe, soreness: df.soreness, reflection: df.reflection },
-                        create: { date: df.date, rpe: df.rpe, soreness: df.soreness, reflection: df.reflection }
+                        create: { date: df.date, rpe: df.rpe, soreness: df.soreness, reflection: df.reflection, swimmerId }
                     }))
                 } : undefined
             },
@@ -61,20 +59,17 @@ export async function POST(request: Request) {
                 submittedAt: isSubmitted ? new Date().toISOString() : undefined,
                 dailyFeedbacks: dailyFeedbacks ? {
                     create: dailyFeedbacks.map((df: any) => ({
-                        date: df.date, rpe: df.rpe, soreness: df.soreness, reflection: df.reflection
+                        date: df.date, rpe: df.rpe, soreness: df.soreness, reflection: df.reflection, swimmerId
                     }))
                 } : undefined
             }
         });
-        return NextResponse.json(feedback, { headers: V11_FINGERPRINT });
-    } catch (error: any) {
-        console.error('Failed to save weekly feedback:', error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V11_FINGERPRINT });
-    }
+        return NextResponse.json(feedback, { headers: V12_FINGERPRINT });
+    });
 }
 
 export async function PATCH(request: Request) {
-    try {
+    return withApiHandler(async () => {
         const prisma = getPrisma();
         const data = flattenPayload(await request.json());
         const { id, coachReply, isReplied } = data;
@@ -87,9 +82,6 @@ export async function PATCH(request: Request) {
                 repliedAt: new Date().toISOString()
             }
         });
-        return NextResponse.json(feedback, { headers: V11_FINGERPRINT });
-    } catch (error: any) {
-        console.error('Failed to reply weekly feedback:', error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V11_FINGERPRINT });
-    }
+        return NextResponse.json(feedback, { headers: V12_FINGERPRINT });
+    });
 }

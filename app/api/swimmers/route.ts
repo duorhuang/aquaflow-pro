@@ -1,23 +1,21 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload, V11_FINGERPRINT } from '@/lib/prisma';
+import { getPrisma, flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
+import { withApiHandler } from '@/lib/api-handler';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-    try {
+    return withApiHandler(async () => {
         const prisma = getPrisma();
         const swimmers = await prisma.swimmer.findMany({
             orderBy: { name: 'asc' }
         });
-        return NextResponse.json(swimmers || [], { headers: V11_FINGERPRINT });
-    } catch (error: any) {
-        console.error('Failed to fetch swimmers:', error);
-        return NextResponse.json([], { headers: V11_FINGERPRINT });
-    }
+        return NextResponse.json(swimmers || [], { headers: V12_FINGERPRINT });
+    });
 }
 
 export async function POST(request: Request) {
-    try {
+    return withApiHandler(async () => {
         const prisma = getPrisma();
         const data = flattenPayload(await request.json());
 
@@ -33,17 +31,12 @@ export async function POST(request: Request) {
                 level: Number(data.level) || 1
             }
         });
-        return NextResponse.json(swimmer, { headers: V11_FINGERPRINT });
-    } catch (error: any) {
-        console.error('Failed to create swimmer:', error);
-        let errorMsg = 'Failed to create swimmer';
-        if (error.code === 'P2002') errorMsg = '该用户名已被其他队员占用。';
-        return NextResponse.json({ error: errorMsg }, { status: 500, headers: V11_FINGERPRINT });
-    }
+        return NextResponse.json(swimmer, { headers: V12_FINGERPRINT });
+    });
 }
 
 export async function PUT(request: Request) {
-    try {
+    return withApiHandler(async () => {
         const prisma = getPrisma();
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
@@ -64,24 +57,18 @@ export async function PUT(request: Request) {
                 level: data.level !== undefined ? Number(data.level) : undefined
             }
         });
-        return NextResponse.json(swimmer, { headers: V11_FINGERPRINT });
-    } catch (error: any) {
-        console.error('Failed to update swimmer:', error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V11_FINGERPRINT });
-    }
+        return NextResponse.json(swimmer, { headers: V12_FINGERPRINT });
+    });
 }
 
 export async function DELETE(request: Request) {
-    try {
+    return withApiHandler(async () => {
         const prisma = getPrisma();
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
         await prisma.swimmer.delete({ where: { id } });
-        return NextResponse.json({ success: true }, { headers: V11_FINGERPRINT });
-    } catch (error: any) {
-        console.error('Failed to delete swimmer:', error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V11_FINGERPRINT });
-    }
+        return NextResponse.json({ success: true }, { headers: V12_FINGERPRINT });
+    });
 }

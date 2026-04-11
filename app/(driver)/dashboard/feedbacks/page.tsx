@@ -51,11 +51,11 @@ export default function FeedbacksPage() {
         setSavingId(id);
         try {
             await api.weeklyFeedbacks.reply(id, replyText);
-            alert("已发送反馈回复给队员！");
+            alert("✅ 已发送反馈回复给队员！");
             await load();
         } catch (e) {
             console.error(e);
-            alert("发送失败");
+            alert("❌ 发送失败: 服务器连接异常。此问题通常与数据库冷启动或网络延迟有关，请重试。");
         } finally {
             setSavingId(null);
         }

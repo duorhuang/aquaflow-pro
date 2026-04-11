@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload, V11_FINGERPRINT } from '@/lib/prisma';
+import { getPrisma, flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
+import { withApiHandler } from '@/lib/api-handler';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-    try {
+    return withApiHandler(async () => {
         const prisma = getPrisma();
         const { searchParams } = new URL(req.url);
         const group = searchParams.get('group');
@@ -19,15 +20,12 @@ export async function GET(req: Request) {
             include: { sessions: true },
             orderBy: { weekStart: 'desc' }
         });
-        return NextResponse.json(plans || [], { headers: V11_FINGERPRINT });
-    } catch (error: any) {
-        console.error('Failed to fetch weekly plans:', error);
-        return NextResponse.json([], { headers: V11_FINGERPRINT });
-    }
+        return NextResponse.json(plans || [], { headers: V12_FINGERPRINT });
+    });
 }
 
 export async function POST(request: Request) {
-    try {
+    return withApiHandler(async () => {
         const prisma = getPrisma();
         const data = flattenPayload(await request.json());
 
@@ -41,15 +39,12 @@ export async function POST(request: Request) {
                 isPublished: Boolean(data.isPublished)
             }
         });
-        return NextResponse.json(plan, { headers: V11_FINGERPRINT });
-    } catch (error: any) {
-        console.error('Failed to create weekly plan:', error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V11_FINGERPRINT });
-    }
+        return NextResponse.json(plan, { headers: V12_FINGERPRINT });
+    });
 }
 
 export async function PUT(request: Request) {
-    try {
+    return withApiHandler(async () => {
         const prisma = getPrisma();
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
@@ -68,24 +63,18 @@ export async function PUT(request: Request) {
                 isPublished: data.isPublished
             }
         });
-        return NextResponse.json(plan, { headers: V11_FINGERPRINT });
-    } catch (error: any) {
-        console.error('Failed to update weekly plan:', error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V11_FINGERPRINT });
-    }
+        return NextResponse.json(plan, { headers: V12_FINGERPRINT });
+    });
 }
 
 export async function DELETE(request: Request) {
-    try {
+    return withApiHandler(async () => {
         const prisma = getPrisma();
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
         await prisma.weeklyPlan.delete({ where: { id } });
-        return NextResponse.json({ success: true }, { headers: V11_FINGERPRINT });
-    } catch (error: any) {
-        console.error('Failed to delete weekly plan:', error);
-        return NextResponse.json({ error: 'Failed' }, { status: 500, headers: V11_FINGERPRINT });
-    }
+        return NextResponse.json({ success: true }, { headers: V12_FINGERPRINT });
+    });
 }

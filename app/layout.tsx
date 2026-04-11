@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   icons: {
     apple: "/icon-192.png",
   },
+  other: {
+    "x-build": "V12-STRATOSPHERE",
+  }
 };
 
 export const viewport: Viewport = {

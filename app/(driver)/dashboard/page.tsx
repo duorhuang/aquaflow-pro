@@ -1,6 +1,7 @@
 "use client";
 
 import { useStore } from "@/lib/store";
+import { useMemo } from "react";
 import { PlanCard } from "@/components/dashboard/PlanCard";
 import { TodayAttendance } from "@/components/dashboard/TodayAttendance";
 import { SwimmerStatusPanel } from "@/components/dashboard/SwimmerStatusPanel";
@@ -21,7 +22,9 @@ export default function DashboardPage() {
     const router = useRouter();
 
     // Get visible plans (active < 14 days OR starred) and sort
-    const visiblePlans = getVisiblePlans().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const visiblePlans = useMemo(() => {
+        return getVisiblePlans().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }, [getVisiblePlans]);
 
     const handleLogout = () => {
         localStorage.removeItem("aquaflow_coach_session");

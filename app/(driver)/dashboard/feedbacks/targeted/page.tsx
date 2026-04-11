@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
-import { Send, Target, MessageSquare, Calendar } from "lucide-react";
+import { Send, Target, MessageSquare, Calendar, Loader2 } from "lucide-react";
 import { getLocalDateISOString } from "@/lib/date-utils";
 
 export default function TargetedFeedbacksPage() {
@@ -13,6 +13,7 @@ export default function TargetedFeedbacksPage() {
     const [targetIds, setTargetIds] = useState<string[]>([]);
     const [periodStart, setPeriodStart] = useState(getLocalDateISOString(new Date()));
     const [periodEnd, setPeriodEnd] = useState(getLocalDateISOString(new Date()));
+    const [isSending, setIsSending] = useState(false);
 
     useEffect(() => {
         load();
@@ -36,7 +37,8 @@ export default function TargetedFeedbacksPage() {
     };
 
     const handleSend = async () => {
-        if (!message) return;
+        if (!message || isSending) return;
+        setIsSending(true);
         try {
             await api.feedbackReminders.create({
                 message,
@@ -46,11 +48,13 @@ export default function TargetedFeedbacksPage() {
             });
             setMessage("");
             setTargetIds([]);
-            load();
-            alert("专项反馈要求已发出！");
+            await load();
+            alert("✅ 专项反馈要求已发出！");
         } catch (e) {
             console.error(e);
-            alert("发送失败");
+            alert("❌ 发送失败: 服务器响应异常，请检查网络后再试。");
+        } finally {
+            setIsSending(false);
         }
     };
 
@@ -118,11 +122,11 @@ export default function TargetedFeedbacksPage() {
                 <div className="flex justify-end">
                     <button
                         onClick={handleSend}
-                        disabled={!message}
-                        className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 disabled:opacity-50"
+                        disabled={!message || isSending}
+                        className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 disabled:opacity-50 transition-all"
                     >
-                        <Send className="w-4 h-4" />
-                        发布通知
+                        {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        {isSending ? "正在发布..." : "发布通知"}
                     </button>
                 </div>
             </div>

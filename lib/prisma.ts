@@ -2,8 +2,10 @@ import { neon } from '@neondatabase/serverless';
 import { PrismaNeonHTTP } from '@prisma/adapter-neon';
 import { PrismaClient } from '@prisma/client';
 
+console.log("[V12_MODULE_LOAD] lib/prisma.ts is loading...");
+
 /**
- * V11-ULTRA-FINAL-RESTORE: The Absolute Stabilizer.
+ * V12-STRATOSPHERE-RECOVERY: The Definitive Stabilizer.
  * Addressing the 1101 Exception by delaying Prisma initialization 
  * until the first actual database query. This ensures the worker DOES NOT crash
  * during the environment cold-start if secrets are transiently unavailable.
@@ -14,37 +16,52 @@ const globalForPrisma = globalThis as unknown as {
 
 /**
  * getPrisma() - Fault-Tolerant Lazy Singleton for Cloudflare Edge.
- * V11: Explicitly prevents top-level worker exceptions.
+ * V12: Explicitly prevents top-level worker exceptions.
  */
 export function getPrisma(): PrismaClient {
     if (globalForPrisma.prisma) return globalForPrisma.prisma;
 
+    // V12_ADVANCED: Detect if we are in a build phase.
+    const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+    
+    if (isBuildPhase) {
+        console.log("[V12_BUILD_BYPASS] Returning Proxy client during build phase.");
+        // Return a proxy that handles any property access without crashing
+        return new Proxy({} as PrismaClient, {
+            get: (target, prop) => {
+                if (prop === 'then') return undefined; // Avoid promise-like behavior
+                return new Proxy(() => {}, {
+                    apply: () => Promise.resolve([]), // Mock method calls
+                    get: (t, p) => p === 'then' ? undefined : t[p as any]
+                });
+            }
+        });
+    }
+
+    console.time("[V12_INIT_TIMER]");
     try {
         let connectionString = process.env.DATABASE_URL || '';
-        const match = connectionString.match(/(postgresql?:\/\/[^\s"']+)/);
-        if (match) connectionString = match[1];
+        
+        const match = connectionString.match(/postgresql?:\/\/[^\s"']+/);
+        if (match) connectionString = match[0];
 
-        // If the connection string is missing, we log it but don't crash yet.
         if (!connectionString || connectionString.includes('dummy')) {
-             console.error("[V11_DIAGNOSTIC] Missing or invalid DATABASE_URL at runtime.");
+             console.warn("[V12_DIAGNOSTIC] DATABASE_URL is missing or invalid.");
         }
 
         const sql = neon(connectionString);
         const adapter = new PrismaNeonHTTP(sql);
         const client = new PrismaClient({ 
             adapter,
-            log: ['error']
+            log: ['error', 'warn']
         });
 
-        if (process.env.NODE_ENV !== 'production') {
-            globalForPrisma.prisma = client;
-        }
-        
+        globalForPrisma.prisma = client;
+        console.timeEnd("[V12_INIT_TIMER]");
         return client;
     } catch (error: any) {
-        console.error("[V11_INITIALIZATION_EXCEPTION]", error.message);
-        // Fallback: throw a clean error that the route handler can catch, 
-        // rather than letting the entire worker 1101 crash.
+        console.timeEnd("[V12_INIT_TIMER]");
+        console.error("[V12_INITIALIZATION_EXCEPTION]", error.message);
         throw error;
     }
 }
@@ -63,10 +80,10 @@ export function flattenPayload(body: any): any {
 }
 
 /**
- * Standard headers for V11 verification.
+ * Standard headers for V12 verification.
  */
-export const V11_FINGERPRINT = {
-    'X-Build': 'V11-ULTRA-FINAL-RESTORE',
+export const V12_FINGERPRINT = {
+    'X-Build': 'V12-STRATOSPHERE-RECOVERY',
     'Cache-Control': 'no-store'
 };
 

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload, V11_FINGERPRINT } from '@/lib/prisma';
+import { getPrisma, flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
+import { withApiHandler } from '@/lib/api-handler';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-    try {
+    return withApiHandler(async () => {
         const prisma = getPrisma();
         const { searchParams } = new URL(req.url);
         const swimmerId = searchParams.get('swimmerId');
@@ -26,15 +27,12 @@ export async function GET(req: Request) {
             }));
         }
 
-        return NextResponse.json(reminders || [], { headers: V11_FINGERPRINT });
-    } catch (error: any) {
-        console.error("GET reminders error:", error);
-        return NextResponse.json([], { headers: V11_FINGERPRINT });
-    }
+        return NextResponse.json(reminders || [], { headers: V12_FINGERPRINT });
+    });
 }
 
 export async function POST(req: Request) {
-    try {
+    return withApiHandler(async () => {
         const prisma = getPrisma();
         const body = flattenPayload(await req.json());
         
@@ -49,12 +47,12 @@ export async function POST(req: Request) {
                     soreness: Number(body.soreness) || 0
                 }
             });
-            return NextResponse.json(response, { status: 201, headers: V11_FINGERPRINT });
+            return NextResponse.json(response, { status: 201, headers: V12_FINGERPRINT });
         }
 
         // 2. Handle reminder creation (coach)
         if (!body.message) {
-            return NextResponse.json({ error: "Missing 'message' in request body." }, { status: 400, headers: V11_FINGERPRINT });
+            return NextResponse.json({ error: "Missing 'message'" }, { status: 400, headers: V12_FINGERPRINT });
         }
 
         const reminder = await prisma.feedbackReminder.create({
@@ -65,9 +63,6 @@ export async function POST(req: Request) {
                 periodEnd: body.periodEnd || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
             }
         });
-        return NextResponse.json(reminder, { status: 201, headers: V11_FINGERPRINT });
-    } catch (error: any) {
-        console.error("POST feedback-reminders error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500, headers: V11_FINGERPRINT });
-    }
+        return NextResponse.json(reminder, { status: 201, headers: V12_FINGERPRINT });
+    });
 }

@@ -22,12 +22,11 @@ import { getLocalDateISOString } from "@/lib/date-utils";
 export default function AthleteWorkoutPage() {
     const { t } = useLanguage();
     const router = useRouter();
-    const { plans, swimmers, attendance, updateSwimmer } = useStore();
+    const { plans, swimmers, attendance, updateSwimmer, weeklyPlans, isLoaded: storeLoaded } = useStore();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [currentUser, setCurrentUser] = useState<Swimmer | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'plan' | 'weekly' | 'memberFeedback' | 'trainingFeedback' | 'history' | 'performance' | 'status' | 'stats'>('plan');
-    const [weeklyPlans, setWeeklyPlans] = useState<any[]>([]);
     const [pendingReminders, setPendingReminders] = useState(0);
 
     // Get current week Monday
@@ -64,21 +63,9 @@ export default function AthleteWorkoutPage() {
         }
         setIsLoading(false);
 
-        // Load weekly plans
-        loadWeeklyPlans();
-
         // Load pending reminder count for badge
         loadPendingReminders(storedId);
     }, [swimmers, router]);
-
-    const loadWeeklyPlans = async () => {
-        try {
-            const plans = await api.weeklyPlans.getAll();
-            setWeeklyPlans(plans.filter((p: any) => p.isPublished));
-        } catch (e) {
-            console.error("Failed to load weekly plans", e);
-        }
-    };
 
     const loadPendingReminders = async (swimmerId: string) => {
         try {
@@ -118,22 +105,39 @@ export default function AthleteWorkoutPage() {
     };
 
     // Get plan for selected date
-    const getSelectedDatePlan = (): TrainingPlan | null => {
+    const getSelectedDatePlan = (): (TrainingPlan & { isDerived?: boolean }) | null => {
         if (!currentUser) return null;
         const dateStr = getLocalDateISOString(selectedDate);
+        
+        // 1. Try to find a standalone daily plan
         const dayPlans = plans.filter(p =>
             p.date === dateStr &&
             p.group === currentUser.group
         );
 
-        // Debug logging
-        if (dayPlans.length > 0) {
-            console.log('📅 Found plan for date:', dateStr);
-            console.log('👤 Current user ID:', currentUser.id);
-            console.log('📝 Targeted notes:', dayPlans[0].targetedNotes);
+        if (dayPlans.length > 0) return dayPlans[0];
+
+        // 2. FALLBACK: Derive from Weekly Plans if no daily plan exists
+        // [V12-SYNC-BRIDGE]
+        for (const wp of weeklyPlans) {
+            const session = wp.sessions?.find((s: any) => s.date === dateStr);
+            if (session) {
+                console.log('🔗 Mapping weekly session to daily view:', session.label);
+                return {
+                    id: `derived-${session.id}`,
+                    date: dateStr,
+                    group: currentUser.group,
+                    totalDistance: 0, // Weekly sessions might not have distance field
+                    focus: session.label,
+                    imageUrl: session.imageUrl || session.imageData,
+                    blocks: [],
+                    isDerived: true, // Metadata for UI info
+                    targetedNotes: {}
+                };
+            }
         }
 
-        return dayPlans.length > 0 ? dayPlans[0] : null;
+        return null;
     };
 
     // Calculate monthly stats
@@ -172,13 +176,13 @@ export default function AthleteWorkoutPage() {
         }
     };
 
-    if (isLoading) {
+    if (isLoading || !storeLoaded) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="text-center group">
                     <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
                     <p className="text-muted-foreground animate-pulse font-mono text-xs uppercase tracking-widest">
-                        Synchronizing AquaFlow Stats...
+                        Syncing AquaFlow Core...
                     </p>
                 </div>
             </div>
@@ -228,9 +232,12 @@ export default function AthleteWorkoutPage() {
                             <h1 className="text-lg font-bold text-white">{currentUser.name}</h1>
                             <div className="flex items-center gap-2">
                                 <div className="w-24 h-2 bg-secondary rounded-full overflow-hidden">
-                                    <div className="h-full bg-yellow-400 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                                <div className="h-full bg-yellow-400 rounded-full transition-all" style={{ width: `${progress}%` }} />
                                 </div>
-                                <p className="text-[10px] text-muted-foreground">{xp} XP</p>
+                                <div className="flex items-center gap-1">
+                                    <p className="text-[10px] text-muted-foreground">{xp} XP</p>
+                                    <div className="w-1 h-1 bg-primary rounded-full animate-pulse" title="Ready & Synced" />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -430,6 +437,15 @@ export default function AthleteWorkoutPage() {
                         {/* Plan Display */}
                         {selectedPlan ? (
                             <>
+                                {selectedPlan.isDerived && (
+                                    <div className="bg-purple-500/10 border border-purple-500/30 p-3 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-left-4">
+                                        <FolderOpen className="w-4 h-4 text-purple-400" />
+                                        <p className="text-[11px] text-purple-200">
+                                            这是从<span className="font-bold">本周大纲</span>中提取的训练内容
+                                        </p>
+                                    </div>
+                                )}
+
                                 {/* Plan Summary */}
                                 <div className="bg-gradient-to-br from-secondary to-card p-6 rounded-3xl border border-white/5">
                                     {selectedPlan.imageUrl ? (
