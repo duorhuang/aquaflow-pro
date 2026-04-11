@@ -287,6 +287,8 @@ model TargetedFeedback {
   content     String   // Athlete's feedback text
   rpe         Int?     // Optional RPE
   soreness    Int?     // Optional soreness
+  coachReply  String?  // Coach's reply to this specific response
+  repliedAt   String?  // ISO date when coach replied
   
   createdAt   DateTime @default(now())
   

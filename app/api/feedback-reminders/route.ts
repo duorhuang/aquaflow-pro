@@ -66,3 +66,24 @@ export async function POST(req: Request) {
         return NextResponse.json(reminder, { status: 201, headers: V12_FINGERPRINT });
     });
 }
+
+export async function PATCH(req: Request) {
+    return withApiHandler(async () => {
+        const prisma = getPrisma();
+        const body = flattenPayload(await req.json());
+        
+        if (!body.id || !body.coachReply) {
+            return NextResponse.json({ error: "Missing 'id' or 'coachReply'" }, { status: 400, headers: V12_FINGERPRINT });
+        }
+
+        const response = await prisma.targetedFeedback.update({
+            where: { id: body.id },
+            data: {
+                coachReply: body.coachReply,
+                repliedAt: new Date().toISOString()
+            }
+        });
+
+        return NextResponse.json(response, { headers: V12_FINGERPRINT });
+    });
+}

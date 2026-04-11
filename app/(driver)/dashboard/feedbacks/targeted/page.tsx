@@ -148,11 +148,43 @@ export default function TargetedFeedbacksPage() {
                         <div className="space-y-3 border-t border-white/10 pt-3">
                             <h4 className="text-xs text-muted-foreground font-bold">队员回复 ({r.responses?.length || 0})</h4>
                             {r.responses?.map((resp: any) => (
-                                <div key={resp.id} className="bg-black/30 p-3 rounded-lg flex items-start gap-3">
-                                    <MessageSquare className="w-4 h-4 text-orange-400 mt-0.5" />
-                                    <div>
-                                        <p className="text-sm font-bold text-white">{resp.swimmer?.name || "未知"}</p>
-                                        <p className="text-sm text-muted-foreground">{resp.content}</p>
+                                <div key={resp.id} className="bg-black/30 p-4 rounded-xl space-y-3">
+                                    <div className="flex items-start gap-3">
+                                        <MessageSquare className="w-4 h-4 text-orange-400 mt-0.5" />
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <p className="text-sm font-bold text-white">{resp.swimmer?.name || "未知"}</p>
+                                                <span className="text-[10px] text-muted-foreground">{new Date(resp.createdAt).toLocaleDateString()}</span>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground bg-white/5 p-2 rounded-lg">{resp.content}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Coach Reply Section */}
+                                    <div className="ml-7 pt-2 border-t border-white/5 space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                                            <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">教练批复</p>
+                                        </div>
+                                        <textarea
+                                            placeholder="点击输入批复内容，队员将立即收到通知..."
+                                            defaultValue={resp.coachReply || ""}
+                                            onBlur={async (e) => {
+                                                const val = e.target.value.trim();
+                                                if (val && val !== resp.coachReply) {
+                                                    try {
+                                                        await api.feedbackReminders.replyToTargeted(resp.id, val);
+                                                        console.log("Reply saved");
+                                                    } catch (err) {
+                                                        alert("回复失败，请检查网络");
+                                                    }
+                                                }
+                                            }}
+                                            className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-xs text-white placeholder-muted-foreground/50 focus:ring-1 focus:ring-orange-500 outline-none resize-none h-16"
+                                        />
+                                        {resp.repliedAt && (
+                                            <p className="text-[9px] text-muted-foreground italic text-right">上次回复于: {new Date(resp.repliedAt).toLocaleString()}</p>
+                                        )}
                                     </div>
                                 </div>
                             ))}

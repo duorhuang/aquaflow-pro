@@ -107,5 +107,6 @@ export const api = {
             fetchAPI<any[]>(`/feedback-reminders?swimmerId=${swimmerId}`),
         create: (data: any) => fetchAPI<any>('/feedback-reminders', { method: 'POST', body: JSON.stringify(data) }),
         respond: (data: any) => fetchAPI<any>('/feedback-reminders', { method: 'POST', body: JSON.stringify(data) }),
+        replyToTargeted: (id: string, coachReply: string) => fetchAPI<any>('/feedback-reminders', { method: 'PATCH', body: JSON.stringify({ id, coachReply }) }),
     }
 };

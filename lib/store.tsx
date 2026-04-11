@@ -45,6 +45,7 @@ interface StoreContextType {
     recordMutation: () => void;
     totalXP: number;
     clearData: () => void;
+    syncStatus: 'idle' | 'syncing' | 'error';
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -59,6 +60,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const [weeklyPlans, setWeeklyPlans] = useState<any[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
     const [dbWaking, setDbWaking] = useState(false);
+    const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
     const lastMutationRef = useRef<number>(0);
 
     const recordMutation = () => {
@@ -113,13 +115,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
         loadData();
 
-        // Auto-sync every 30s for better real-time experience
+        // Auto-sync every 30s
         const syncInterval = setInterval(async () => {
-            if (Date.now() - lastMutationRef.current < 15000) {
-                console.log("⏳ Sync deferred: Local mutation in progress...");
-                return;
-            }
+            if (Date.now() - lastMutationRef.current < 15000) return;
 
+            setSyncStatus('syncing');
             try {
                 const [plans, swimmers, feedbacks, attendance, performances, weeklyPlans] = await Promise.all([
                     api.plans.getAll(),
@@ -130,14 +130,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                     api.weeklyPlans.getAll()
                 ]);
 
-                setPlans(plans || []);
-                setSwimmers(swimmers || []);
-                setFeedbacks(feedbacks || []);
-                setAttendance(attendance || []);
-                setPerformances(performances || []);
-                setWeeklyPlans((weeklyPlans || []).filter((p: any) => p.isPublished));
+                if (plans) setPlans(plans);
+                if (swimmers) setSwimmers(swimmers);
+                if (feedbacks) setFeedbacks(feedbacks);
+                if (attendance) setAttendance(attendance);
+                if (performances) setPerformances(performances);
+                if (weeklyPlans) setWeeklyPlans(weeklyPlans.filter((p: any) => p.isPublished));
+                
+                setSyncStatus('idle');
             } catch (error) {
                 console.error("Auto-sync failed:", error);
+                setSyncStatus('error');
             }
         }, 30000);
 
@@ -423,7 +426,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             },
             templates, addTemplate, deleteTemplate,
             totalXP: swimmers.reduce((acc, s) => acc + (s.xp || 0), 0),
-            clearData
+            clearData,
+            syncStatus
         }}>
             {children}
         </StoreContext.Provider>

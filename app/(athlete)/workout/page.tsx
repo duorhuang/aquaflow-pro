@@ -26,7 +26,7 @@ export default function AthleteWorkoutPage() {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [currentUser, setCurrentUser] = useState<Swimmer | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'plan' | 'weekly' | 'memberFeedback' | 'trainingFeedback' | 'history' | 'performance' | 'status' | 'stats'>('plan');
+    const [activeTab, setActiveTab] = useState<'training' | 'feedback' | 'achievements' | 'health'>('training');
     const [pendingReminders, setPendingReminders] = useState(0);
 
     // Get current week Monday
@@ -256,545 +256,220 @@ export default function AthleteWorkoutPage() {
 
             <main className="p-4 max-w-lg mx-auto space-y-6">
                 {/* Tab Navigation */}
-                <div className="flex overflow-x-auto hide-scrollbar gap-2 bg-card/30 border border-border rounded-xl p-2">
+                <div className="grid grid-cols-4 gap-2 bg-card/30 border border-border rounded-xl p-2 shrink-0">
                     <button
-                        onClick={() => setActiveTab('plan')}
+                        onClick={() => setActiveTab('training')}
                         className={cn(
-                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all",
-                            activeTab === 'plan'
+                            "py-2 rounded-lg text-[10px] font-bold transition-all flex flex-col items-center gap-1",
+                            activeTab === 'training'
                                 ? "bg-primary text-primary-foreground shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        ⚡️ 今日任务
+                        <Calendar className="w-4 h-4" />
+                        ⚡️ 训练
                     </button>
                     <button
-                        onClick={() => setActiveTab('weekly')}
+                        onClick={() => setActiveTab('feedback')}
                         className={cn(
-                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all relative",
-                            activeTab === 'weekly'
+                            "py-2 rounded-lg text-[10px] font-bold transition-all flex flex-col items-center gap-1 relative",
+                            activeTab === 'feedback'
                                 ? "bg-purple-500 text-white shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        📂 本周大纲
-                        {weeklyPlans.length > 0 && (
-                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-purple-400 rounded-full animate-pulse border border-white" />
+                        <MessageSquare className="w-4 h-4" />
+                        📝 反馈
+                        {pendingReminders > 0 && (
+                            <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                         )}
                     </button>
                     <button
-                        onClick={() => setActiveTab('memberFeedback')}
+                        onClick={() => setActiveTab('achievements')}
                         className={cn(
-                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all",
-                            activeTab === 'memberFeedback'
-                                ? "bg-primary text-primary-foreground shadow-lg"
-                                : "text-muted-foreground hover:text-white"
-                        )}
-                    >
-                        📝 队员反馈
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('trainingFeedback')}
-                        className={cn(
-                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all relative",
-                            activeTab === 'trainingFeedback'
+                            "py-2 rounded-lg text-[10px] font-bold transition-all flex flex-col items-center gap-1",
+                            activeTab === 'achievements'
                                 ? "bg-orange-500 text-white shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        🎯 训练反馈
-                        {pendingReminders > 0 && (
-                            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-background animate-pulse">
-                                {pendingReminders}
-                            </span>
-                        )}
+                        <TrendingUp className="w-4 h-4" />
+                        📊 成绩
                     </button>
                     <button
-                        onClick={() => setActiveTab('history')}
+                        onClick={() => setActiveTab('health')}
                         className={cn(
-                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all",
-                            activeTab === 'history'
-                                ? "bg-primary text-primary-foreground shadow-lg"
+                            "py-2 rounded-lg text-[10px] font-bold transition-all flex flex-col items-center gap-1",
+                            activeTab === 'health'
+                                ? "bg-red-500 text-white shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        历史记录
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('performance')}
-                        className={cn(
-                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all",
-                            activeTab === 'performance'
-                                ? "bg-primary text-primary-foreground shadow-lg"
-                                : "text-muted-foreground hover:text-white"
-                        )}
-                    >
-                        成绩考核
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('status')}
-                        className={cn(
-                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all",
-                            activeTab === 'status'
-                                ? "bg-primary text-primary-foreground shadow-lg"
-                                : "text-muted-foreground hover:text-white"
-                        )}
-                    >
-                        更新状态
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('stats')}
-                        className={cn(
-                            "flex-none py-2 px-4 rounded-lg text-[12px] font-bold transition-all",
-                            activeTab === 'stats'
-                                ? "bg-primary text-primary-foreground shadow-lg"
-                                : "text-muted-foreground hover:text-white"
-                        )}
-                    >
-                        我的统计
+                        <Activity className="w-4 h-4" />
+                        ❤️ 状态
                     </button>
                 </div>
 
-                {/* EMERGENCY DATA ALERT - ONLY SHOWS IF CRITICAL ARRAYS ARE MISSING */}
-                {(!plans || plans.length === 0) && activeTab === 'plan' && (
+                {/* EMERGENCY DATA ALERT */}
+                {(!plans || plans.length === 0) && activeTab === 'training' && (
                     <div className="mt-4 bg-orange-500/10 border border-orange-500/20 p-4 rounded-2xl flex items-center gap-3 animate-pulse">
                         <div className="w-2 h-2 bg-orange-500 rounded-full" />
                         <p className="text-[11px] text-orange-200">系统数据暂时离线，请刷新重试或联系教练检查网络。</p>
                     </div>
                 )}
 
-                {/* Tab Content: Training Plan */}
-                {activeTab === 'plan' && (
+                {/* Tab Content: Training Section (Merged Plan + Weekly) */}
+                {activeTab === 'training' && (
                     <div className="space-y-6">
                         {/* Date Selector */}
                         <div className="bg-card/30 border border-border rounded-xl p-4">
-                            <label className="text-xs text-muted-foreground mb-2 block">选择日期</label>
-                            <select
-                                value={selectedDate.toISOString().split('T')[0]}
-                                onChange={(e) => setSelectedDate(new Date(e.target.value))}
-                                className="w-full bg-secondary border border-white/10 rounded-lg px-4 py-2 text-white font-medium"
-                            >
-                                {next7Days.map(date => {
-                                    const dateStr = date.toISOString().split('T')[0];
-                                    const isToday = dateStr === new Date().toISOString().split('T')[0];
-                                    return (
-                                        <option key={dateStr} value={dateStr}>
-                                            {isToday ? '今天 - ' : ''}{date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', weekday: 'short' })}
-                                        </option>
-                                    );
-                                })}
-                            </select>
+                            <label className="text-xs text-muted-foreground mb-2 block">选择日期 (查看今日或导出周大纲)</label>
+                            <div className="flex gap-2">
+                                <select
+                                    value={selectedDate.toISOString().split('T')[0]}
+                                    onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                                    className="flex-1 bg-secondary border border-white/10 rounded-lg px-4 py-2 text-white font-medium"
+                                >
+                                    {next7Days.map(date => {
+                                        const dateStr = date.toISOString().split('T')[0];
+                                        const isToday = dateStr === new Date().toISOString().split('T')[0];
+                                        return (
+                                            <option key={dateStr} value={dateStr}>
+                                                {isToday ? '今天 - ' : ''}{date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', weekday: 'short' })}
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                                <button 
+                                    onClick={() => {
+                                        const container = document.getElementById('weekly-view');
+                                        container?.scrollIntoView({ behavior: 'smooth' });
+                                    }}
+                                    className="bg-purple-500/20 text-purple-400 px-3 py-2 rounded-lg text-xs font-bold"
+                                >
+                                    本周大纲
+                                </button>
+                            </div>
                         </div>
 
-                        {/* Coach Note Section - Distinct and Separate */}
-                        {myNote && (
-                            <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 p-5 rounded-3xl relative overflow-hidden shadow-lg animate-in slide-in-from-top-4 duration-500">
-                                <div className="absolute top-0 right-0 p-3 opacity-20">
-                                    <MessageSquare className="w-12 h-12 text-yellow-400" />
-                                </div>
-                                <div className="relative z-10">
-                                    <h3 className="text-yellow-400 font-bold uppercase tracking-widest text-xs mb-2 flex items-center gap-2">
-                                        <Quote className="w-4 h-4" />
-                                        Coach's Special Note (教练寄语)
-                                    </h3>
-                                    <p className="text-white text-lg font-medium italic leading-relaxed">
-                                        "{myNote}"
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Today's Attendance Status Badge for Athletes */}
-                        {(() => {
-                            const today = getLocalDateISOString(new Date());
-                            const checkedIn = attendance.some(a => a.swimmerId === currentUser.id && a.date === today);
-                            return (
-                                <div className={cn(
-                                    "flex items-center justify-between p-4 rounded-2xl border transition-all animate-in fade-in zoom-in duration-500",
-                                    checkedIn 
-                                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" 
-                                        : "bg-orange-500/10 border-orange-500/30 text-orange-400"
-                                )}>
-                                    <div className="flex items-center gap-3">
-                                        <div className={cn(
-                                            "p-2 rounded-xl",
-                                            checkedIn ? "bg-emerald-500/20" : "bg-orange-500/20"
-                                        )}>
-                                            <Activity className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-bold opacity-70">今日考勤状态</p>
-                                            <p className="text-sm font-bold">{checkedIn ? "今日已到场打卡 ✅" : "今日尚未打卡 ⏳"}</p>
-                                        </div>
-                                    </div>
-                                    {!checkedIn && (
-                                        <p className="text-[10px] bg-orange-400 text-black px-2 py-0.5 rounded-full font-bold">待处理</p>
-                                    )}
-                                </div>
-                            );
-                        })()}
-
-                        {/* Plan Display */}
+                        {/* Plan Content */}
                         {selectedPlan ? (
                             <>
+                                {/* Derived indicator */}
                                 {selectedPlan.isDerived && (
-                                    <div className="bg-purple-500/10 border border-purple-500/30 p-3 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-left-4">
+                                    <div className="bg-purple-500/10 border border-purple-500/30 p-3 rounded-2xl flex items-center gap-3">
                                         <FolderOpen className="w-4 h-4 text-purple-400" />
                                         <p className="text-[11px] text-purple-200">
-                                            这是从<span className="font-bold">本周大纲</span>中提取的训练内容
+                                            正在显示本周大纲中的训练截图
                                         </p>
                                     </div>
                                 )}
-
-                                {/* Plan Summary */}
-                                <div className="bg-gradient-to-br from-secondary to-card p-6 rounded-3xl border border-white/5">
-                                    {selectedPlan.imageUrl ? (
-                                        <div className="mb-6 rounded-2xl overflow-hidden border border-white/10 relative group">
-                                            <img
-                                                src={selectedPlan.imageUrl}
-                                                alt="Training Plan"
-                                                className="w-full h-auto object-contain hover:scale-105 transition-transform duration-500 cursor-zoom-in"
-                                                onClick={() => window.open(selectedPlan.imageUrl, '_blank')}
-                                            />
-                                            <div className="absolute top-2 right-2 bg-black/60 backdrop-blur px-2 py-1 rounded text-[10px] text-white/80 pointer-events-none">
-                                                点击查看大图
-                                            </div>
-                                        </div>
-                                    ) : null}
-
-                                    <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">总距离</p>
-                                    <div className="text-4xl font-mono font-bold text-white mb-2">{selectedPlan.totalDistance}m</div>
-                                    <div className="flex gap-2">
-                                        <span className="px-3 py-1 bg-white/10 rounded-full text-xs font-bold text-white">
-                                            {selectedPlan.focus}
-                                        </span>
-                                        <span className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-xs font-bold">
-                                            {selectedPlan.blocks?.reduce((acc, b) => acc + b.items.length, 0) || 0} Sets
-                                        </span>
+                                {/* Coach Note */}
+                                {myNote && (
+                                    <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 p-5 rounded-3xl relative overflow-hidden shadow-lg">
+                                        <p className="text-white text-lg font-medium italic">"{myNote}"</p>
                                     </div>
+                                )}
+                                {/* Image / Blocks */}
+                                <div className="bg-gradient-to-br from-secondary to-card p-6 rounded-3xl border border-white/5">
+                                    {selectedPlan.imageUrl && (
+                                        <img src={selectedPlan.imageUrl} className="w-full rounded-2xl mb-4" onClick={() => window.open(selectedPlan.imageUrl, '_blank')} />
+                                    )}
+                                    <div className="text-4xl font-mono font-bold text-white mb-2">{selectedPlan.totalDistance}m</div>
+                                    <div className="text-xs text-muted-foreground uppercase">{selectedPlan.focus}</div>
                                 </div>
-
-                                {/* Blocks */}
-                                <div className="space-y-6">
-                                    <h2 className="text-xl font-bold text-white">训练详情</h2>
-                                    {selectedPlan.blocks?.map((block) => (
-                                        <div key={block.id} className="space-y-3">
-                                            <div className="flex items-center gap-3 px-2">
-                                                <div className="h-px flex-1 bg-white/10" />
-                                                <span className="text-xs uppercase font-bold text-primary tracking-widest">{block.type}</span>
-                                                {block.rounds > 1 && <span className="text-xs font-mono text-white bg-white/10 px-2 py-0.5 rounded">{block.rounds} Rounds</span>}
-                                                <div className="h-px flex-1 bg-white/10" />
-                                            </div>
-
-                                            <div className={cn("space-y-3", block.rounds > 1 && "border-l-2 border-primary/30 pl-3 ml-2")}>
-                                                {block.items.map((item, idx) => (
-                                                    <div key={item.id} className="bg-card border border-border p-4 rounded-2xl flex gap-4">
-                                                        <div className="flex-none w-12 h-12 rounded-xl bg-secondary flex items-center justify-center font-mono font-bold text-muted-foreground">
-                                                            <span>{idx + 1}</span>
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <div className="flex justify-between items-start mb-1">
-                                                                <span className="font-bold text-lg text-white">
-                                                                    {item.repeats > 1 ? `${item.repeats} x ` : ""}
-                                                                    {item.distance}m
-                                                                </span>
-                                                                <span className={cn(
-                                                                    "text-xs font-bold px-2 py-0.5 rounded",
-                                                                    item.intensity === "High" ? "bg-red-500/20 text-red-400" : "bg-blue-500/20 text-blue-400"
-                                                                )}>{item.intensity}</span>
-                                                            </div>
-                                                            <div className="flex flex-wrap gap-2 mb-2">
-                                                                <span className="text-sm text-primary font-medium">{item.stroke}</span>
-                                                                {item.alternateStroke && (
-                                                                    <span className="text-sm text-purple-400 font-medium flex items-center gap-1">
-                                                                        <ArrowRightLeft className="w-3 h-3" />
-                                                                        {item.alternateStroke}
-                                                                    </span>
-                                                                )}
-                                                                {item.equipment?.map(e => (
-                                                                    <span key={e} className="text-xs border border-white/10 px-1.5 py-0.5 rounded text-muted-foreground">{e}</span>
-                                                                ))}
-                                                            </div>
-                                                            <p className="text-sm text-muted-foreground">{item.description}</p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-
-                                            {/* Block Feedback */}
-                                            <BlockFeedbackPanel
-                                                planId={selectedPlan.id}
-                                                blockId={block.id}
-                                                swimmerId={currentUser.id}
-                                                blockName={`${block.type} (${block.items.length} items)`}
-                                            />
+                                {/* Full Weekly Section at bottom */}
+                                <div id="weekly-view" className="pt-10">
+                                    <h2 className="text-lg font-bold text-white mb-4">📂 本周大纲全集</h2>
+                                    {weeklyPlans.map(wp => (
+                                        <div key={wp.id} className="bg-card/20 border border-border rounded-2xl p-4 space-y-4">
+                                            {wp.sessions?.map((s: any) => (
+                                                <div key={s.id} className="border-b border-border/50 pb-4 last:border-0 last:pb-0">
+                                                    <p className="text-sm font-bold text-white mb-2">{s.label} ({s.date})</p>
+                                                    {(s.imageUrl || s.imageData) && <img src={s.imageUrl || s.imageData} className="w-full rounded-lg" />}
+                                                </div>
+                                            ))}
                                         </div>
                                     ))}
                                 </div>
-
-                                {/* Guide to Member Feedback */}
-                                <button
-                                    onClick={() => setActiveTab('memberFeedback')}
-                                    className="w-full bg-gradient-to-r from-primary/15 to-blue-500/15 border border-primary/25 rounded-2xl p-5 flex items-center justify-between group hover:border-primary/50 transition-all"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                                            <ClipboardList className="w-5 h-5 text-primary" />
-                                        </div>
-                                        <div className="text-left">
-                                            <p className="text-sm font-bold text-white">训练结束了？去打卡 →</p>
-                                            <p className="text-xs text-muted-foreground">记录今日 RPE、酸痛和训练反思</p>
-                                        </div>
-                                    </div>
-                                    <ArrowRight className="w-5 h-5 text-primary opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                                </button>
                             </>
                         ) : (
-                            <div className="text-center py-12 bg-card/30 border border-dashed border-border rounded-xl">
-                                <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                                <h3 className="text-lg font-bold text-white mb-2">今天没有训练计划</h3>
-                                <p className="text-sm text-muted-foreground">请联系教练或查看其他日期</p>
-                            </div>
+                            <div className="text-center py-12 opacity-50">还没有发布该日期的计划</div>
                         )}
                     </div>
                 )}
 
-                {/* Tab Content: Weekly Training */}
-                {activeTab === 'weekly' && currentUser && (
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                                <FolderOpen className="w-5 h-5 text-purple-400" />
-                                本周训练计划
-                            </h2>
-                            {isLoading && (
-                                <div className="flex items-center gap-2 text-[10px] text-muted-foreground animate-pulse">
-                                    <div className="w-2 h-2 bg-purple-500 rounded-full" />
-                                    同步中...
-                                </div>
-                            )}
-                        </div>
-
-                        {weeklyPlans.length > 0 ? (
-                            weeklyPlans.map((plan: any) => (
-                                <div key={plan.id} className="bg-card/30 border border-border rounded-2xl overflow-hidden">
-                                    <div className="p-4 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-b border-border">
-                                        <h3 className="font-bold text-white">{plan.title || `${plan.weekStart} 周训练`}</h3>
-                                        <p className="text-xs text-muted-foreground">{plan.weekStart} ~ {plan.weekEnd}</p>
-                                        {plan.coachNotes && (
-                                            <p className="text-xs text-primary mt-2 bg-primary/10 rounded-lg p-2">教练备注: {plan.coachNotes}</p>
-                                        )}
-                                    </div>
-                                    <div className="p-4 space-y-4">
-                                        {[...(plan.sessions || [])].sort((a, b) => a.date.localeCompare(b.date) || a.sortOrder - b.sortOrder).map((session: any) => (
-                                            <div key={session.id} className="bg-black/20 rounded-xl p-3">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <Calendar className="w-4 h-4 text-purple-400" />
-                                                    <span className="font-bold text-white text-sm">{session.label}</span>
-                                                    <span className="text-xs text-muted-foreground">{session.date}</span>
-                                                </div>
-                                                {(session.imageData || session.imageUrl) && (
-                                                    <img
-                                                        src={session.imageData || session.imageUrl}
-                                                        alt={session.label}
-                                                        className="w-full max-h-[400px] object-contain rounded-lg mb-2 cursor-zoom-in"
-                                                        onClick={() => window.open(session.imageData || session.imageUrl, '_blank')}
-                                                    />
-                                                )}
-                                                {session.notes && (
-                                                    <p className="text-xs text-muted-foreground">{session.notes}</p>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="text-center py-12 bg-card/30 border border-dashed border-border rounded-xl">
-                                <FolderOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                                <h3 className="text-lg font-bold text-white mb-2">本周没有新训练计划</h3>
-                                <p className="text-sm text-muted-foreground">教练发布后将显示在这里</p>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Tab Content: 队员反馈 (Member Feedback — daily diary + coach replies) */}
-                {activeTab === 'memberFeedback' && currentUser && (
+                {/* Tab Content: Feedback Section (Merged Weekly + Targeted) */}
+                {activeTab === 'feedback' && currentUser && (
                     <div className="space-y-6">
-                        {/* Guide Card */}
-                        <div className="bg-gradient-to-r from-primary/10 to-blue-500/10 border border-primary/20 rounded-2xl p-5">
-                            <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-none mt-0.5">
-                                    <ClipboardList className="w-5 h-5 text-primary" />
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-bold text-white mb-1">📝 队员反馈 — 每日训练打卡</h3>
-                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                        每天训练后，展开当天的行，记录你的 RPE（疲劳度）、酸痛感和训练反思。
-                                        <span className="text-primary font-medium"> 周末提交周总结，教练会收到并给予批语。</span>
-                                    </p>
-                                </div>
+                        {/* Summary Header */}
+                        <div className="bg-purple-500/10 border border-purple-500/20 p-4 rounded-2xl flex items-center gap-4">
+                            <MessageSquare className="w-6 h-6 text-purple-400" />
+                            <div>
+                                <h3 className="text-sm font-bold text-white">反馈收件箱</h3>
+                                <p className="text-xs text-muted-foreground">查看教练评语、完成专项任务或提交周总结</p>
                             </div>
                         </div>
 
-                        <WeeklyFeedbackForm swimmerId={currentUser.id} weekStart={currentWeekStart} />
+                        {/* targeted feedback section */}
+                        <div className="space-y-4">
+                            <h4 className="text-[10px] uppercase tracking-widest text-muted-foreground">🎯 专项任务 ({pendingReminders} 待办)</h4>
+                            <TargetedFeedbackForm swimmerId={currentUser.id} />
+                        </div>
 
-                        {/* Coach Replies Section */}
+                        {/* weekly feedback section */}
+                        <div className="space-y-4 pt-6 border-t border-border/50">
+                            <h4 className="text-[10px] uppercase tracking-widest text-muted-foreground">📝 每周总结与打卡</h4>
+                            <WeeklyFeedbackForm swimmerId={currentUser.id} weekStart={currentWeekStart} />
+                        </div>
+
+                        {/* coach replies */}
                         <CoachReplyPanel swimmerId={currentUser.id} />
                     </div>
                 )}
 
-                {/* Tab Content: 训练反馈 (Coach-Initiated Training Feedback) */}
-                {activeTab === 'trainingFeedback' && currentUser && (
-                    <div className="space-y-6">
-                        {/* Guide Card */}
-                        <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-2xl p-5">
-                            <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center flex-none mt-0.5">
-                                    <Target className="w-5 h-5 text-orange-400" />
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-bold text-white mb-1">🎯 训练反馈 — 教练发起的问卷</h3>
-                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                        教练会不定期发起专项提问（例如：技术改进、身体感受等）。
-                                        <span className="text-orange-400 font-medium"> 请尽快回答，教练将即时查看。</span>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <TargetedFeedbackForm swimmerId={currentUser.id} />
-                    </div>
-                )}
-
-                {/* Tab Content: Status Update */}
-                {activeTab === 'status' && (
+                {/* Tab Content: Health & Stats (Merged) */}
+                {activeTab === 'health' && (
                     <div className="space-y-6">
                         <div className="bg-card/30 border border-border rounded-xl p-6">
-                            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                                <Activity className="w-5 h-5 text-primary" />
-                                身体状态
-                            </h2>
-
-                            {/* Readiness Slider */}
+                            <h2 className="text-xl font-bold text-white mb-4">当前状态</h2>
                             <div className="mb-6">
-                                <label className="text-sm text-muted-foreground mb-2 block">
-                                    Readiness: <span className={cn(
-                                        "font-bold",
-                                        readiness >= 80 ? "text-green-400" : readiness >= 60 ? "text-yellow-400" : "text-red-400"
-                                    )}>{readiness}%</span>
-                                </label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={readiness}
-                                    onChange={(e) => setReadiness(parseInt(e.target.value))}
-                                    className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
-                                />
-                                <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                                    <span>疲劳</span>
-                                    <span>良好</span>
-                                    <span>最佳</span>
-                                </div>
+                                <label className="text-sm text-muted-foreground mb-2 block">Readiness: {readiness}%</label>
+                                <input type="range" min="0" max="100" value={readiness} onChange={(e) => setReadiness(parseInt(e.target.value))} className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary" />
                             </div>
-
-                            {/* Status Mode Toggle */}
-                            <div className="mb-6">
-                                <label className="text-sm text-muted-foreground mb-2 block">
-                                    当前状态 (Status)
-                                </label>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button
-                                        onClick={() => setStatus("Active")}
-                                        className={cn(
-                                            "py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2",
-                                            status === "Active"
-                                                ? "bg-green-500/20 text-green-400 border border-green-500/50"
-                                                : "bg-secondary text-muted-foreground border border-transparent hover:bg-secondary/80"
-                                        )}
-                                    >
-                                        <Activity className="w-4 h-4" />
-                                        Active (训练中)
-                                    </button>
-                                    <button
-                                        onClick={() => setStatus("Resting")}
-                                        className={cn(
-                                            "py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2",
-                                            status === "Resting"
-                                                ? "bg-orange-500/20 text-orange-400 border border-orange-500/50"
-                                                : "bg-secondary text-muted-foreground border border-transparent hover:bg-secondary/80"
-                                        )}
-                                    >
-                                        <History className="w-4 h-4" />
-                                        Resting (休息/伤病)
-                                    </button>
-                                </div>
+                            <div className="grid grid-cols-2 gap-3 mb-6">
+                                <button onClick={() => setStatus("Active")} className={cn("py-3 rounded-lg font-bold text-sm", status === "Active" ? "bg-green-500/20 text-green-400 border border-green-500/50" : "bg-secondary")}>训练中</button>
+                                <button onClick={() => setStatus("Resting")} className={cn("py-3 rounded-lg font-bold text-sm", status === "Resting" ? "bg-orange-500/20 text-orange-400 border border-orange-500/50" : "bg-secondary")}>休息中</button>
                             </div>
-
-                            {/* Injury Note */}
-                            <div className="mb-6">
-                                <label className="text-sm text-muted-foreground mb-2 block">
-                                    🤕 伤病报告
-                                </label>
-                                <textarea
-                                    value={injuryNote}
-                                    onChange={(e) => setInjuryNote(e.target.value)}
-                                    placeholder="例如：右肩轻微疼痛，需要注意..."
-                                    className="w-full bg-secondary border border-white/10 rounded-lg px-4 py-3 text-white text-sm min-h-[100px] resize-none"
-                                />
-                            </div>
-
-                            <button
-                                onClick={handleSaveStatus}
-                                className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-medium hover:brightness-110 transition-all"
-                            >
-                                保存状态
-                            </button>
+                            <button onClick={handleSaveStatus} className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-medium">保存状态</button>
                         </div>
-
-                        {/* Current Status Display */}
-                        <div className="bg-card/30 border border-border rounded-xl p-6">
-                            <h3 className="text-sm font-bold text-white mb-3">当前状态</h3>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Readiness:</span>
-                                    <span className={cn(
-                                        "font-bold",
-                                        currentUser.readiness >= 80 ? "text-green-400" :
-                                            currentUser.readiness >= 60 ? "text-yellow-400" : "text-red-400"
-                                    )}>{currentUser.readiness}%</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">状态:</span>
-                                    <span className={cn(
-                                        "font-bold",
-                                        currentUser.status === "Active" ? "text-green-400" : "text-orange-400"
-                                    )}>{currentUser.status}</span>
-                                </div>
-                                {currentUser.currentStreak && currentUser.currentStreak > 0 && (
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">连续打卡:</span>
-                                        <span className="font-bold text-yellow-400">🔥 {currentUser.currentStreak} 天</span>
-                                    </div>
-                                )}
+                        <div className="grid grid-cols-3 gap-3">
+                            <div className="bg-card/30 p-4 rounded-2xl border border-border text-center">
+                                <p className="text-[10px] text-muted-foreground uppercase">本月里程</p>
+                                <p className="text-lg font-bold text-white">{monthlyStats.totalDistance}m</p>
+                            </div>
+                            <div className="bg-card/30 p-4 rounded-2xl border border-border text-center">
+                                <p className="text-[10px] text-muted-foreground uppercase">出勤天数</p>
+                                <p className="text-lg font-bold text-white">{monthlyStats.trainingDays}天</p>
+                            </div>
+                            <div className="bg-card/30 p-4 rounded-2xl border border-border text-center">
+                                <p className="text-[10px] text-muted-foreground uppercase">XP 经验值</p>
+                                <p className="text-lg font-bold text-white">{xp}</p>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* Tab Content: Monthly Stats */}
-                {/* Tab Content: Training History */}
-                {activeTab === 'history' && (
+                {/* Tab Content: Achievements (Merged) */}
+                {activeTab === 'achievements' && (
                     <div className="space-y-6">
+                        <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-2xl flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-orange-400 flex items-center gap-2">
+                                <TrendingUp className="w-5 h-5" />
+                                成绩与历史记录
+                            </h3>
+                        </div>
                         <TrainingHistory swimmerId={currentUser.id} />
-                    </div>
-                )}
-
-                {/* Tab Content: Performance */}
-                {activeTab === 'performance' && (
-                    <div className="space-y-6">
                         <PerformanceList swimmerId={currentUser.id} />
                     </div>
                 )}

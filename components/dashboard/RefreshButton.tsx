@@ -1,46 +1,41 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { RefreshCw, Check, AlertTriangle } from "lucide-react";
+import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export function RefreshButton() {
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [lastUpdate, setLastUpdate] = useState(new Date());
+    const { syncStatus } = useStore();
 
     const handleRefresh = () => {
-        setIsRefreshing(true);
-
-        // Reload the page to get fresh data from localStorage
         window.location.reload();
-    };
-
-    const getTimeAgo = () => {
-        const seconds = Math.floor((new Date().getTime() - lastUpdate.getTime()) / 1000);
-
-        if (seconds < 60) return `${seconds}秒前`;
-        if (seconds < 3600) return `${Math.floor(seconds / 60)}分钟前`;
-        return `${Math.floor(seconds / 3600)}小时前`;
     };
 
     return (
         <button
             onClick={handleRefresh}
-            disabled={isRefreshing}
             className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-full border transition-all",
-                "bg-card/50 border-border hover:bg-card hover:border-primary/50",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
+                syncStatus === 'idle' && "bg-card/50 border-border hover:bg-card hover:border-primary/50",
+                syncStatus === 'syncing' && "bg-primary/10 border-primary animate-pulse",
+                syncStatus === 'error' && "bg-red-500/10 border-red-500/50 text-red-500"
             )}
         >
-            <RefreshCw className={cn(
-                "w-4 h-4",
-                isRefreshing && "animate-spin"
-            )} />
+            {syncStatus === 'syncing' ? (
+                <RefreshCw className="w-4 h-4 animate-spin text-primary" />
+            ) : syncStatus === 'error' ? (
+                <AlertTriangle className="w-4 h-4" />
+            ) : (
+                <Check className="w-4 h-4 text-primary" />
+            )}
+            
             <div className="flex flex-col items-start">
-                <span className="text-xs font-medium text-white">刷新数据</span>
-                <span className="text-[10px] text-muted-foreground">
-                    {getTimeAgo()}
+                <span className="text-xs font-bold text-white uppercase tracking-tighter">
+                    {syncStatus === 'syncing' ? "正在同步..." : 
+                     syncStatus === 'error' ? "同步异常" : "云端在线"}
+                </span>
+                <span className="text-[9px] text-muted-foreground">
+                    {syncStatus === 'error' ? "请重试或检查数据库状态" : "每 30s 自动同步数据"}
                 </span>
             </div>
         </button>
