@@ -10,16 +10,21 @@ export async function GET(req: Request) {
         const { searchParams } = new URL(req.url);
         const swimmerId = searchParams.get('swimmerId');
         const weekStart = searchParams.get('weekStart');
+        const submittedOnly = searchParams.get('submitted') === 'true';
 
         if (swimmerId && weekStart) {
             const feedback = await prisma.weeklyFeedback.findUnique({
                 where: { swimmerId_weekStart: { swimmerId, weekStart } },
                 include: { dailyFeedbacks: true, swimmer: true }
             });
-            return NextResponse.json(feedback, { headers: V12_FINGERPRINT });
+            return NextResponse.json(feedback ?? null, { headers: V12_FINGERPRINT });
         }
 
+        const where: any = {};
+        if (submittedOnly) where.isSubmitted = true;
+
         const feedbacks = await prisma.weeklyFeedback.findMany({
+            where,
             include: { dailyFeedbacks: true, swimmer: true },
             orderBy: { weekStart: 'desc' }
         });

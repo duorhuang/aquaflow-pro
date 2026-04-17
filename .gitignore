@@ -37,3 +37,4 @@ next-env.d.ts
 *_output.txt
 .npm-cache/
 build-output.log
+*.log

@@ -8,7 +8,7 @@ import { WeeklyFeedbackForm } from "@/components/athlete/WeeklyFeedbackForm";
 import { TargetedFeedbackForm } from "@/components/athlete/TargetedFeedbackForm";
 import { CoachReplyPanel } from "@/components/athlete/CoachReplyPanel";
 import { api } from "@/lib/api-client";
-import { LogOut, Calendar, FolderOpen, Activity, History, Quote, MessageSquare, ArrowRightLeft, Target, ClipboardList, ArrowRight } from "lucide-react";
+import { LogOut, Calendar, FolderOpen, Activity, History, Quote, MessageSquare, ArrowRightLeft, Target, ClipboardList, ArrowRight, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
