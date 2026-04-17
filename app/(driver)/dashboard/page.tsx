@@ -71,11 +71,9 @@ export default function DashboardPage() {
 
             {/* Mobile Quick Actions */}
             <div className="md:hidden w-full mb-6">
-                <Link href="/dashboard/weekly-plan">
-                    <button className="w-full bg-gradient-to-r from-primary to-blue-400 text-black font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-4 duration-500">
-                        <FolderOpen className="w-6 h-6" />
-                        <span className="text-lg">新建培训夹 (Weekly Upload)</span>
-                    </button>
+                <Link href="/dashboard/weekly-plan" className="block w-full bg-gradient-to-r from-primary to-blue-400 text-black font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <FolderOpen className="w-6 h-6" />
+                    <span className="text-lg">新建培训夹 (Weekly Upload)</span>
                 </Link>
             </div>
 
@@ -104,11 +102,9 @@ export default function DashboardPage() {
                 <div className="lg:col-span-1 space-y-6">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-semibold text-white">{t.dashboard.recentPlans}</h2>
-                        <Link href="/dashboard/weekly-plan">
-                            <button className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full font-medium hover:brightness-110 transition-all shadow-[0_0_15px_rgba(100,255,218,0.3)]">
-                                <FolderOpen className="w-4 h-4" />
-                                {t.dashboard.createPlan} (按周)
-                            </button>
+                        <Link href="/dashboard/weekly-plan" className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full font-medium hover:brightness-110 transition-all shadow-[0_0_15px_rgba(100,255,218,0.3)]">
+                            <FolderOpen className="w-4 h-4" />
+                            {t.dashboard.createPlan} (按周)
                         </Link>
                     </div>
 
@@ -120,10 +116,8 @@ export default function DashboardPage() {
                         {visiblePlans.length === 0 && (
                             <div className="bg-card/30 border border-border rounded-2xl p-8 text-center">
                                 <p className="text-muted-foreground mb-4">还没有训练计划</p>
-                                <Link href="/dashboard/weekly-plan">
-                                    <button className="bg-primary text-primary-foreground px-6 py-2 rounded-full font-medium hover:brightness-110 transition-all">
-                                        创建第一个周计划
-                                    </button>
+                                <Link href="/dashboard/weekly-plan" className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded-full font-medium hover:brightness-110 transition-all">
+                                    创建第一个周计划
                                 </Link>
                             </div>
                         )}

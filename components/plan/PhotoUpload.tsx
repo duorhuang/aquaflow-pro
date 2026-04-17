@@ -35,19 +35,64 @@ export function PhotoUpload({
             return;
         }
 
-        // Check file size
+        // Check file size (original)
         if (file.size > maxSizeMB * 1024 * 1024) {
             setError(`文件大小不能超过 ${maxSizeMB}MB`);
             return;
         }
 
-        setSelectedFile(file);
-        onFileSelect?.(file);
-
-        // Create preview
+        // Image Compression Logic
         const reader = new FileReader();
-        reader.onloadend = () => {
-            setPreviewUrl(reader.result as string);
+        reader.onloadend = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                let width = img.width;
+                let height = img.height;
+                const MAX_DIM = 1200;
+
+                if (width > height) {
+                    if (width > MAX_DIM) {
+                        height *= MAX_DIM / width;
+                        width = MAX_DIM;
+                    }
+                } else {
+                    if (height > MAX_DIM) {
+                        width *= MAX_DIM / height;
+                        height = MAX_DIM;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                if (ctx) {
+                    ctx.drawImage(img, 0, 0, width, height);
+                    // Compress to 50% quality JPEG
+                    const dataUrl = canvas.toDataURL("image/jpeg", 0.5);
+                    setPreviewUrl(dataUrl);
+
+                    // Reconstruct into a File object so the parent gets the compressed version
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+                                type: "image/jpeg",
+                                lastModified: Date.now(),
+                            });
+                            setSelectedFile(compressedFile);
+                            onFileSelect?.(compressedFile);
+                        }
+                    }, "image/jpeg", 0.5);
+                } else {
+                    // Fallback to original
+                    setPreviewUrl(e.target?.result as string);
+                    setSelectedFile(file);
+                    onFileSelect?.(file);
+                }
+            };
+            if (e.target?.result) {
+                img.src = e.target.result as string;
+            }
         };
         reader.readAsDataURL(file);
     }, [maxSizeMB, onFileSelect]);

@@ -94,8 +94,7 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
         // to make the app feel instant.
         const prevSubmitted = isSubmitted;
         if (submitContent) {
-            setIsSubmitted(true);
-            setSaveStatus("正在同步至云端...");
+            setSaveStatus("正在云端校验中...");
         }
 
         try {
@@ -125,8 +124,10 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                 setSaveStatus(res.message);
                 if (submitContent) setIsSubmitted(prevSubmitted); // Rollback if skipped
             } else if (submitContent) {
+                // If cloudflare succeeded, mark status properly
+                setIsSubmitted(true);
                 setSaveStatus("✨ 提交成功！教练已收到您的本周总结。");
-                markAttendance(swimmerId);
+                markAttendance(swimmerId, undefined, "AthletePresent");
             } else {
                 setSaveStatus("✅ 草稿已保存。今日已自动为你打卡！");
                 
@@ -134,7 +135,7 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                 const todayStr = new Date().toISOString().split('T')[0];
                 const todayFeedback = dailyFeedbacks.find(d => d.date === todayStr);
                 if (todayFeedback && todayFeedback.reflection && todayFeedback.reflection.trim().length > 0) {
-                    markAttendance(swimmerId);
+                    markAttendance(swimmerId, todayStr, "AthletePresent");
                 }
             }
         } catch (e: any) {

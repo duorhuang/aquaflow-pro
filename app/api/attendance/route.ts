@@ -20,14 +20,42 @@ export async function POST(request: Request) {
         const prisma = getPrisma();
         const data = flattenPayload(await request.json());
         
-        const record = await prisma.attendanceRecord.create({
-            data: {
-                date: String(data.date),
-                swimmerId: String(data.swimmerId),
-                status: String(data.status || 'Present'),
-                timestamp: data.timestamp || new Date().toISOString()
+        const id = data.id || '';
+        
+        let record;
+        if (id) {
+            // Check if it exists. If the client sent an ID, it might already exist.
+            const existing = await prisma.attendanceRecord.findUnique({ where: { id } });
+            if (existing) {
+                record = await prisma.attendanceRecord.update({
+                    where: { id },
+                    data: {
+                        status: String(data.status || 'Present'),
+                        timestamp: data.timestamp || new Date().toISOString()
+                    }
+                });
+            } else {
+                record = await prisma.attendanceRecord.create({
+                    data: {
+                        id,
+                        date: String(data.date),
+                        swimmerId: String(data.swimmerId),
+                        status: String(data.status || 'Present'),
+                        timestamp: data.timestamp || new Date().toISOString()
+                    }
+                });
             }
-        });
+        } else {
+            record = await prisma.attendanceRecord.create({
+                data: {
+                    date: String(data.date),
+                    swimmerId: String(data.swimmerId),
+                    status: String(data.status || 'Present'),
+                    timestamp: data.timestamp || new Date().toISOString()
+                }
+            });
+        }
+        
         return NextResponse.json(record, { headers: V12_FINGERPRINT });
     });
 }

@@ -20,7 +20,7 @@ interface StoreContextType {
     updatePlan: (id: string, updates: Partial<TrainingPlan>) => void;
     deletePlan: (id: string) => void;
     submitFeedback: (feedback: Feedback) => void;
-    markAttendance: (swimmerId: string, date?: string) => void;
+    markAttendance: (swimmerId: string, date?: string, status?: "Present" | "AthletePresent") => void;
     unmarkAttendance: (swimmerId: string, date: string) => void;
     batchMarkAttendance: (swimmerIds: string[], date: string) => Promise<void>;
     batchUnmarkAttendance: (swimmerIds: string[], date: string) => Promise<void>;
@@ -90,9 +90,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                     api.weeklyPlans.getAll()
                 ]);
 
+                // Also fetch all weekly feedbacks so we can aggregate daily sessions into standard feedbacks
+                const fetchedWeeklyFeedbacks = await api.weeklyFeedbacks.getSubmitted();
+                const transformedDaily = (fetchedWeeklyFeedbacks || []).flatMap((wf: any) => 
+                    (wf.dailyFeedbacks || []).filter((df: any) => df.rpe || df.soreness || df.reflection).map((df: any) => ({
+                        id: df.id,
+                        swimmerId: wf.swimmerId,
+                        planId: wf.weeklyPlanId || "weekly",
+                        date: df.date,
+                        rpe: df.rpe || 5,
+                        soreness: df.soreness || 3,
+                        comments: df.reflection || "",
+                        timestamp: new Date().toISOString()
+                    }))
+                );
+
                 setPlans(fetchedPlans || []);
                 setSwimmers(fetchedSwimmers || []);
-                setFeedbacks(fetchedFeedbacks || []);
+                setFeedbacks([...(fetchedFeedbacks || []), ...transformedDaily].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
                 setAttendance(fetchedAttendance || []);
                 setPerformances(fetchedPerformances || []);
                 setWeeklyPlans((fetchedWeeklyPlans || []).filter((p: any) => p.isPublished));
@@ -130,9 +145,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                     api.weeklyPlans.getAll()
                 ]);
 
+                const fetchedWeeklyFeedbacks = await api.weeklyFeedbacks.getSubmitted();
+                const transformedDaily = (fetchedWeeklyFeedbacks || []).flatMap((wf: any) => 
+                    (wf.dailyFeedbacks || []).filter((df: any) => df.rpe || df.soreness || df.reflection).map((df: any) => ({
+                        id: df.id,
+                        swimmerId: wf.swimmerId,
+                        planId: wf.weeklyPlanId || "weekly",
+                        date: df.date,
+                        rpe: df.rpe || 5,
+                        soreness: df.soreness || 3,
+                        comments: df.reflection || "",
+                        timestamp: new Date().toISOString()
+                    }))
+                );
+
                 if (plans) setPlans(plans);
                 if (swimmers) setSwimmers(swimmers);
-                if (feedbacks) setFeedbacks(feedbacks);
+                if (feedbacks) setFeedbacks([...feedbacks, ...transformedDaily].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
                 if (attendance) setAttendance(attendance);
                 if (performances) setPerformances(performances);
                 if (weeklyPlans) setWeeklyPlans(weeklyPlans.filter((p: any) => p.isPublished));
@@ -205,19 +234,32 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         markAttendance(fb.swimmerId);
     };
 
-    const markAttendance = async (swimmerId: string, date?: string) => {
+    const markAttendance = async (swimmerId: string, date?: string, status: "Present" | "AthletePresent" = "Present") => {
         const targetDate = date || getLocalDateISOString(new Date());
-        if (attendance.some(a => a.swimmerId === swimmerId && a.date === targetDate)) return;
+        
+        // If athlete is upgrading attendance or marking attendance
+        const existingRecord = attendance.find(a => a.swimmerId === swimmerId && a.date === targetDate);
+        
+        // Ensure no redundant calls. We can upgrade 'AthletePresent' to 'Present'
+        if (existingRecord) {
+            if (existingRecord.status === 'Present') return; // already fully present
+            if (existingRecord.status === 'AthletePresent' && status === 'AthletePresent') return; // already half
+        }
 
         const newRecord: AttendanceRecord = {
-            id: uid(),
+            id: existingRecord ? existingRecord.id : uid(),
             date: targetDate,
             swimmerId,
-            status: "Present",
+            status,
             timestamp: new Date().toISOString()
         };
 
-        setAttendance((prev) => [...prev, newRecord]);
+        if (existingRecord) {
+            setAttendance(prev => prev.map(a => a.id === existingRecord.id ? newRecord : a));
+        } else {
+            setAttendance((prev) => [...prev, newRecord]);
+        }
+
         recordMutation();
         adjustXP(swimmerId, 10);
 

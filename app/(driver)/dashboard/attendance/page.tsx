@@ -41,34 +41,38 @@ export default function CoachAttendancePage() {
     }, [swimmers, groupFilter]);
 
     // Check attendance for one swimmer on selected date
-    const isPresent = (swimmerId: string) => {
-        return attendance.some(a => a.swimmerId === swimmerId && a.date === selectedDate);
+    const getAttendanceStatus = (swimmerId: string) => {
+        const record = attendance.find(a => a.swimmerId === swimmerId && a.date === selectedDate);
+        return record ? record.status : "Absent";
     };
 
     // Stats
-    const presentCount = filteredSwimmers.filter(s => isPresent(s.id)).length;
-    const absentCount = filteredSwimmers.length - presentCount;
+    const presentCount = filteredSwimmers.filter(s => getAttendanceStatus(s.id) === "Present").length;
+    const athletePresentCount = filteredSwimmers.filter(s => getAttendanceStatus(s.id) === "AthletePresent").length;
+    const absentCount = filteredSwimmers.length - presentCount - athletePresentCount;
     const attendanceRate = filteredSwimmers.length > 0 ? Math.round((presentCount / filteredSwimmers.length) * 100) : 0;
 
     // Toggle check-in
     const handleToggle = async (swimmerId: string) => {
-        if (isPresent(swimmerId)) {
+        const status = getAttendanceStatus(swimmerId);
+        if (status === "Present") {
             await unmarkAttendance(swimmerId, selectedDate);
         } else {
-            await markAttendance(swimmerId, selectedDate);
+            // Either Absent or AthletePresent -> upgrade to Present
+            await markAttendance(swimmerId, selectedDate, "Present");
         }
     };
 
     // Select all / deselect all
     const handleSelectAll = async () => {
-        const toMark = filteredSwimmers.filter(s => !isPresent(s.id)).map(s => s.id);
+        const toMark = filteredSwimmers.filter(s => getAttendanceStatus(s.id) !== "Present").map(s => s.id);
         if (toMark.length > 0) {
             await batchMarkAttendance(toMark, selectedDate);
         }
     };
 
     const handleDeselectAll = async () => {
-        const toUnmark = filteredSwimmers.filter(s => isPresent(s.id)).map(s => s.id);
+        const toUnmark = filteredSwimmers.filter(s => getAttendanceStatus(s.id) !== "Absent").map(s => s.id);
         if (toUnmark.length > 0) {
             await batchUnmarkAttendance(toUnmark, selectedDate);
         }
@@ -146,6 +150,13 @@ export default function CoachAttendancePage() {
                 </div>
                 <div className="bg-card border border-border rounded-xl p-4 text-center">
                     <div className="flex items-center justify-center gap-2 mb-1">
+                        <UserX className="w-4 h-4 text-orange-400" />
+                        <span className="text-xs text-muted-foreground font-bold">待确认 (队员半打卡)</span>
+                    </div>
+                    <p className="text-2xl font-bold text-orange-400">{athletePresentCount}</p>
+                </div>
+                <div className="bg-card border border-border rounded-xl p-4 text-center">
+                    <div className="flex items-center justify-center gap-2 mb-1">
                         <UserX className="w-4 h-4 text-red-400" />
                         <span className="text-xs text-muted-foreground font-bold">缺席</span>
                     </div>
@@ -200,23 +211,30 @@ export default function CoachAttendancePage() {
                     <p className="text-center text-muted-foreground py-12">暂无队员，请先到"运动员"页面添加。</p>
                 )}
                 {filteredSwimmers.map((swimmer) => {
-                    const present = isPresent(swimmer.id);
+                    const status = getAttendanceStatus(swimmer.id);
+                    const isPresent = status === "Present";
+                    const isAthletePresent = status === "AthletePresent";
+
                     return (
                         <button
                             key={swimmer.id}
                             onClick={() => handleToggle(swimmer.id)}
                             className={cn(
                                 "w-full flex items-center justify-between p-4 rounded-xl border transition-all duration-200",
-                                present
+                                isPresent
                                     ? "bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20"
+                                    : isAthletePresent
+                                    ? "bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/20"
                                     : "bg-card border-border hover:bg-white/5"
                             )}
                         >
                             <div className="flex items-center gap-3">
                                 <div className={cn(
                                     "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors",
-                                    present
+                                    isPresent
                                         ? "bg-emerald-500 text-white shadow-[0_0_12px_rgba(16,185,129,0.4)]"
+                                        : isAthletePresent
+                                        ? "bg-orange-500 text-white shadow-[0_0_12px_rgba(249,115,22,0.4)]"
                                         : "bg-secondary text-muted-foreground"
                                 )}>
                                     {swimmer.name.charAt(0)}
@@ -226,8 +244,12 @@ export default function CoachAttendancePage() {
                                     <p className="text-xs text-muted-foreground">{GROUP_LABELS[swimmer.group] || swimmer.group}</p>
                                 </div>
                             </div>
-                            {present ? (
+                            {isPresent ? (
                                 <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                            ) : isAthletePresent ? (
+                                <div className="flex items-center gap-1 text-orange-400">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest bg-orange-500/20 px-2 py-0.5 rounded-full">教练需点确认</span>
+                                </div>
                             ) : (
                                 <XCircle className="w-6 h-6 text-muted-foreground/30" />
                             )}

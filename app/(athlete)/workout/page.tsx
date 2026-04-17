@@ -212,7 +212,20 @@ export default function AthleteWorkoutPage() {
     const selectedPlan = getSelectedDatePlan();
     const myNote = (selectedPlan?.targetedNotes && currentUser) ? selectedPlan.targetedNotes[currentUser.id] : null;
     const monthlyStats = getMonthlyStats();
-    const next7Days = getNext7Days();
+    
+    // Weekly Framework Logic
+    const currentWeeklyPlan = weeklyPlans.find(wp => wp.weekStart === currentWeekStart && wp.group === currentUser?.group);
+    
+    const weekDays = (() => {
+        const days = [];
+        const start = new Date(currentWeekStart + "T12:00:00");
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(start);
+            d.setDate(d.getDate() + i);
+            days.push(d);
+        }
+        return days;
+    })();
 
     // Gamification
     const xp = currentUser.xp || 0;
@@ -321,81 +334,93 @@ export default function AthleteWorkoutPage() {
                 {/* Tab Content: Training Section (Merged Plan + Weekly) */}
                 {activeTab === 'training' && (
                     <div className="space-y-6">
-                        {/* Date Selector */}
-                        <div className="bg-card/30 border border-border rounded-xl p-4">
-                            <label className="text-xs text-muted-foreground mb-2 block">选择日期 (查看今日或导出周大纲)</label>
-                            <div className="flex gap-2">
-                                <select
-                                    value={selectedDate.toISOString().split('T')[0]}
-                                    onChange={(e) => setSelectedDate(new Date(e.target.value))}
-                                    className="flex-1 bg-secondary border border-white/10 rounded-lg px-4 py-2 text-white font-medium"
-                                >
-                                    {next7Days.map(date => {
-                                        const dateStr = date.toISOString().split('T')[0];
-                                        const isToday = dateStr === new Date().toISOString().split('T')[0];
-                                        return (
-                                            <option key={dateStr} value={dateStr}>
-                                                {isToday ? '今天 - ' : ''}{date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', weekday: 'short' })}
-                                            </option>
-                                        );
-                                    })}
-                                </select>
-                                <button 
-                                    onClick={() => {
-                                        const container = document.getElementById('weekly-view');
-                                        container?.scrollIntoView({ behavior: 'smooth' });
-                                    }}
-                                    className="bg-purple-500/20 text-purple-400 px-3 py-2 rounded-lg text-xs font-bold"
-                                >
-                                    本周大纲
-                                </button>
+                        {/* --- WEEKLY FRAMEWORK (TOP) --- */}
+                        <div className="bg-card/30 border border-border rounded-xl p-4 md:p-5">
+                            <h2 className="text-sm font-bold text-white mb-1 flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-emerald-400" />
+                                {currentWeeklyPlan?.title || "本周训练大纲"}
+                            </h2>
+                            {currentWeeklyPlan?.coachNotes && (
+                                <p className="text-xs text-muted-foreground mb-4 italic">教练说：{currentWeeklyPlan.coachNotes}</p>
+                            )}
+
+                            <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                                {weekDays.map(date => {
+                                    const dateStr = date.toISOString().split('T')[0];
+                                    const isSelected = dateStr === selectedDate.toISOString().split('T')[0];
+                                    const isToday = dateStr === new Date().toISOString().split('T')[0];
+                                    
+                                    // Check if this date has a session
+                                    const hasSession = currentWeeklyPlan?.sessions?.some((s: any) => s.date === dateStr) || 
+                                                       plans.some(p => p.date === dateStr && p.group === currentUser.group);
+                                    
+                                    const dayName = date.toLocaleDateString('zh-CN', { weekday: 'short' }).replace('周', '');
+
+                                    return (
+                                        <button
+                                            key={dateStr}
+                                            onClick={() => setSelectedDate(date)}
+                                            className={cn(
+                                                "flex flex-col items-center py-2 rounded-lg transition-all relative border",
+                                                isSelected
+                                                    ? "bg-primary text-black border-primary shadow-[0_0_10px_rgba(100,255,218,0.3)]"
+                                                    : hasSession
+                                                    ? "bg-primary/10 border-primary/20 text-white hover:bg-primary/20"
+                                                    : "bg-secondary/50 border-white/5 text-muted-foreground hover:bg-white/5"
+                                            )}
+                                        >
+                                            <span className="text-[10px] font-bold">{dayName}</span>
+                                            <span className="text-sm font-bold mt-0.5">{date.getDate()}</span>
+                                            {isToday && (
+                                                <div className={cn("absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-background", isSelected ? "bg-black" : "bg-emerald-500")} />
+                                            )}
+                                            {hasSession && !isSelected && (
+                                                <div className="w-1 h-1 bg-primary rounded-full mt-1" />
+                                            )}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
 
-                        {/* Plan Content */}
-                        {selectedPlan ? (
-                            <>
-                                {/* Derived indicator */}
-                                {selectedPlan.isDerived && (
-                                    <div className="bg-purple-500/10 border border-purple-500/30 p-3 rounded-2xl flex items-center gap-3">
-                                        <FolderOpen className="w-4 h-4 text-purple-400" />
-                                        <p className="text-[11px] text-purple-200">
-                                            正在显示本周大纲中的训练截图
-                                        </p>
-                                    </div>
-                                )}
-                                {/* Coach Note */}
-                                {myNote && (
-                                    <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 p-5 rounded-3xl relative overflow-hidden shadow-lg">
-                                        <p className="text-white text-lg font-medium italic">"{myNote}"</p>
-                                    </div>
-                                )}
-                                {/* Image / Blocks */}
-                                <div className="bg-gradient-to-br from-secondary to-card p-6 rounded-3xl border border-white/5">
-                                    {selectedPlan.imageUrl && (
-                                        <img src={selectedPlan.imageUrl} className="w-full rounded-2xl mb-4" onClick={() => window.open(selectedPlan.imageUrl, '_blank')} />
-                                    )}
-                                    <div className="text-4xl font-mono font-bold text-white mb-2">{selectedPlan.totalDistance}m</div>
-                                    <div className="text-xs text-muted-foreground uppercase">{selectedPlan.focus}</div>
-                                </div>
-                                {/* Full Weekly Section at bottom */}
-                                <div id="weekly-view" className="pt-10">
-                                    <h2 className="text-lg font-bold text-white mb-4">📂 本周大纲全集</h2>
-                                    {weeklyPlans.map(wp => (
-                                        <div key={wp.id} className="bg-card/20 border border-border rounded-2xl p-4 space-y-4">
-                                            {wp.sessions?.map((s: any) => (
-                                                <div key={s.id} className="border-b border-border/50 pb-4 last:border-0 last:pb-0">
-                                                    <p className="text-sm font-bold text-white mb-2">{s.label} ({s.date})</p>
-                                                    {(s.imageUrl || s.imageData) && <img src={s.imageUrl || s.imageData} className="w-full rounded-lg" />}
-                                                </div>
-                                            ))}
+                        {/* --- DAILY CONTEXT (BOTTOM) --- */}
+                        <div className="pt-2">
+                            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                <FolderOpen className="w-5 h-5 text-purple-400" />
+                                {selectedDate.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })} 详情
+                            </h3>
+                            
+                            {selectedPlan ? (
+                                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    {/* Coach Note */}
+                                    {myNote && (
+                                        <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 p-5 rounded-3xl relative overflow-hidden shadow-lg">
+                                            <p className="text-white text-lg font-medium italic">"{myNote}"</p>
                                         </div>
-                                    ))}
+                                    )}
+                                    {/* Image / Blocks */}
+                                    <div className="bg-gradient-to-br from-secondary to-card p-6 rounded-3xl border border-white/5">
+                                        {selectedPlan.isDerived && (
+                                            <div className="mb-4 inline-block bg-purple-500/20 text-purple-300 text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-full border border-purple-500/30">
+                                                从周大纲提取
+                                            </div>
+                                        )}
+                                        {selectedPlan.imageUrl && (
+                                            <img src={selectedPlan.imageUrl} className="w-full rounded-2xl mb-4" onClick={() => window.open(selectedPlan.imageUrl, '_blank')} />
+                                        )}
+                                        {selectedPlan.totalDistance > 0 && (
+                                            <div className="text-4xl font-mono font-bold text-white mb-2">{selectedPlan.totalDistance}m</div>
+                                        )}
+                                        <div className="text-xs text-muted-foreground uppercase">{selectedPlan.focus}</div>
+                                    </div>
                                 </div>
-                            </>
-                        ) : (
-                            <div className="text-center py-12 opacity-50">还没有发布该日期的计划</div>
-                        )}
+                            ) : (
+                                <div className="text-center py-12 bg-card/30 border border-border rounded-3xl border-dashed">
+                                    <p className="text-muted-foreground">教练没有发布当天的训练内容 🏖</p>
+                                    <p className="text-[10px] text-muted-foreground/50 mt-2">提示：去『反馈』页提交日常日记吧</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
 
