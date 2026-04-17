@@ -21,6 +21,7 @@ export async function POST(request: Request) {
 
         const plan = await prisma.trainingPlan.create({
             data: {
+                id: data.id,
                 date: String(data.date),
                 startTime: data.startTime || '',
                 endTime: data.endTime || '',

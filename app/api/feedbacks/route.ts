@@ -22,6 +22,7 @@ export async function POST(request: Request) {
         
         const feedback = await prisma.feedback.create({
             data: {
+                id: data.id,
                 swimmerId: String(data.swimmerId),
                 planId: data.planId,
                 date: String(data.date),
