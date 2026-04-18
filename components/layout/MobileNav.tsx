@@ -71,6 +71,7 @@ export function MobileNav() {
                         <button
                             onClick={() => {
                                 localStorage.removeItem("aquaflow_coach_session");
+                                localStorage.removeItem("aquaflow_athlete_id"); // Ensure isolation
                                 window.location.href = '/login?role=coach';
                             }}
                             className="flex items-center gap-4 px-4 py-4 w-full rounded-xl text-red-400 hover:bg-red-500/10 transition-colors"

@@ -79,6 +79,7 @@ export default function AthleteWorkoutPage() {
 
     const handleLogout = () => {
         localStorage.removeItem("aquaflow_athlete_id");
+        localStorage.removeItem("aquaflow_coach_session"); // Ensure isolation
         router.push('/login');
     };
 

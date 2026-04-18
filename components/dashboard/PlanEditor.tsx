@@ -63,6 +63,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
     const [aiAnalysis, setAiAnalysis] = useState<{ summary?: string; safetyAlerts?: string[]; suggestions?: any[] } | null>(null);
 
     // Initialize State
+    const [editorMode, setEditorMode] = useState<"text" | "photo">("text");
     const [plan, setPlan] = useState<TrainingPlan>(initialPlan || {
         id: uid(),
         date: getLocalDateISOString(),

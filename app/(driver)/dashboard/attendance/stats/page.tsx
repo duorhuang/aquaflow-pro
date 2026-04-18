@@ -1,3 +1,5 @@
+"use client";
+
 import { useStore } from "@/lib/store";
 import { getLocalDateISOString } from "@/lib/date-utils";
 import { ChevronLeft, ChevronRight, Download, Calendar, Users, CheckCircle2 } from "lucide-react";

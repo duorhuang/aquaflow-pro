@@ -3,6 +3,8 @@
 echo "🚀 AquaFlow Pro: Final Force Deployment Protocol"
 echo "------------------------------------------------"
 
+export PATH="/opt/homebrew/bin:$PATH"
+
 # 1. Path Verification
 CURRENT_DIR=$(basename "$PWD")
 if [ "$CURRENT_DIR" != "aquaflow-pro" ]; then
@@ -30,11 +32,12 @@ rm -rf dist
 
 # 4. Prisma Hardening
 echo "💎 Re-generating Prisma Client (Force)..."
+export XDG_CACHE_HOME="$PWD/.xdg-cache"
+mkdir -p "$XDG_CACHE_HOME"
 npx prisma generate
 
 # 5. Build & Deploy
 echo "🏗️ Starting Production Build & Cloudflare Deployment..."
-# Using the V12 fingerprint to ensure cold-start protection is active
 export NEXT_PUBLIC_DEPLOY_VERSION="V12-STRATOSPHERE-RECOVERY"
 
 npm run deploy

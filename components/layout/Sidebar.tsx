@@ -70,9 +70,9 @@ export function Sidebar() {
                 </div>
                 <button
                     onClick={() => {
-                        // Clear all localStorage data
                         // Clear session only
                         localStorage.removeItem("aquaflow_coach_session");
+                        localStorage.removeItem("aquaflow_athlete_id"); // Ensure isolation
                         // Redirect to login page
                         window.location.href = '/login?role=coach';
                     }}

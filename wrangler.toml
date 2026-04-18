@@ -9,3 +9,7 @@ command = "npx opennextjs-cloudflare build"
 [assets]
 directory = ".open-next/assets"
 binding = "ASSETS"
+
+[[routes]]
+pattern = "sw.sportsflow.best"
+custom_domain = true

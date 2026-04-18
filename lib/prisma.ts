@@ -1,5 +1,5 @@
-import { neon } from '@neondatabase/serverless';
-import { PrismaNeonHTTP } from '@prisma/adapter-neon';
+import { Pool } from '@neondatabase/serverless';
+import { PrismaNeon } from '@prisma/adapter-neon';
 import { PrismaClient } from '@prisma/client';
 
 console.log("[V12_MODULE_LOAD] lib/prisma.ts is loading...");
@@ -49,8 +49,9 @@ export function getPrisma(): PrismaClient {
              console.warn("[V12_DIAGNOSTIC] DATABASE_URL is missing or invalid.");
         }
 
-        const sql = neon(connectionString);
-        const adapter = new PrismaNeonHTTP(sql);
+        // FIX: Switch from HTTP (neon) to WebSocket (Pool) to prevent timestamp crash
+        const pool = new Pool({ connectionString });
+        const adapter = new PrismaNeon(pool);
         const client = new PrismaClient({ 
             adapter,
             log: ['error', 'warn']

@@ -28,6 +28,7 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
             if (mode === "coach") {
                 if (username === "coach" && password === "admin123") {
                     localStorage.setItem("aquaflow_coach_session", "active");
+                    localStorage.removeItem("aquaflow_athlete_id"); // Ensure isolation
                     router.push("/dashboard");
                 } else {
                     setError("Invalid coach credentials");
@@ -43,6 +44,7 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
 
             if (user) {
                 localStorage.setItem("aquaflow_athlete_id", user.id);
+                localStorage.removeItem("aquaflow_coach_session"); // Ensure isolation
                 router.push("/workout");
             } else {
                 setError("Invalid username or password");
