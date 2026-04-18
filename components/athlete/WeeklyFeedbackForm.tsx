@@ -160,22 +160,19 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
         return <div className="p-12 text-center animate-pulse"><Loader2 className="w-6 h-6 text-primary animate-spin mx-auto" /></div>;
     }
 
-    if (isSubmitted) {
-        return (
-            <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-8 text-center animate-in fade-in zoom-in">
-                <Check className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                <h3 className="text-xl font-bold text-white mb-2">本周总结已提交</h3>
-                <p className="text-muted-foreground text-sm">教练已收到您的反馈，祝周末愉快！</p>
-                <div className="mt-6 p-4 bg-black/30 rounded-xl text-left border border-border">
-                    <p className="text-sm font-medium text-white mb-2">您的周总评：</p>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{summary}</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
+            {/* Submitted Banner (non-blocking) */}
+            {isSubmitted && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-4 flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-400 shrink-0" />
+                    <div className="flex-1">
+                        <p className="text-sm font-bold text-green-400">本周反馈已提交给教练</p>
+                        <p className="text-xs text-muted-foreground">你仍可继续修改并重新提交，教练将看到最新版本。</p>
+                    </div>
+                </div>
+            )}
             {/* Header */}
             <div>
                 <h2 className="text-2xl font-bold text-white mb-2">本周训练打卡</h2>
@@ -259,6 +256,22 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                                         />
                                     </div>
                                 </div>
+                                <div className="mt-4 flex justify-end">
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (!confirm("确定要清除今天的反馈记录吗？清除后需点击保存才会同步。")) return;
+                                            const newArr = [...dailyFeedbacks];
+                                            newArr[idx].rpe = 5;
+                                            newArr[idx].soreness = 3;
+                                            newArr[idx].reflection = "";
+                                            setDailyFeedbacks(newArr);
+                                        }}
+                                        className="text-xs text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg transition-colors border border-red-500/20"
+                                    >
+                                        🗑 清除今日记录
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     );
@@ -298,7 +311,7 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                     className="flex-[2] bg-gradient-to-r from-primary to-blue-400 text-black px-4 py-3 rounded-xl font-bold hover:brightness-110 transition-all flex items-center justify-center gap-2"
                 >
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} 
-                    上传并提交本周总结
+                    {isSubmitted ? "更新并重新提交" : "提交给教练"}
                 </button>
             </div>
         </div>

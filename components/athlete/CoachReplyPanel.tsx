@@ -10,12 +10,14 @@ export function CoachReplyPanel({ swimmerId }: { swimmerId: string }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let isMounted = true;
         const load = async () => {
             try {
                 const [weeklyRes, targetedRes] = await Promise.all([
                     api.weeklyFeedbacks.getSubmitted(),
                     api.feedbackReminders.getForSwimmer(swimmerId)
                 ]);
+                if (!isMounted) return;
                 
                 // Filter weekly replies
                 setWeeklyFeedbacks(weeklyRes.filter((f: any) => f.swimmerId === swimmerId && f.isReplied));
@@ -38,10 +40,17 @@ export function CoachReplyPanel({ swimmerId }: { swimmerId: string }) {
             } catch (e) {
                 console.error(e);
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         };
+        
         load();
+        const interval = setInterval(load, 15000); // 15-second live polling!
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
     }, [swimmerId]);
 
     if (loading) {

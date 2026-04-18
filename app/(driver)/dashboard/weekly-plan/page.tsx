@@ -45,7 +45,7 @@ export default function WeeklyPlanPage() {
         }
     };
 
-    const compressImage = (file: File, maxDim = 1200): Promise<string> => {
+    const compressImage = (file: File, maxDim = 800): Promise<string> => {
         return new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -67,7 +67,9 @@ export default function WeeklyPlanPage() {
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx?.drawImage(img, 0, 0, width, height);
-                    resolve(canvas.toDataURL('image/jpeg', 0.6)); // 60% quality is optimal balance.
+                    // Extremely aggressive compression (40% quality) to guarantee small Base64 
+                    // that won't trigger Cloudflare Worker 10ms CPU parse limits
+                    resolve(canvas.toDataURL('image/jpeg', 0.4)); 
                 };
                 img.src = e.target?.result as string;
             };
@@ -79,9 +81,9 @@ export default function WeeklyPlanPage() {
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
 
-        // Strict scaling for Cloudflare body-size limits (1MB)
-        // If multiple images are uploaded, we stay very conservative.
-        const targetDim = files.length > 2 ? 1000 : 1200;
+        // Force maximum dimension to 600px if uploading more than 2 photos
+        // This is explicitly protecting the Serverless Edge endpoint from payload crashes
+        const targetDim = files.length > 2 ? 600 : 800;
 
         for (const file of files) {
             const base64 = await compressImage(file, targetDim);

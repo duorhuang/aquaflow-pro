@@ -25,7 +25,7 @@ export default function AthleteWorkoutPage() {
     const { plans, swimmers, attendance, updateSwimmer, weeklyPlans, isLoaded: storeLoaded } = useStore();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [currentUser, setCurrentUser] = useState<Swimmer | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [authResolved, setAuthResolved] = useState(false);
     const [activeTab, setActiveTab] = useState<'training' | 'feedback' | 'achievements' | 'health'>('training');
     const [pendingReminders, setPendingReminders] = useState(0);
 
@@ -61,11 +61,14 @@ export default function AthleteWorkoutPage() {
                 setStatus(user.status);
             }
         }
-        setIsLoading(false);
+        // Only resolve authentication AFTER the store is fully populated!
+        if (storeLoaded) {
+            setAuthResolved(true);
+        }
 
         // Load pending reminder count for badge
         loadPendingReminders(storedId);
-    }, [swimmers, router]);
+    }, [swimmers, storeLoaded, router]);
 
     const loadPendingReminders = async (swimmerId: string) => {
         try {
@@ -105,40 +108,37 @@ export default function AthleteWorkoutPage() {
         return days;
     };
 
-    // Get plan for selected date
-    const getSelectedDatePlan = (): (TrainingPlan & { isDerived?: boolean }) | null => {
-        if (!currentUser) return null;
+    // Get all plans/sessions for selected date
+    const getSelectedDatePlans = (): (TrainingPlan & { isDerived?: boolean })[] => {
+        if (!currentUser) return [];
         const dateStr = getLocalDateISOString(selectedDate);
+        const dayPlansObj: (TrainingPlan & { isDerived?: boolean })[] = [];
         
-        // 1. Try to find a standalone daily plan
-        const dayPlans = plans.filter(p =>
-            p.date === dateStr &&
-            p.group === currentUser.group
-        );
-
-        if (dayPlans.length > 0) return dayPlans[0];
+        // 1. Standalone daily plans
+        const dayPlans = plans.filter(p => p.date === dateStr && p.group === currentUser.group);
+        if (dayPlans.length > 0) dayPlansObj.push(...dayPlans);
 
         // 2. FALLBACK: Derive from Weekly Plans if no daily plan exists
-        // [V12-SYNC-BRIDGE]
         for (const wp of weeklyPlans) {
-            const session = wp.sessions?.find((s: any) => s.date === dateStr);
-            if (session) {
-                console.log('🔗 Mapping weekly session to daily view:', session.label);
-                return {
-                    id: `derived-${session.id}`,
-                    date: dateStr,
-                    group: currentUser.group,
-                    totalDistance: 0, // Weekly sessions might not have distance field
-                    focus: session.label,
-                    imageUrl: session.imageUrl || session.imageData,
-                    blocks: [],
-                    isDerived: true, // Metadata for UI info
-                    targetedNotes: {}
-                };
+            const sessions = wp.sessions?.filter((s: any) => s.date === dateStr);
+            if (sessions && sessions.length > 0) {
+                sessions.forEach((session: any) => {
+                    dayPlansObj.push({
+                        id: `derived-${session.id}`,
+                        date: dateStr,
+                        group: currentUser.group,
+                        totalDistance: 0,
+                        focus: session.label,
+                        imageUrl: session.imageUrl || session.imageData,
+                        blocks: [],
+                        isDerived: true,
+                        targetedNotes: {}
+                    });
+                });
             }
         }
 
-        return null;
+        return dayPlansObj;
     };
 
     // Calculate monthly stats
@@ -177,7 +177,7 @@ export default function AthleteWorkoutPage() {
         }
     };
 
-    if (isLoading || !storeLoaded) {
+    if (!authResolved || !storeLoaded) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="text-center group">
@@ -210,8 +210,9 @@ export default function AthleteWorkoutPage() {
         );
     }
 
-    const selectedPlan = getSelectedDatePlan();
-    const myNote = (selectedPlan?.targetedNotes && currentUser) ? selectedPlan.targetedNotes[currentUser.id] : null;
+    const selectedPlansObj = getSelectedDatePlans();
+    // Use the first plan's targetedNotes since targetedNotes are per day not per session
+    const myNote = (selectedPlansObj.length > 0 && selectedPlansObj[0].targetedNotes && currentUser) ? selectedPlansObj[0].targetedNotes[currentUser.id] : null;
     const monthlyStats = getMonthlyStats();
     
     // Weekly Framework Logic
@@ -391,29 +392,36 @@ export default function AthleteWorkoutPage() {
                                 {selectedDate.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })} 详情
                             </h3>
                             
-                            {selectedPlan ? (
+                            {selectedPlansObj.length > 0 ? (
                                 <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    {/* Coach Note */}
+                                    {/* Coach Note (Only show once if present on the first session) */}
                                     {myNote && (
                                         <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 p-5 rounded-3xl relative overflow-hidden shadow-lg">
                                             <p className="text-white text-lg font-medium italic">"{myNote}"</p>
                                         </div>
                                     )}
-                                    {/* Image / Blocks */}
-                                    <div className="bg-gradient-to-br from-secondary to-card p-6 rounded-3xl border border-white/5">
-                                        {selectedPlan.isDerived && (
-                                            <div className="mb-4 inline-block bg-purple-500/20 text-purple-300 text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-full border border-purple-500/30">
-                                                从周大纲提取
-                                            </div>
-                                        )}
-                                        {selectedPlan.imageUrl && (
-                                            <img src={selectedPlan.imageUrl} className="w-full rounded-2xl mb-4" onClick={() => window.open(selectedPlan.imageUrl, '_blank')} />
-                                        )}
-                                        {selectedPlan.totalDistance > 0 && (
-                                            <div className="text-4xl font-mono font-bold text-white mb-2">{selectedPlan.totalDistance}m</div>
-                                        )}
-                                        <div className="text-xs text-muted-foreground uppercase">{selectedPlan.focus}</div>
-                                    </div>
+                                    {/* Render each plan/session */}
+                                    {selectedPlansObj.map((plan, index) => (
+                                        <div key={plan.id || index} className="bg-gradient-to-br from-secondary to-card p-6 rounded-3xl border border-white/5">
+                                            {plan.isDerived && (
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div className="inline-block bg-purple-500/20 text-purple-300 text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-full border border-purple-500/30">
+                                                        从周大纲提取
+                                                    </div>
+                                                    {selectedPlansObj.length > 1 && (
+                                                        <div className="text-[10px] text-muted-foreground">Session {index + 1} of {selectedPlansObj.length}</div>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {plan.imageUrl && (
+                                                <img src={plan.imageUrl} className="w-full rounded-2xl mb-4" onClick={() => window.open(plan.imageUrl, '_blank')} />
+                                            )}
+                                            {plan.totalDistance > 0 && (
+                                                <div className="text-4xl font-mono font-bold text-white mb-2">{plan.totalDistance}m</div>
+                                            )}
+                                            <div className="text-xs text-muted-foreground uppercase">{plan.focus}</div>
+                                        </div>
+                                    ))}
                                 </div>
                             ) : (
                                 <div className="text-center py-12 bg-card/30 border border-border rounded-3xl border-dashed">

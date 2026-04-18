@@ -73,25 +73,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const loadData = async () => {
             const wakeTimeout = setTimeout(() => setDbWaking(true), 2000);
             try {
-                // Fetch all data in parallel
-                const [
-                    fetchedPlans,
-                    fetchedSwimmers,
-                    fetchedFeedbacks,
-                    fetchedAttendance,
-                    fetchedPerformances,
-                    fetchedWeeklyPlans
-                ] = await Promise.all([
-                    api.plans.getAll(),
-                    api.swimmers.getAll(),
-                    api.feedbacks.getAll(),
-                    api.attendance.getAll(),
-                    api.performances.getAll(),
-                    api.weeklyPlans.getAll()
-                ]);
+                // Helper to safely fetch data
+                const safeFetch = async (fetcher: () => Promise<any>, fallback: any = []) => {
+                    try { return await fetcher(); } 
+                    catch (e) { console.error("Fetch API failed:", e); return fallback; }
+                };
+
+                // Fetch all data individually to prevent Promise.all from failing the entire UI
+                const fetchedPlans = await safeFetch(api.plans.getAll);
+                const fetchedSwimmers = await safeFetch(api.swimmers.getAll);
+                const fetchedFeedbacks = await safeFetch(api.feedbacks.getAll);
+                const fetchedAttendance = await safeFetch(api.attendance.getAll);
+                const fetchedPerformances = await safeFetch(api.performances.getAll);
+                const fetchedWeeklyPlans = await safeFetch(api.weeklyPlans.getAll);
 
                 // Also fetch all weekly feedbacks so we can aggregate daily sessions into standard feedbacks
-                const fetchedWeeklyFeedbacks = await api.weeklyFeedbacks.getSubmitted();
+                const fetchedWeeklyFeedbacks = await safeFetch(api.weeklyFeedbacks.getSubmitted);
                 const transformedDaily = (fetchedWeeklyFeedbacks || []).flatMap((wf: any) => 
                     (wf.dailyFeedbacks || []).filter((df: any) => df.rpe || df.soreness || df.reflection).map((df: any) => ({
                         id: df.id,
@@ -120,7 +117,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 setTemplates([...uniqueUserTemplates, ...DEFAULT_TEMPLATES]);
 
             } catch (error) {
-                console.error("Failed to load data from API:", error);
+                console.error("Critical failure during loadData:", error);
             } finally {
                 clearTimeout(wakeTimeout);
                 setDbWaking(false);
@@ -136,14 +133,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
             setSyncStatus('syncing');
             try {
-                const [plans, swimmers, feedbacks, attendance, performances, weeklyPlans] = await Promise.all([
-                    api.plans.getAll(),
-                    api.swimmers.getAll(),
-                    api.feedbacks.getAll(),
-                    api.attendance.getAll(),
-                    api.performances.getAll(),
-                    api.weeklyPlans.getAll()
-                ]);
+                const safeSync = async (fetcher: () => Promise<any>) => {
+                    try { return await fetcher(); } catch (e) { return null; }
+                };
+
+                const plans = await safeSync(api.plans.getAll);
+                const swimmers = await safeSync(api.swimmers.getAll);
+                const feedbacks = await safeSync(api.feedbacks.getAll);
+                const attendance = await safeSync(api.attendance.getAll);
+                const performances = await safeSync(api.performances.getAll);
+                const weeklyPlans = await safeSync(api.weeklyPlans.getAll);
 
                 const fetchedWeeklyFeedbacks = await api.weeklyFeedbacks.getSubmitted();
                 const transformedDaily = (fetchedWeeklyFeedbacks || []).flatMap((wf: any) => 

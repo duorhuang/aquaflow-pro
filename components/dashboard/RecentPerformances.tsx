@@ -9,8 +9,9 @@ export function RecentPerformances() {
     const { performances, swimmers } = useStore();
     const { t } = useLanguage();
 
-    // Get latest 5 performances across all swimmers
+    // Get latest 5 performances across all VALID swimmers
     const recentPerfs = [...performances]
+        .filter(p => swimmers.some(s => s.id === p.swimmerId))
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5);
 
