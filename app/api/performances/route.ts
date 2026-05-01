@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getPrisma, flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
+import { requireCoach, requireAnyAuth } from '@/lib/auth-api';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
     return withApiHandler(async () => {
+        const auth = await requireAnyAuth(req);
+        if (auth instanceof NextResponse) return auth;
+
         const prisma = getPrisma();
         const performances = await prisma.performanceRecord.findMany({
             include: { swimmer: true },
@@ -17,6 +21,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
     return withApiHandler(async () => {
+        const auth = await requireCoach(request);
+        if (auth instanceof NextResponse) return auth;
+
         const prisma = getPrisma();
         const data = flattenPayload(await request.json());
 
@@ -37,11 +44,14 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
     return withApiHandler(async () => {
+        const auth = await requireCoach(request);
+        if (auth instanceof NextResponse) return auth;
+
         const prisma = getPrisma();
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
-        
+
         const data = flattenPayload(await request.json());
 
         const record = await prisma.performanceRecord.update({
@@ -61,6 +71,9 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
     return withApiHandler(async () => {
+        const auth = await requireCoach(request);
+        if (auth instanceof NextResponse) return auth;
+
         const prisma = getPrisma();
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');

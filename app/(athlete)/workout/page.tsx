@@ -445,6 +445,21 @@ export default function AthleteWorkoutPage() {
                                                 <div className="text-4xl font-mono font-bold text-white mb-2">{plan.totalDistance}m</div>
                                             )}
                                             <div className="text-xs text-muted-foreground uppercase">{plan.focus}</div>
+                                            {/* Block Feedback Panels */}
+                                            {plan.blocks && plan.blocks.length > 0 && currentUser && (
+                                                <div className="mt-4 space-y-3">
+                                                    <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">动作反馈</div>
+                                                    {plan.blocks.map((block: any) => (
+                                                        <BlockFeedbackPanel
+                                                            key={block.id}
+                                                            planId={plan.id}
+                                                            blockId={block.id}
+                                                            swimmerId={currentUser.id}
+                                                            blockName={block.type || block.items?.[0]?.description}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

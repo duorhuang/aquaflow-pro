@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useStore } from "@/lib/store";
-import { cn } from "@/lib/utils";
 import { Lock, User } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface LoginFormProps {
     mode?: "athlete" | "coach";
@@ -12,45 +11,41 @@ interface LoginFormProps {
 
 export function LoginForm({ mode = "athlete" }: LoginFormProps) {
     const router = useRouter();
-    const { swimmers } = useStore();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
         setIsLoading(true);
 
-        // Simulate network delay for realism
-        setTimeout(() => {
-            if (mode === "coach") {
-                if (username === "coach" && password === "admin123") {
-                    localStorage.setItem("aquaflow_coach_session", "active");
-                    localStorage.removeItem("aquaflow_athlete_id"); // Ensure isolation
-                    router.push("/dashboard");
-                } else {
-                    setError("Invalid coach credentials");
-                    setIsLoading(false);
-                }
+        try {
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password, role: mode }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                setError(data.error || "Login failed");
+                setIsLoading(false);
                 return;
             }
 
-            const user = swimmers.find(s =>
-                s.username?.toLowerCase() === username.toLowerCase() &&
-                s.password === password
-            );
-
-            if (user) {
-                localStorage.setItem("aquaflow_athlete_id", user.id);
-                localStorage.removeItem("aquaflow_coach_session"); // Ensure isolation
-                router.push("/workout");
+            // Server sets HttpOnly cookie, just redirect
+            if (mode === "coach") {
+                router.push("/dashboard");
             } else {
-                setError("Invalid username or password");
-                setIsLoading(false);
+                router.push("/workout");
             }
-        }, 500);
+        } catch (err: any) {
+            setError(err.message || "Network error");
+            setIsLoading(false);
+        }
     };
 
     return (

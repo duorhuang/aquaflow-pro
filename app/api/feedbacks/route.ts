@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getPrisma, flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
+import { requireAnyAuth, requireCoach } from '@/lib/auth-api';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
     return withApiHandler(async () => {
+        const auth = await requireAnyAuth(req);
+        if (auth instanceof NextResponse) return auth;
+
         const prisma = getPrisma();
         const feedbacks = await prisma.feedback.findMany({
             include: { swimmer: true },
@@ -17,9 +21,12 @@ export async function GET() {
 
 export async function POST(request: Request) {
     return withApiHandler(async () => {
+        const auth = await requireAnyAuth(request);
+        if (auth instanceof NextResponse) return auth;
+
         const prisma = getPrisma();
         const data = flattenPayload(await request.json());
-        
+
         const feedback = await prisma.feedback.create({
             data: {
                 id: data.id,

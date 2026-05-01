@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getPrisma, flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
+import { requireAnyAuth, requireCoach } from '@/lib/auth-api';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
     return withApiHandler(async () => {
+        const auth = await requireAnyAuth(req);
+        if (auth instanceof NextResponse) return auth;
+
         const prisma = getPrisma();
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
@@ -21,7 +25,7 @@ export async function GET(req: Request) {
             return NextResponse.json(plan, { headers: V12_FINGERPRINT });
         }
 
-        let where: any = {};
+        const where: any = {};
         if (group) where.group = group;
         if (searchParams.has('isPublished')) where.isPublished = isPublished;
 
@@ -36,6 +40,9 @@ export async function GET(req: Request) {
 
 export async function POST(request: Request) {
     return withApiHandler(async () => {
+        const auth = await requireCoach(request);
+        if (auth instanceof NextResponse) return auth;
+
         const prisma = getPrisma();
         const data = flattenPayload(await request.json());
 
@@ -55,6 +62,9 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
     return withApiHandler(async () => {
+        const auth = await requireCoach(request);
+        if (auth instanceof NextResponse) return auth;
+
         const prisma = getPrisma();
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
@@ -79,6 +89,9 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
     return withApiHandler(async () => {
+        const auth = await requireCoach(request);
+        if (auth instanceof NextResponse) return auth;
+
         const prisma = getPrisma();
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');

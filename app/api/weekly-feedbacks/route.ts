@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getPrisma, flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
+import { requireAnyAuth, requireCoach } from '@/lib/auth-api';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
     return withApiHandler(async () => {
+        const auth = await requireAnyAuth(req);
+        if (auth instanceof NextResponse) return auth;
+
         const prisma = getPrisma();
         const { searchParams } = new URL(req.url);
         const swimmerId = searchParams.get('swimmerId');
@@ -34,9 +38,12 @@ export async function GET(req: Request) {
 
 export async function POST(request: Request) {
     return withApiHandler(async () => {
+        const auth = await requireAnyAuth(request);
+        if (auth instanceof NextResponse) return auth;
+
         const prisma = getPrisma();
         const data = flattenPayload(await request.json());
-        
+
         const { swimmerId, weekStart, summary, isSubmitted, dailyFeedbacks, coachReply, isReplied } = data;
 
         const feedback = await prisma.weeklyFeedback.upsert({
@@ -50,7 +57,7 @@ export async function POST(request: Request) {
                 repliedAt: coachReply ? new Date().toISOString() : undefined,
                 dailyFeedbacks: dailyFeedbacks ? {
                     upsert: dailyFeedbacks.map((df: any) => ({
-                        where: { swimmerId_date: { swimmerId, date: df.date } }, // Uses the unique constraint on DailyFeedback
+                        where: { swimmerId_date: { swimmerId, date: df.date } },
                         update: { rpe: df.rpe, soreness: df.soreness, reflection: df.reflection },
                         create: { date: df.date, rpe: df.rpe, soreness: df.soreness, reflection: df.reflection, swimmerId }
                     }))
@@ -75,10 +82,13 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
     return withApiHandler(async () => {
+        const auth = await requireCoach(request);
+        if (auth instanceof NextResponse) return auth;
+
         const prisma = getPrisma();
         const data = flattenPayload(await request.json());
         const { id, coachReply, isReplied } = data;
-        
+
         const feedback = await prisma.weeklyFeedback.update({
             where: { id },
             data: {

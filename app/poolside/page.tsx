@@ -1,55 +1,105 @@
 "use client";
 
-import { MOCK_PLANS } from "@/lib/data";
 import { useState, useEffect } from "react";
-import { Play, Pause, SkipForward, Maximize2 } from "lucide-react";
+import { Play, Pause, SkipForward } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api-client";
+
+const GROUPS = ["Junior", "Intermediate", "Advanced"];
+
+interface PoolsidePlan {
+    group: string;
+    focus: string;
+    allItems: Array<{ distance: number; stroke: string; description: string; intensity?: string }>;
+}
 
 export default function PoolsidePage() {
     const [currentSetIndex, setCurrentSetIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [time, setTime] = useState(new Date());
+    const [selectedGroup, setSelectedGroup] = useState(GROUPS[0]);
+    const [plan, setPlan] = useState<PoolsidePlan | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
 
-    // Safe access to items, assuming Main Set is present or just flattening for display
-    const allItems = MOCK_PLANS[0].blocks.flatMap(b => b.items);
-    const MOCK_PLAN = MOCK_PLANS[0];
-    const currentSet = allItems[currentSetIndex] || allItems[0];
+    useEffect(() => {
+        setLoading(true);
+        api.plans.getAll(selectedGroup)
+            .then((plans: any[]) => {
+                const today = new Date().toISOString().split('T')[0];
+                const todayPlan = plans?.find((p: any) => p.date === today);
+                const fallback = plans?.[0];
+                const p = todayPlan || fallback;
+                if (p && p.blocks) {
+                    const items = p.blocks.flatMap((b: any) => b.items || []);
+                    setPlan({ group: p.group, focus: p.focus, allItems: items });
+                } else {
+                    setPlan(null);
+                }
+            })
+            .catch(() => setPlan(null))
+            .finally(() => setLoading(false));
+        setCurrentSetIndex(0);
+    }, [selectedGroup]);
+
+    const items = plan?.allItems || [];
+    const currentSet = items[currentSetIndex] || items[0];
 
     return (
         <div className="h-screen w-screen bg-black text-white overflow-hidden flex flex-col">
-            {/* Top Bar: Clock & Info */}
+            {/* Top Bar */}
             <div className="flex justify-between items-center p-6 bg-white/5 border-b border-white/10">
                 <h1 className="text-4xl font-mono font-bold text-primary">
                     {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </h1>
+                <div className="flex items-center gap-4">
+                    {GROUPS.map(g => (
+                        <button
+                            key={g}
+                            onClick={() => setSelectedGroup(g)}
+                            className={cn(
+                                "px-4 py-2 rounded-lg text-sm font-bold transition-all",
+                                selectedGroup === g
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-white/10 text-muted-foreground hover:text-white"
+                            )}
+                        >
+                            {g}
+                        </button>
+                    ))}
+                </div>
                 <div className="text-right">
-                    <p className="text-2xl font-bold">{MOCK_PLAN.group} Group</p>
-                    <p className="text-muted-foreground">{MOCK_PLAN.focus}</p>
+                    <p className="text-2xl font-bold">{plan?.group || "—"}</p>
+                    <p className="text-muted-foreground">{plan?.focus || ""}</p>
                 </div>
             </div>
 
-            {/* Main Content: Current Set */}
+            {/* Main Content */}
             <div className="flex-1 flex flex-col items-center justify-center p-8 relative">
-                <div className="absolute inset-0 bg-primary/5 animate-pulse" />
-
-                <div className="z-10 text-center space-y-8 max-w-5xl">
-                    <div className="text-[150px] font-bold leading-none tracking-tighter text-primary font-mono glow">
-                        {currentSet.distance}m
-                    </div>
-
-                    <div className="text-6xl font-medium uppercase tracking-wide text-white/90">
-                        {currentSet.stroke}
-                    </div>
-
-                    <div className="text-4xl text-muted-foreground bg-black/50 p-6 rounded-2xl border border-white/10">
-                        {currentSet.description}
-                    </div>
-                </div>
+                {loading ? (
+                    <div className="text-3xl text-muted-foreground animate-pulse">Loading...</div>
+                ) : !currentSet ? (
+                    <div className="text-3xl text-muted-foreground">No plan found for today</div>
+                ) : (
+                    <>
+                        <div className="absolute inset-0 bg-primary/5 animate-pulse" />
+                        <div className="z-10 text-center space-y-8 max-w-5xl">
+                            <div className="text-[150px] font-bold leading-none tracking-tighter text-primary font-mono">
+                                {currentSet.distance}m
+                            </div>
+                            <div className="text-6xl font-medium uppercase tracking-wide text-white/90">
+                                {currentSet.stroke}
+                            </div>
+                            <div className="text-4xl text-muted-foreground bg-black/50 p-6 rounded-2xl border border-white/10">
+                                {currentSet.description}
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* Controls */}
@@ -57,9 +107,8 @@ export default function PoolsidePage() {
                 <div className="flex items-center gap-4 text-2xl text-muted-foreground">
                     <span className="font-mono text-primary">Set {currentSetIndex + 1}</span>
                     <span>/</span>
-                    <span>{allItems.length}</span>
+                    <span>{items.length}</span>
                 </div>
-
                 <div className="flex items-center gap-8">
                     <button
                         onClick={() => setIsPlaying(!isPlaying)}
@@ -70,18 +119,14 @@ export default function PoolsidePage() {
                     >
                         {isPlaying ? <Pause className="w-12 h-12" /> : <Play className="w-12 h-12 ml-1" />}
                     </button>
-
                     <button
-                        onClick={() => setCurrentSetIndex((prev) => (prev + 1) % allItems.length)}
+                        onClick={() => setCurrentSetIndex((prev) => (prev + 1) % items.length)}
                         className="p-6 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
                     >
                         <SkipForward className="w-12 h-12" />
                     </button>
                 </div>
-
-                <button className="p-4 rounded-xl bg-white/5 hover:bg-white/10 text-muted-foreground">
-                    <Maximize2 className="w-8 h-8" />
-                </button>
+                <div className="w-12" />
             </div>
         </div>
     );

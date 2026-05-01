@@ -11,15 +11,10 @@ export async function GET(req: Request) {
         if (auth instanceof NextResponse) return auth;
 
         const prisma = getPrisma();
-        const { searchParams } = new URL(req.url);
-        const group = searchParams.get('group');
-
-        const where: any = group ? { group } : {};
-        const plans = await prisma.trainingPlan.findMany({
-            where,
-            orderBy: { date: 'desc' }
+        const templates = await prisma.blockTemplate.findMany({
+            orderBy: { category: 'asc' }
         });
-        return NextResponse.json(plans || [], { headers: V12_FINGERPRINT });
+        return NextResponse.json(templates || [], { headers: V12_FINGERPRINT });
     });
 }
 
@@ -31,24 +26,18 @@ export async function POST(request: Request) {
         const prisma = getPrisma();
         const data = flattenPayload(await request.json());
 
-        const plan = await prisma.trainingPlan.create({
+        const template = await prisma.blockTemplate.create({
             data: {
-                id: data.id,
-                date: String(data.date),
-                startTime: data.startTime || '',
-                endTime: data.endTime || '',
-                group: String(data.group),
-                blocks: data.blocks || [],
-                totalDistance: Number(data.totalDistance) || 0,
-                focus: data.focus || '',
-                status: data.status || 'Active',
-                coachNotes: data.coachNotes,
-                targetedNotes: data.targetedNotes || {},
-                imageUrl: data.imageUrl,
-                isStarred: Boolean(data.isStarred)
+                templateId: String(data.templateId),
+                name: String(data.name),
+                category: String(data.category),
+                type: String(data.type),
+                rounds: Number(data.rounds) || 1,
+                items: data.items || [],
+                note: data.note
             }
         });
-        return NextResponse.json(plan, { headers: V12_FINGERPRINT });
+        return NextResponse.json(template, { headers: V12_FINGERPRINT });
     });
 }
 
@@ -64,24 +53,18 @@ export async function PUT(request: Request) {
 
         const data = flattenPayload(await request.json());
 
-        const plan = await prisma.trainingPlan.update({
+        const template = await prisma.blockTemplate.update({
             where: { id },
             data: {
-                date: data.date,
-                startTime: data.startTime,
-                endTime: data.endTime,
-                group: data.group,
-                blocks: data.blocks,
-                totalDistance: data.totalDistance !== undefined ? Number(data.totalDistance) : undefined,
-                focus: data.focus,
-                status: data.status,
-                coachNotes: data.coachNotes,
-                targetedNotes: data.targetedNotes,
-                imageUrl: data.imageUrl,
-                isStarred: data.isStarred
+                name: data.name,
+                category: data.category,
+                type: data.type,
+                rounds: data.rounds !== undefined ? Number(data.rounds) : undefined,
+                items: data.items,
+                note: data.note
             }
         });
-        return NextResponse.json(plan, { headers: V12_FINGERPRINT });
+        return NextResponse.json(template, { headers: V12_FINGERPRINT });
     });
 }
 
@@ -95,7 +78,7 @@ export async function DELETE(request: Request) {
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
-        await prisma.trainingPlan.delete({ where: { id } });
+        await prisma.blockTemplate.delete({ where: { id } });
         return NextResponse.json({ success: true }, { headers: V12_FINGERPRINT });
     });
 }

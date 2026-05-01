@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MessageSquare, ThumbsUp, ThumbsDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api-client";
 
 export function BlockFeedbackPanel({
     planId,
@@ -20,11 +21,36 @@ export function BlockFeedbackPanel({
     const [reaction, setReaction] = useState<'like'|'dislike'|null>(null);
     const [comment, setComment] = useState("");
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        api.blockFeedbacks.getAll({ planId, blockId, swimmerId })
+            .then((feedbacks: any[]) => {
+                if (feedbacks.length > 0) {
+                    setIsSubmitted(true);
+                }
+            })
+            .catch(() => {});
+    }, [planId, blockId, swimmerId]);
 
     const handleSubmit = async () => {
-        setIsSubmitted(true);
-        if (onFeedbackSubmitted) onFeedbackSubmitted();
-        // API call to save block feedback
+        setLoading(true);
+        try {
+            await api.blockFeedbacks.create({
+                planId,
+                blockId,
+                swimmerId,
+                reaction,
+                comment: comment || null,
+                tags: []
+            });
+            setIsSubmitted(true);
+            if (onFeedbackSubmitted) onFeedbackSubmitted();
+        } catch (e) {
+            console.error("Failed to submit block feedback:", e);
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (isSubmitted) {
@@ -64,8 +90,12 @@ export function BlockFeedbackPanel({
                         onChange={(e) => setComment(e.target.value)}
                         className="flex-1 bg-black/40 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
                     />
-                    <button onClick={handleSubmit} className="bg-primary text-black px-4 py-2 rounded-lg text-sm font-bold">
-                        发送
+                    <button
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        className="bg-primary text-black px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
+                    >
+                        {loading ? "发送中..." : "发送"}
                     </button>
                 </div>
             )}
