@@ -16,6 +16,7 @@ interface StoreContextType {
     attendance: AttendanceRecord[];
     performances: PerformanceRecord[];
     weeklyPlans: any[];
+    announcements: any[];
     addPlan: (plan: TrainingPlan) => void;
     updatePlan: (id: string, updates: Partial<TrainingPlan>) => void;
     deletePlan: (id: string) => void;
@@ -43,6 +44,8 @@ interface StoreContextType {
     addTemplate: (block: TrainingBlock, name: string, category: BlockTemplate['category']) => void;
     deleteTemplate: (templateId: string) => void;
     recordMutation: () => void;
+    addAnnouncement: (data: any) => void;
+    deleteAnnouncement: (id: string) => void;
     totalXP: number;
     clearData: () => void;
     syncStatus: 'idle' | 'syncing' | 'error';
@@ -58,6 +61,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const [performances, setPerformances] = useState<PerformanceRecord[]>([]);
     const [templates, setTemplates] = useState<BlockTemplate[]>([]);
     const [weeklyPlans, setWeeklyPlans] = useState<any[]>([]);
+    const [announcements, setAnnouncements] = useState<any[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
     const [dbWaking, setDbWaking] = useState(false);
     const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
@@ -86,6 +90,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 const fetchedAttendance = await safeFetch(api.attendance.getAll, null);
                 const fetchedPerformances = await safeFetch(api.performances.getAll, null);
                 const fetchedWeeklyPlans = await safeFetch(api.weeklyPlans.getAll, null);
+                const fetchedAnnouncements = await safeFetch(api.announcements.getAll, null);
 
                 // Also fetch all weekly feedbacks so we can aggregate daily sessions into standard feedbacks
                 const fetchedWeeklyFeedbacks = await safeFetch(api.weeklyFeedbacks.getSubmitted, null);
@@ -115,13 +120,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 setAttendance(fetchedAttendance || []);
                 setPerformances(fetchedPerformances || []);
                 setWeeklyPlans((fetchedWeeklyPlans || []).filter((p: any) => p.isPublished));
+                setAnnouncements(fetchedAnnouncements || []);
 
-                // Load templates from localStorage
-                const savedTemplates = localStorage.getItem("aquaflow_templates");
-                const userTemplates = savedTemplates ? JSON.parse(savedTemplates) : [];
-                const defaultIds = new Set(DEFAULT_TEMPLATES.map(t => t.templateId));
-                const uniqueUserTemplates = userTemplates.filter((t: BlockTemplate) => !defaultIds.has(t.templateId));
-                setTemplates([...uniqueUserTemplates, ...DEFAULT_TEMPLATES]);
+                // Load templates from API, fall back to defaults if empty
+                let fetchedTemplates = await safeFetch(api.templates.getAll, null);
+                if (!fetchedTemplates || fetchedTemplates.length === 0) {
+                    fetchedTemplates = DEFAULT_TEMPLATES.map(t => ({ ...t, id: `local_${t.templateId}` }));
+                }
+                setTemplates(fetchedTemplates);
 
             } catch (error) {
                 console.error("Critical failure during loadData:", error);
@@ -150,6 +156,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 const attendance = await safeSync(api.attendance.getAll);
                 const performances = await safeSync(api.performances.getAll);
                 const weeklyPlans = await safeSync(api.weeklyPlans.getAll);
+                const announcements = await safeSync(api.announcements.getAll);
 
                 const fetchedWeeklyFeedbacks = await safeSync(api.weeklyFeedbacks.getSubmitted);
                 const transformedDaily = (fetchedWeeklyFeedbacks || []).flatMap((wf: any) => 
@@ -171,6 +178,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 if (attendance) setAttendance(attendance);
                 if (performances) setPerformances(performances);
                 if (weeklyPlans) setWeeklyPlans(weeklyPlans.filter((p: any) => p.isPublished));
+                if (announcements) setAnnouncements(announcements);
                 
                 setSyncStatus('idle');
             } catch (error) {
@@ -181,15 +189,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
         return () => clearInterval(syncInterval);
     }, []);
-
-    // Persist templates to localStorage
-    useEffect(() => {
-        if (isLoaded && templates.length > 0) {
-            const defaultIds = new Set(DEFAULT_TEMPLATES.map(t => t.templateId));
-            const userTemplates = templates.filter(t => !defaultIds.has(t.templateId));
-            localStorage.setItem("aquaflow_templates", JSON.stringify(userTemplates));
-        }
-    }, [templates, isLoaded]);
 
     const addPlan = async (plan: TrainingPlan) => {
         recordMutation();
@@ -426,18 +425,60 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const addTemplate = (block: TrainingBlock, name: string, category: BlockTemplate['category']) => {
+    const addTemplate = async (block: TrainingBlock, name: string, category: BlockTemplate['category']) => {
+        const templateId = uid();
         const newTemplate: BlockTemplate = {
             ...block,
-            templateId: uid(),
+            id: `local_${templateId}`,
+            templateId,
             name,
             category,
         };
         setTemplates(prev => [newTemplate, ...prev]);
+        try {
+            const saved = await api.templates.create({ ...newTemplate });
+            if (saved?.id) {
+                setTemplates(prev => prev.map(t => t.id === newTemplate.id ? { ...t, id: saved.id } : t));
+            }
+        } catch (e) {
+            console.error("Failed to save template:", e);
+            setTemplates(prev => prev.filter(t => t.id !== newTemplate.id));
+        }
     };
 
-    const deleteTemplate = (templateId: string) => {
+    const deleteTemplate = async (templateId: string) => {
+        const tmpl = templates.find(t => t.templateId === templateId);
         setTemplates(prev => prev.filter(t => t.templateId !== templateId));
+        try {
+            if (tmpl && !tmpl.id?.startsWith('local_')) {
+                await api.templates.delete(tmpl.id);
+            }
+        } catch (e) {
+            console.error("Failed to delete template:", e);
+            if (tmpl) setTemplates(prev => [...prev, tmpl]);
+        }
+    };
+
+    const addAnnouncement = async (data: any) => {
+        recordMutation();
+        try {
+            const created = await api.announcements.create(data);
+            setAnnouncements(prev => [created, ...prev]);
+        } catch (e) {
+            console.error("Failed to create announcement:", e);
+            throw e;
+        }
+    };
+
+    const deleteAnnouncement = async (id: string) => {
+        recordMutation();
+        setAnnouncements(prev => prev.filter(a => a.id !== id));
+        try {
+            await api.announcements.delete(id);
+        } catch (e) {
+            console.error("Failed to delete announcement:", e);
+            setAnnouncements(prev => [...prev]);
+        }
     };
 
     const clearData = async () => {
@@ -452,7 +493,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <StoreContext.Provider value={{
-            isLoaded, plans, swimmers, feedbacks, attendance, performances, weeklyPlans,
+            isLoaded, plans, swimmers, feedbacks, attendance, performances, weeklyPlans, announcements,
             addPlan, updatePlan, deletePlan, submitFeedback, markAttendance, unmarkAttendance,
             batchMarkAttendance, batchUnmarkAttendance, adjustXP, addSwimmer, updateSwimmer, deleteSwimmer,
             dbWaking, recordMutation, getSwimmerArgs: (id) => {
@@ -473,6 +514,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 return pbs;
             },
             templates, addTemplate, deleteTemplate,
+            addAnnouncement, deleteAnnouncement,
             totalXP: swimmers.reduce((acc, s) => acc + (s.xp || 0), 0),
             clearData,
             syncStatus

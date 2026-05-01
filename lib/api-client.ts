@@ -108,6 +108,9 @@ export const api = {
     },
     templates: {
         getAll: () => fetchAPI<any[]>('/templates'),
+        create: (data: any) => fetchAPI<any>('/templates', { method: 'POST', body: JSON.stringify(data) }),
+        update: (id: string, data: any) => fetchAPI<any>(`/templates?id=${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        delete: (id: string) => fetchAPI<void>(`/templates?id=${id}`, { method: 'DELETE' }),
     },
     weeklyPlans: {
         getAll: (group?: string) => fetchAPI<any[]>(`/weekly-plans${group ? `?group=${group}` : ''}`),
@@ -134,5 +137,47 @@ export const api = {
         create: (data: any) => fetchAPI<any>('/feedback-reminders', { method: 'POST', body: JSON.stringify(data) }),
         respond: (data: any) => fetchAPI<any>('/feedback-reminders', { method: 'POST', body: JSON.stringify({ ...data, _action: 'respond' }) }),
         replyToTargeted: (id: string, coachReply: string) => fetchAPI<any>('/feedback-reminders', { method: 'PATCH', body: JSON.stringify({ id, coachReply }) }),
+    },
+    announcements: {
+        getAll: (group?: string) => fetchAPI<any[]>(`/announcements${group ? `?group=${group}` : ''}`),
+        create: (data: any) => fetchAPI<any>('/announcements', { method: 'POST', body: JSON.stringify(data) }),
+        delete: (id: string) => fetchAPI<void>(`/announcements?id=${id}`, { method: 'DELETE' }),
+    },
+    upload: {
+        file: async (file: File) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 60000);
+            const response = await fetch(`${API_BASE}/upload`, {
+                method: 'POST',
+                body: formData,
+                signal: controller.signal,
+            });
+            clearTimeout(timeout);
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+                throw new Error(error.error || `Upload failed: ${response.status}`);
+            }
+            return response.json();
+        },
+    },
+    blockFeedbacks: {
+        getAll: (params?: { planId?: string; blockId?: string; swimmerId?: string }) => {
+            const qs = params ? '?' + new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]).toString() : '';
+            return fetchAPI<any[]>(`/block-feedbacks${qs}`);
+        },
+        create: (data: any) => fetchAPI<any>('/block-feedbacks', { method: 'POST', body: JSON.stringify(data) }),
+        delete: (id: string) => fetchAPI<void>(`/block-feedbacks?id=${id}`, { method: 'DELETE' }),
+    },
+    planAnalysis: {
+        getByPlan: (planId: string) => fetchAPI<any>(`/plan-analysis?planId=${planId}`),
+        create: (data: any) => fetchAPI<any>('/plan-analysis', { method: 'POST', body: JSON.stringify(data) }),
+        delete: (planId: string) => fetchAPI<void>(`/plan-analysis?planId=${planId}`, { method: 'DELETE' }),
+    },
+    auth: {
+        me: () => fetchAPI<any>('/auth/me'),
+        login: (data: any) => fetchAPI<any>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+        logout: () => fetchAPI<any>('/auth/logout', { method: 'POST' }),
     }
 };

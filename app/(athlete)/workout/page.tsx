@@ -7,8 +7,9 @@ import { BlockFeedbackPanel } from "@/components/athlete/BlockFeedbackPanel";
 import { WeeklyFeedbackForm } from "@/components/athlete/WeeklyFeedbackForm";
 import { TargetedFeedbackForm } from "@/components/athlete/TargetedFeedbackForm";
 import { CoachReplyPanel } from "@/components/athlete/CoachReplyPanel";
+import { AnnouncementCard } from "@/components/feed/AnnouncementCard";
 import { api } from "@/lib/api-client";
-import { LogOut, Calendar, FolderOpen, Activity, History, Quote, MessageSquare, ArrowRightLeft, Target, ClipboardList, ArrowRight, TrendingUp } from "lucide-react";
+import { LogOut, Calendar, FolderOpen, Activity, History, Quote, MessageSquare, ArrowRightLeft, Target, ClipboardList, ArrowRight, TrendingUp, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
@@ -22,7 +23,7 @@ import { getLocalDateISOString } from "@/lib/date-utils";
 export default function AthleteWorkoutPage() {
     const { t } = useLanguage();
     const router = useRouter();
-    const { plans, swimmers, attendance, updateSwimmer, weeklyPlans, isLoaded: storeLoaded } = useStore();
+    const { plans, swimmers, attendance, updateSwimmer, weeklyPlans, announcements, isLoaded: storeLoaded } = useStore();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [currentUser, setCurrentUser] = useState<Swimmer | null>(null);
     const [authResolved, setAuthResolved] = useState(false);
@@ -80,9 +81,10 @@ export default function AthleteWorkoutPage() {
         }
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        try { await api.auth.logout(); } catch {}
         localStorage.removeItem("aquaflow_athlete_id");
-        localStorage.removeItem("aquaflow_coach_session"); // Ensure isolation
+        localStorage.removeItem("aquaflow_coach_session");
         router.push('/login');
     };
 
@@ -217,6 +219,13 @@ export default function AthleteWorkoutPage() {
     
     // Weekly Framework Logic
     const currentWeeklyPlan = weeklyPlans.find(wp => wp.weekStart === currentWeekStart && wp.group === currentUser?.group);
+
+    // Filter announcements visible to this swimmer
+    const myAnnouncements = (announcements || []).filter((a: any) => {
+        if (a.targetGroup && a.targetGroup !== currentUser?.group) return false;
+        if (a.targetSwimmerIds && !a.targetSwimmerIds.includes(currentUser?.id)) return false;
+        return true;
+    });
     
     const weekDays = (() => {
         const days = [];
@@ -257,6 +266,9 @@ export default function AthleteWorkoutPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        <Link href="/profile" className="p-2 hover:bg-secondary/50 rounded-lg transition-colors text-white" title="Profile">
+                            <UserCircle className="w-5 h-5" />
+                        </Link>
                         <LanguageToggle />
                         <button
                             onClick={handleLogout}
@@ -336,6 +348,19 @@ export default function AthleteWorkoutPage() {
                 {/* Tab Content: Training Section (Merged Plan + Weekly) */}
                 {activeTab === 'training' && (
                     <div className="space-y-6">
+                        {/* --- COACH ANNOUNCEMENTS FEED --- */}
+                        {myAnnouncements.length > 0 && (
+                            <div className="space-y-4">
+                                <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                                    <MessageSquare className="w-3.5 h-3.5 text-primary" />
+                                    教练动态
+                                </h2>
+                                {myAnnouncements.map((a: any) => (
+                                    <AnnouncementCard key={a.id} announcement={a} />
+                                ))}
+                            </div>
+                        )}
+
                         {/* --- WEEKLY FRAMEWORK (TOP) --- */}
                         <div className="bg-card/30 border border-border rounded-xl p-4 md:p-5">
                             <h2 className="text-sm font-bold text-white mb-1 flex items-center gap-2">

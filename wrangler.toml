@@ -13,3 +13,8 @@ binding = "ASSETS"
 [[routes]]
 pattern = "sw.sportsflow.best"
 custom_domain = true
+
+[[r2_buckets]]
+bucket_name = "aquaflow-uploads"
+binding = "UPLOADS"
+preview_bucket_name = "aquaflow-uploads-dev"

@@ -45,7 +45,7 @@ export default function WeeklyPlanPage() {
         }
     };
 
-    const compressImage = (file: File, maxDim = 800): Promise<string> => {
+    const compressImage = (file: File, maxDim = 1920): Promise<string> => {
         return new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -67,9 +67,8 @@ export default function WeeklyPlanPage() {
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx?.drawImage(img, 0, 0, width, height);
-                    // Extremely aggressive compression (40% quality) to guarantee small Base64 
-                    // that won't trigger Cloudflare Worker 10ms CPU parse limits
-                    resolve(canvas.toDataURL('image/jpeg', 0.4)); 
+                    // High-quality compression (85% quality) to preserve text readability
+                    resolve(canvas.toDataURL('image/jpeg', 0.85)); 
                 };
                 img.src = e.target?.result as string;
             };
@@ -81,9 +80,8 @@ export default function WeeklyPlanPage() {
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
 
-        // Force maximum dimension to 600px if uploading more than 2 photos
-        // This is explicitly protecting the Serverless Edge endpoint from payload crashes
-        const targetDim = files.length > 2 ? 600 : 800;
+        // Use consistent 1920px resolution for all uploads to preserve quality
+        const targetDim = 1920;
 
         for (const file of files) {
             const base64 = await compressImage(file, targetDim);
@@ -266,26 +264,37 @@ export default function WeeklyPlanPage() {
                                         <Trash2 className="w-4 h-4" />
                                     </button>
                                     <div className="aspect-[4/3] rounded-lg overflow-hidden bg-secondary flex items-center justify-center mb-3">
-                                        {s.imageData ? <img src={s.imageData} className="w-full h-full object-cover" /> : <ImageIcon className="w-8 h-8 opacity-50" />}
+                                        {s.imageData ? <img src={s.imageData} className="w-full h-full object-contain" /> : <ImageIcon className="w-8 h-8 opacity-50" />}
                                     </div>
                                     <div className="space-y-2">
-                                        <input 
+                                        <input
                                             type="text" value={s.label} placeholder="如：周六上午"
                                             onChange={e => {
                                                 const newS = [...sessions];
                                                 newS[idx] = { ...newS[idx], label: e.target.value, isUpdated: true };
                                                 setSessions(newS);
                                             }}
-                                            className="w-full bg-transparent border-b border-white/20 px-1 py-1 text-sm text-white focus:border-purple-400 outline-none" 
+                                            className="w-full bg-transparent border-b border-white/20 px-1 py-1 text-sm text-white focus:border-purple-400 outline-none"
                                         />
-                                        <input 
+                                        <input
                                             type="date" value={s.date}
                                             onChange={e => {
                                                 const newS = [...sessions];
                                                 newS[idx] = { ...newS[idx], date: e.target.value, isUpdated: true };
                                                 setSessions(newS);
                                             }}
-                                            className="w-full bg-secondary/50 rounded px-2 py-1 text-xs text-white outline-none" 
+                                            className="w-full bg-secondary/50 rounded px-2 py-1 text-xs text-white outline-none"
+                                        />
+                                        <textarea
+                                            value={s.notes || ""}
+                                            onChange={e => {
+                                                const newS = [...sessions];
+                                                newS[idx] = { ...newS[idx], notes: e.target.value, isUpdated: true };
+                                                setSessions(newS);
+                                            }}
+                                            placeholder="今日训练说明..."
+                                            rows={2}
+                                            className="w-full bg-black/30 rounded px-2 py-1.5 text-xs text-white resize-none outline-none border border-white/10 focus:border-purple-500/50 placeholder:text-muted-foreground/50"
                                         />
                                     </div>
                                 </div>
