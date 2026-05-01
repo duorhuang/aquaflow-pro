@@ -1,12 +1,13 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { ChevronLeft, ChevronRight, Plus, Copy, FileText, X, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Copy, FileText, X, AlertTriangle, Bell, Send, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { getLocalDateISOString } from "@/lib/date-utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/api-client";
 
 export default function SchedulePage() {
     const router = useRouter();
@@ -14,6 +15,10 @@ export default function SchedulePage() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [showModal, setShowModal] = useState(false);
+    const [showReminder, setShowReminder] = useState(false);
+    const [reminderMsg, setReminderMsg] = useState("");
+    const [reminderGroup, setReminderGroup] = useState("Advanced");
+    const [sendingReminder, setSendingReminder] = useState(false);
 
     // Get calendar data
     const year = currentDate.getFullYear();
@@ -94,6 +99,28 @@ export default function SchedulePage() {
             addPlan(newPlan);
             setShowModal(false);
             router.push(`/dashboard/plan/${newPlan.id}`);
+        }
+    };
+
+    const sendDailyReminder = async () => {
+        if (!reminderMsg.trim() || !selectedDate) return;
+        setSendingReminder(true);
+        try {
+            const dateStr = getLocalDateISOString(selectedDate);
+            await api.feedbackReminders.create({
+                message: reminderMsg,
+                targetGroup: reminderGroup,
+                periodStart: dateStr,
+                periodEnd: dateStr,
+            });
+            alert("✅ 每日提醒已发送！");
+            setReminderMsg("");
+            setShowReminder(false);
+        } catch (e) {
+            console.error("Failed to send reminder:", e);
+            alert("发送失败，请重试");
+        } finally {
+            setSendingReminder(false);
         }
     };
 
@@ -310,7 +337,7 @@ export default function SchedulePage() {
                             <h2 className="text-xl font-bold text-white">
                                 {selectedDate.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
                             </h2>
-                            <button onClick={() => setShowModal(false)} className="p-1 hover:bg-white/10 rounded-lg">
+                            <button onClick={() => { setShowModal(false); setShowReminder(false); setReminderMsg(""); }} className="p-1 hover:bg-white/10 rounded-lg">
                                 <X className="w-5 h-5 text-muted-foreground" />
                             </button>
                         </div>
@@ -382,6 +409,58 @@ export default function SchedulePage() {
                                             <div className="text-xs text-muted-foreground">拍照上传手写板书</div>
                                         </div>
                                     </Link>
+
+                                    <button
+                                        onClick={() => setShowReminder(!showReminder)}
+                                        className="w-full flex items-center gap-3 p-4 bg-yellow-500/20 rounded-xl hover:bg-yellow-500/30 transition-colors text-left"
+                                    >
+                                        <Bell className="w-5 h-5 text-yellow-400" />
+                                        <div>
+                                            <div className="font-bold text-white">发送每日提醒</div>
+                                            <div className="text-xs text-muted-foreground">向队员发送训练提示</div>
+                                        </div>
+                                    </button>
+
+                                    {showReminder && (
+                                        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 space-y-3 animate-in slide-in-from-top-2">
+                                            <textarea
+                                                value={reminderMsg}
+                                                onChange={e => setReminderMsg(e.target.value)}
+                                                placeholder="训练提示内容..."
+                                                rows={2}
+                                                className="w-full bg-black/30 rounded-lg px-3 py-2 text-sm text-white resize-none outline-none border border-white/10 focus:border-yellow-500/50 placeholder:text-muted-foreground/50"
+                                            />
+                                            <div className="flex gap-2">
+                                                {["Advanced", "Intermediate", "Junior"].map(g => (
+                                                    <button
+                                                        key={g}
+                                                        onClick={() => setReminderGroup(g)}
+                                                        className={cn(
+                                                            "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+                                                            reminderGroup === g
+                                                                ? "bg-yellow-500/30 border-yellow-500 text-yellow-200"
+                                                                : "bg-white/5 border-white/10 text-muted-foreground hover:border-white/20"
+                                                        )}
+                                                    >
+                                                        {g === "Advanced" ? "高级组" : g === "Intermediate" ? "中级组" : "初级组"}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <button
+                                                onClick={sendDailyReminder}
+                                                disabled={sendingReminder || !reminderMsg.trim()}
+                                                className={cn(
+                                                    "w-full py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all",
+                                                    sendingReminder || !reminderMsg.trim()
+                                                        ? "bg-yellow-500/30 text-yellow-500/50 cursor-not-allowed"
+                                                        : "bg-yellow-500 text-black hover:brightness-110"
+                                                )}
+                                            >
+                                                {sendingReminder ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                                发送提醒
+                                            </button>
+                                        </div>
+                                    )}
                                 </>
                             )}
                         </div>

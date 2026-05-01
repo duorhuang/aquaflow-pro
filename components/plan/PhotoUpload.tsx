@@ -17,9 +17,11 @@ export function PhotoUpload({
     onFileSelect,
     className,
     maxSizeMB = 10,
+    maxDim = 2000,
+    quality = 0.85,
     label = "上传计划照片",
     description = "支持 JPG, PNG 格式，最大 10MB"
-}: PhotoUploadProps) {
+}: PhotoUploadProps & { maxDim?: number; quality?: number }) {
     const [isDragging, setIsDragging] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -49,7 +51,7 @@ export function PhotoUpload({
                 const canvas = document.createElement("canvas");
                 let width = img.width;
                 let height = img.height;
-                const MAX_DIM = 1200;
+                const MAX_DIM = maxDim;
 
                 if (width > height) {
                     if (width > MAX_DIM) {
@@ -68,8 +70,8 @@ export function PhotoUpload({
                 const ctx = canvas.getContext("2d");
                 if (ctx) {
                     ctx.drawImage(img, 0, 0, width, height);
-                    // Compress to 50% quality JPEG
-                    const dataUrl = canvas.toDataURL("image/jpeg", 0.5);
+                    // Compress to configurable quality JPEG
+                    const dataUrl = canvas.toDataURL("image/jpeg", quality);
                     setPreviewUrl(dataUrl);
 
                     // Reconstruct into a File object so the parent gets the compressed version
@@ -82,7 +84,7 @@ export function PhotoUpload({
                             setSelectedFile(compressedFile);
                             onFileSelect?.(compressedFile);
                         }
-                    }, "image/jpeg", 0.5);
+                    }, "image/jpeg", quality);
                 } else {
                     // Fallback to original
                     setPreviewUrl(e.target?.result as string);
@@ -95,7 +97,7 @@ export function PhotoUpload({
             }
         };
         reader.readAsDataURL(file);
-    }, [maxSizeMB, onFileSelect]);
+    }, [maxSizeMB, maxDim, quality, onFileSelect]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];

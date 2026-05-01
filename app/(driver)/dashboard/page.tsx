@@ -10,11 +10,13 @@ import { RefreshButton } from "@/components/dashboard/RefreshButton";
 import { RecentPerformances } from "@/components/dashboard/RecentPerformances";
 import { AthletesFeedbackPanel } from "@/components/dashboard/AthletesFeedbackPanel";
 import { TeamFeedbackSummary } from "@/components/dashboard/TeamFeedbackSummary";
+import { AnnouncementComposer } from "@/components/dashboard/AnnouncementComposer";
 import { Plus, LogOut, MessageSquare, FolderOpen, Send } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/api-client";
 
 export default function DashboardPage() {
     const { t } = useLanguage();
@@ -26,7 +28,8 @@ export default function DashboardPage() {
         return getVisiblePlans().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [getVisiblePlans]);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        try { await api.auth.logout(); } catch {}
         localStorage.removeItem("aquaflow_coach_session");
         router.push('/login?role=coach');
     };
@@ -82,6 +85,7 @@ export default function DashboardPage() {
                 {/* Left Column: Attendance & Status */}
                 <div className="space-y-6">
                     <TodayAttendance />
+                    <AnnouncementComposer />
                     <TeamFeedbackSummary />
                     <TeamStatsPanel />
                     <Link href="/dashboard/feedbacks" className="bg-gradient-to-br from-primary/20 to-blue-600/20 border border-primary/20 rounded-3xl p-6 flex flex-col justify-between hover:scale-[1.02] transition-transform cursor-pointer group">

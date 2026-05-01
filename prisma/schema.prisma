@@ -11,6 +11,14 @@ datasource db {
   url       = env("DATABASE_URL")
 }
 
+model CoachUser {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String   // hashed with PBKDF2-SHA256
+  name      String?
+  createdAt DateTime @default(now())
+}
+
 model Swimmer {
   id        String   @id @default(cuid())
   name      String
@@ -298,4 +306,33 @@ model TargetedFeedback {
   @@index([reminderId])
   @@index([swimmerId])
   @@unique([reminderId, swimmerId])
+}
+
+// ==========================================
+// Coach Announcements (Moments Feed)
+// ==========================================
+
+model CoachAnnouncement {
+  id             String   @id @default(cuid())
+  targetSwimmerIds Json?  // JSON array of swimmer IDs, null = all
+  targetGroup    String?  // Optional group filter e.g. "Advanced"
+  createdAt      DateTime @default(now())
+
+  blocks         AnnouncementBlock[]
+
+  @@index([createdAt])
+  @@index([targetGroup])
+}
+
+model AnnouncementBlock {
+  id              String   @id @default(cuid())
+  announcementId  String
+  type            String   // "text" | "image" | "video" | "link"
+  content         String   // text body, R2 URL, or external URL
+  sortOrder       Int      @default(0)
+  thumbnailUrl    String?  // for video thumbnails
+
+  announcement    CoachAnnouncement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@index([announcementId])
 }
