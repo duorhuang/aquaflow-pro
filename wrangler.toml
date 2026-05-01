@@ -14,7 +14,8 @@ binding = "ASSETS"
 pattern = "sw.sportsflow.best"
 custom_domain = true
 
-[[r2_buckets]]
-bucket_name = "aquaflow-uploads"
-binding = "UPLOADS"
-preview_bucket_name = "aquaflow-uploads-dev"
+# TODO: Enable R2 in Cloudflare Dashboard, then uncomment:
+# [[r2_buckets]]
+# bucket_name = "aquaflow-uploads"
+# binding = "UPLOADS"
+# preview_bucket_name = "aquaflow-uploads-dev"
