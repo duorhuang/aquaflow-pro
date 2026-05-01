@@ -325,10 +325,10 @@ export default function AthleteWorkoutPage() {
                     </button>
                 </div>
 
-                {/* EMERGENCY DATA ALERT */}
-                {(!plans || plans.length === 0) && activeTab === 'training' && (
-                    <div className="mt-4 bg-orange-500/10 border border-orange-500/20 p-4 rounded-2xl flex items-center gap-3 animate-pulse">
-                        <div className="w-2 h-2 bg-orange-500 rounded-full" />
+                {/* EMERGENCY DATA ALERT: Only show if we have NO swimmer data at all — real outage */}
+                {(!swimmers || swimmers.length === 0) && activeTab === 'training' && (
+                    <div className="mt-4 bg-orange-500/10 border border-orange-500/20 p-4 rounded-2xl flex items-center gap-3">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
                         <p className="text-[11px] text-orange-200">系统数据暂时离线，请刷新重试或联系教练检查网络。</p>
                     </div>
                 )}

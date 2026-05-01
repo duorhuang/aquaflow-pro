@@ -80,15 +80,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 };
 
                 // Fetch all data individually to prevent Promise.all from failing the entire UI
-                const fetchedPlans = await safeFetch(api.plans.getAll);
-                const fetchedSwimmers = await safeFetch(api.swimmers.getAll);
-                const fetchedFeedbacks = await safeFetch(api.feedbacks.getAll);
-                const fetchedAttendance = await safeFetch(api.attendance.getAll);
-                const fetchedPerformances = await safeFetch(api.performances.getAll);
-                const fetchedWeeklyPlans = await safeFetch(api.weeklyPlans.getAll);
+                const fetchedPlans = await safeFetch(api.plans.getAll, null);
+                const fetchedSwimmers = await safeFetch(api.swimmers.getAll, null);
+                const fetchedFeedbacks = await safeFetch(api.feedbacks.getAll, null);
+                const fetchedAttendance = await safeFetch(api.attendance.getAll, null);
+                const fetchedPerformances = await safeFetch(api.performances.getAll, null);
+                const fetchedWeeklyPlans = await safeFetch(api.weeklyPlans.getAll, null);
 
                 // Also fetch all weekly feedbacks so we can aggregate daily sessions into standard feedbacks
-                const fetchedWeeklyFeedbacks = await safeFetch(api.weeklyFeedbacks.getSubmitted);
+                const fetchedWeeklyFeedbacks = await safeFetch(api.weeklyFeedbacks.getSubmitted, null);
+
+                // If multiple critical collections returned null, we are likely experiencing a severe DB or Network outage
+                if (fetchedPlans === null && fetchedSwimmers === null) {
+                    setSyncStatus('error');
+                    throw new Error("Critical data fetch failed. Backend is unavailable.");
+                }
+
                 const transformedDaily = (fetchedWeeklyFeedbacks || []).flatMap((wf: any) => 
                     (wf.dailyFeedbacks || []).filter((df: any) => df.rpe || df.soreness || df.reflection).map((df: any) => ({
                         id: df.id,
@@ -144,7 +151,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 const performances = await safeSync(api.performances.getAll);
                 const weeklyPlans = await safeSync(api.weeklyPlans.getAll);
 
-                const fetchedWeeklyFeedbacks = await api.weeklyFeedbacks.getSubmitted();
+                const fetchedWeeklyFeedbacks = await safeSync(api.weeklyFeedbacks.getSubmitted);
                 const transformedDaily = (fetchedWeeklyFeedbacks || []).flatMap((wf: any) => 
                     (wf.dailyFeedbacks || []).filter((df: any) => df.rpe || df.soreness || df.reflection).map((df: any) => ({
                         id: df.id,

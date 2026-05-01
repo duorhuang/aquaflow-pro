@@ -18,9 +18,10 @@ export default function FeedbacksPage() {
     }, []);
 
     const load = async () => {
+        setLoading(true);
         try {
             const res = await api.weeklyFeedbacks.getSubmitted();
-            setFeedbacks(res);
+            setFeedbacks(res || []);
         } catch (e) {
             console.error(e);
         } finally {
@@ -61,16 +62,32 @@ export default function FeedbacksPage() {
         }
     };
 
-    if (loading) return <div className="text-center p-10"><Clock className="w-8 h-8 animate-spin mx-auto text-primary" /></div>;
+    if (loading && feedbacks.length === 0) return <div className="text-center p-10"><Clock className="w-8 h-8 animate-spin mx-auto text-primary" /></div>;
 
     return (
         <div className="space-y-6 max-w-4xl mx-auto">
-            <div>
-                <h1 className="text-2xl font-bold text-white">📥 队员反馈收件箱</h1>
-                <p className="text-sm text-muted-foreground mt-1">查看队员的每日训练日记与周总结，在此写评语</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-white">📥 队员反馈收件箱</h1>
+                    <p className="text-sm text-muted-foreground mt-1">查看队员的每日训练日记与周总结，在此写评语</p>
+                </div>
+                <button
+                    onClick={load}
+                    disabled={loading}
+                    className="text-xs bg-white/5 hover:bg-white/10 border border-border px-4 py-2 rounded-xl text-muted-foreground flex items-center gap-2 transition-colors"
+                >
+                    {loading ? <Clock className="w-3.5 h-3.5 animate-spin" /> : <>🔄 刷新</>}
+                </button>
             </div>
             
             <div className="space-y-4">
+                {feedbacks.length === 0 && !loading && (
+                    <div className="text-center py-20 bg-card/20 border border-dashed border-border rounded-3xl">
+                        <CheckCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-30" />
+                        <h3 className="text-lg font-bold text-white mb-2">暂无已提交的周总结</h3>
+                        <p className="text-sm text-muted-foreground">队员提交周总结后，会在这里显示。点击刷新可获取最新数据。</p>
+                    </div>
+                )}
                 {feedbacks.map(f => {
                     const swimmer = swimmers.find(s => s.id === f.swimmerId) || f.swimmer;
                     const isExpanded = expandedIds.has(f.id);

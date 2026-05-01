@@ -8,8 +8,18 @@ export async function GET(req: Request) {
     return withApiHandler(async () => {
         const prisma = getPrisma();
         const { searchParams } = new URL(req.url);
+        const id = searchParams.get('id');
         const group = searchParams.get('group');
         const isPublished = searchParams.get('isPublished') === 'true';
+
+        if (id) {
+            const plan = await prisma.weeklyPlan.findUnique({
+                where: { id },
+                include: { sessions: true }
+            });
+            if (!plan) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+            return NextResponse.json(plan, { headers: V12_FINGERPRINT });
+        }
 
         let where: any = {};
         if (group) where.group = group;
