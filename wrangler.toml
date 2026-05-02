@@ -14,8 +14,7 @@ binding = "ASSETS"
 pattern = "sw.sportsflow.best"
 custom_domain = true
 
-# TODO: After creating the R2 bucket, uncomment:
-# [[r2_buckets]]
-# bucket_name = "aquaflow-uploads"
-# binding = "UPLOADS"
-# preview_bucket_name = "aquaflow-uploads-dev"
+[[r2_buckets]]
+bucket_name = "aquaflow-uploads"
+binding = "UPLOADS"
+preview_bucket_name = "aquaflow-uploads-dev"
