@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageViewer } from "@/components/common/ImageViewer";
 import { AttendanceCalendar } from "@/components/athlete/AttendanceCalendar";
 import { PerformanceList } from "@/components/athlete/PerformanceTracker";
 import { TrainingHistory } from "@/components/athlete/TrainingHistory";
@@ -439,7 +440,7 @@ export default function AthleteWorkoutPage() {
                                                 </div>
                                             )}
                                             {plan.imageUrl && (
-                                                <img src={plan.imageUrl} className="w-full rounded-2xl mb-4" onClick={() => window.open(plan.imageUrl, '_blank')} />
+                                                <ImageViewer src={plan.imageUrl} className="w-full rounded-2xl mb-4" />
                                             )}
                                             {plan.totalDistance > 0 && (
                                                 <div className="text-4xl font-mono font-bold text-white mb-2">{plan.totalDistance}m</div>

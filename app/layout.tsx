@@ -1,3 +1,4 @@
+import { ImageViewerModal } from "@/components/common/ImageViewer";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n";
@@ -45,6 +46,7 @@ export default function RootLayout({
           <StoreProvider>
             <DbStatus />
             {children}
+            <ImageViewerModal />
           </StoreProvider>
         </LanguageProvider>
       </body>

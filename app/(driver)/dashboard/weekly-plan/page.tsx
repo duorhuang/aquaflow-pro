@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
 import { Save, Plus, Trash2, Image as ImageIcon, CheckCircle, Upload } from "lucide-react";
+import { ImageViewer } from "@/components/common/ImageViewer";
 
 export default function WeeklyPlanPage() {
     const [weekStart, setWeekStart] = useState("");
@@ -264,7 +265,7 @@ export default function WeeklyPlanPage() {
                                         <Trash2 className="w-4 h-4" />
                                     </button>
                                     <div className="aspect-[4/3] rounded-lg overflow-hidden bg-secondary flex items-center justify-center mb-3">
-                                        {s.imageData ? <img src={s.imageData} className="w-full h-full object-contain" /> : <ImageIcon className="w-8 h-8 opacity-50" />}
+                                        {s.imageData ? <ImageViewer src={s.imageData} className="w-full h-full object-contain" /> : <ImageIcon className="w-8 h-8 opacity-50" />}
                                     </div>
                                     <div className="space-y-2">
                                         <input
