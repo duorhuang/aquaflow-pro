@@ -1,6 +1,6 @@
 "use client";
 
-import { ImageViewer } from "@/components/common/ImageViewer";
+import { SessionRenderer } from "@/components/dashboard/SessionRenderer";
 import { AttendanceCalendar } from "@/components/athlete/AttendanceCalendar";
 import { PerformanceList } from "@/components/athlete/PerformanceTracker";
 import { TrainingHistory } from "@/components/athlete/TrainingHistory";
@@ -77,8 +77,11 @@ export default function AthleteWorkoutPage() {
             const res = await api.feedbackReminders.getForSwimmer(swimmerId);
             const pending = res.filter((r: any) => !r.isResponded);
             setPendingReminders(pending.length);
-        } catch (e) {
-            console.error("Failed to load reminders count", e);
+        } catch (e: any) {
+            // Suppress expected 401 (auth not yet established)
+            if (!e.message?.includes('API Error: 4')) {
+                console.error("Failed to load reminders count", e);
+            }
         }
     };
 
@@ -111,18 +114,35 @@ export default function AthleteWorkoutPage() {
         return days;
     };
 
+    // Check if a weekly plan is visible to this swimmer
+    const isWeeklyPlanVisible = (wp: any): boolean => {
+        if (!currentUser) return false;
+        const hasGroupTarget = wp.targetGroup && wp.targetGroup.length > 0;
+        const hasIndividualTarget = wp.targetSwimmerIds && wp.targetSwimmerIds.length > 0;
+
+        // No targeting set → legacy plan visible to everyone
+        if (!hasGroupTarget && !hasIndividualTarget) return true;
+
+        // OR logic: matches group OR matches individual
+        if (hasGroupTarget && wp.targetGroup.includes(currentUser.group)) return true;
+        if (hasIndividualTarget && wp.targetSwimmerIds.includes(currentUser.id)) return true;
+
+        return false;
+    };
+
     // Get all plans/sessions for selected date
     const getSelectedDatePlans = (): (TrainingPlan & { isDerived?: boolean })[] => {
         if (!currentUser) return [];
         const dateStr = getLocalDateISOString(selectedDate);
         const dayPlansObj: (TrainingPlan & { isDerived?: boolean })[] = [];
-        
+
         // 1. Standalone daily plans
         const dayPlans = plans.filter(p => p.date === dateStr && p.group === currentUser.group);
         if (dayPlans.length > 0) dayPlansObj.push(...dayPlans);
 
         // 2. FALLBACK: Derive from Weekly Plans if no daily plan exists
         for (const wp of weeklyPlans) {
+            if (!isWeeklyPlanVisible(wp)) continue;
             const sessions = wp.sessions?.filter((s: any) => s.date === dateStr);
             if (sessions && sessions.length > 0) {
                 sessions.forEach((session: any) => {
@@ -135,8 +155,16 @@ export default function AthleteWorkoutPage() {
                         imageUrl: session.imageUrl || session.imageData,
                         blocks: [],
                         isDerived: true,
-                        targetedNotes: {}
-                    });
+                        targetedNotes: {},
+                        status: "Published",
+                        // Pass through session content fields for SessionRenderer
+                        editorMode: session.editorMode,
+                        contentBlocks: session.contentBlocks,
+                        contentHtml: session.contentHtml,
+                        imageData: session.imageData,
+                        imageType: session.imageType,
+                        notes: session.notes,
+                    } as any);
                 });
             }
         }
@@ -219,7 +247,9 @@ export default function AthleteWorkoutPage() {
     const monthlyStats = getMonthlyStats();
     
     // Weekly Framework Logic
-    const currentWeeklyPlan = weeklyPlans.find(wp => wp.weekStart === currentWeekStart && wp.group === currentUser?.group);
+    const currentWeeklyPlan = weeklyPlans.find(wp =>
+        wp.weekStart === currentWeekStart && isWeeklyPlanVisible(wp)
+    );
 
     // Filter announcements visible to this swimmer
     const myAnnouncements = (announcements || []).filter((a: any) => {
@@ -439,9 +469,7 @@ export default function AthleteWorkoutPage() {
                                                     )}
                                                 </div>
                                             )}
-                                            {plan.imageUrl && (
-                                                <ImageViewer src={plan.imageUrl} className="w-full rounded-2xl mb-4" />
-                                            )}
+                                            <SessionRenderer session={plan} className="mb-4" />
                                             {plan.totalDistance > 0 && (
                                                 <div className="text-4xl font-mono font-bold text-white mb-2">{plan.totalDistance}m</div>
                                             )}

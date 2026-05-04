@@ -40,6 +40,9 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
             if (mode === "coach") {
                 router.push("/dashboard");
             } else {
+                if (data.user?.id) {
+                    localStorage.setItem("aquaflow_athlete_id", data.user.id);
+                }
                 router.push("/workout");
             }
         } catch (err: any) {

@@ -190,17 +190,19 @@ model WeeklyPlan {
   id          String   @id @default(cuid())
   weekStart   String   // Monday date YYYY-MM-DD
   weekEnd     String   // Sunday date YYYY-MM-DD
-  group       String
+  group       String   // Legacy: hardcoded "Advanced", kept for backward compat
   title       String?  // e.g. "第12周训练"
   coachNotes  String?
   isPublished Boolean  @default(false)
-  
+  targetGroup Json?    // Array of GroupLevel strings (e.g. ["Junior", "Intermediate"]) — null + no individual = all athletes
+  targetSwimmerIds Json? // Array of swimmer IDs for individual targeting
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   sessions    DailySession[]
   feedbacks   WeeklyFeedback[]
-  
+
   @@index([weekStart])
   @@index([group])
 }
@@ -211,15 +213,20 @@ model DailySession {
   weeklyPlanId  String
   label         String   // e.g. "周三", "周六上午", "周六下午"
   date          String   // YYYY-MM-DD
-  imageData     String?  // Base64 encoded image data
-  imageType     String?  // MIME type e.g. "image/jpeg"
+  imageData     String?  // Base64 encoded image data (legacy)
+  imageType     String?  // MIME type e.g. "image/jpeg" (legacy)
   notes         String?
   sortOrder     Int      @default(0)
-  
+
+  // Flexible content
+  contentBlocks Json?    // Array<{type: "text"|"image"|"video"|"link", content: string, thumbnailUrl?: string}>
+  contentHtml   String?  // HTML from WYSIWYG editor
+  editorMode    String   @default("legacy")  // "block" | "rich" | "legacy"
+
   createdAt     DateTime @default(now())
-  
+
   weeklyPlan    WeeklyPlan @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
-  
+
   @@index([weeklyPlanId])
   @@index([date])
 }

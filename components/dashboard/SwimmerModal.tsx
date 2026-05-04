@@ -34,7 +34,9 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
             setName(swimmerToEdit.name);
             setGroup(swimmerToEdit.group);
             setUsername(swimmerToEdit.username || "");
-            setPassword(swimmerToEdit.password || "");
+            // Do NOT pre-fill with the stored hash — leave blank so coach must
+            // intentionally type a new password to change it.
+            setPassword("");
         } else {
             // Reset for new
             const randomUser = `swimmer${Date.now().toString().slice(-6)}`;
@@ -56,13 +58,12 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
         setIsSubmitting(true);
         try {
             if (swimmerToEdit) {
-                // Update
-                await updateSwimmer(swimmerToEdit.id, {
-                    name,
-                    group,
-                    username,
-                    password
-                });
+                // Update — only include password if the coach typed a new one
+                const updatePayload: any = { name, group, username };
+                if (password.trim()) {
+                    updatePayload.password = password.trim();
+                }
+                await updateSwimmer(swimmerToEdit.id, updatePayload);
             } else {
                 // Create
                 const newSwimmer: Swimmer = {
@@ -167,12 +168,13 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                         <div>
                             <label className="text-xs uppercase font-bold text-muted-foreground mb-1 block">密码</label>
                             <input
-                                required
+                                required={!swimmerToEdit}
                                 type="text"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 disabled={isSubmitting}
-                                className="w-full bg-secondary/50 border border-transparent focus:border-primary rounded-lg px-4 py-2 text-sm text-white outline-none font-mono disabled:opacity-50"
+                                placeholder={swimmerToEdit ? "留空则不修改密码" : ""}
+                                className="w-full bg-secondary/50 border border-transparent focus:border-primary rounded-lg px-4 py-2 text-sm text-white outline-none font-mono disabled:opacity-50 placeholder:text-muted-foreground/50"
                             />
                         </div>
                     </div>

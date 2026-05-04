@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  turbopack: {
+    root: __dirname,
+  },
   serverExternalPackages: ["@prisma/client", ".prisma/client"],
   async redirects() {
     return [

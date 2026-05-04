@@ -5,16 +5,17 @@ const API_BASE = '/api';
 const MAX_RETRIES = 3;
 const BASE_DELAY = 800; // ms
 
-async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
+async function fetchAPI<T>(endpoint: string, options?: RequestInit, silent4xx: boolean = true): Promise<T> {
     let lastError: Error | null = null;
-    
+
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         try {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 12000); // 12s timeout per attempt
-            
+
             const response = await fetch(`${API_BASE}${endpoint}`, {
                 ...options,
+                credentials: 'include',
                 signal: controller.signal,
                 headers: {
                     'Content-Type': 'application/json',
@@ -25,24 +26,31 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
 
             if (!response.ok) {
                 const error = await response.json().catch(() => ({}));
-                throw new Error(error.error || error.message || `API Error: ${response.status} ${response.statusText}`);
+                const is4xx = response.status >= 400 && response.status < 500;
+                const errMsg = error.error || error.message || `API Error: ${response.status} ${response.statusText}`;
+                if (silent4xx && is4xx) {
+                    // Return null instead of throwing — 4xx is expected behavior (auth, not found, etc.)
+                    // This prevents Next.js dev overlay from capturing the error
+                    return null as unknown as T;
+                }
+                throw new Error(errMsg);
             }
 
             return response.json();
         } catch (err: any) {
             lastError = err;
             const isLastAttempt = attempt === MAX_RETRIES - 1;
-            const isNonRetryable = err.message?.includes('API Error: 4') || 
+            const isNonRetryable = err.message?.includes('API Error: 4') ||
                                    err.message?.includes('API Error: 403') ||
                                    err.message?.includes('API Error: 401');
 
             if (isLastAttempt || isNonRetryable) break;
-            
+
             // Exponential backoff: 800ms, 1600ms...
             await new Promise(r => setTimeout(r, BASE_DELAY * Math.pow(2, attempt)));
         }
     }
-    
+
     throw lastError!;
 }
 
@@ -152,6 +160,7 @@ export const api = {
             const response = await fetch(`${API_BASE}/upload`, {
                 method: 'POST',
                 body: formData,
+                credentials: 'include',
                 signal: controller.signal,
             });
             clearTimeout(timeout);

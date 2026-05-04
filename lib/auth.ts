@@ -149,7 +149,10 @@ export function getCookieFromRequest(request: Request, name: string): string | u
  * Create a Set-Cookie header value for the session cookie.
  */
 export function setSessionCookie(token: string, maxAge = 7 * 24 * 60 * 60): string {
-  return `aquaflow_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}; Secure`;
+  const isProd = process.env.NODE_ENV === 'production';
+  const parts = [`aquaflow_session=${token}`, 'Path=/', 'HttpOnly', 'SameSite=Strict', `Max-Age=${maxAge}`];
+  if (isProd) parts.push('Secure');
+  return parts.join('; ');
 }
 
 /**

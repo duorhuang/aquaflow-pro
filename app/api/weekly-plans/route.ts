@@ -50,10 +50,12 @@ export async function POST(request: Request) {
             data: {
                 weekStart: String(data.weekStart),
                 weekEnd: String(data.weekEnd),
-                group: String(data.group),
+                group: String(data.group || "Advanced"),
                 title: data.title,
                 coachNotes: data.coachNotes,
-                isPublished: Boolean(data.isPublished)
+                isPublished: Boolean(data.isPublished),
+                targetGroup: data.targetGroup !== undefined ? (data.targetGroup ?? null) : null,
+                targetSwimmerIds: data.targetSwimmerIds !== undefined ? (data.targetSwimmerIds ?? null) : null,
             }
         });
         return NextResponse.json(plan, { headers: V12_FINGERPRINT });
@@ -80,7 +82,9 @@ export async function PUT(request: Request) {
                 group: data.group,
                 title: data.title,
                 coachNotes: data.coachNotes,
-                isPublished: data.isPublished
+                isPublished: data.isPublished,
+                targetGroup: data.targetGroup !== undefined ? (data.targetGroup ?? null) : undefined,
+                targetSwimmerIds: data.targetSwimmerIds !== undefined ? (data.targetSwimmerIds ?? null) : undefined,
             }
         });
         return NextResponse.json(plan, { headers: V12_FINGERPRINT });

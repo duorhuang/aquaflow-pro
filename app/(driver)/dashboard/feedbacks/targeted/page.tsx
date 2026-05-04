@@ -3,14 +3,18 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
-import { Send, Target, MessageSquare, Calendar, Loader2 } from "lucide-react";
+import { Send, Target, MessageSquare, Calendar, Loader2, Users } from "lucide-react";
 import { getLocalDateISOString } from "@/lib/date-utils";
+import { GroupLevel } from "@/types";
+
+const GROUP_LEVELS: GroupLevel[] = ["Junior", "Intermediate", "Advanced"];
 
 export default function TargetedFeedbacksPage() {
     const { swimmers } = useStore();
     const [reminders, setReminders] = useState<any[]>([]);
     const [message, setMessage] = useState("");
     const [targetIds, setTargetIds] = useState<string[]>([]);
+    const [selectedGroups, setSelectedGroups] = useState<GroupLevel[]>([]);
     const [periodStart, setPeriodStart] = useState(getLocalDateISOString(new Date()));
     const [periodEnd, setPeriodEnd] = useState(getLocalDateISOString(new Date()));
     const [isSending, setIsSending] = useState(false);
@@ -36,6 +40,29 @@ export default function TargetedFeedbacksPage() {
         }
     };
 
+    const getGroupSwimmerIds = (group: GroupLevel): string[] => {
+        return (swimmers || []).filter(s => s.group === group).map(s => s.id);
+    };
+
+    const toggleGroup = (group: GroupLevel) => {
+        const groupIds = getGroupSwimmerIds(group);
+        if (groupIds.length === 0) return;
+        if (selectedGroups.includes(group)) {
+            setSelectedGroups(selectedGroups.filter(g => g !== group));
+            setTargetIds(targetIds.filter(id => !groupIds.includes(id)));
+        } else {
+            setSelectedGroups([...selectedGroups, group]);
+            setTargetIds([...new Set([...targetIds, ...groupIds])]);
+        }
+    };
+
+    const isGroupPartiallySelected = (group: GroupLevel): boolean => {
+        const groupIds = getGroupSwimmerIds(group);
+        if (groupIds.length === 0) return false;
+        const selected = groupIds.filter(id => targetIds.includes(id)).length;
+        return selected > 0 && selected < groupIds.length;
+    };
+
     const handleSend = async () => {
         if (!message || isSending) return;
         setIsSending(true);
@@ -43,11 +70,13 @@ export default function TargetedFeedbacksPage() {
             await api.feedbackReminders.create({
                 message,
                 targetSwimmerIds: targetIds.length > 0 ? targetIds : null,
+                targetGroup: selectedGroups.length > 0 ? selectedGroups.join(', ') : null,
                 periodStart,
                 periodEnd
             });
             setMessage("");
             setTargetIds([]);
+            setSelectedGroups([]);
             await load();
             alert("✅ 专项反馈要求已发出！");
         } catch (e) {
@@ -65,7 +94,7 @@ export default function TargetedFeedbacksPage() {
                     <Target className="w-6 h-6 text-orange-500" />
                 </div>
                 <div>
-                    <h1 className="text-2xl font-bold text-white">🎯 训练反馈管理</h1>
+                    <h1 className="text-2xl font-bold text-white"> 训练反馈管理</h1>
                     <p className="text-sm text-muted-foreground">向队员发起专项训练问卷，指定时间范围，查看回复（可选特定队员或全队）</p>
                 </div>
             </div>
@@ -104,20 +133,54 @@ export default function TargetedFeedbacksPage() {
                     </div>
                 </div>
 
-                <label className="text-sm font-bold text-white block mb-2">提问对象（至少选一个，或全不选代表全队）</label>
-                <div className="flex flex-wrap gap-2 mb-4">
-                    {swimmers && swimmers.length > 0 ? swimmers.map(s => (
-                        <button
-                            key={s.id}
-                            onClick={() => toggleTarget(s.id)}
-                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${targetIds.includes(s.id) ? 'bg-orange-500 text-white border-orange-500' : 'bg-transparent border-white/20 text-muted-foreground hover:bg-white/5'}`}
-                        >
-                            {s.name}
-                        </button>
-                    )) : (
-                        <p className="text-sm text-muted-foreground italic">暂无队员数据，无法选择特定对象。</p>
-                    )}
+                <label className="text-sm font-bold text-white block mb-2">提问对象（按组快速选择，或点击个人徽章微调）</label>
+
+                {/* Group quick-select buttons */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                    {GROUP_LEVELS.map(group => {
+                        const count = getGroupSwimmerIds(group).length;
+                        if (count === 0) return null;
+                        const isSelected = selectedGroups.includes(group);
+                        const isPartial = !isSelected && isGroupPartiallySelected(group);
+                        return (
+                            <button
+                                key={group}
+                                onClick={() => toggleGroup(group)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 ${
+                                    isSelected
+                                        ? "bg-orange-500 text-white border-orange-500"
+                                        : isPartial
+                                        ? "bg-orange-500/40 text-white border-orange-400/60"
+                                        : "bg-transparent border-white/20 text-muted-foreground hover:bg-white/5"
+                                }`}
+                            >
+                                <Users className="w-3 h-3" /> {group} ({count})
+                            </button>
+                        );
+                    })}
                 </div>
+
+                {/* Individual swimmer badges grouped by level */}
+                {GROUP_LEVELS.map(group => {
+                    const groupSwimmers = (swimmers || []).filter(s => s.group === group);
+                    if (groupSwimmers.length === 0) return null;
+                    return (
+                        <div key={group} className="mb-3">
+                            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1.5">{group}</p>
+                            <div className="flex flex-wrap gap-2">
+                                {groupSwimmers.map(s => (
+                                    <button
+                                        key={s.id}
+                                        onClick={() => toggleTarget(s.id)}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${targetIds.includes(s.id) ? "bg-orange-500 text-white border-orange-500" : "bg-transparent border-white/20 text-muted-foreground hover:bg-white/5"}`}
+                                    >
+                                        {s.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
 
                 <div className="flex justify-end">
                     <button
@@ -144,7 +207,7 @@ export default function TargetedFeedbacksPage() {
                             </div>
                             <p className="text-white font-medium">Q: {r.message}</p>
                         </div>
-                        
+
                         <div className="space-y-3 border-t border-white/10 pt-3">
                             <h4 className="text-xs text-muted-foreground font-bold">队员回复 ({r.responses?.length || 0})</h4>
                             {r.responses?.map((resp: any) => (
@@ -159,7 +222,7 @@ export default function TargetedFeedbacksPage() {
                                             <p className="text-sm text-muted-foreground bg-white/5 p-2 rounded-lg">{resp.content}</p>
                                         </div>
                                     </div>
-                                    
+
                                     {/* Coach Reply Section */}
                                     <div className="ml-7 pt-2 border-t border-white/5 space-y-2">
                                         <div className="flex items-center gap-2">

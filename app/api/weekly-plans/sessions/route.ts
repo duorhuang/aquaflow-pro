@@ -50,7 +50,40 @@ export async function POST(request: Request) {
                 imageData: data.imageData,
                 imageType: data.imageType,
                 notes: data.notes,
-                sortOrder: Number(data.sortOrder) || 0
+                sortOrder: Number(data.sortOrder) || 0,
+                contentBlocks: data.contentBlocks ?? null,
+                contentHtml: data.contentHtml ?? null,
+                editorMode: data.editorMode ?? "legacy",
+            }
+        });
+        return NextResponse.json(session, { headers: V12_FINGERPRINT });
+    });
+}
+
+export async function PUT(request: Request) {
+    return withApiHandler(async () => {
+        const auth = await requireCoach(request);
+        if (auth instanceof NextResponse) return auth;
+
+        const prisma = getPrisma();
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+        if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
+
+        const data = flattenPayload(await request.json());
+
+        const session = await prisma.dailySession.update({
+            where: { id },
+            data: {
+                label: data.label,
+                date: data.date,
+                imageData: data.imageData,
+                imageType: data.imageType,
+                notes: data.notes,
+                sortOrder: data.sortOrder !== undefined ? Number(data.sortOrder) : undefined,
+                ...(data.contentBlocks !== undefined && { contentBlocks: data.contentBlocks }),
+                ...(data.contentHtml !== undefined && { contentHtml: data.contentHtml }),
+                ...(data.editorMode !== undefined && { editorMode: data.editorMode }),
             }
         });
         return NextResponse.json(session, { headers: V12_FINGERPRINT });

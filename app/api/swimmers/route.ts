@@ -14,8 +14,11 @@ export async function GET(request: Request) {
         const swimmers = await prisma.swimmer.findMany({
             orderBy: { name: 'asc' }
         });
-        // Strip password for non-coach
+
+        // Only return password field to coaches; strip it for athletes/other roles
+        const isCoach = (auth as any).role === 'coach';
         const safe = (swimmers || []).map((s: any) => {
+            if (isCoach) return s;
             const { password, ...rest } = s;
             return rest;
         });

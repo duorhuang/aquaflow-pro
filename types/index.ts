@@ -140,13 +140,21 @@ export interface WeeklyPlan {
     id: string;
     weekStart: string;    // Monday YYYY-MM-DD
     weekEnd: string;      // Sunday YYYY-MM-DD
-    group: string;
+    group: string;        // Legacy: kept for backward compat
     title?: string;
     coachNotes?: string;
     isPublished: boolean;
+    targetGroup?: GroupLevel[];   // Array of groups to target
+    targetSwimmerIds?: string[];  // Array of individual swimmer IDs
     sessions?: DailySession[];
     createdAt?: string;
     updatedAt?: string;
+}
+
+export interface ContentBlock {
+    type: "text" | "image" | "video" | "link";
+    content: string;
+    thumbnailUrl?: string;
 }
 
 export interface DailySession {
@@ -154,10 +162,13 @@ export interface DailySession {
     weeklyPlanId: string;
     label: string;        // "周三", "周六上午"
     date: string;         // YYYY-MM-DD
-    imageData?: string;   // Base64 image
-    imageType?: string;   // MIME type
+    imageData?: string;   // Base64 image (legacy)
+    imageType?: string;   // MIME type (legacy)
     notes?: string;
     sortOrder: number;
+    contentBlocks?: ContentBlock[];  // Block editor content
+    contentHtml?: string;            // Rich text editor content
+    editorMode?: "block" | "rich" | "legacy";
     createdAt?: string;
 }
 

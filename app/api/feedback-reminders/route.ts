@@ -70,6 +70,7 @@ export async function POST(req: Request) {
             data: {
                 message: String(body.message),
                 targetSwimmerIds: Array.isArray(body.targetSwimmerIds) ? body.targetSwimmerIds : null,
+                targetGroup: body.targetGroup || null,
                 periodStart: body.periodStart || new Date().toISOString().split('T')[0],
                 periodEnd: body.periodEnd || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
             }
