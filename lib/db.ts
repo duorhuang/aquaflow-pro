@@ -1,6 +1,8 @@
+import { getPrisma } from './prisma';
+
 /**
  * DB SHIM: Exported for backward compatibility.
- * 
+ *
  * To prevent Cloudflare Worker 1101 crashes, we use a getter to ensure
  * Prisma is only initialized when actually accessed, NOT at module load time.
  */

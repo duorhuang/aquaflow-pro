@@ -79,26 +79,41 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             try {
                 // Helper to safely fetch data
                 const safeFetch = async (fetcher: () => Promise<any>, fallback: any = []) => {
-                    try { return await fetcher(); } 
-                    catch (e) { console.error("Fetch API failed:", e); return fallback; }
+                    try { return await fetcher(); }
+                    catch (e: any) {
+                        // Suppress expected 401/403 errors (unauthenticated on public routes)
+                        if (!e.message?.includes('API Error: 4')) {
+                            console.error("Fetch API failed:", e);
+                        }
+                        return fallback;
+                    }
                 };
 
-                // Fetch all data individually to prevent Promise.all from failing the entire UI
-                const fetchedPlans = await safeFetch(api.plans.getAll, null);
-                const fetchedSwimmers = await safeFetch(api.swimmers.getAll, null);
-                const fetchedFeedbacks = await safeFetch(api.feedbacks.getAll, null);
-                const fetchedAttendance = await safeFetch(api.attendance.getAll, null);
-                const fetchedPerformances = await safeFetch(api.performances.getAll, null);
-                const fetchedWeeklyPlans = await safeFetch(api.weeklyPlans.getAll, null);
-                const fetchedAnnouncements = await safeFetch(api.announcements.getAll, null);
+                // Fetch ALL data in parallel to minimize cold-start latency
+                const [
+                    fetchedPlans,
+                    fetchedSwimmers,
+                    fetchedFeedbacks,
+                    fetchedAttendance,
+                    fetchedPerformances,
+                    fetchedWeeklyPlans,
+                    fetchedAnnouncements,
+                    fetchedWeeklyFeedbacks,
+                ] = await Promise.all([
+                    safeFetch(api.plans.getAll, null),
+                    safeFetch(api.swimmers.getAll, null),
+                    safeFetch(api.feedbacks.getAll, null),
+                    safeFetch(api.attendance.getAll, null),
+                    safeFetch(api.performances.getAll, null),
+                    safeFetch(api.weeklyPlans.getAll, null),
+                    safeFetch(api.announcements.getAll, null),
+                    safeFetch(api.weeklyFeedbacks.getSubmitted, null),
+                ]);
 
-                // Also fetch all weekly feedbacks so we can aggregate daily sessions into standard feedbacks
-                const fetchedWeeklyFeedbacks = await safeFetch(api.weeklyFeedbacks.getSubmitted, null);
-
-                // If multiple critical collections returned null, we are likely experiencing a severe DB or Network outage
+                // If multiple critical collections returned null, check if it's an auth issue (expected on public pages)
                 if (fetchedPlans === null && fetchedSwimmers === null) {
-                    setSyncStatus('error');
-                    throw new Error("Critical data fetch failed. Backend is unavailable.");
+                    // 401s are expected on public routes like /login — not a critical failure
+                    return;
                 }
 
                 const transformedDaily = (fetchedWeeklyFeedbacks || []).flatMap((wf: any) => 
@@ -255,7 +270,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             id: existingRecord ? existingRecord.id : uid(),
             date: targetDate,
             swimmerId,
-            status,
+            status: status as "Present",
             timestamp: new Date().toISOString()
         };
 

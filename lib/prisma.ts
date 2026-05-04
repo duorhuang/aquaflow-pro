@@ -32,7 +32,7 @@ export function getPrisma(): PrismaClient {
                 if (prop === 'then') return undefined; // Avoid promise-like behavior
                 return new Proxy(() => {}, {
                     apply: () => Promise.resolve([]), // Mock method calls
-                    get: (t, p) => p === 'then' ? undefined : t[p as any]
+                    get: (t, p) => p === 'then' ? undefined : (t as any)[p]
                 });
             }
         });
