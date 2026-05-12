@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
+import { flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
 import { requireAnyAuth, requireCoach } from '@/lib/auth-api';
+import { neon } from '@neondatabase/serverless';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,21 +11,21 @@ export async function GET(req: Request) {
         const auth = await requireAnyAuth(req);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const { searchParams } = new URL(req.url);
         const planId = searchParams.get('planId');
 
         if (planId) {
-            const analysis = await prisma.planAnalysis.findUnique({
-                where: { planId }
-            });
-            return NextResponse.json(analysis ?? null, { headers: V12_FINGERPRINT });
+            const analysis = await sql`
+                SELECT * FROM "PlanAnalysis" WHERE "planId" = ${planId}
+            `;
+            return NextResponse.json(analysis.length > 0 ? analysis[0] : null, { headers: V12_FINGERPRINT });
         }
 
-        // Coach: list all analyses
-        const analyses = await prisma.planAnalysis.findMany({
-            orderBy: { createdAt: 'desc' }
-        });
+        const analyses = await sql`
+            SELECT * FROM "PlanAnalysis"
+            ORDER BY "createdAt" DESC
+        `;
         return NextResponse.json(analyses || [], { headers: V12_FINGERPRINT });
     });
 }
@@ -34,31 +35,47 @@ export async function POST(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const data = flattenPayload(await request.json());
 
         if (!data.planId || !data.imageUrl) {
             return NextResponse.json({ error: 'planId and imageUrl required' }, { status: 400 });
         }
 
-        const analysis = await prisma.planAnalysis.upsert({
-            where: { planId: String(data.planId) },
-            create: {
-                planId: String(data.planId),
-                imageUrl: String(data.imageUrl),
-                rawText: data.rawText || null,
-                structuredData: data.structuredData || null,
-                coachInsights: data.coachInsights || null,
-                aiSuggestions: data.aiSuggestions || null
-            },
-            update: {
-                imageUrl: String(data.imageUrl),
-                rawText: data.rawText,
-                structuredData: data.structuredData,
-                coachInsights: data.coachInsights,
-                aiSuggestions: data.aiSuggestions
-            }
-        });
+        // Check if exists for upsert
+        const existing = await sql`
+            SELECT * FROM "PlanAnalysis" WHERE "planId" = ${String(data.planId)}
+        `;
+
+        let analysis: any;
+        if (existing.length > 0) {
+            analysis = await sql`
+                UPDATE "PlanAnalysis" SET
+                    "imageUrl" = ${String(data.imageUrl)},
+                    "rawText" = ${data.rawText || null},
+                    "structuredData" = ${data.structuredData || null},
+                    "coachInsights" = ${data.coachInsights || null},
+                    "aiSuggestions" = ${data.aiSuggestions || null},
+                    "updatedAt" = NOW()
+                WHERE "planId" = ${String(data.planId)}
+                RETURNING *
+            `;
+        } else {
+            analysis = await sql`
+                INSERT INTO "PlanAnalysis" ("planId", "imageUrl", "rawText", "structuredData", "coachInsights", "aiSuggestions", "createdAt", "updatedAt")
+                VALUES (
+                    ${String(data.planId)},
+                    ${String(data.imageUrl)},
+                    ${data.rawText || null},
+                    ${data.structuredData || null},
+                    ${data.coachInsights || null},
+                    ${data.aiSuggestions || null},
+                    NOW(),
+                    NOW()
+                )
+                RETURNING *
+            `;
+        }
         return NextResponse.json(analysis, { headers: V12_FINGERPRINT });
     });
 }
@@ -68,12 +85,12 @@ export async function DELETE(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const { searchParams } = new URL(request.url);
         const planId = searchParams.get('planId');
         if (!planId) return NextResponse.json({ error: 'planId required' }, { status: 400 });
 
-        await prisma.planAnalysis.delete({ where: { planId } });
+        await sql`DELETE FROM "PlanAnalysis" WHERE "planId" = ${planId}`;
         return NextResponse.json({ success: true }, { headers: V12_FINGERPRINT });
     });
 }

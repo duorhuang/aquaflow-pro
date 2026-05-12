@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
+import { flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
 import { requireAnyAuth, requireCoach } from '@/lib/auth-api';
+import { neon } from '@neondatabase/serverless';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,31 +11,57 @@ export async function GET(req: Request) {
         const auth = await requireAnyAuth(req);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
         const group = searchParams.get('group');
         const isPublished = searchParams.get('isPublished') === 'true';
 
         if (id) {
-            const plan = await prisma.weeklyPlan.findUnique({
-                where: { id },
-                include: { sessions: true }
-            });
-            if (!plan) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-            return NextResponse.json(plan, { headers: V12_FINGERPRINT });
+            const plan = await sql`SELECT * FROM "WeeklyPlan" WHERE "id" = ${id}`;
+            if (plan.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+            const sessions = await sql`
+                SELECT * FROM "DailySession" WHERE "weeklyPlanId" = ${id}
+            `;
+            return NextResponse.json({ ...plan[0], sessions }, { headers: V12_FINGERPRINT });
         }
 
-        const where: any = {};
-        if (group) where.group = group;
-        if (searchParams.has('isPublished')) where.isPublished = isPublished;
+        let plans: any[];
+        if (group && searchParams.has('isPublished')) {
+            plans = await sql`
+                SELECT * FROM "WeeklyPlan"
+                WHERE "group" = ${group} AND "isPublished" = ${isPublished}
+                ORDER BY "weekStart" DESC
+            `;
+        } else if (group) {
+            plans = await sql`
+                SELECT * FROM "WeeklyPlan"
+                WHERE "group" = ${group}
+                ORDER BY "weekStart" DESC
+            `;
+        } else if (searchParams.has('isPublished')) {
+            plans = await sql`
+                SELECT * FROM "WeeklyPlan"
+                WHERE "isPublished" = ${isPublished}
+                ORDER BY "weekStart" DESC
+            `;
+        } else {
+            plans = await sql`
+                SELECT * FROM "WeeklyPlan"
+                ORDER BY "weekStart" DESC
+            `;
+        }
 
-        const plans = await prisma.weeklyPlan.findMany({
-            where,
-            include: { sessions: true },
-            orderBy: { weekStart: 'desc' }
-        });
-        return NextResponse.json(plans || [], { headers: V12_FINGERPRINT });
+        // Include sessions for each plan
+        const results = await Promise.all(plans.map(async (plan: any) => {
+            const sessions = await sql`
+                SELECT * FROM "DailySession" WHERE "weeklyPlanId" = ${plan.id}
+            `;
+            return { ...plan, sessions };
+        }));
+
+        return NextResponse.json(results || [], { headers: V12_FINGERPRINT });
     });
 }
 
@@ -43,21 +70,25 @@ export async function POST(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const data = flattenPayload(await request.json());
 
-        const plan = await prisma.weeklyPlan.create({
-            data: {
-                weekStart: String(data.weekStart),
-                weekEnd: String(data.weekEnd),
-                group: String(data.group || "Advanced"),
-                title: data.title,
-                coachNotes: data.coachNotes,
-                isPublished: Boolean(data.isPublished),
-                targetGroup: data.targetGroup !== undefined ? (data.targetGroup ?? null) : null,
-                targetSwimmerIds: data.targetSwimmerIds !== undefined ? (data.targetSwimmerIds ?? null) : null,
-            }
-        });
+        const plan = await sql`
+            INSERT INTO "WeeklyPlan" ("weekStart", "weekEnd", "group", "title", "coachNotes", "isPublished", "targetGroup", "targetSwimmerIds", "createdAt", "updatedAt")
+            VALUES (
+                ${String(data.weekStart)},
+                ${String(data.weekEnd)},
+                ${String(data.group || "Advanced")},
+                ${data.title},
+                ${data.coachNotes},
+                ${Boolean(data.isPublished)},
+                ${data.targetGroup !== undefined ? (data.targetGroup ?? null) : null},
+                ${data.targetSwimmerIds !== undefined ? (data.targetSwimmerIds ?? null) : null},
+                NOW(),
+                NOW()
+            )
+            RETURNING *
+        `;
         return NextResponse.json(plan, { headers: V12_FINGERPRINT });
     });
 }
@@ -67,26 +98,27 @@ export async function PUT(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
         const data = flattenPayload(await request.json());
 
-        const plan = await prisma.weeklyPlan.update({
-            where: { id },
-            data: {
-                weekStart: data.weekStart,
-                weekEnd: data.weekEnd,
-                group: data.group,
-                title: data.title,
-                coachNotes: data.coachNotes,
-                isPublished: data.isPublished,
-                targetGroup: data.targetGroup !== undefined ? (data.targetGroup ?? null) : undefined,
-                targetSwimmerIds: data.targetSwimmerIds !== undefined ? (data.targetSwimmerIds ?? null) : undefined,
-            }
-        });
+        const plan = await sql`
+            UPDATE "WeeklyPlan" SET
+                "weekStart" = ${data.weekStart},
+                "weekEnd" = ${data.weekEnd},
+                "group" = ${data.group},
+                "title" = ${data.title},
+                "coachNotes" = ${data.coachNotes},
+                "isPublished" = ${data.isPublished},
+                "targetGroup" = ${data.targetGroup !== undefined ? (data.targetGroup ?? null) : null},
+                "targetSwimmerIds" = ${data.targetSwimmerIds !== undefined ? (data.targetSwimmerIds ?? null) : null},
+                "updatedAt" = NOW()
+            WHERE "id" = ${id}
+            RETURNING *
+        `;
         return NextResponse.json(plan, { headers: V12_FINGERPRINT });
     });
 }
@@ -96,12 +128,12 @@ export async function DELETE(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
-        await prisma.weeklyPlan.delete({ where: { id } });
+        await sql`DELETE FROM "WeeklyPlan" WHERE "id" = ${id}`;
         return NextResponse.json({ success: true }, { headers: V12_FINGERPRINT });
     });
 }

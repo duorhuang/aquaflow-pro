@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
+import { flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
 import { requireAnyAuth, requireCoach } from '@/lib/auth-api';
+import { neon } from '@neondatabase/serverless';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,15 +11,23 @@ export async function GET(req: Request) {
         const auth = await requireAnyAuth(req);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const { searchParams } = new URL(req.url);
         const group = searchParams.get('group');
 
-        const where: any = group ? { group } : {};
-        const plans = await prisma.trainingPlan.findMany({
-            where,
-            orderBy: { date: 'desc' }
-        });
+        let plans: any[];
+        if (group) {
+            plans = await sql`
+                SELECT * FROM "TrainingPlan"
+                WHERE "group" = ${group}
+                ORDER BY "date" DESC
+            `;
+        } else {
+            plans = await sql`
+                SELECT * FROM "TrainingPlan"
+                ORDER BY "date" DESC
+            `;
+        }
         return NextResponse.json(plans || [], { headers: V12_FINGERPRINT });
     });
 }
@@ -28,26 +37,30 @@ export async function POST(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const data = flattenPayload(await request.json());
 
-        const plan = await prisma.trainingPlan.create({
-            data: {
-                id: data.id,
-                date: String(data.date),
-                startTime: data.startTime || '',
-                endTime: data.endTime || '',
-                group: String(data.group),
-                blocks: data.blocks || [],
-                totalDistance: Number(data.totalDistance) || 0,
-                focus: data.focus || '',
-                status: data.status || 'Active',
-                coachNotes: data.coachNotes,
-                targetedNotes: data.targetedNotes || {},
-                imageUrl: data.imageUrl,
-                isStarred: Boolean(data.isStarred)
-            }
-        });
+        const plan = await sql`
+            INSERT INTO "TrainingPlan" ("id", "date", "startTime", "endTime", "group", "blocks", "totalDistance", "focus", "status", "coachNotes", "targetedNotes", "imageUrl", "isStarred", "createdAt", "updatedAt")
+            VALUES (
+                ${data.id},
+                ${String(data.date)},
+                ${data.startTime || ''},
+                ${data.endTime || ''},
+                ${String(data.group)},
+                ${data.blocks || []},
+                ${Number(data.totalDistance) || 0},
+                ${data.focus || ''},
+                ${data.status || 'Active'},
+                ${data.coachNotes},
+                ${data.targetedNotes || {}},
+                ${data.imageUrl},
+                ${Boolean(data.isStarred)},
+                NOW(),
+                NOW()
+            )
+            RETURNING *
+        `;
         return NextResponse.json(plan, { headers: V12_FINGERPRINT });
     });
 }
@@ -57,30 +70,31 @@ export async function PUT(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
         const data = flattenPayload(await request.json());
 
-        const plan = await prisma.trainingPlan.update({
-            where: { id },
-            data: {
-                date: data.date,
-                startTime: data.startTime,
-                endTime: data.endTime,
-                group: data.group,
-                blocks: data.blocks,
-                totalDistance: data.totalDistance !== undefined ? Number(data.totalDistance) : undefined,
-                focus: data.focus,
-                status: data.status,
-                coachNotes: data.coachNotes,
-                targetedNotes: data.targetedNotes,
-                imageUrl: data.imageUrl,
-                isStarred: data.isStarred
-            }
-        });
+        const plan = await sql`
+            UPDATE "TrainingPlan" SET
+                "date" = ${data.date},
+                "startTime" = ${data.startTime},
+                "endTime" = ${data.endTime},
+                "group" = ${data.group},
+                "blocks" = ${data.blocks},
+                "totalDistance" = ${data.totalDistance !== undefined ? Number(data.totalDistance) : null},
+                "focus" = ${data.focus},
+                "status" = ${data.status},
+                "coachNotes" = ${data.coachNotes},
+                "targetedNotes" = ${data.targetedNotes},
+                "imageUrl" = ${data.imageUrl},
+                "isStarred" = ${data.isStarred},
+                "updatedAt" = NOW()
+            WHERE "id" = ${id}
+            RETURNING *
+        `;
         return NextResponse.json(plan, { headers: V12_FINGERPRINT });
     });
 }
@@ -90,12 +104,12 @@ export async function DELETE(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
-        await prisma.trainingPlan.delete({ where: { id } });
+        await sql`DELETE FROM "TrainingPlan" WHERE "id" = ${id}`;
         return NextResponse.json({ success: true }, { headers: V12_FINGERPRINT });
     });
 }

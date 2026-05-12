@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
+import { flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
 import { requireCoach, requireAnyAuth } from '@/lib/auth-api';
+import { neon } from '@neondatabase/serverless';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,12 +11,21 @@ export async function GET(req: Request) {
         const auth = await requireAnyAuth(req);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
-        const performances = await prisma.performanceRecord.findMany({
-            include: { swimmer: true },
-            orderBy: { date: 'desc' }
-        });
-        return NextResponse.json(performances || [], { headers: V12_FINGERPRINT });
+        const sql = neon(process.env.DATABASE_URL!);
+        const performances = await sql`
+            SELECT "PerformanceRecord".*,
+                   row_to_json("Swimmer") as swimmer
+            FROM "PerformanceRecord"
+            LEFT JOIN "Swimmer" ON "PerformanceRecord"."swimmerId" = "Swimmer"."id"
+            ORDER BY "PerformanceRecord"."date" DESC
+        `;
+
+        const normalized = (performances || []).map((p: any) => ({
+            ...p,
+            swimmer: p.swimmer === null ? null : p.swimmer,
+        }));
+
+        return NextResponse.json(normalized, { headers: V12_FINGERPRINT });
     });
 }
 
@@ -24,20 +34,23 @@ export async function POST(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const data = flattenPayload(await request.json());
 
-        const record = await prisma.performanceRecord.create({
-            data: {
-                swimmerId: String(data.swimmerId),
-                event: String(data.event),
-                time: String(data.time),
-                date: String(data.date),
-                isPB: Boolean(data.isPB),
-                meetName: data.meetName,
-                notes: data.notes
-            }
-        });
+        const record = await sql`
+            INSERT INTO "PerformanceRecord" ("swimmerId", "event", "time", "date", "isPB", "meetName", "notes", "createdAt")
+            VALUES (
+                ${String(data.swimmerId)},
+                ${String(data.event)},
+                ${String(data.time)},
+                ${String(data.date)},
+                ${Boolean(data.isPB)},
+                ${data.meetName},
+                ${data.notes},
+                NOW()
+            )
+            RETURNING *
+        `;
         return NextResponse.json(record, { headers: V12_FINGERPRINT });
     });
 }
@@ -47,24 +60,24 @@ export async function PUT(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
         const data = flattenPayload(await request.json());
 
-        const record = await prisma.performanceRecord.update({
-            where: { id },
-            data: {
-                event: data.event,
-                time: data.time,
-                date: data.date,
-                isPB: data.isPB,
-                meetName: data.meetName,
-                notes: data.notes
-            }
-        });
+        const record = await sql`
+            UPDATE "PerformanceRecord" SET
+                "event" = ${data.event},
+                "time" = ${data.time},
+                "date" = ${data.date},
+                "isPB" = ${data.isPB},
+                "meetName" = ${data.meetName},
+                "notes" = ${data.notes}
+            WHERE "id" = ${id}
+            RETURNING *
+        `;
         return NextResponse.json(record, { headers: V12_FINGERPRINT });
     });
 }
@@ -74,12 +87,12 @@ export async function DELETE(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'Missing id parameter' }, { status: 400 });
 
-        await prisma.performanceRecord.delete({ where: { id } });
+        await sql`DELETE FROM "PerformanceRecord" WHERE "id" = ${id}`;
         return NextResponse.json({ success: true }, { headers: V12_FINGERPRINT });
     });
 }

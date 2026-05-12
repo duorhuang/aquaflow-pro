@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
+import { flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
 import { requireAnyAuth, requireCoach } from '@/lib/auth-api';
+import { neon } from '@neondatabase/serverless';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,12 +11,21 @@ export async function GET(req: Request) {
         const auth = await requireAnyAuth(req);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
-        const feedbacks = await prisma.feedback.findMany({
-            include: { swimmer: true },
-            orderBy: { createdAt: 'desc' }
-        });
-        return NextResponse.json(feedbacks || [], { headers: V12_FINGERPRINT });
+        const sql = neon(process.env.DATABASE_URL!);
+        const feedbacks = await sql`
+            SELECT "Feedback".*,
+                   row_to_json("Swimmer") as swimmer
+            FROM "Feedback"
+            LEFT JOIN "Swimmer" ON "Feedback"."swimmerId" = "Swimmer"."id"
+            ORDER BY "Feedback"."createdAt" DESC
+        `;
+
+        const normalized = (feedbacks || []).map((f: any) => ({
+            ...f,
+            swimmer: f.swimmer === null ? null : f.swimmer,
+        }));
+
+        return NextResponse.json(normalized, { headers: V12_FINGERPRINT });
     });
 }
 
@@ -24,35 +34,47 @@ export async function POST(request: Request) {
         const auth = await requireAnyAuth(request);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const data = flattenPayload(await request.json());
 
         // Upsert: update if same swimmer+date exists, create otherwise
-        const feedback = await prisma.feedback.upsert({
-            where: {
-                swimmerId_date: { swimmerId: String(data.swimmerId), date: String(data.date) }
-            },
-            update: {
-                rpe: Number(data.rpe) || 0,
-                soreness: Number(data.soreness) || 0,
-                comments: data.comments || '',
-                timestamp: data.timestamp || new Date().toISOString(),
-                goodPoints: data.goodPoints,
-                improvementAreas: data.improvementAreas,
-            },
-            create: {
-                id: data.id,
-                swimmerId: String(data.swimmerId),
-                planId: data.planId,
-                date: String(data.date),
-                rpe: Number(data.rpe) || 0,
-                soreness: Number(data.soreness) || 0,
-                comments: data.comments || '',
-                timestamp: data.timestamp || new Date().toISOString(),
-                goodPoints: data.goodPoints,
-                improvementAreas: data.improvementAreas,
-            }
-        });
+        const existing = await sql`
+            SELECT * FROM "Feedback"
+            WHERE "swimmerId" = ${String(data.swimmerId)} AND "date" = ${String(data.date)}
+        `;
+
+        let feedback: any;
+        if (existing.length > 0) {
+            feedback = await sql`
+                UPDATE "Feedback" SET
+                    "rpe" = ${Number(data.rpe) || 0},
+                    "soreness" = ${Number(data.soreness) || 0},
+                    "comments" = ${data.comments || ''},
+                    "timestamp" = ${data.timestamp || new Date().toISOString()},
+                    "goodPoints" = ${data.goodPoints},
+                    "improvementAreas" = ${data.improvementAreas}
+                WHERE "swimmerId" = ${String(data.swimmerId)} AND "date" = ${String(data.date)}
+                RETURNING *
+            `;
+        } else {
+            feedback = await sql`
+                INSERT INTO "Feedback" ("id", "swimmerId", "planId", "date", "rpe", "soreness", "comments", "timestamp", "goodPoints", "improvementAreas", "createdAt")
+                VALUES (
+                    ${data.id},
+                    ${String(data.swimmerId)},
+                    ${data.planId},
+                    ${String(data.date)},
+                    ${Number(data.rpe) || 0},
+                    ${Number(data.soreness) || 0},
+                    ${data.comments || ''},
+                    ${data.timestamp || new Date().toISOString()},
+                    ${data.goodPoints},
+                    ${data.improvementAreas},
+                    NOW()
+                )
+                RETURNING *
+            `;
+        }
         return NextResponse.json(feedback, { headers: V12_FINGERPRINT });
     });
 }

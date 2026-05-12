@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
+import { flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
 import { requireAnyAuth, requireCoach } from '@/lib/auth-api';
+import { neon } from '@neondatabase/serverless';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,26 +11,30 @@ export async function GET(req: Request) {
         const auth = await requireAnyAuth(req);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const { searchParams } = new URL(req.url);
         const weeklyPlanId = searchParams.get('weeklyPlanId');
         const date = searchParams.get('date');
 
         if (date) {
-             const sessions = await prisma.dailySession.findMany({
-                 where: { date },
-                 include: { weeklyPlan: true },
-                 orderBy: { label: 'asc' }
-             });
-             return NextResponse.json(sessions || [], { headers: V12_FINGERPRINT });
+            const sessions = await sql`
+                SELECT "DailySession".*,
+                       row_to_json("WeeklyPlan") as weeklyPlan
+                FROM "DailySession"
+                LEFT JOIN "WeeklyPlan" ON "DailySession"."weeklyPlanId" = "WeeklyPlan"."id"
+                WHERE "DailySession"."date" = ${date}
+                ORDER BY "DailySession"."label" ASC
+            `;
+            return NextResponse.json(sessions || [], { headers: V12_FINGERPRINT });
         }
 
         if (!weeklyPlanId) return NextResponse.json([], { headers: V12_FINGERPRINT });
 
-        const sessions = await prisma.dailySession.findMany({
-            where: { weeklyPlanId },
-            orderBy: { sortOrder: 'asc' }
-        });
+        const sessions = await sql`
+            SELECT * FROM "DailySession"
+            WHERE "weeklyPlanId" = ${weeklyPlanId}
+            ORDER BY "sortOrder" ASC
+        `;
         return NextResponse.json(sessions || [], { headers: V12_FINGERPRINT });
     });
 }
@@ -39,23 +44,26 @@ export async function POST(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const data = flattenPayload(await request.json());
 
-        const session = await prisma.dailySession.create({
-            data: {
-                weeklyPlanId: String(data.weeklyPlanId),
-                label: String(data.label),
-                date: String(data.date),
-                imageData: data.imageData,
-                imageType: data.imageType,
-                notes: data.notes,
-                sortOrder: Number(data.sortOrder) || 0,
-                contentBlocks: data.contentBlocks ?? null,
-                contentHtml: data.contentHtml ?? null,
-                editorMode: data.editorMode ?? "legacy",
-            }
-        });
+        const session = await sql`
+            INSERT INTO "DailySession" ("weeklyPlanId", "label", "date", "imageData", "imageType", "notes", "sortOrder", "contentBlocks", "contentHtml", "editorMode", "createdAt")
+            VALUES (
+                ${String(data.weeklyPlanId)},
+                ${String(data.label)},
+                ${String(data.date)},
+                ${data.imageData},
+                ${data.imageType},
+                ${data.notes},
+                ${Number(data.sortOrder) || 0},
+                ${data.contentBlocks ?? null},
+                ${data.contentHtml ?? null},
+                ${data.editorMode ?? "legacy"},
+                NOW()
+            )
+            RETURNING *
+        `;
         return NextResponse.json(session, { headers: V12_FINGERPRINT });
     });
 }
@@ -65,27 +73,28 @@ export async function PUT(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
         const data = flattenPayload(await request.json());
 
-        const session = await prisma.dailySession.update({
-            where: { id },
-            data: {
-                label: data.label,
-                date: data.date,
-                imageData: data.imageData,
-                imageType: data.imageType,
-                notes: data.notes,
-                sortOrder: data.sortOrder !== undefined ? Number(data.sortOrder) : undefined,
-                ...(data.contentBlocks !== undefined && { contentBlocks: data.contentBlocks }),
-                ...(data.contentHtml !== undefined && { contentHtml: data.contentHtml }),
-                ...(data.editorMode !== undefined && { editorMode: data.editorMode }),
-            }
-        });
+        const session = await sql`
+            UPDATE "DailySession" SET
+                "label" = ${data.label},
+                "date" = ${data.date},
+                "imageData" = ${data.imageData},
+                "imageType" = ${data.imageType},
+                "notes" = ${data.notes},
+                "sortOrder" = ${data.sortOrder !== undefined ? Number(data.sortOrder) : null},
+                "contentBlocks" = ${data.contentBlocks !== undefined ? data.contentBlocks : null},
+                "contentHtml" = ${data.contentHtml !== undefined ? data.contentHtml : null},
+                "editorMode" = ${data.editorMode !== undefined ? data.editorMode : "legacy"},
+                "updatedAt" = NOW()
+            WHERE "id" = ${id}
+            RETURNING *
+        `;
         return NextResponse.json(session, { headers: V12_FINGERPRINT });
     });
 }
@@ -95,12 +104,12 @@ export async function DELETE(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
-        await prisma.dailySession.delete({ where: { id } });
+        await sql`DELETE FROM "DailySession" WHERE "id" = ${id}`;
         return NextResponse.json({ success: true }, { headers: V12_FINGERPRINT });
     });
 }

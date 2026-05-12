@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getPrisma, flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
+import { flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
 import { requireAnyAuth, requireCoach } from '@/lib/auth-api';
+import { neon } from '@neondatabase/serverless';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,15 +11,36 @@ export async function GET(req: Request) {
         const auth = await requireAnyAuth(req);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const { searchParams } = new URL(req.url);
         const swimmerId = searchParams.get('swimmerId');
         const withResponses = searchParams.get('withResponses') === 'true';
 
-        let reminders = await prisma.feedbackReminder.findMany({
-            include: withResponses ? { responses: { include: { swimmer: true } } } : { responses: true },
-            orderBy: { createdAt: 'desc' }
-        });
+        let reminders = await sql`
+            SELECT * FROM "FeedbackReminder"
+            ORDER BY "createdAt" DESC
+        `;
+
+        // Include responses
+        reminders = await Promise.all(reminders.map(async (r: any) => {
+            let responses: any[];
+            if (withResponses) {
+                const respRows = await sql`
+                    SELECT "TargetedFeedback".*,
+                           row_to_json("Swimmer") as swimmer
+                    FROM "TargetedFeedback"
+                    LEFT JOIN "Swimmer" ON "TargetedFeedback"."swimmerId" = "Swimmer"."id"
+                    WHERE "TargetedFeedback"."reminderId" = ${r.id}
+                `;
+                responses = respRows;
+            } else {
+                responses = await sql`
+                    SELECT * FROM "TargetedFeedback"
+                    WHERE "reminderId" = ${r.id}
+                `;
+            }
+            return { ...r, responses };
+        }));
 
         if (swimmerId) {
             reminders = (reminders || []).filter((r: any) => {
@@ -40,25 +62,21 @@ export async function POST(req: Request) {
         const auth = await requireAnyAuth(req);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const body = flattenPayload(await req.json());
 
         // Athlete response to a reminder
-        if (body.reminderId && body.swimmerId && body.content && auth.role === 'athlete') {
-            const response = await prisma.targetedFeedback.create({
-                data: {
-                    reminderId: body.reminderId,
-                    swimmerId: body.swimmerId,
-                    content: body.content,
-                    rpe: Number(body.rpe) || 0,
-                    soreness: Number(body.soreness) || 0
-                }
-            });
+        if (body.reminderId && body.swimmerId && body.content && (auth as any).role === 'athlete') {
+            const response = await sql`
+                INSERT INTO "TargetedFeedback" ("reminderId", "swimmerId", "content", "rpe", "soreness", "createdAt")
+                VALUES (${body.reminderId}, ${body.swimmerId}, ${body.content}, ${Number(body.rpe) || 0}, ${Number(body.soreness) || 0}, NOW())
+                RETURNING *
+            `;
             return NextResponse.json(response, { status: 201, headers: V12_FINGERPRINT });
         }
 
         // Coach creates a reminder
-        if (auth.role !== 'coach') {
+        if ((auth as any).role !== 'coach') {
             return NextResponse.json({ error: "Coach access required" }, { status: 403, headers: V12_FINGERPRINT });
         }
 
@@ -66,15 +84,18 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing 'message'" }, { status: 400, headers: V12_FINGERPRINT });
         }
 
-        const reminder = await prisma.feedbackReminder.create({
-            data: {
-                message: String(body.message),
-                targetSwimmerIds: Array.isArray(body.targetSwimmerIds) ? body.targetSwimmerIds : null,
-                targetGroup: body.targetGroup || null,
-                periodStart: body.periodStart || new Date().toISOString().split('T')[0],
-                periodEnd: body.periodEnd || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-            }
-        });
+        const reminder = await sql`
+            INSERT INTO "FeedbackReminder" ("message", "targetSwimmerIds", "targetGroup", "periodStart", "periodEnd", "createdAt")
+            VALUES (
+                ${String(body.message)},
+                ${Array.isArray(body.targetSwimmerIds) ? body.targetSwimmerIds : null},
+                ${body.targetGroup || null},
+                ${body.periodStart || new Date().toISOString().split('T')[0]},
+                ${body.periodEnd || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]},
+                NOW()
+            )
+            RETURNING *
+        `;
         return NextResponse.json(reminder, { status: 201, headers: V12_FINGERPRINT });
     });
 }
@@ -84,20 +105,20 @@ export async function PATCH(req: Request) {
         const auth = await requireCoach(req);
         if (auth instanceof NextResponse) return auth;
 
-        const prisma = getPrisma();
+        const sql = neon(process.env.DATABASE_URL!);
         const body = flattenPayload(await req.json());
 
         if (!body.id || !body.coachReply) {
             return NextResponse.json({ error: "Missing 'id' or 'coachReply'" }, { status: 400, headers: V12_FINGERPRINT });
         }
 
-        const response = await prisma.targetedFeedback.update({
-            where: { id: body.id },
-            data: {
-                coachReply: body.coachReply,
-                repliedAt: new Date().toISOString()
-            }
-        });
+        const response = await sql`
+            UPDATE "TargetedFeedback" SET
+                "coachReply" = ${body.coachReply},
+                "repliedAt" = ${new Date().toISOString()}
+            WHERE "id" = ${body.id}
+            RETURNING *
+        `;
 
         return NextResponse.json(response, { headers: V12_FINGERPRINT });
     });
