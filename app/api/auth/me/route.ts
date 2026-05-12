@@ -1,10 +1,11 @@
 import { verifyJWT, getCookieFromRequest } from '@/lib/auth';
-import { getPrisma } from '@/lib/prisma';
+import { withApiHandler } from '@/lib/api-handler';
+import { neon } from '@neondatabase/serverless';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  try {
+  return withApiHandler(async () => {
     const token = getCookieFromRequest(request, 'aquaflow_session');
     if (!token) {
       return Response.json({ error: 'Not authenticated' }, { status: 401 });
@@ -15,29 +16,22 @@ export async function GET(request: Request) {
       return Response.json({ error: 'Invalid session' }, { status: 401 });
     }
 
-    const prisma = getPrisma();
+    const sql = neon(process.env.DATABASE_URL!);
 
     if (payload.role === 'coach') {
-      const coach = await prisma.coachUser.findUnique({
-        where: { id: payload.userId },
-        select: { id: true, name: true, username: true, createdAt: true }
-      });
+      const rows = await sql`SELECT id, name, username, "createdAt" FROM "CoachUser" WHERE id = ${payload.userId} LIMIT 1`;
+      const coach = rows[0];
       if (!coach) return Response.json({ error: 'User not found' }, { status: 401 });
       return Response.json({ ...coach, role: 'coach' });
     }
 
     if (payload.role === 'athlete') {
-      const swimmer = await prisma.swimmer.findUnique({
-        where: { id: payload.userId },
-        select: { id: true, name: true, username: true, group: true, status: true, xp: true, level: true, currentStreak: true }
-      });
+      const rows = await sql`SELECT id, name, username, "group", status, xp, level, "currentStreak" FROM "Swimmer" WHERE id = ${payload.userId} LIMIT 1`;
+      const swimmer = rows[0];
       if (!swimmer) return Response.json({ error: 'User not found' }, { status: 401 });
       return Response.json({ ...swimmer, role: 'athlete' });
     }
 
     return Response.json({ error: 'Invalid role' }, { status: 401 });
-  } catch (error: any) {
-    console.error('[AUTH_ME_ERROR]', error.message);
-    return Response.json({ error: 'Internal error' }, { status: 500 });
-  }
+  });
 }
