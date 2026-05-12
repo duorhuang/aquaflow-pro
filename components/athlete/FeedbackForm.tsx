@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Send, ThumbsUp, Activity, Mail, Sparkles, Edit2, Loader2 } from "lucide-react";
+import { Send, ThumbsUp, Activity, Mail, Sparkles } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
-import { api } from "@/lib/api-client";
 import { Feedback } from "@/types";
 
 interface FeedbackFormProps {
@@ -17,71 +16,39 @@ export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
     const { t } = useLanguage();
     const { submitFeedback } = useStore();
     const [submitted, setSubmitted] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
-    const [existingId, setExistingId] = useState<string | null>(null);
     const [rpe, setRpe] = useState(5);
     const [soreness, setSoreness] = useState(3);
     const [comments, setComments] = useState("");
-    const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
-    // Load existing feedback for today
-    useEffect(() => {
-        const loadTodayFeedback = async () => {
-            const today = new Date().toISOString().split('T')[0];
-            try {
-                const allFeedback = await api.feedbacks.getAll();
-                const todayFb = (allFeedback || []).find(
-                    (f: any) => f.swimmerId === swimmerId && f.date === today
-                );
-                if (todayFb) {
-                    setRpe(todayFb.rpe || 5);
-                    setSoreness(todayFb.soreness || 3);
-                    setComments(todayFb.comments || "");
-                    setExistingId(todayFb.id);
-                    setSubmitted(true);
-                }
-            } catch (e) {
-                console.error("Failed to load today's feedback", e);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        if (swimmerId) loadTodayFeedback();
-    }, [swimmerId]);
-
-    const handleSave = async () => {
-        setIsSaving(true);
-        setSaveStatus(null);
-        const today = new Date().toISOString().split('T')[0];
+    const handleSubmit = () => {
+        const today = new Date();
+        const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
 
         const feedback: Feedback = {
-            id: existingId || Math.random().toString(36).substr(2, 9),
+            id: Math.random().toString(36).substr(2, 9),
             swimmerId,
             planId,
-            date: today,
+            date: dateStr,
             rpe,
             soreness,
             comments,
-            timestamp: new Date().toISOString()
+            timestamp: today.toISOString()
         };
 
-        try {
-            await api.feedbacks.create(feedback);
-            submitFeedback(feedback);
-            setSubmitted(true);
-            setSaveStatus(existingId ? "✅ 已更新今日反馈！" : "✅ 反馈已提交！");
-            setExistingId(feedback.id);
-        } catch (e: any) {
-            console.error("Failed to save feedback", e);
-            setSaveStatus("❌ 保存失败，请重试。");
-        } finally {
-            setIsSaving(false);
-        }
+        submitFeedback(feedback);
+        setSubmitted(true);
     };
 
-    if (isLoading) {
-        return <div className="p-12 text-center animate-pulse"><Loader2 className="w-6 h-6 text-primary animate-spin mx-auto" /></div>;
+    if (submitted) {
+        return (
+            <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-8 text-center animate-in fade-in zoom-in">
+                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <ThumbsUp className="w-8 h-8 text-green-500" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">{t.athlete.greatJob}</h3>
+                <p className="text-green-400 font-medium">反馈已提交，教练将即时收到通知！</p>
+            </div>
+        );
     }
 
     const getRpeColor = (value: number) => {
@@ -104,35 +71,25 @@ export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-blue-500/10 to-purple-500/20 rounded-3xl blur-xl opacity-50" />
 
             <div className="relative bg-card/80 backdrop-blur-sm border-2 border-primary/30 rounded-3xl overflow-hidden shadow-2xl">
-                {/* Header */}
+                {/* Header - Like a mail subject line */}
                 <div className="bg-gradient-to-r from-primary/20 to-blue-500/20 border-b border-primary/20 px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
-                                <Mail className="w-5 h-5 text-primary" />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                    📝 训练日记
-                                    <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-normal">
-                                        {new Date().toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
-                                    </span>
-                                </h3>
-                                <p className="text-xs text-muted-foreground">
-                                    {submitted ? "今日反馈已提交，可继续修改" : "记录今日训练感受，帮助教练了解你的状态"}
-                                </p>
-                            </div>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
+                            <Mail className="w-5 h-5 text-primary" />
                         </div>
-                        {submitted && (
-                            <div className="flex items-center gap-1 text-xs text-green-400">
-                                <Edit2 className="w-3 h-3" />
-                                可编辑
-                            </div>
-                        )}
+                        <div>
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                 训练日记
+                                <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-normal">
+                                    {new Date().toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
+                                </span>
+                            </h3>
+                            <p className="text-xs text-muted-foreground">记录今日训练感受，帮助教练了解你的状态</p>
+                        </div>
                     </div>
                 </div>
 
-                {/* Content */}
+                {/* Content - Mail body */}
                 <div className="p-6 space-y-6">
                     {/* Physical Status Section */}
                     <div className="bg-secondary/30 rounded-2xl p-4 space-y-4">
@@ -184,6 +141,7 @@ export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
 
                     {/* Reflection Section */}
                     <div className="space-y-4">
+                        {/* Good Points */}
                         <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4">
                             <label className="text-sm font-bold text-primary mb-2 flex items-center gap-2">
                                 <Sparkles className="w-4 h-4" />
@@ -202,27 +160,13 @@ export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
                         </div>
                     </div>
 
-                    {/* Status / Save */}
-                    {saveStatus && (
-                        <div className={cn("p-3 rounded-lg text-sm font-medium text-center", saveStatus.includes("❌") ? "bg-red-500/20 text-red-400" : "bg-green-500/10 text-green-400")}>
-                            {saveStatus}
-                        </div>
-                    )}
-
                     {/* Submit Button */}
                     <button
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className="w-full py-4 bg-gradient-to-r from-primary to-blue-500 text-white font-bold rounded-2xl hover:brightness-110 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 disabled:opacity-50"
+                        onClick={handleSubmit}
+                        className="w-full py-4 bg-gradient-to-r from-primary to-blue-500 text-white font-bold rounded-2xl hover:brightness-110 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
                     >
-                        {isSaving ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : submitted ? (
-                            <Edit2 className="w-5 h-5" />
-                        ) : (
-                            <Send className="w-5 h-5" />
-                        )}
-                        {submitted ? "更新今日反馈" : "提交训练日记"}
+                        <Send className="w-5 h-5" />
+                        提交训练日记
                     </button>
                 </div>
             </div>
