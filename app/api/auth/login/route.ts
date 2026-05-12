@@ -1,9 +1,21 @@
 import { NextResponse } from 'next/server';
 import { generateJWT, setSessionCookie, verifyPassword } from '@/lib/auth';
-import { getPrisma } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
+import { neon } from '@neondatabase/serverless';
 
 export const dynamic = 'force-dynamic';
+
+async function getCoachUser(username: string) {
+  const sql = neon(process.env.DATABASE_URL!);
+  const rows = await sql`SELECT id, username, name, password FROM "CoachUser" WHERE username = ${username} LIMIT 1`;
+  return rows[0] || null;
+}
+
+async function getSwimmer(username: string) {
+  const sql = neon(process.env.DATABASE_URL!);
+  const rows = await sql`SELECT id, username, name, password FROM "Swimmer" WHERE username = ${username} LIMIT 1`;
+  return rows[0] || null;
+}
 
 export async function POST(request: Request) {
   return withApiHandler(async () => {
@@ -14,10 +26,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
 
-    const prisma = getPrisma();
-
     if (role === 'coach') {
-      const coach = await prisma.coachUser.findUnique({ where: { username } });
+      const coach = await getCoachUser(username);
       if (!coach) {
         return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
       }
@@ -34,9 +44,7 @@ export async function POST(request: Request) {
     }
 
     if (role === 'athlete') {
-      const swimmer = await prisma.swimmer.findFirst({
-        where: { username }
-      });
+      const swimmer = await getSwimmer(username);
       if (!swimmer) {
         return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
       }
