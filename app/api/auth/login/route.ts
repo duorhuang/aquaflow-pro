@@ -1,9 +1,7 @@
+import { NextResponse } from 'next/server';
 import { generateJWT, setSessionCookie, verifyPassword } from '@/lib/auth';
 import { getPrisma } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
-import { NextResponse } from 'next/server';
-
-export const runtime = 'edge';
 
 export const dynamic = 'force-dynamic';
 

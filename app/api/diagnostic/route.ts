@@ -3,7 +3,6 @@ import { V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
 
 export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
 
 export async function GET() {
     return withApiHandler(async () => {
