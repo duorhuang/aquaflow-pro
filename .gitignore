@@ -38,3 +38,12 @@ next-env.d.ts
 .npm-cache/
 build-output.log
 *.log
+
+# local Wrangler/Claude state
+.wrangler/
+.xdg-cache/
+.claude/scheduled_tasks.lock
+
+# debug scripts
+test-db.js
+tests/light-check.js

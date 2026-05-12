@@ -1,10 +1,13 @@
-import { hashPassword, verifyPassword, generateJWT, setSessionCookie } from '@/lib/auth';
+import { generateJWT, setSessionCookie, verifyPassword } from '@/lib/auth';
 import { getPrisma } from '@/lib/prisma';
+import { withApiHandler } from '@/lib/api-handler';
+
+export const runtime = 'edge';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
-  try {
+  return withApiHandler(async () => {
     const body = await request.json();
     const { username, password, role } = body;
 
@@ -49,8 +52,5 @@ export async function POST(request: Request) {
     }
 
     return Response.json({ error: 'Invalid role' }, { status: 400 });
-  } catch (error: any) {
-    console.error('[AUTH_LOGIN_ERROR]', error.message);
-    return Response.json({ error: 'Internal error' }, { status: 500 });
-  }
+  });
 }

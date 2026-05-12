@@ -28,6 +28,15 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                 body: JSON.stringify({ username, password, role: mode }),
             });
 
+            const contentType = res.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await res.text();
+                setError('Server error. Please try again in a moment.');
+                console.error('Login API returned non-JSON response:', text.substring(0, 200));
+                setIsLoading(false);
+                return;
+            }
+
             const data = await res.json();
 
             if (!res.ok) {

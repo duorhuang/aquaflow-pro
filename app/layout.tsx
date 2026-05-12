@@ -10,14 +10,8 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: "AquaFlow Pro - 游泳队管理系统",
   description: "专业游泳队训练管理系统 | Professional Swimming Team Management",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "AquaFlow",
-  },
   icons: {
-    apple: "/icon-192.png",
+    icon: "/favicon.ico",
   },
   other: {
     "x-build": "V12-STRATOSPHERE",
@@ -27,9 +21,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#09090b",
   width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export default function RootLayout({
