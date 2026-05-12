@@ -1,6 +1,7 @@
 import { generateJWT, setSessionCookie, verifyPassword } from '@/lib/auth';
 import { getPrisma } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
+import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
     const { username, password, role } = body;
 
     if (!username || !password || !role) {
-      return Response.json({ error: 'Missing fields' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
 
     const prisma = getPrisma();
@@ -20,17 +21,18 @@ export async function POST(request: Request) {
     if (role === 'coach') {
       const coach = await prisma.coachUser.findUnique({ where: { username } });
       if (!coach) {
-        return Response.json({ error: 'Invalid credentials' }, { status: 401 });
+        return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
       }
       const valid = await verifyPassword(password, coach.password);
       if (!valid) {
-        return Response.json({ error: 'Invalid credentials' }, { status: 401 });
+        return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
       }
       const token = await generateJWT({ userId: coach.id, role: 'coach' });
-      return Response.json(
-        { success: true, user: { id: coach.id, name: coach.name || coach.username, role: 'coach' } },
-        { headers: { 'Set-Cookie': setSessionCookie(token) } }
+      const response = NextResponse.json(
+        { success: true, user: { id: coach.id, name: coach.name || coach.username, role: 'coach' } }
       );
+      response.headers.set('Set-Cookie', setSessionCookie(token));
+      return response;
     }
 
     if (role === 'athlete') {
@@ -38,19 +40,20 @@ export async function POST(request: Request) {
         where: { username }
       });
       if (!swimmer) {
-        return Response.json({ error: 'Invalid credentials' }, { status: 401 });
+        return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
       }
       const valid = await verifyPassword(password, swimmer.password);
       if (!valid) {
-        return Response.json({ error: 'Invalid credentials' }, { status: 401 });
+        return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
       }
       const token = await generateJWT({ userId: swimmer.id, role: 'athlete' });
-      return Response.json(
-        { success: true, user: { id: swimmer.id, name: swimmer.name, role: 'athlete' } },
-        { headers: { 'Set-Cookie': setSessionCookie(token) } }
+      const response = NextResponse.json(
+        { success: true, user: { id: swimmer.id, name: swimmer.name, role: 'athlete' } }
       );
+      response.headers.set('Set-Cookie', setSessionCookie(token));
+      return response;
     }
 
-    return Response.json({ error: 'Invalid role' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
   });
 }

@@ -242,12 +242,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     const submitFeedback = async (fb: Feedback) => {
         recordMutation();
-        setFeedbacks((prev) => [...prev, fb]);
+        // Update local state: replace if same swimmerId+date exists, otherwise add
+        setFeedbacks((prev) => {
+            const existingIdx = prev.findIndex(f => f.swimmerId === fb.swimmerId && f.date === fb.date);
+            if (existingIdx >= 0) {
+                const updated = [...prev];
+                updated[existingIdx] = fb;
+                return updated;
+            }
+            return [...prev, fb];
+        });
         adjustXP(fb.swimmerId, 20);
         try {
             await api.feedbacks.create(fb);
-            console.log("✅ Feedback synced");
-        } catch (e) { 
+            console.log("✅ Feedback synced (upsert)");
+        } catch (e) {
             console.error("❌ Sync error (submitFeedback):", e);
             throw e;
         }

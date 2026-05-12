@@ -24,13 +24,21 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit, silent4xx: b
             });
             clearTimeout(timeout);
 
+            // Check content-type before parsing JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                if (response.status === 200 && endpoint === '/auth/login') {
+                    // Login succeeds even without JSON (cookie was set)
+                    return {} as T;
+                }
+                throw new Error(`Server returned non-JSON response (${response.status})`);
+            }
+
             if (!response.ok) {
                 const error = await response.json().catch(() => ({}));
                 const is4xx = response.status >= 400 && response.status < 500;
                 const errMsg = error.error || error.message || `API Error: ${response.status} ${response.statusText}`;
                 if (silent4xx && is4xx) {
-                    // Return null instead of throwing — 4xx is expected behavior (auth, not found, etc.)
-                    // This prevents Next.js dev overlay from capturing the error
                     return null as unknown as T;
                 }
                 throw new Error(errMsg);
@@ -87,6 +95,10 @@ export const api = {
         getAll: () => fetchAPI<any[]>('/feedbacks'),
         create: (data: any) => fetchAPI<any>('/feedbacks', {
             method: 'POST',
+            body: JSON.stringify(data),
+        }),
+        update: (id: string, data: any) => fetchAPI<any>(`/feedbacks?id=${id}`, {
+            method: 'PUT',
             body: JSON.stringify(data),
         }),
     },

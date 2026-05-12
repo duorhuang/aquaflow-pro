@@ -87,11 +87,12 @@ model Feedback {
   timestamp String
   goodPoints        String?
   improvementAreas  String?
-  
+
   createdAt DateTime @default(now())
-  
+
   swimmer Swimmer @relation(fields: [swimmerId], references: [id], onDelete: Cascade)
-  
+
+  @@unique([swimmerId, date])
   @@index([swimmerId])
   @@index([date])
 }

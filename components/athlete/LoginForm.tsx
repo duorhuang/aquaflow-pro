@@ -30,6 +30,15 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
 
             const contentType = res.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
+                // If status is 200 but no JSON, the cookie was set — redirect anyway
+                if (res.ok) {
+                    if (mode === "coach") {
+                        router.push("/dashboard");
+                    } else {
+                        router.push("/workout");
+                    }
+                    return;
+                }
                 const text = await res.text();
                 setError('Server error. Please try again in a moment.');
                 console.error('Login API returned non-JSON response:', text.substring(0, 200));
