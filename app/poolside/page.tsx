@@ -28,7 +28,7 @@ export default function PoolsidePage() {
 
     useEffect(() => {
         setLoading(true);
-        api.plans.getAll(selectedGroup)
+        api.plans.getAll()
             .then((plans: any[]) => {
                 const today = new Date().toISOString().split('T')[0];
                 const todayPlan = plans?.find((p: any) => p.date === today);

@@ -107,7 +107,7 @@ export interface AttendanceRecord {
     id: string;
     date: string; // YYYY-MM-DD
     swimmerId: string;
-    status: "Present";
+    status: "Present" | "AthletePresent";
     timestamp: string; // ISO
 }
 

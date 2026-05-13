@@ -36,6 +36,7 @@
   "devDependencies": {
     "@opennextjs/cloudflare": "^1.16.1",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
     "@types/jsdom": "^28.0.2",
     "@types/node": "^20",
     "@types/react": "^19",

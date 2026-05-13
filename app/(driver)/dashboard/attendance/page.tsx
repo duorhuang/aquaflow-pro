@@ -140,18 +140,18 @@ export default function CoachAttendancePage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
                 <div className="bg-card border border-border rounded-xl p-4 text-center">
                     <div className="flex items-center justify-center gap-2 mb-1">
                         <UserCheck className="w-4 h-4 text-emerald-400" />
-                        <span className="text-xs text-muted-foreground font-bold">到场</span>
+                        <span className="text-xs text-muted-foreground font-bold">已确认</span>
                     </div>
                     <p className="text-2xl font-bold text-emerald-400">{presentCount}</p>
                 </div>
                 <div className="bg-card border border-border rounded-xl p-4 text-center">
                     <div className="flex items-center justify-center gap-2 mb-1">
-                        <UserX className="w-4 h-4 text-orange-400" />
-                        <span className="text-xs text-muted-foreground font-bold">待确认 (队员半打卡)</span>
+                        <UserCheck className="w-4 h-4 text-orange-400" />
+                        <span className="text-xs text-muted-foreground font-bold">待确认</span>
                     </div>
                     <p className="text-2xl font-bold text-orange-400">{athletePresentCount}</p>
                 </div>
@@ -224,8 +224,8 @@ export default function CoachAttendancePage() {
                                 isPresent
                                     ? "bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20"
                                     : isAthletePresent
-                                    ? "bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/20"
-                                    : "bg-card border-border hover:bg-white/5"
+                                        ? "bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/20"
+                                        : "bg-card border-border hover:bg-white/5"
                             )}
                         >
                             <div className="flex items-center gap-3">
@@ -234,22 +234,22 @@ export default function CoachAttendancePage() {
                                     isPresent
                                         ? "bg-emerald-500 text-white shadow-[0_0_12px_rgba(16,185,129,0.4)]"
                                         : isAthletePresent
-                                        ? "bg-orange-500 text-white shadow-[0_0_12px_rgba(249,115,22,0.4)]"
-                                        : "bg-secondary text-muted-foreground"
+                                            ? "bg-orange-500 text-white shadow-[0_0_12px_rgba(251,146,60,0.4)]"
+                                            : "bg-secondary text-muted-foreground"
                                 )}>
                                     {swimmer.name.charAt(0)}
                                 </div>
                                 <div className="text-left">
                                     <p className="font-bold text-white">{swimmer.name}</p>
-                                    <p className="text-xs text-muted-foreground">{GROUP_LABELS[swimmer.group] || swimmer.group}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {isAthletePresent ? "已自查 · 待确认" : ""}{GROUP_LABELS[swimmer.group] || swimmer.group}
+                                    </p>
                                 </div>
                             </div>
                             {isPresent ? (
                                 <CheckCircle2 className="w-6 h-6 text-emerald-400" />
                             ) : isAthletePresent ? (
-                                <div className="flex items-center gap-1 text-orange-400">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest bg-orange-500/20 px-2 py-0.5 rounded-full">教练需点确认</span>
-                                </div>
+                                <UserCheck className="w-6 h-6 text-orange-400" />
                             ) : (
                                 <XCircle className="w-6 h-6 text-muted-foreground/30" />
                             )}

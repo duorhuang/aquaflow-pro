@@ -1,7 +1,6 @@
 "use client";
 
 import { SessionRenderer } from "@/components/dashboard/SessionRenderer";
-import { AttendanceCalendar } from "@/components/athlete/AttendanceCalendar";
 import { PerformanceList } from "@/components/athlete/PerformanceTracker";
 import { TrainingHistory } from "@/components/athlete/TrainingHistory";
 import { BlockFeedbackPanel } from "@/components/athlete/BlockFeedbackPanel";
@@ -574,54 +573,6 @@ export default function AthleteWorkoutPage() {
                         </div>
                         <TrainingHistory swimmerId={currentUser.id} />
                         <PerformanceList swimmerId={currentUser.id} />
-                    </div>
-                )}
-
-                {activeTab === 'stats' && (
-                    <div className="space-y-6">
-                        <div className="bg-gradient-to-br from-secondary to-card p-6 rounded-3xl border border-white/5">
-                            <h2 className="text-xl font-bold text-white mb-4">
-                                {new Date().toLocaleDateString('zh-CN', { month: 'long' })} 统计
-                            </h2>
-
-                            <div className="grid grid-cols-2 gap-4 mb-6">
-                                <div className="bg-black/20 rounded-xl p-4">
-                                    <p className="text-xs text-muted-foreground mb-1">总游泳距离</p>
-                                    <p className="text-2xl font-bold text-primary">{monthlyStats.totalDistance.toLocaleString()}m</p>
-                                </div>
-                                <div className="bg-black/20 rounded-xl p-4">
-                                    <p className="text-xs text-muted-foreground mb-1">训练天数</p>
-                                    <p className="text-2xl font-bold text-blue-400">{monthlyStats.trainingDays}天</p>
-                                </div>
-                                <div className="bg-black/20 rounded-xl p-4">
-                                    <p className="text-xs text-muted-foreground mb-1">完成率</p>
-                                    <p className="text-2xl font-bold text-green-400">{monthlyStats.completionRate}%</p>
-                                </div>
-                                <div className="bg-black/20 rounded-xl p-4">
-                                    <p className="text-xs text-muted-foreground mb-1">连续打卡</p>
-                                    <p className="text-2xl font-bold text-yellow-400">{currentUser.currentStreak || 0}天</p>
-                                </div>
-                            </div>
-
-                            {/* Progress to Goal */}
-                            <div className="bg-black/20 rounded-xl p-4">
-                                <div className="flex justify-between items-center mb-2">
-                                    <p className="text-xs text-muted-foreground">本月目标: 50,000m</p>
-                                    <p className="text-xs font-bold text-primary">
-                                        {Math.round((monthlyStats.totalDistance / 50000) * 100)}%
-                                    </p>
-                                </div>
-                                <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-primary rounded-full transition-all"
-                                        style={{ width: `${Math.min((monthlyStats.totalDistance / 50000) * 100, 100)}%` }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Attendance Calendar */}
-                        <AttendanceCalendar swimmerId={currentUser.id} />
                     </div>
                 )}
             </main>

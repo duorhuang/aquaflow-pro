@@ -740,7 +740,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                                                 <span className="text-[10px] text-purple-400">↩</span>
                                                                 <select
                                                                     value={item.alternateStroke || ""}
-                                                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateItem(block.id, item.id, { alternateStroke: e.target.value || undefined })}
+                                                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateItem(block.id, item.id, { alternateStroke: (e.target.value || undefined) as "Free" | "Back" | "Breast" | "Fly" | "IM" | "Choice" | undefined })}
                                                                     className="flex-1 bg-secondary/30 rounded px-2 py-1 text-xs outline-none text-purple-300 border border-purple-500/20 [&>option]:text-black"
                                                                 >
                                                                     <option value="">无交换</option>

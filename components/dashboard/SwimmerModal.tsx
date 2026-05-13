@@ -169,7 +169,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                             <label className="text-xs uppercase font-bold text-muted-foreground mb-1 block">密码</label>
                             <input
                                 required={!swimmerToEdit}
-                                type="text"
+                                type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 disabled={isSubmitting}

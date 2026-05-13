@@ -6,13 +6,14 @@ import { useStore } from "@/lib/store";
 import { api } from "@/lib/api-client";
 import { Waves, LogOut, User, Save, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { Swimmer } from "@/types";
 
 export default function AthleteProfilePage() {
     const router = useRouter();
     const { swimmers, updateSwimmer, isLoaded } = useStore();
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [name, setName] = useState("");
-    const [mainStroke, setMainStroke] = useState("");
+    const [mainStroke, setMainStroke] = useState<Swimmer["mainStroke"] | undefined>(undefined);
     const [readiness, setReadiness] = useState(100);
     const [injuryNote, setInjuryNote] = useState("");
     const [saving, setSaving] = useState(false);
@@ -27,7 +28,7 @@ export default function AthleteProfilePage() {
                 }
                 setCurrentUser(user);
                 setName(user.name || "");
-                setMainStroke(user.mainStroke || "");
+                setMainStroke((user.mainStroke || undefined) as Swimmer["mainStroke"] | undefined);
                 setReadiness(user.readiness || 100);
                 setInjuryNote(user.injuryNote || "");
             })
@@ -122,7 +123,7 @@ export default function AthleteProfilePage() {
                         <label className="text-sm text-muted-foreground mb-1 block">Main Stroke</label>
                         <select
                             value={mainStroke}
-                            onChange={(e) => setMainStroke(e.target.value)}
+                            onChange={(e) => setMainStroke((e.target.value || undefined) as Swimmer["mainStroke"] | undefined)}
                             className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
                         >
                             <option value="">Select...</option>
