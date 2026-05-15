@@ -1,4 +1,5 @@
 import { ImageViewerModal } from "@/components/common/ImageViewer";
+import { ToastProvider } from "@/components/common/Toast";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n";
@@ -35,9 +36,11 @@ export default function RootLayout({
       <body className="antialiased" suppressHydrationWarning={true}>
         <LanguageProvider>
           <StoreProvider>
-            <DbStatus />
-            {children}
-            <ImageViewerModal />
+            <ToastProvider>
+              <DbStatus />
+              {children}
+              <ImageViewerModal />
+            </ToastProvider>
           </StoreProvider>
         </LanguageProvider>
       </body>

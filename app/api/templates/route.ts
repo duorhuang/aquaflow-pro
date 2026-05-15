@@ -16,6 +16,12 @@ export async function GET(req: Request) {
             SELECT * FROM "BlockTemplate"
             ORDER BY "category" ASC
         `;
+        // Parse JSON fields
+        templates.forEach((t: any) => {
+            if (t.items && typeof t.items === 'string') {
+                t.items = JSON.parse(t.items);
+            }
+        });
         return NextResponse.json(templates || [], { headers: V12_FINGERPRINT });
     });
 }
@@ -28,6 +34,8 @@ export async function POST(request: Request) {
         const sql = neon(process.env.DATABASE_URL!);
         const data = flattenPayload(await request.json());
 
+        const itemsJson = JSON.stringify(data.items || []);
+
         const template = await sql`
             INSERT INTO "BlockTemplate" ("templateId", "name", "category", "type", "rounds", "items", "note", "createdAt", "updatedAt")
             VALUES (
@@ -36,7 +44,7 @@ export async function POST(request: Request) {
                 ${String(data.category)},
                 ${String(data.type)},
                 ${Number(data.rounds) || 1},
-                ${data.items || []},
+                ${itemsJson},
                 ${data.note},
                 NOW(),
                 NOW()
@@ -59,13 +67,15 @@ export async function PUT(request: Request) {
 
         const data = flattenPayload(await request.json());
 
+        const itemsJson = data.items !== undefined ? JSON.stringify(data.items) : null;
+
         const template = await sql`
             UPDATE "BlockTemplate" SET
                 "name" = ${data.name},
                 "category" = ${data.category},
                 "type" = ${data.type},
                 "rounds" = ${data.rounds !== undefined ? Number(data.rounds) : null},
-                "items" = ${data.items},
+                "items" = ${itemsJson},
                 "note" = ${data.note},
                 "updatedAt" = NOW()
             WHERE "id" = ${id}

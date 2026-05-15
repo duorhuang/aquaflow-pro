@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
+import { useToast } from "@/components/common/Toast";
 import { Save, Plus, Trash2, Image as ImageIcon, CheckCircle, Users, Target, FileText, Blocks, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { ImageViewer } from "@/components/common/ImageViewer";
 import { BlockEditor } from "@/components/dashboard/BlockEditor";
@@ -10,7 +11,7 @@ import { RichTextEditor } from "@/components/dashboard/RichTextEditor";
 import { cn } from "@/lib/utils";
 import { GroupLevel } from "@/types";
 
-const GROUP_LEVELS: GroupLevel[] = ["Junior", "Intermediate", "Advanced"];
+const GROUP_LEVELS: GroupLevel[] = ["Junior", "Intermediate", "Advanced", "External"];
 const DAY_NAMES = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 
 // Get ISO day-of-week (0=Monday, 6=Sunday) from a date string
@@ -21,36 +22,9 @@ function getDayOfWeek(dateStr: string): number {
     return (d.getDay() + 6) % 7;
 }
 
-const compressImage = (file: File, maxDim = 1920): Promise<string> => {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                if (width > height && width > maxDim) {
-                    height *= maxDim / width;
-                    width = maxDim;
-                } else if (height > maxDim) {
-                    width *= maxDim / height;
-                    height = maxDim;
-                }
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx?.drawImage(img, 0, 0, width, height);
-                resolve(canvas.toDataURL('image/jpeg', 0.92));
-            };
-            img.src = e.target?.result as string;
-        };
-        reader.readAsDataURL(file);
-    });
-};
-
 export default function WeeklyPlanPage() {
     const { swimmers } = useStore();
+    const { toast } = useToast();
     const [weekStart, setWeekStart] = useState("");
     const [weekEnd, setWeekEnd] = useState("");
     const [group, setGroup] = useState("Advanced");
@@ -67,6 +41,12 @@ export default function WeeklyPlanPage() {
     const [loadedPlans, setLoadedPlans] = useState<any[]>([]);
     const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
+    // Weekly overview state
+    const [overviewImageUrl, setOverviewImageUrl] = useState("");
+    const [overviewContentHtml, setOverviewContentHtml] = useState("");
+    const [uploadingOverview, setUploadingOverview] = useState(false);
+    const overviewFileInputRef = useRef<HTMLInputElement>(null);
+
     // Accordion: which days are expanded
     const [expandedDays, setExpandedDays] = useState<Set<number>>(new Set());
 
@@ -78,13 +58,26 @@ export default function WeeklyPlanPage() {
     const handleLegacyUpload = async (sessionId: string, file: File) => {
         setUploadingLegacyId(sessionId);
         try {
-            const base64 = await compressImage(file, 1920);
-            updateSession(sessionId, { imageData: base64, imageType: "image/jpeg" });
+            const result = await api.upload.file(file);
+            updateSession(sessionId, { imageData: result.url, imageType: "image/jpeg" });
         } catch (e) {
             console.error(e);
-            alert("照片上传失败");
+            toast("error", "照片上传失败");
         } finally {
             setUploadingLegacyId(null);
+        }
+    };
+
+    const handleOverviewUpload = async (file: File) => {
+        setUploadingOverview(true);
+        try {
+            const result = await api.upload.file(file);
+            setOverviewImageUrl(result.url);
+        } catch (e) {
+            console.error(e);
+            toast("error", "本周总览照片上传失败");
+        } finally {
+            setUploadingOverview(false);
         }
     };
 
@@ -217,7 +210,7 @@ export default function WeeklyPlanPage() {
     const handleSave = async () => {
         if (saving) return;
         if (targetGroups.length === 0 && targetSwimmerIds.length === 0) {
-            alert("请至少选择一个组别或队员");
+            toast("info", "请至少选择一个组别或队员");
             return;
         }
         setSaving(true);
@@ -235,6 +228,8 @@ export default function WeeklyPlanPage() {
                     isPublished: true,
                     targetGroup: targetGroups.length > 0 ? targetGroups : null,
                     targetSwimmerIds: targetSwimmerIds.length > 0 ? targetSwimmerIds : null,
+                    overviewImageUrl: overviewImageUrl || null,
+                    overviewContentHtml: overviewContentHtml || null,
                 });
                 planId = newPlan.id;
             } else {
@@ -242,6 +237,8 @@ export default function WeeklyPlanPage() {
                     weekStart, weekEnd, group, title, coachNotes, isPublished: true,
                     targetGroup: targetGroups.length > 0 ? targetGroups : null,
                     targetSwimmerIds: targetSwimmerIds.length > 0 ? targetSwimmerIds : null,
+                    overviewImageUrl: overviewImageUrl || null,
+                    overviewContentHtml: overviewContentHtml || null,
                 });
             }
 
@@ -281,17 +278,20 @@ export default function WeeklyPlanPage() {
                 setPublishProgress({ current: i + 1, total: totalSessions });
             }
 
-            alert("计划发布成功！");
+            toast("success", "计划发布成功！");
             loadPlans();
             if (!selectedPlanId) setSelectedPlanId(planId);
         } catch (e: any) {
-            console.error("📋 Publish Error:", e);
-            const isPayloadTooLarge = e.message?.includes("too large") || e.status === 413;
-            const errorMsg = isPayloadTooLarge
-                ? "照片体积过大（Cloudflare 限制 1MB）。请尝试分批上传，或减少单张照片的分辨率。"
-                : `同步失败：${e.message || "服务器连接超时"}\n请检查网络并重试。`;
-
-            alert(errorMsg);
+            console.error("Publish Error:", e);
+            if (e.message?.includes("413") || e.status === 413) {
+                toast("error", "照片体积过大（Cloudflare 限制 1MB）。请尝试分批上传，或减少单张照片的分辨率。");
+            } else if (e.message?.includes("401")) {
+                toast("error", "登录已过期，请重新登录后重试。");
+            } else if (e.name === "TypeError" || e.message?.includes("network")) {
+                toast("error", "网络连接失败，请检查网络后重试。");
+            } else {
+                toast("error", `同步失败：${e.message || "服务器连接超时"}`);
+            }
         } finally {
             setSaving(false);
             setPublishProgress(null);
@@ -309,6 +309,8 @@ export default function WeeklyPlanPage() {
         setSessions(plan.sessions || []);
         setTargetGroups(plan.targetGroup || []);
         setTargetSwimmerIds(plan.targetSwimmerIds || []);
+        setOverviewImageUrl(plan.overviewImageUrl || "");
+        setOverviewContentHtml(plan.overviewContentHtml || "");
     };
 
     const createNew = () => {
@@ -318,6 +320,8 @@ export default function WeeklyPlanPage() {
         setGroup("Advanced");
         setTargetGroups([]);
         setTargetSwimmerIds([]);
+        setOverviewImageUrl("");
+        setOverviewContentHtml("");
 
         const monday = new Date();
         const day = monday.getDay();
@@ -388,8 +392,63 @@ export default function WeeklyPlanPage() {
                         </div>
                         <div>
                             <label className="text-xs text-muted-foreground block mb-1">教练本周寄语 (选填)</label>
-                            <textarea value={coachNotes} onChange={e => setCoachNotes(e.target.value)} className="w-full h-20 bg-black/40 border border-border rounded-lg px-3 py-2 text-white resize-none" placeholder="这周大家好好练..." />
+                            <RichTextEditor
+                                value={coachNotes}
+                                onChange={setCoachNotes}
+                                placeholder="这周大家好好练..."
+                            />
                         </div>
+                    </div>
+
+                    {/* Weekly Overview Section */}
+                    <div className="bg-gradient-to-br from-card/40 to-amber-900/10 border border-amber-500/20 rounded-xl p-6">
+                        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <Target className="w-5 h-5 text-amber-400" />
+                            本周总览
+                        </h2>
+
+                        {overviewImageUrl ? (
+                            <div className="relative mb-4 rounded-lg overflow-hidden">
+                                <ImageViewer src={overviewImageUrl} className="w-full max-h-[300px] object-contain" />
+                                <button
+                                    onClick={() => setOverviewImageUrl("")}
+                                    className="absolute top-2 right-2 p-1 bg-black/60 rounded-full text-white hover:bg-red-500/80 transition-colors"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+                        ) : (
+                            <div
+                                className="aspect-[4/3] rounded-lg overflow-hidden bg-secondary flex items-center justify-center cursor-pointer mb-4 border-2 border-dashed border-white/10 hover:border-amber-500/50 transition-colors"
+                                onClick={() => overviewFileInputRef.current?.click()}
+                            >
+                                {uploadingOverview ? (
+                                    <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+                                ) : (
+                                    <div className="text-center">
+                                        <ImageIcon className="w-8 h-8 opacity-50 mx-auto mb-2" />
+                                        <p className="text-xs text-muted-foreground">点击上传本周总览照片</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        <input
+                            type="file"
+                            ref={overviewFileInputRef}
+                            accept="image/*"
+                            className="hidden"
+                            onChange={e => {
+                                const file = e.target.files?.[0];
+                                if (file) handleOverviewUpload(file);
+                                if (e.target) e.target.value = "";
+                            }}
+                        />
+
+                        <RichTextEditor
+                            value={overviewContentHtml}
+                            onChange={setOverviewContentHtml}
+                            placeholder="输入本周总览说明，支持粗体、列表、图片..."
+                        />
                     </div>
 
                     {/* Vertical accordion - Daily sessions */}

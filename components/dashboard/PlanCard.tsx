@@ -23,9 +23,10 @@ export function PlanCard({ plan }: PlanCardProps) {
                             "text-xs font-mono px-2 py-1 rounded-full uppercase tracking-wider",
                             plan.group === "Advanced" ? "bg-red-500/10 text-red-400" :
                                 plan.group === "Intermediate" ? "bg-yellow-500/10 text-yellow-400" :
-                                    "bg-green-500/10 text-green-400"
+                                    plan.group === "External" ? "bg-teal-500/10 text-teal-400" :
+                                        "bg-green-500/10 text-green-400"
                         )}>
-                            {plan.group === "Advanced" ? "高级组" : plan.group === "Intermediate" ? "中级组" : "初级组"}
+                            {plan.group === "Advanced" ? "高级组" : plan.group === "Intermediate" ? "中级组" : plan.group === "External" ? "校外组" : "初级组"}
                         </span>
                         <h3 className="text-xl font-bold mt-2 text-white group-hover:text-primary transition-colors">
                             {plan.date} 训练计划

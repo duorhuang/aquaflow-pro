@@ -1,4 +1,4 @@
-export type GroupLevel = "Junior" | "Intermediate" | "Advanced";
+export type GroupLevel = "Junior" | "Intermediate" | "Advanced" | "External";
 
 export interface Swimmer {
     id: string;
@@ -146,6 +146,8 @@ export interface WeeklyPlan {
     isPublished: boolean;
     targetGroup?: GroupLevel[];   // Array of groups to target
     targetSwimmerIds?: string[];  // Array of individual swimmer IDs
+    overviewImageUrl?: string;    // R2 URL for weekly overview photo
+    overviewContentHtml?: string; // HTML for weekly overview rich text notes
     sessions?: DailySession[];
     createdAt?: string;
     updatedAt?: string;

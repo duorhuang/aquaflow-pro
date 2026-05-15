@@ -33,7 +33,7 @@ export default function CoachAttendancePage() {
     const isToday = selectedDate === getLocalDateISOString(new Date());
 
     // Group filter
-    const [groupFilter, setGroupFilter] = useState<"All" | "Junior" | "Intermediate" | "Advanced">("All");
+    const [groupFilter, setGroupFilter] = useState<"All" | "Junior" | "Intermediate" | "Advanced" | "External">("All");
 
     // Filtered swimmers
     const filteredSwimmers = useMemo(() => {
@@ -89,6 +89,7 @@ export default function CoachAttendancePage() {
         Junior: "初级组",
         Intermediate: "中级组",
         Advanced: "高级组",
+        External: "校外组",
     };
 
     return (
@@ -174,7 +175,7 @@ export default function CoachAttendancePage() {
             {/* Group Filter + Batch Actions */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex p-1 bg-card/30 border border-border rounded-xl overflow-x-auto no-scrollbar">
-                    {(["All", "Advanced", "Intermediate", "Junior"] as const).map((tab) => (
+                    {(["All", "Advanced", "Intermediate", "Junior", "External"] as const).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setGroupFilter(tab)}

@@ -52,6 +52,7 @@ export const DICTIONARY = {
                 Advanced: "Advanced",
                 Intermediate: "Intermediate",
                 Junior: "Junior",
+                External: "External",
             },
             strokes: {
                 Free: "Free",
@@ -160,6 +161,7 @@ export const DICTIONARY = {
                 Advanced: "高级组",
                 Intermediate: "中级组",
                 Junior: "初级组",
+                External: "校外组",
             },
             strokes: {
                 Free: "自由泳",

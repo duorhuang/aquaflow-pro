@@ -6,6 +6,12 @@ import { neon } from '@neondatabase/serverless';
 
 export const dynamic = 'force-dynamic';
 
+function parseSessionJson(s: any) {
+    if (s.contentBlocks && typeof s.contentBlocks === 'string') {
+        s.contentBlocks = JSON.parse(s.contentBlocks);
+    }
+}
+
 export async function GET(req: Request) {
     return withApiHandler(async () => {
         const auth = await requireAnyAuth(req);
@@ -25,6 +31,7 @@ export async function GET(req: Request) {
                 WHERE "DailySession"."date" = ${date}
                 ORDER BY "DailySession"."label" ASC
             `;
+            sessions.forEach(parseSessionJson);
             return NextResponse.json(sessions || [], { headers: V12_FINGERPRINT });
         }
 
@@ -35,6 +42,7 @@ export async function GET(req: Request) {
             WHERE "weeklyPlanId" = ${weeklyPlanId}
             ORDER BY "sortOrder" ASC
         `;
+        sessions.forEach(parseSessionJson);
         return NextResponse.json(sessions || [], { headers: V12_FINGERPRINT });
     });
 }
@@ -57,7 +65,7 @@ export async function POST(request: Request) {
                 ${data.imageType},
                 ${data.notes},
                 ${Number(data.sortOrder) || 0},
-                ${data.contentBlocks ?? null},
+                ${data.contentBlocks ? JSON.stringify(data.contentBlocks) : null},
                 ${data.contentHtml ?? null},
                 ${data.editorMode ?? "legacy"},
                 NOW()
@@ -88,7 +96,7 @@ export async function PUT(request: Request) {
                 "imageType" = ${data.imageType},
                 "notes" = ${data.notes},
                 "sortOrder" = ${data.sortOrder !== undefined ? Number(data.sortOrder) : null},
-                "contentBlocks" = ${data.contentBlocks !== undefined ? data.contentBlocks : null},
+                "contentBlocks" = ${data.contentBlocks !== undefined ? JSON.stringify(data.contentBlocks) : null},
                 "contentHtml" = ${data.contentHtml !== undefined ? data.contentHtml : null},
                 "editorMode" = ${data.editorMode !== undefined ? data.editorMode : "legacy"},
                 "updatedAt" = NOW()

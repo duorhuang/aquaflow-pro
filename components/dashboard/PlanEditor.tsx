@@ -9,6 +9,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
+import { api } from "@/lib/api-client";
+import { useToast } from "@/components/common/Toast";
 import { AIInsight } from "@/components/dashboard/AIInsight";
 import { WorkoutLibrary } from "@/components/dashboard/WorkoutLibrary";
 import { getLocalDateISOString } from "@/lib/date-utils";
@@ -57,6 +59,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
     const router = useRouter();
     const { t } = useLanguage();
     const { addPlan, updatePlan, deletePlan, swimmers, addTemplate } = useStore();
+    const { toast } = useToast();
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -279,7 +282,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
 
     const handleSave = async () => {
         if (isSaving) return;
-        
+
         setIsSaving(true);
         try {
             const notesCount = Object.keys(plan.targetedNotes || {}).length;
@@ -290,17 +293,16 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                 await addPlan(plan);
             }
 
-            const message = `✅ 计划已保存！\n\n` +
-                `📅 日期: ${plan.date}\n` +
-                `👥 组别: ${plan.group === "Advanced" ? "高级组" : plan.group === "Intermediate" ? "中级组" : "初级组"}\n` +
-                `🏊 总距离: ${plan.totalDistance}m\n` +
-                `📝 备注: 已为 ${notesCount} 位队员添加备注`;
+            const message = `计划已保存！日期: ${plan.date} | 组别: ${plan.group === "Advanced" ? "高级组" : plan.group === "Intermediate" ? "中级组" : plan.group === "External" ? "校外组" : "初级组"} | 总距离: ${plan.totalDistance}m | 备注: ${notesCount} 位队员`;
 
-            alert(message);
+            toast("success", message);
             router.push("/dashboard");
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to save plan:", error);
-            alert("❌ 保存失败: 无法连接至服务器或数据库。请检查网络后重试。");
+            const msg = error.message?.includes("413") ? "照片体积过大，请压缩后重试"
+                : error.message?.includes("401") ? "登录已过期，请重新登录"
+                : "保存失败：无法连接服务器，请检查网络";
+            toast("error", msg);
         } finally {
             setIsSaving(false);
         }
@@ -361,6 +363,8 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                             <option value="Intermediate">中级组</option>
                                             {/* @ts-ignore */}
                                             <option value="Junior">初级组</option>
+                                            {/* @ts-ignore */}
+                                            <option value="External">校外组</option>
                                         </select>
                                     </div>
 
@@ -498,13 +502,22 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                 </p>
                             </div>
 
-                            <PhotoUpload 
-                                onFileSelect={(file) => {
+                            <PhotoUpload
+                                onFileSelect={async (file) => {
                                     if (file) {
-                                        // NOTE: In a real app, this would upload to Cloudflare R2 / S3
-                                        // For now, we utilize a local preview URL
-                                        const url = URL.createObjectURL(file);
-                                        setPlan(prev => ({ ...prev, imageUrl: url }));
+                                        try {
+                                            setIsSaving(true);
+                                            const result = await api.upload.file(file);
+                                            setPlan(prev => ({ ...prev, imageUrl: result.url }));
+                                        } catch (e: any) {
+                                            console.error("Photo upload failed:", e);
+                                            const msg = e.message?.includes("413") ? "照片体积过大，请压缩后重试"
+                                                : e.message?.includes("401") ? "登录已过期，请重新登录"
+                                                : "照片上传失败，请重试";
+                                            toast("error", msg);
+                                        } finally {
+                                            setIsSaving(false);
+                                        }
                                     } else {
                                         setPlan(prev => ({ ...prev, imageUrl: "" }));
                                     }

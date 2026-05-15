@@ -4,6 +4,7 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import { Bold, Italic, List, ListOrdered, Link2, Image as ImageIcon, Undo, Redo } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api-client";
+import { useToast } from "@/components/common/Toast";
 
 interface RichTextEditorProps {
     value: string;
@@ -17,16 +18,36 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
     const [isEmpty, setIsEmpty] = useState(!value || value === "<br>" || value === "<div><br></div>");
     const imageInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
+    const { toast } = useToast();
+
+    // Save selection range before toolbar interaction steals focus
+    const savedRange = useRef<Range | null>(null);
+
+    const saveSelection = () => {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+            savedRange.current = sel.getRangeAt(0);
+        }
+    };
+
+    const restoreSelection = () => {
+        if (savedRange.current && editorRef.current?.contains(savedRange.current.startContainer)) {
+            const sel = window.getSelection();
+            sel?.removeAllRanges();
+            sel?.addRange(savedRange.current);
+        }
+    };
 
     useEffect(() => {
         if (editorRef.current && editorRef.current.innerHTML !== value) {
             editorRef.current.innerHTML = value;
         }
-    }, []); // Only set initial content on mount
+    }, [value]); // Sync when value changes externally (e.g. selectPlan)
 
     const exec = useCallback((command: string, value?: string) => {
-        document.execCommand(command, false, value);
+        restoreSelection();
         editorRef.current?.focus();
+        document.execCommand(command, false, value);
         requestAnimationFrame(() => {
             if (editorRef.current) {
                 onChange(editorRef.current.innerHTML);
@@ -42,7 +63,7 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
             exec("insertImage", result.url);
         } catch (e) {
             console.error("Upload failed:", e);
-            alert("图片上传失败");
+            toast("error", "图片上传失败");
         } finally {
             setUploading(false);
         }
@@ -72,31 +93,31 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
         <div className="border border-white/10 rounded-xl overflow-hidden focus-within:border-primary/50 transition-colors">
             {/* Toolbar */}
             <div className="flex items-center gap-0.5 px-2 py-1.5 bg-black/20 border-b border-white/10">
-                <ToolbarButton onClick={() => exec("bold")} title="粗体">
+                <ToolbarButton onMouseDown={saveSelection} onClick={() => exec("bold")} title="粗体">
                     <Bold className="w-3.5 h-3.5" />
                 </ToolbarButton>
-                <ToolbarButton onClick={() => exec("italic")} title="斜体">
+                <ToolbarButton onMouseDown={saveSelection} onClick={() => exec("italic")} title="斜体">
                     <Italic className="w-3.5 h-3.5" />
                 </ToolbarButton>
                 <div className="w-px h-5 bg-white/10 mx-1" />
-                <ToolbarButton onClick={() => exec("insertUnorderedList")} title="无序列表">
+                <ToolbarButton onMouseDown={saveSelection} onClick={() => exec("insertUnorderedList")} title="无序列表">
                     <List className="w-3.5 h-3.5" />
                 </ToolbarButton>
-                <ToolbarButton onClick={() => exec("insertOrderedList")} title="有序列表">
+                <ToolbarButton onMouseDown={saveSelection} onClick={() => exec("insertOrderedList")} title="有序列表">
                     <ListOrdered className="w-3.5 h-3.5" />
                 </ToolbarButton>
                 <div className="w-px h-5 bg-white/10 mx-1" />
-                <ToolbarButton onClick={insertLink} title="插入链接">
+                <ToolbarButton onMouseDown={saveSelection} onClick={insertLink} title="插入链接">
                     <Link2 className="w-3.5 h-3.5" />
                 </ToolbarButton>
-                <ToolbarButton onClick={() => imageInputRef.current?.click()} title="插入图片" disabled={uploading}>
+                <ToolbarButton onMouseDown={saveSelection} onClick={() => imageInputRef.current?.click()} title="插入图片" disabled={uploading}>
                     <ImageIcon className="w-3.5 h-3.5" />
                 </ToolbarButton>
                 <div className="w-px h-5 bg-white/10 mx-1" />
-                <ToolbarButton onClick={() => exec("undo")} title="撤销">
+                <ToolbarButton onMouseDown={saveSelection} onClick={() => exec("undo")} title="撤销">
                     <Undo className="w-3.5 h-3.5" />
                 </ToolbarButton>
-                <ToolbarButton onClick={() => exec("redo")} title="重做">
+                <ToolbarButton onMouseDown={saveSelection} onClick={() => exec("redo")} title="重做">
                     <Redo className="w-3.5 h-3.5" />
                 </ToolbarButton>
             </div>
@@ -142,8 +163,9 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
     );
 }
 
-function ToolbarButton({ onClick, children, title, disabled }: {
+function ToolbarButton({ onClick, onMouseDown, children, title, disabled }: {
     onClick: () => void;
+    onMouseDown?: (e: React.MouseEvent) => void;
     children: React.ReactNode;
     title: string;
     disabled?: boolean;
@@ -151,6 +173,10 @@ function ToolbarButton({ onClick, children, title, disabled }: {
     return (
         <button
             type="button"
+            onMouseDown={e => {
+                e.preventDefault(); // Prevent focus loss from editor
+                onMouseDown?.(e);
+            }}
             onClick={onClick}
             disabled={disabled}
             title={title}

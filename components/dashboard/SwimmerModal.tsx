@@ -14,7 +14,8 @@ interface SwimmerModalProps {
 const GROUP_LABELS: Record<GroupLevel, string> = {
     "Junior": "初级组",
     "Intermediate": "中级组",
-    "Advanced": "高级组"
+    "Advanced": "高级组",
+    "External": "校外组"
 };
 
 export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalProps) {
@@ -134,8 +135,8 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                     {/* Group Selection */}
                     <div>
                         <label className="text-xs uppercase font-bold text-muted-foreground mb-1 block">训练组别</label>
-                        <div className="grid grid-cols-3 gap-2">
-                            {(["Junior", "Intermediate", "Advanced"] as GroupLevel[]).map((lvl) => (
+                        <div className="grid grid-cols-4 gap-2">
+                            {(["Junior", "Intermediate", "Advanced", "External"] as GroupLevel[]).map((lvl) => (
                                 <button
                                     key={lvl}
                                     type="button"

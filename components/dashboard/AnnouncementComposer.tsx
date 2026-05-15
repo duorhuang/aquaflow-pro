@@ -227,7 +227,7 @@ export function AnnouncementComposer({ className }: { className?: string }) {
                 <div>
                     <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 block">可见组别</label>
                     <div className="flex gap-2">
-                        {["Advanced", "Intermediate", "Junior"].map(g => (
+                        {["Advanced", "Intermediate", "Junior", "External"].map(g => (
                             <button
                                 key={g}
                                 onClick={() => setTargetGroup(targetGroup === g ? "" : g)}
@@ -238,7 +238,7 @@ export function AnnouncementComposer({ className }: { className?: string }) {
                                         : "bg-white/5 border-white/10 text-muted-foreground hover:border-white/20"
                                 )}
                             >
-                                {g === "Advanced" ? "高级组" : g === "Intermediate" ? "中级组" : "初级组"}
+                                {g === "Advanced" ? "高级组" : g === "Intermediate" ? "中级组" : g === "External" ? "校外组" : "初级组"}
                             </button>
                         ))}
                     </div>

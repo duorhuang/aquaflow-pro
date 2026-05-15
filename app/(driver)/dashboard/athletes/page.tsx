@@ -39,7 +39,7 @@ export default function AthletesPage() {
         );
     };
 
-    const [activeTab, setActiveTab] = useState<"All" | "Junior" | "Intermediate" | "Advanced">("All");
+    const [activeTab, setActiveTab] = useState<"All" | "Junior" | "Intermediate" | "Advanced" | "External">("All");
 
     const filteredSwimmers = swimmers.filter(s => activeTab === "All" || s.group === activeTab);
 
@@ -61,7 +61,7 @@ export default function AthletesPage() {
 
             {/* Group Filter Tabs */}
             <div className="flex p-1 bg-card/30 border border-border rounded-xl overflow-x-auto no-scrollbar">
-                {(["All", "Advanced", "Intermediate", "Junior"] as const).map((tab) => (
+                {(["All", "Advanced", "Intermediate", "Junior", "External"] as const).map((tab) => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}

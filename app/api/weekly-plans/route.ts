@@ -24,7 +24,10 @@ export async function GET(req: Request) {
             const sessions = await sql`
                 SELECT * FROM "DailySession" WHERE "weeklyPlanId" = ${id}
             `;
-            return NextResponse.json({ ...plan[0], sessions }, { headers: V12_FINGERPRINT });
+            const p = plan[0];
+            if (p.targetGroup && typeof p.targetGroup === 'string') p.targetGroup = JSON.parse(p.targetGroup);
+            if (p.targetSwimmerIds && typeof p.targetSwimmerIds === 'string') p.targetSwimmerIds = JSON.parse(p.targetSwimmerIds);
+            return NextResponse.json({ ...p, sessions }, { headers: V12_FINGERPRINT });
         }
 
         let plans: any[];
@@ -58,6 +61,8 @@ export async function GET(req: Request) {
             const sessions = await sql`
                 SELECT * FROM "DailySession" WHERE "weeklyPlanId" = ${plan.id}
             `;
+            if (plan.targetGroup && typeof plan.targetGroup === 'string') plan.targetGroup = JSON.parse(plan.targetGroup);
+            if (plan.targetSwimmerIds && typeof plan.targetSwimmerIds === 'string') plan.targetSwimmerIds = JSON.parse(plan.targetSwimmerIds);
             return { ...plan, sessions };
         }));
 
@@ -74,7 +79,7 @@ export async function POST(request: Request) {
         const data = flattenPayload(await request.json());
 
         const plan = await sql`
-            INSERT INTO "WeeklyPlan" ("weekStart", "weekEnd", "group", "title", "coachNotes", "isPublished", "targetGroup", "targetSwimmerIds", "createdAt", "updatedAt")
+            INSERT INTO "WeeklyPlan" ("weekStart", "weekEnd", "group", "title", "coachNotes", "isPublished", "targetGroup", "targetSwimmerIds", "overviewImageUrl", "overviewContentHtml", "createdAt", "updatedAt")
             VALUES (
                 ${String(data.weekStart)},
                 ${String(data.weekEnd)},
@@ -82,8 +87,10 @@ export async function POST(request: Request) {
                 ${data.title},
                 ${data.coachNotes},
                 ${Boolean(data.isPublished)},
-                ${data.targetGroup !== undefined ? (data.targetGroup ?? null) : null},
-                ${data.targetSwimmerIds !== undefined ? (data.targetSwimmerIds ?? null) : null},
+                ${data.targetGroup ? JSON.stringify(data.targetGroup) : null},
+                ${data.targetSwimmerIds ? JSON.stringify(data.targetSwimmerIds) : null},
+                ${data.overviewImageUrl ?? null},
+                ${data.overviewContentHtml ?? null},
                 NOW(),
                 NOW()
             )
@@ -113,8 +120,10 @@ export async function PUT(request: Request) {
                 "title" = ${data.title},
                 "coachNotes" = ${data.coachNotes},
                 "isPublished" = ${data.isPublished},
-                "targetGroup" = ${data.targetGroup !== undefined ? (data.targetGroup ?? null) : null},
-                "targetSwimmerIds" = ${data.targetSwimmerIds !== undefined ? (data.targetSwimmerIds ?? null) : null},
+                "targetGroup" = ${data.targetGroup !== undefined ? (data.targetGroup ? JSON.stringify(data.targetGroup) : null) : null},
+                "targetSwimmerIds" = ${data.targetSwimmerIds !== undefined ? (data.targetSwimmerIds ? JSON.stringify(data.targetSwimmerIds) : null) : null},
+                "overviewImageUrl" = ${data.overviewImageUrl !== undefined ? (data.overviewImageUrl ?? null) : null},
+                "overviewContentHtml" = ${data.overviewContentHtml !== undefined ? (data.overviewContentHtml ?? null) : null},
                 "updatedAt" = NOW()
             WHERE "id" = ${id}
             RETURNING *

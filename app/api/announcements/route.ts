@@ -36,6 +36,10 @@ export async function GET(req: Request) {
                 WHERE "announcementId" = ${announcement.id}
                 ORDER BY "sortOrder" ASC
             `;
+            // Parse JSON fields
+            if (announcement.targetSwimmerIds && typeof announcement.targetSwimmerIds === 'string') {
+                announcement.targetSwimmerIds = JSON.parse(announcement.targetSwimmerIds);
+            }
             return { ...announcement, blocks };
         }));
 
@@ -51,22 +55,25 @@ export async function POST(request: Request) {
         const sql = neon(process.env.DATABASE_URL!);
         const data = flattenPayload(await request.json());
 
-        const { blocks } = data;
+        const targetSwimmerIds = data.targetSwimmerIds
+            ? JSON.stringify(data.targetSwimmerIds)
+            : null;
 
         const announcement = await sql`
-            INSERT INTO "CoachAnnouncement" ("targetSwimmerIds", "targetGroup", "createdAt")
-            VALUES (${data.targetSwimmerIds}, ${data.targetGroup}, NOW())
+            INSERT INTO "CoachAnnouncement" ("id", "targetSwimmerIds", "targetGroup", "createdAt")
+            VALUES (gen_random_uuid()::text, ${targetSwimmerIds}, ${data.targetGroup}, NOW())
             RETURNING *
         `;
         const ann = announcement[0];
 
         // Insert blocks if provided
+        const { blocks } = data;
         if (blocks && blocks.length > 0) {
             for (let i = 0; i < blocks.length; i++) {
                 const b = blocks[i];
                 await sql`
-                    INSERT INTO "AnnouncementBlock" ("announcementId", "type", "content", "sortOrder", "thumbnailUrl")
-                    VALUES (${ann.id}, ${String(b.type)}, ${String(b.content)}, ${i}, ${b.thumbnailUrl || null})
+                    INSERT INTO "AnnouncementBlock" ("id", "announcementId", "type", "content", "sortOrder", "thumbnailUrl")
+                    VALUES (gen_random_uuid()::text, ${ann.id}, ${String(b.type)}, ${String(b.content)}, ${i}, ${b.thumbnailUrl || null})
                 `;
             }
         }

@@ -28,6 +28,15 @@ export async function GET(req: Request) {
                 ORDER BY "date" DESC
             `;
         }
+        // Parse JSON fields
+        plans.forEach((p: any) => {
+            if (p.blocks && typeof p.blocks === 'string') {
+                p.blocks = JSON.parse(p.blocks);
+            }
+            if (p.targetedNotes && typeof p.targetedNotes === 'string') {
+                p.targetedNotes = JSON.parse(p.targetedNotes);
+            }
+        });
         return NextResponse.json(plans || [], { headers: V12_FINGERPRINT });
     });
 }
@@ -40,6 +49,9 @@ export async function POST(request: Request) {
         const sql = neon(process.env.DATABASE_URL!);
         const data = flattenPayload(await request.json());
 
+        const blocksJson = JSON.stringify(data.blocks || []);
+        const targetedNotesJson = JSON.stringify(data.targetedNotes || {});
+
         const plan = await sql`
             INSERT INTO "TrainingPlan" ("id", "date", "startTime", "endTime", "group", "blocks", "totalDistance", "focus", "status", "coachNotes", "targetedNotes", "imageUrl", "isStarred", "createdAt", "updatedAt")
             VALUES (
@@ -48,12 +60,12 @@ export async function POST(request: Request) {
                 ${data.startTime || ''},
                 ${data.endTime || ''},
                 ${String(data.group)},
-                ${data.blocks || []},
+                ${blocksJson},
                 ${Number(data.totalDistance) || 0},
                 ${data.focus || ''},
                 ${data.status || 'Active'},
                 ${data.coachNotes},
-                ${data.targetedNotes || {}},
+                ${targetedNotesJson},
                 ${data.imageUrl},
                 ${Boolean(data.isStarred)},
                 NOW(),
@@ -77,18 +89,21 @@ export async function PUT(request: Request) {
 
         const data = flattenPayload(await request.json());
 
+        const blocksJson = data.blocks !== undefined ? JSON.stringify(data.blocks) : null;
+        const targetedNotesJson = data.targetedNotes !== undefined ? JSON.stringify(data.targetedNotes) : null;
+
         const plan = await sql`
             UPDATE "TrainingPlan" SET
                 "date" = ${data.date},
                 "startTime" = ${data.startTime},
                 "endTime" = ${data.endTime},
                 "group" = ${data.group},
-                "blocks" = ${data.blocks},
+                "blocks" = ${blocksJson},
                 "totalDistance" = ${data.totalDistance !== undefined ? Number(data.totalDistance) : null},
                 "focus" = ${data.focus},
                 "status" = ${data.status},
                 "coachNotes" = ${data.coachNotes},
-                "targetedNotes" = ${data.targetedNotes},
+                "targetedNotes" = ${targetedNotesJson},
                 "imageUrl" = ${data.imageUrl},
                 "isStarred" = ${data.isStarred},
                 "updatedAt" = NOW()

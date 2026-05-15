@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api-client";
 import { MessageSquare, Clock, CheckCircle } from "lucide-react";
+import { formatDateLocal } from "@/lib/date-utils";
 
 export function CoachReplyPanel({ swimmerId }: { swimmerId: string }) {
     const [weeklyFeedbacks, setWeeklyFeedbacks] = useState<any[]>([]);
@@ -79,7 +80,7 @@ export function CoachReplyPanel({ swimmerId }: { swimmerId: string }) {
                             <span className="text-xs font-bold bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full">
                                 {f.weekStart} 周总结批复
                             </span>
-                            <span className="text-xs text-muted-foreground">{new Date(f.repliedAt).toLocaleDateString()}</span>
+                            <span className="text-xs text-muted-foreground">{formatDateLocal(f.repliedAt)}</span>
                         </div>
                         <p className="text-white text-sm leading-relaxed whitespace-pre-wrap font-medium">
                             {f.coachReply}
@@ -99,7 +100,7 @@ export function CoachReplyPanel({ swimmerId }: { swimmerId: string }) {
                             <span className="text-xs font-bold bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
                                 {f.title}
                             </span>
-                            <span className="text-xs text-muted-foreground">{new Date(f.date).toLocaleDateString()}</span>
+                            <span className="text-xs text-muted-foreground">{formatDateLocal(f.date)}</span>
                         </div>
                         <p className="text-white text-sm leading-relaxed whitespace-pre-wrap font-medium italic">
                             教练回执: "{f.content}"

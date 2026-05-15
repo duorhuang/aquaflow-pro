@@ -7,7 +7,7 @@ import { Send, Target, MessageSquare, Calendar, Loader2, Users } from "lucide-re
 import { getLocalDateISOString } from "@/lib/date-utils";
 import { GroupLevel } from "@/types";
 
-const GROUP_LEVELS: GroupLevel[] = ["Junior", "Intermediate", "Advanced"];
+const GROUP_LEVELS: GroupLevel[] = ["Junior", "Intermediate", "Advanced", "External"];
 
 export default function TargetedFeedbacksPage() {
     const { swimmers } = useStore();

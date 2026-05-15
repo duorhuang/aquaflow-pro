@@ -52,7 +52,7 @@ export function SwimmerStatusPanel() {
                                         {swimmer.name}
                                     </span>
                                     <span className="text-xs text-muted-foreground px-2 py-0.5 bg-white/10 rounded flex-shrink-0">
-                                        {swimmer.group === "Advanced" ? "高级组" : swimmer.group === "Intermediate" ? "中级组" : "初级组"}
+                                        {swimmer.group === "Advanced" ? "高级组" : swimmer.group === "Intermediate" ? "中级组" : swimmer.group === "External" ? "校外组" : "初级组"}
                                     </span>
                                 </div>
                                 <div className={cn(

@@ -431,7 +431,7 @@ export default function SchedulePage() {
                                                 className="w-full bg-black/30 rounded-lg px-3 py-2 text-sm text-white resize-none outline-none border border-white/10 focus:border-yellow-500/50 placeholder:text-muted-foreground/50"
                                             />
                                             <div className="flex gap-2">
-                                                {["Advanced", "Intermediate", "Junior"].map(g => (
+                                                {["Advanced", "Intermediate", "Junior", "External"].map(g => (
                                                     <button
                                                         key={g}
                                                         onClick={() => setReminderGroup(g)}
@@ -442,7 +442,7 @@ export default function SchedulePage() {
                                                                 : "bg-white/5 border-white/10 text-muted-foreground hover:border-white/20"
                                                         )}
                                                     >
-                                                        {g === "Advanced" ? "高级组" : g === "Intermediate" ? "中级组" : "初级组"}
+                                                        {g === "Advanced" ? "高级组" : g === "Intermediate" ? "中级组" : g === "External" ? "校外组" : "初级组"}
                                                     </button>
                                                 ))}
                                             </div>

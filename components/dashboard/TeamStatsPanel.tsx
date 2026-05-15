@@ -11,7 +11,7 @@ export function TeamStatsPanel() {
     // Calculate this month's stats
     const now = new Date();
     const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const GROUP_MAP: Record<string, string> = { "Advanced": "高级组", "Intermediate": "中级组", "Junior": "初级组" };
+    const GROUP_MAP: Record<string, string> = { "Advanced": "高级组", "Intermediate": "中级组", "Junior": "初级组", "External": "校外组" };
 
     // Total distance this month (Advanced group only)
     const monthPlans = plans.filter(p => p.date.startsWith(thisMonth));

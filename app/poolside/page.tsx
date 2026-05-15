@@ -5,7 +5,7 @@ import { Play, Pause, SkipForward } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api-client";
 
-const GROUPS = ["Junior", "Intermediate", "Advanced"];
+const GROUPS = ["Junior", "Intermediate", "Advanced", "External"];
 
 interface PoolsidePlan {
     group: string;

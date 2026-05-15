@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { TrainingBlock, TrainingPlan, GroupLevel, PlanItem, Equipment } from "@/types";
 
 
-const GROUPS: GroupLevel[] = ["Advanced", "Intermediate", "Junior"];
+const GROUPS: GroupLevel[] = ["Advanced", "Intermediate", "Junior", "External"];
 const STROKES: PlanItem["stroke"][] = ["Free", "Back", "Breast", "Fly", "IM", "Choice"];
 const DISTANCES = [15, 25, 50, 75, 100, 150, 200, 300, 400, 800];
 const EQUIPMENT_MAP: Record<Equipment, string> = {

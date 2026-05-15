@@ -19,6 +19,12 @@ export async function GET(req: Request) {
             const analysis = await sql`
                 SELECT * FROM "PlanAnalysis" WHERE "planId" = ${planId}
             `;
+            if (analysis.length > 0) {
+                const a = analysis[0];
+                if (a.structuredData && typeof a.structuredData === 'string') a.structuredData = JSON.parse(a.structuredData);
+                if (a.coachInsights && typeof a.coachInsights === 'string') a.coachInsights = JSON.parse(a.coachInsights);
+                if (a.aiSuggestions && typeof a.aiSuggestions === 'string') a.aiSuggestions = JSON.parse(a.aiSuggestions);
+            }
             return NextResponse.json(analysis.length > 0 ? analysis[0] : null, { headers: V12_FINGERPRINT });
         }
 
@@ -26,6 +32,11 @@ export async function GET(req: Request) {
             SELECT * FROM "PlanAnalysis"
             ORDER BY "createdAt" DESC
         `;
+        analyses.forEach((a: any) => {
+            if (a.structuredData && typeof a.structuredData === 'string') a.structuredData = JSON.parse(a.structuredData);
+            if (a.coachInsights && typeof a.coachInsights === 'string') a.coachInsights = JSON.parse(a.coachInsights);
+            if (a.aiSuggestions && typeof a.aiSuggestions === 'string') a.aiSuggestions = JSON.parse(a.aiSuggestions);
+        });
         return NextResponse.json(analyses || [], { headers: V12_FINGERPRINT });
     });
 }
@@ -49,27 +60,33 @@ export async function POST(request: Request) {
 
         let analysis: any;
         if (existing.length > 0) {
+            const structuredJson = data.structuredData !== undefined ? (data.structuredData ? JSON.stringify(data.structuredData) : null) : null;
+            const insightsJson = data.coachInsights !== undefined ? (data.coachInsights ? JSON.stringify(data.coachInsights) : null) : null;
+            const suggestionsJson = data.aiSuggestions !== undefined ? (data.aiSuggestions ? JSON.stringify(data.aiSuggestions) : null) : null;
             analysis = await sql`
                 UPDATE "PlanAnalysis" SET
                     "imageUrl" = ${String(data.imageUrl)},
                     "rawText" = ${data.rawText || null},
-                    "structuredData" = ${data.structuredData || null},
-                    "coachInsights" = ${data.coachInsights || null},
-                    "aiSuggestions" = ${data.aiSuggestions || null},
+                    "structuredData" = ${structuredJson},
+                    "coachInsights" = ${insightsJson},
+                    "aiSuggestions" = ${suggestionsJson},
                     "updatedAt" = NOW()
                 WHERE "planId" = ${String(data.planId)}
                 RETURNING *
             `;
         } else {
+            const structuredJson = data.structuredData !== undefined ? (data.structuredData ? JSON.stringify(data.structuredData) : null) : null;
+            const insightsJson = data.coachInsights !== undefined ? (data.coachInsights ? JSON.stringify(data.coachInsights) : null) : null;
+            const suggestionsJson = data.aiSuggestions !== undefined ? (data.aiSuggestions ? JSON.stringify(data.aiSuggestions) : null) : null;
             analysis = await sql`
                 INSERT INTO "PlanAnalysis" ("planId", "imageUrl", "rawText", "structuredData", "coachInsights", "aiSuggestions", "createdAt", "updatedAt")
                 VALUES (
                     ${String(data.planId)},
                     ${String(data.imageUrl)},
                     ${data.rawText || null},
-                    ${data.structuredData || null},
-                    ${data.coachInsights || null},
-                    ${data.aiSuggestions || null},
+                    ${structuredJson},
+                    ${insightsJson},
+                    ${suggestionsJson},
                     NOW(),
                     NOW()
                 )

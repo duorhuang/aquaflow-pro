@@ -28,7 +28,8 @@ export function SwimmerSelect({ onSelect }: SwimmerSelectProps) {
                                 "text-xs",
                                 swimmer.group === "Advanced" ? "text-red-400" :
                                     swimmer.group === "Intermediate" ? "text-yellow-400" :
-                                        "text-green-400"
+                                        swimmer.group === "External" ? "text-teal-400" :
+                                            "text-green-400"
                             )}>{swimmer.group}</p>
                         </div>
                     </div>
