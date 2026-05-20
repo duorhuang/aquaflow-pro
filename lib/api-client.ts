@@ -4,14 +4,15 @@
 const API_BASE = '/api';
 const MAX_RETRIES = 3;
 const BASE_DELAY = 800; // ms
+const REQUEST_TIMEOUT = 45000; // 45s (Neon cold starts from China can take 20-30s+)
 
-async function fetchAPI<T>(endpoint: string, options?: RequestInit, silent4xx: boolean = true): Promise<T> {
+async function fetchAPI<T>(endpoint: string, options?: RequestInit, silent4xx: boolean = true, retries: number = MAX_RETRIES): Promise<T> {
     let lastError: Error | null = null;
 
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    for (let attempt = 0; attempt < retries; attempt++) {
         try {
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 12000); // 12s timeout per attempt
+            const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
             const response = await fetch(`${API_BASE}${endpoint}`, {
                 ...options,
@@ -37,7 +38,7 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit, silent4xx: b
             if (!response.ok) {
                 const error = await response.json().catch(() => ({}));
                 const is4xx = response.status >= 400 && response.status < 500;
-                const errMsg = error.error || error.message || `API Error: ${response.status} ${response.statusText}`;
+                const errMsg = error.detail || error.error || error.message || `API Error: ${response.status} ${response.statusText}`;
                 if (silent4xx && is4xx) {
                     return null as unknown as T;
                 }
@@ -46,11 +47,13 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit, silent4xx: b
 
             return response.json();
         } catch (err: any) {
-            lastError = err;
+            const isAbortError = err.name === 'AbortError';
+            const abortMsg = isAbortError ? `Request timed out for ${endpoint}` : err.message;
+            lastError = isAbortError ? new Error(abortMsg) : err;
             const isLastAttempt = attempt === MAX_RETRIES - 1;
-            const isNonRetryable = err.message?.includes('API Error: 4') ||
-                                   err.message?.includes('API Error: 403') ||
-                                   err.message?.includes('API Error: 401');
+            const isNonRetryable = isAbortError ||
+                                   err.message?.includes('API Error: 4') ||
+                                   err.message?.includes('non-JSON response');
 
             if (isLastAttempt || isNonRetryable) break;
 
@@ -63,6 +66,9 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit, silent4xx: b
 }
 
 export const api = {
+    sync: {
+        getAll: () => fetchAPI<any>('/sync'),
+    },
     swimmers: {
         getAll: () => fetchAPI<any[]>('/swimmers'),
         create: (data: any) => fetchAPI<any>('/swimmers', {
@@ -160,8 +166,10 @@ export const api = {
     },
     announcements: {
         getAll: (group?: string) => fetchAPI<any[]>(`/announcements${group ? `?group=${group}` : ''}`),
+        getArchived: (group?: string) => fetchAPI<any[]>(`/announcements?archived=true${group ? `&group=${group}` : ''}`),
         create: (data: any) => fetchAPI<any>('/announcements', { method: 'POST', body: JSON.stringify(data) }),
         delete: (id: string) => fetchAPI<void>(`/announcements?id=${id}`, { method: 'DELETE' }),
+        toggleStar: (id: string, isStarred: boolean) => fetchAPI<any>('/announcements', { method: 'PUT', body: JSON.stringify({ id, isStarred }) }),
     },
     upload: {
         file: async (file: File) => {
@@ -191,10 +199,11 @@ export const api = {
         create: (data: any) => fetchAPI<any>('/block-feedbacks', { method: 'POST', body: JSON.stringify(data) }),
         delete: (id: string) => fetchAPI<void>(`/block-feedbacks?id=${id}`, { method: 'DELETE' }),
     },
-    planAnalysis: {
-        getByPlan: (planId: string) => fetchAPI<any>(`/plan-analysis?planId=${planId}`),
-        create: (data: any) => fetchAPI<any>('/plan-analysis', { method: 'POST', body: JSON.stringify(data) }),
-        delete: (planId: string) => fetchAPI<void>(`/plan-analysis?planId=${planId}`, { method: 'DELETE' }),
+    archive: {
+        getFeedbacks: (params?: { swimmerId?: string; group?: string; type?: string; dateFrom?: string; dateTo?: string }) => {
+            const qs = params ? '?' + new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]).toString() : '';
+            return fetchAPI<any>(`/archive/feedbacks${qs}`);
+        },
     },
     auth: {
         me: () => fetchAPI<any>('/auth/me'),
@@ -202,3 +211,6 @@ export const api = {
         logout: () => fetchAPI<any>('/auth/logout', { method: 'POST' }),
     }
 };
+
+// Re-export for low-retry polling — store uses fetchAPI directly with retries=1
+export { fetchAPI };

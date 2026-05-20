@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withApiHandler } from '@/lib/api-handler';
 import { requireCoach } from '@/lib/auth-api';
 
+/**
+ * Convert ArrayBuffer to base64 string without Node.js Buffer.
+ */
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+}
+
 export const dynamic = 'force-dynamic';
 
 // POST /api/upload — Upload file and return URL
@@ -37,8 +49,8 @@ export async function POST(request: NextRequest) {
             const bucket = (cfContext.env as any).UPLOADS;
 
             if (bucket && typeof bucket.put === 'function') {
-                const buffer = Buffer.from(await file.arrayBuffer());
-                await bucket.put(key, buffer, {
+                const arrayBuffer = await file.arrayBuffer();
+                await bucket.put(key, arrayBuffer, {
                     httpMetadata: { contentType: fileType },
                 });
 
@@ -49,9 +61,9 @@ export async function POST(request: NextRequest) {
             // Not in Cloudflare environment
         }
 
-        // Fallback for dev: return base64 data URL
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const base64 = buffer.toString('base64');
+        // Fallback for dev: return base64 data URL (edge-compatible, no Buffer)
+        const arrayBuffer = await file.arrayBuffer();
+        const base64 = arrayBufferToBase64(arrayBuffer);
         const dataUrl = `data:${fileType};base64,${base64}`;
         return NextResponse.json({ url: dataUrl, key, dev: true });
     });

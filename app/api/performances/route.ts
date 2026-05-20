@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
 import { requireCoach, requireAnyAuth } from '@/lib/auth-api';
-import { neon } from '@neondatabase/serverless';
+import { getNeon } from '@/lib/db-pool';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +11,7 @@ export async function GET(req: Request) {
         const auth = await requireAnyAuth(req);
         if (auth instanceof NextResponse) return auth;
 
-        const sql = neon(process.env.DATABASE_URL!);
+        const sql = getNeon();
         const performances = await sql`
             SELECT "PerformanceRecord".*,
                    row_to_json("Swimmer") as swimmer
@@ -20,10 +20,10 @@ export async function GET(req: Request) {
             ORDER BY "PerformanceRecord"."date" DESC
         `;
 
-        const normalized = (performances || []).map((p: any) => ({
-            ...p,
-            swimmer: p.swimmer === null ? null : p.swimmer,
-        }));
+        const normalized = (performances || []).map((p: any) => {
+            const swimmer = p.swimmer && Object.keys(p.swimmer).length > 1 ? p.swimmer : null;
+            return { ...p, swimmer };
+        });
 
         return NextResponse.json(normalized, { headers: V12_FINGERPRINT });
     });
@@ -34,24 +34,26 @@ export async function POST(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const sql = neon(process.env.DATABASE_URL!);
+        const sql = getNeon();
         const data = flattenPayload(await request.json());
 
         const record = await sql`
-            INSERT INTO "PerformanceRecord" ("swimmerId", "event", "time", "date", "isPB", "meetName", "notes", "createdAt")
+            INSERT INTO "PerformanceRecord" ("id", "swimmerId", "event", "time", "date", "isPB", "improvement", "meetName", "notes", "createdAt")
             VALUES (
+                ${crypto.randomUUID()},
                 ${String(data.swimmerId)},
                 ${String(data.event)},
                 ${String(data.time)},
                 ${String(data.date)},
                 ${Boolean(data.isPB)},
+                ${data.improvement !== undefined ? Number(data.improvement) : null},
                 ${data.meetName},
                 ${data.notes},
                 NOW()
             )
             RETURNING *
         `;
-        return NextResponse.json(record, { headers: V12_FINGERPRINT });
+        return NextResponse.json(record[0], { headers: V12_FINGERPRINT });
     });
 }
 
@@ -60,25 +62,31 @@ export async function PUT(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const sql = neon(process.env.DATABASE_URL!);
+        const sql = getNeon();
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
-        if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+        if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
         const data = flattenPayload(await request.json());
 
+        // Fetch existing record to preserve unspecified fields
+        const existing = await sql`SELECT * FROM "PerformanceRecord" WHERE "id" = ${id}`;
+        if (existing.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+        const current = existing[0];
+
         const record = await sql`
             UPDATE "PerformanceRecord" SET
-                "event" = ${data.event},
-                "time" = ${data.time},
-                "date" = ${data.date},
-                "isPB" = ${data.isPB},
-                "meetName" = ${data.meetName},
-                "notes" = ${data.notes}
+                "event" = ${data.event ?? current.event},
+                "time" = ${data.time ?? current.time},
+                "date" = ${data.date ?? current.date},
+                "isPB" = ${data.isPB !== undefined ? Boolean(data.isPB) : current.isPB},
+                "improvement" = ${data.improvement !== undefined ? Number(data.improvement) : current.improvement},
+                "meetName" = ${data.meetName !== undefined ? data.meetName : current.meetName},
+                "notes" = ${data.notes !== undefined ? data.notes : current.notes}
             WHERE "id" = ${id}
             RETURNING *
         `;
-        return NextResponse.json(record, { headers: V12_FINGERPRINT });
+        return NextResponse.json(record[0], { headers: V12_FINGERPRINT });
     });
 }
 
@@ -87,7 +95,7 @@ export async function DELETE(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const sql = neon(process.env.DATABASE_URL!);
+        const sql = getNeon();
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'Missing id parameter' }, { status: 400 });

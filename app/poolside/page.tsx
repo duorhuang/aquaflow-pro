@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Play, Pause, SkipForward } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { api } from "@/lib/api-client";
+import { api, fetchAPI } from "@/lib/api-client";
 
 const GROUPS = ["Junior", "Intermediate", "Advanced", "External"];
 
@@ -28,7 +28,7 @@ export default function PoolsidePage() {
 
     useEffect(() => {
         setLoading(true);
-        api.plans.getAll()
+        fetchAPI<any[]>(`/plans?group=${selectedGroup}`)
             .then((plans: any[]) => {
                 const today = new Date().toISOString().split('T')[0];
                 const todayPlan = plans?.find((p: any) => p.date === today);

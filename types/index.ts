@@ -100,9 +100,6 @@ export interface Feedback {
     improvementAreas?: string;  // 需要改进的地方
 }
 
-// "Timeline" logic helper types
-export type TimelinePhase = "T-24 (Preview)" | "T-12 (Feedback)" | "T-2 (Processing)" | "T-0 (Execution)";
-
 export interface AttendanceRecord {
     id: string;
     date: string; // YYYY-MM-DD
@@ -133,8 +130,6 @@ export interface PerformanceRecord {
 // ==========================================
 // Weekly Training & Feedback System
 // ==========================================
-
-export type StrokeType = "Free" | "Back" | "Breast" | "Fly" | "IM" | "Choice";
 
 export interface WeeklyPlan {
     id: string;
@@ -207,6 +202,24 @@ export interface FeedbackReminder {
     periodEnd: string;
     responses?: TargetedFeedbackType[];
     createdAt?: string;
+}
+
+export interface Announcement {
+    id: string;
+    targetSwimmerIds?: string[];
+    targetGroup?: string;
+    createdAt: string;
+    isStarred: boolean;
+    blocks?: AnnouncementBlock[];
+}
+
+export interface AnnouncementBlock {
+    id: string;
+    announcementId: string;
+    type: "text" | "image" | "video" | "link";
+    content: string;
+    sortOrder: number;
+    thumbnailUrl?: string;
 }
 
 export interface TargetedFeedbackType {

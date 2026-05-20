@@ -5,10 +5,10 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { getLocalDateISOString } from "@/lib/date-utils";
 import {
+    AlertTriangle,
     CheckCircle2,
     XCircle,
     Calendar,
-    Users,
     UserCheck,
     UserX,
     ChevronLeft,
@@ -37,12 +37,12 @@ export default function CoachAttendancePage() {
 
     // Filtered swimmers
     const filteredSwimmers = useMemo(() => {
-        return swimmers.filter(s => groupFilter === "All" || s.group === groupFilter);
+        return (swimmers || []).filter(s => groupFilter === "All" || s.group === groupFilter);
     }, [swimmers, groupFilter]);
 
     // Check attendance for one swimmer on selected date
     const getAttendanceStatus = (swimmerId: string) => {
-        const record = attendance.find(a => a.swimmerId === swimmerId && a.date === selectedDate);
+        const record = (attendance || []).find(a => a.swimmerId === swimmerId && a.date === selectedDate);
         return record ? record.status : "Absent";
     };
 
@@ -245,6 +245,14 @@ export default function CoachAttendancePage() {
                                     <p className="text-xs text-muted-foreground">
                                         {isAthletePresent ? "已自查 · 待确认" : ""}{GROUP_LABELS[swimmer.group] || swimmer.group}
                                     </p>
+                                    {swimmer.status === "Injured" && (
+                                        <div className="flex items-center gap-1 mt-1">
+                                            <AlertTriangle className="w-3 h-3 text-red-400" />
+                                            <span className="text-[10px] text-red-400 font-medium">
+                                                {swimmer.injuryNote || "受伤中"}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             {isPresent ? (

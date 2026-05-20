@@ -20,7 +20,7 @@ export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
     const [soreness, setSoreness] = useState(3);
     const [comments, setComments] = useState("");
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         const today = new Date();
         const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
 
@@ -35,8 +35,12 @@ export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
             timestamp: today.toISOString()
         };
 
-        submitFeedback(feedback);
-        setSubmitted(true);
+        try {
+            await submitFeedback(feedback);
+            setSubmitted(true);
+        } catch (e) {
+            console.error("Failed to submit feedback:", e);
+        }
     };
 
     if (submitted) {

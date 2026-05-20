@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
 import { requireAnyAuth, requireCoach } from '@/lib/auth-api';
-import { neon } from '@neondatabase/serverless';
+import { getNeon } from '@/lib/db-pool';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +11,7 @@ export async function GET(req: Request) {
         const auth = await requireAnyAuth(req);
         if (auth instanceof NextResponse) return auth;
 
-        const sql = neon(process.env.DATABASE_URL!);
+        const sql = getNeon();
         const { searchParams } = new URL(req.url);
         const swimmerId = searchParams.get('swimmerId');
         const weekStart = searchParams.get('weekStart');
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
         const auth = await requireAnyAuth(request);
         if (auth instanceof NextResponse) return auth;
 
-        const sql = neon(process.env.DATABASE_URL!);
+        const sql = getNeon();
         const data = flattenPayload(await request.json());
 
         const { swimmerId, weekStart, summary, isSubmitted, dailyFeedbacks, coachReply, isReplied } = data;
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
                     const existingDf = await sql`
                         SELECT * FROM "DailyFeedback"
                         WHERE "swimmerId" = ${swimmerId} AND "date" = ${df.date}
-                        AND "weeklyFeedbackId" = ${feedback.id}
+                        AND "weeklyFeedbackId" = ${feedback[0].id}
                     `;
                     if (existingDf.length > 0) {
                         await sql`
@@ -114,8 +114,8 @@ export async function POST(request: Request) {
                         `;
                     } else {
                         await sql`
-                            INSERT INTO "DailyFeedback" ("weeklyFeedbackId", "swimmerId", "date", "rpe", "soreness", "reflection", "createdAt")
-                            VALUES (${feedback.id}, ${swimmerId}, ${df.date}, ${df.rpe}, ${df.soreness}, ${df.reflection}, NOW())
+                            INSERT INTO "DailyFeedback" ("id", "weeklyFeedbackId", "swimmerId", "date", "rpe", "soreness", "reflection", "createdAt")
+                            VALUES (${crypto.randomUUID()}, ${feedback[0].id}, ${swimmerId}, ${df.date}, ${df.rpe}, ${df.soreness}, ${df.reflection}, NOW())
                         `;
                     }
                 }
@@ -123,8 +123,9 @@ export async function POST(request: Request) {
         } else {
             // Create
             feedback = await sql`
-                INSERT INTO "WeeklyFeedback" ("swimmerId", "weekStart", "summary", "isSubmitted", "submittedAt", "coachReply", "isReplied", "repliedAt", "createdAt", "updatedAt")
+                INSERT INTO "WeeklyFeedback" ("id", "swimmerId", "weekStart", "summary", "isSubmitted", "submittedAt", "coachReply", "isReplied", "repliedAt", "weeklyPlanId", "createdAt", "updatedAt")
                 VALUES (
+                    ${crypto.randomUUID()},
                     ${swimmerId},
                     ${weekStart},
                     ${summary},
@@ -133,6 +134,7 @@ export async function POST(request: Request) {
                     ${coachReply},
                     ${isReplied},
                     ${coachReply ? new Date().toISOString() : null},
+                    ${data.weeklyPlanId || null},
                     NOW(),
                     NOW()
                 )
@@ -143,14 +145,14 @@ export async function POST(request: Request) {
             if (dailyFeedbacks && dailyFeedbacks.length > 0) {
                 for (const df of dailyFeedbacks) {
                     await sql`
-                        INSERT INTO "DailyFeedback" ("weeklyFeedbackId", "swimmerId", "date", "rpe", "soreness", "reflection", "createdAt")
-                        VALUES (${feedback.id}, ${swimmerId}, ${df.date}, ${df.rpe}, ${df.soreness}, ${df.reflection}, NOW())
+                        INSERT INTO "DailyFeedback" ("id", "weeklyFeedbackId", "swimmerId", "date", "rpe", "soreness", "reflection", "createdAt")
+                        VALUES (${crypto.randomUUID()}, ${feedback[0].id}, ${swimmerId}, ${df.date}, ${df.rpe}, ${df.soreness}, ${df.reflection}, NOW())
                     `;
                 }
             }
         }
 
-        return NextResponse.json(feedback, { headers: V12_FINGERPRINT });
+        return NextResponse.json(feedback[0], { headers: V12_FINGERPRINT });
     });
 }
 
@@ -159,7 +161,7 @@ export async function PATCH(request: Request) {
         const auth = await requireCoach(request);
         if (auth instanceof NextResponse) return auth;
 
-        const sql = neon(process.env.DATABASE_URL!);
+        const sql = getNeon();
         const data = flattenPayload(await request.json());
         const { id, coachReply, isReplied } = data;
 
@@ -171,6 +173,6 @@ export async function PATCH(request: Request) {
             WHERE "id" = ${id}
             RETURNING *
         `;
-        return NextResponse.json(feedback, { headers: V12_FINGERPRINT });
+        return NextResponse.json(feedback[0], { headers: V12_FINGERPRINT });
     });
 }

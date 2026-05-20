@@ -52,10 +52,7 @@ export function PerformanceForm({ swimmerId, onClose, initialData }: Performance
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!time.trim()) {
-            alert("请输入成绩时间");
-            return;
-        }
+        if (!time.trim()) return;
 
         const performanceData = {
             swimmerId,

@@ -83,7 +83,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Athlete routes
-  if (pathname.startsWith('/workout') || pathname.startsWith('/athlete') || pathname.startsWith('/profile')) {
+  if (pathname.startsWith('/workout') || pathname.startsWith('/athlete') || pathname.startsWith('/profile') || pathname.startsWith('/archive')) {
     if (!token) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('role', 'athlete');
@@ -99,7 +99,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // All other routes — pass through (per-route auth checks in API handlers)
+  // Catch-all: /athlete/* paths not matched by matcher above will fall through to API route guards
   return NextResponse.next();
 }
 
@@ -109,6 +109,8 @@ export const config = {
     '/workout/:path*',
     '/profile',
     '/profile/:path*',
+    '/archive',
+    '/archive/:path*',
     '/poolside/:path*',
     '/login',
     '/setup',

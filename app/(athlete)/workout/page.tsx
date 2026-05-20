@@ -9,28 +9,42 @@ import { TargetedFeedbackForm } from "@/components/athlete/TargetedFeedbackForm"
 import { CoachReplyPanel } from "@/components/athlete/CoachReplyPanel";
 import { AnnouncementCard } from "@/components/feed/AnnouncementCard";
 import { api } from "@/lib/api-client";
-import { LogOut, Calendar, FolderOpen, Activity, History, Quote, MessageSquare, ArrowRightLeft, Target, ClipboardList, ArrowRight, TrendingUp, UserCircle } from "lucide-react";
+import { AlertTriangle, LogOut, Calendar, FolderOpen, Activity, History, Quote, MessageSquare, Target, ClipboardList, ArrowRight, TrendingUp, UserCircle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+import { useState, useEffect } from "react";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
 import { useStore } from "@/lib/store";
-import { useEffect, useState } from "react";
 import { TrainingPlan, Swimmer } from "@/types";
 import { useRouter } from "next/navigation";
 import { getLocalDateISOString } from "@/lib/date-utils";
 
+/**
+ * Basic HTML sanitizer — strips <script>, <iframe>, <object>, <embed> and
+ * all on* event-handler attributes to prevent stored XSS from coach-authored content.
+ */
+function sanitizeHtml(html: string): string {
+    return html
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+        .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+        .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
+        .replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+}
+
 export default function AthleteWorkoutPage() {
     const { t } = useLanguage();
     const router = useRouter();
-    const { plans, swimmers, attendance, updateSwimmer, weeklyPlans, announcements, isLoaded: storeLoaded } = useStore();
+    const { plans, swimmers, attendance, updateSwimmer, weeklyPlans, announcements, archivedAnnouncements, getVisibleAnnouncements, isLoaded: storeLoaded } = useStore();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [currentUser, setCurrentUser] = useState<Swimmer | null>(null);
     const [authResolved, setAuthResolved] = useState(false);
     const [activeTab, setActiveTab] = useState<'training' | 'feedback' | 'achievements' | 'health'>('training');
     const [pendingReminders, setPendingReminders] = useState(0);
+    const [showArchive, setShowArchive] = useState(false);
 
-    // Get current week Monday
+    // Current viewing week (navigable with arrows)
     const getCurrentWeekMonday = () => {
         const d = new Date();
         const day = d.getDay();
@@ -38,12 +52,21 @@ export default function AthleteWorkoutPage() {
         d.setDate(diff);
         return d.toISOString().split('T')[0];
     };
-    const [currentWeekStart] = useState(getCurrentWeekMonday());
+    const [currentWeekStart, setCurrentWeekStart] = useState(getCurrentWeekMonday());
+
+    const navigateWeek = (direction: -1 | 1) => {
+        const d = new Date(currentWeekStart + "T12:00:00");
+        d.setDate(d.getDate() + direction * 7);
+        setCurrentWeekStart(d.toISOString().split('T')[0]);
+    };
+
+    const isCurrentWeek = currentWeekStart === getCurrentWeekMonday();
 
     // Status form
     const [readiness, setReadiness] = useState(95);
     const [injuryNote, setInjuryNote] = useState("");
     const [status, setStatus] = useState<"Active" | "Resting" | "Injured">("Active");
+    const [statusSaved, setStatusSaved] = useState(false);
 
     useEffect(() => {
         // Check Login Session
@@ -87,19 +110,23 @@ export default function AthleteWorkoutPage() {
     const handleLogout = async () => {
         try { await api.auth.logout(); } catch {}
         localStorage.removeItem("aquaflow_athlete_id");
-        localStorage.removeItem("aquaflow_coach_session");
         router.push('/login');
     };
 
-    const handleSaveStatus = () => {
+    const handleSaveStatus = async () => {
         if (!currentUser) return;
-        updateSwimmer(currentUser.id, {
-            readiness,
-            injuryNote,
-            status: status as "Active" | "Resting" | "Injured",
-            lastProfileUpdate: new Date().toISOString()
-        });
-        alert('✅ 状态已更新！数据已实时同步至教练仪表板。');
+        try {
+            await updateSwimmer(currentUser.id, {
+                readiness,
+                injuryNote,
+                status: status as "Active" | "Resting" | "Injured",
+                lastProfileUpdate: new Date().toISOString()
+            });
+            setStatusSaved(true);
+            setTimeout(() => setStatusSaved(false), 3000);
+        } catch (e) {
+            console.error("Failed to save status:", e);
+        }
     };
 
     // Get next 7 days for date selector
@@ -116,15 +143,23 @@ export default function AthleteWorkoutPage() {
     // Check if a weekly plan is visible to this swimmer
     const isWeeklyPlanVisible = (wp: any): boolean => {
         if (!currentUser) return false;
-        const hasGroupTarget = wp.targetGroup && wp.targetGroup.length > 0;
-        const hasIndividualTarget = wp.targetSwimmerIds && wp.targetSwimmerIds.length > 0;
+        // Handle both parsed JSON array and string-encoded JSON
+        const targetGroup: string[] = Array.isArray(wp.targetGroup)
+            ? wp.targetGroup
+            : typeof wp.targetGroup === 'string' ? (() => { try { return JSON.parse(wp.targetGroup || '[]'); } catch { return []; } })() : [];
+        const targetSwimmerIds: string[] = Array.isArray(wp.targetSwimmerIds)
+            ? wp.targetSwimmerIds
+            : typeof wp.targetSwimmerIds === 'string' ? (() => { try { return JSON.parse(wp.targetSwimmerIds || '[]'); } catch { return []; } })() : [];
+
+        const hasGroupTarget = targetGroup.length > 0;
+        const hasIndividualTarget = targetSwimmerIds.length > 0;
 
         // No targeting set → legacy plan visible to everyone
         if (!hasGroupTarget && !hasIndividualTarget) return true;
 
         // OR logic: matches group OR matches individual
-        if (hasGroupTarget && wp.targetGroup.includes(currentUser.group)) return true;
-        if (hasIndividualTarget && wp.targetSwimmerIds.includes(currentUser.id)) return true;
+        if (hasGroupTarget && targetGroup.includes(currentUser.group)) return true;
+        if (hasIndividualTarget && targetSwimmerIds.includes(currentUser.id)) return true;
 
         return false;
     };
@@ -245,13 +280,15 @@ export default function AthleteWorkoutPage() {
     const myNote = (selectedPlansObj.length > 0 && selectedPlansObj[0].targetedNotes && currentUser) ? selectedPlansObj[0].targetedNotes[currentUser.id] : null;
     const monthlyStats = getMonthlyStats();
     
-    // Weekly Framework Logic
-    const currentWeeklyPlan = weeklyPlans.find(wp =>
-        wp.weekStart === currentWeekStart && isWeeklyPlanVisible(wp)
-    );
+    // Find weekly plan that covers the viewing week (date-range match, not exact string)
+    const currentWeeklyPlan = weeklyPlans.find(wp => {
+        if (!isWeeklyPlanVisible(wp)) return false;
+        if (!wp.weekStart || !wp.weekEnd) return false;
+        return currentWeekStart >= wp.weekStart && currentWeekStart <= wp.weekEnd;
+    });
 
-    // Filter announcements visible to this swimmer
-    const myAnnouncements = (announcements || []).filter((a: any) => {
+    // Filter announcements visible to this swimmer (active feed: starred or within 7 days)
+    const myAnnouncements = getVisibleAnnouncements().filter((a: any) => {
         if (a.targetGroup && a.targetGroup !== currentUser?.group) return false;
         if (a.targetSwimmerIds && !a.targetSwimmerIds.includes(currentUser?.id)) return false;
         return true;
@@ -381,24 +418,83 @@ export default function AthleteWorkoutPage() {
                         {/* --- COACH ANNOUNCEMENTS FEED --- */}
                         {myAnnouncements.length > 0 && (
                             <div className="space-y-4">
-                                <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                                    <MessageSquare className="w-3.5 h-3.5 text-primary" />
-                                    教练动态
-                                </h2>
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                                        <MessageSquare className="w-3.5 h-3.5 text-primary" />
+                                        教练动态
+                                    </h2>
+                                    <button
+                                        onClick={() => setShowArchive(!showArchive)}
+                                        className="text-[10px] text-muted-foreground hover:text-white flex items-center gap-1"
+                                    >
+                                        {showArchive ? (
+                                            <>收起历史 <ChevronUp className="w-3 h-3" /></>
+                                        ) : (
+                                            <>查看历史 ({archivedAnnouncements.length}) <ChevronDown className="w-3 h-3" /></>
+                                        )}
+                                    </button>
+                                </div>
                                 {myAnnouncements.map((a: any) => (
                                     <AnnouncementCard key={a.id} announcement={a} />
                                 ))}
+                                {/* Archived Announcements */}
+                                {showArchive && (
+                                    <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">📦 历史存档</p>
+                                        {archivedAnnouncements.length === 0 && (
+                                            <p className="text-[10px] text-muted-foreground/50 italic">超过 7 天的非收藏动态会自动归档到这里</p>
+                                        )}
+                                        {archivedAnnouncements.map((a: any) => (
+                                            <div key={a.id} className="opacity-60">
+                                                <AnnouncementCard announcement={a} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
 
                         {/* --- WEEKLY FRAMEWORK (TOP) --- */}
-                        <div className="bg-card/30 border border-border rounded-xl p-4 md:p-5">
-                            <h2 className="text-sm font-bold text-white mb-1 flex items-center gap-2">
-                                <Calendar className="w-4 h-4 text-emerald-400" />
-                                {currentWeeklyPlan?.title || "本周训练大纲"}
-                            </h2>
+                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 md:p-5">
+                            <div className="flex items-center justify-between mb-1">
+                                <button
+                                    onClick={() => navigateWeek(-1)}
+                                    className="p-1 rounded-lg hover:bg-white/10 transition-colors text-blue-300"
+                                    title="上一周"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </button>
+                                <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                                    <Calendar className="w-4 h-4 text-emerald-400" />
+                                    {currentWeeklyPlan?.title || "本周训练大纲"}
+                                </h2>
+                                <button
+                                    onClick={() => navigateWeek(1)}
+                                    className={cn(
+                                        "p-1 rounded-lg transition-colors",
+                                        isCurrentWeek ? "text-white/20 cursor-default" : "text-blue-300 hover:bg-white/10"
+                                    )}
+                                    title="下一周"
+                                    disabled={isCurrentWeek}
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
                             {currentWeeklyPlan?.coachNotes && (
-                                <p className="text-xs text-muted-foreground mb-4 italic">教练说：{currentWeeklyPlan.coachNotes}</p>
+                                <p className="text-xs text-blue-200/70 mb-3 italic">教练说：{currentWeeklyPlan.coachNotes}</p>
+                            )}
+
+                            {/* Weekly Summary (本周总览) */}
+                            {currentWeeklyPlan?.overviewImageUrl && (
+                                <div className="mb-3 rounded-lg overflow-hidden">
+                                    <img src={currentWeeklyPlan.overviewImageUrl} alt="本周总览" className="w-full max-h-[250px] object-contain" />
+                                </div>
+                            )}
+                            {currentWeeklyPlan?.overviewContentHtml && (
+                                <div
+                                    className="mb-3 text-sm text-white prose prose-invert prose-sm max-w-none"
+                                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentWeeklyPlan.overviewContentHtml) }}
+                                />
                             )}
 
                             <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
@@ -539,11 +635,34 @@ export default function AthleteWorkoutPage() {
                                 <label className="text-sm text-muted-foreground mb-2 block">Readiness: {readiness}%</label>
                                 <input type="range" min="0" max="100" value={readiness} onChange={(e) => setReadiness(parseInt(e.target.value))} className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary" />
                             </div>
-                            <div className="grid grid-cols-2 gap-3 mb-6">
-                                <button onClick={() => setStatus("Active")} className={cn("py-3 rounded-lg font-bold text-sm", status === "Active" ? "bg-green-500/20 text-green-400 border border-green-500/50" : "bg-secondary")}>训练中</button>
-                                <button onClick={() => setStatus("Resting")} className={cn("py-3 rounded-lg font-bold text-sm", status === "Resting" ? "bg-orange-500/20 text-orange-400 border border-orange-500/50" : "bg-secondary")}>休息中</button>
+                            <div className="grid grid-cols-3 gap-3 mb-6">
+                                <button onClick={() => { setStatus("Active"); setInjuryNote(""); }} className={cn("py-3 rounded-lg font-bold text-sm", status === "Active" ? "bg-green-500/20 text-green-400 border border-green-500/50" : "bg-secondary")}>训练中</button>
+                                <button onClick={() => { setStatus("Resting"); setInjuryNote(""); }} className={cn("py-3 rounded-lg font-bold text-sm", status === "Resting" ? "bg-orange-500/20 text-orange-400 border border-orange-500/50" : "bg-secondary")}>休息中</button>
+                                <button onClick={() => setStatus("Injured")} className={cn("py-3 rounded-lg font-bold text-sm", status === "Injured" ? "bg-red-500/20 text-red-400 border border-red-500/50" : "bg-secondary")}>受伤中</button>
                             </div>
-                            <button onClick={handleSaveStatus} className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-medium">保存状态</button>
+                            {status === "Injured" && (
+                                <div className="mb-6">
+                                    <textarea
+                                        value={injuryNote}
+                                        onChange={(e) => setInjuryNote(e.target.value)}
+                                        placeholder="描述你的伤势... Describe your injury"
+                                        className="w-full bg-secondary/50 border border-border rounded-lg p-3 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/20 resize-none"
+                                        rows={3}
+                                    />
+                                    <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
+                                        <AlertTriangle className="w-3 h-3" />
+                                        老师会看到此报告 · Your teacher will see this report
+                                    </p>
+                                </div>
+                            )}
+                            <button onClick={handleSaveStatus} className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-medium relative">
+                                保存状态
+                                {statusSaved && (
+                                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs text-green-400 bg-green-500/10 border border-green-500/20 px-3 py-1 rounded-full whitespace-nowrap">
+                                        ✓ 已保存
+                                    </span>
+                                )}
+                            </button>
                         </div>
                         <div className="grid grid-cols-3 gap-3">
                             <div className="bg-card/30 p-4 rounded-2xl border border-border text-center">
@@ -570,6 +689,9 @@ export default function AthleteWorkoutPage() {
                                 <TrendingUp className="w-5 h-5" />
                                 成绩与历史记录
                             </h3>
+                            <Link href="/archive" className="text-xs text-primary hover:underline flex items-center gap-1">
+                                查看完整档案 <ArrowRight className="w-3 h-3" />
+                            </Link>
                         </div>
                         <TrainingHistory swimmerId={currentUser.id} />
                         <PerformanceList swimmerId={currentUser.id} />

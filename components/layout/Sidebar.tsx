@@ -1,18 +1,20 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, Calendar, Settings, LogOut, Waves, UserCheck } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, Settings, LogOut, Waves, UserCheck, FolderOpen } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
+import { api } from "@/lib/api-client";
 
 const SIDEBAR_ITEMS = [
     { label: "dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "athlete", href: "/dashboard/athletes", icon: Users },
     { label: "attendance", href: "/dashboard/attendance", icon: UserCheck },
     { label: "schedule", href: "/dashboard/schedule", icon: Calendar },
-    { label: "settings", href: "/settings", icon: Settings },
+    { label: "archive", href: "/dashboard/archive", icon: FolderOpen },
+    { label: "settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -38,9 +40,11 @@ export function Sidebar() {
                     const isActive = pathname === item.href;
                     const label = item.label === 'dashboard' ? t.common.dashboard :
                         item.label === 'athlete' ? t.common.athlete :
-                            item.label === 'attendance' ? '出勤管理' :
-                                item.label === 'settings' ? t.common.settings :
-                                    "Schedule";
+                            item.label === 'attendance' ? t.common.attendance :
+                                item.label === 'schedule' ? t.common.schedule :
+                                    item.label === 'archive' ? '反馈档案' :
+                                        item.label === 'settings' ? t.common.settings :
+                                            item.label;
 
                     return (
                         <Link
@@ -69,11 +73,8 @@ export function Sidebar() {
                     <LanguageToggle />
                 </div>
                 <button
-                    onClick={() => {
-                        // Clear session only
-                        localStorage.removeItem("aquaflow_coach_session");
-                        localStorage.removeItem("aquaflow_athlete_id"); // Ensure isolation
-                        // Redirect to login page
+                    onClick={async () => {
+                        try { await api.auth.logout(); } catch {}
                         window.location.href = '/login?role=coach';
                     }}
                     className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-red-400 hover:bg-red-500/10 transition-colors opacity-70 hover:opacity-100"

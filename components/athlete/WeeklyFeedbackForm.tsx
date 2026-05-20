@@ -198,8 +198,8 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                                     </div>
                                     <div className="text-left">
                                         <div className="text-sm font-bold text-white flex items-center gap-2">
-                                            {DAY_LABELS[idx]} 
-                                            {idx === new Date().getDay() - 1 && <span className="px-2 py-0.5 bg-primary/20 text-primary rounded-full text-[10px]">今天</span>}
+                                            {DAY_LABELS[idx]}
+                                            {(() => { const today = new Date().getDay(); const todayIdx = today === 0 ? 6 : today - 1; return idx === todayIdx; })() && <span className="px-2 py-0.5 bg-primary/20 text-primary rounded-full text-[10px]">今天</span>}
                                         </div>
                                         <div className="text-xs text-muted-foreground">{df.date}</div>
                                     </div>

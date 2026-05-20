@@ -9,11 +9,12 @@ export function CoachGuard({ children }: { children: React.ReactNode }) {
     const [status, setStatus] = useState<"loading" | "authorized" | "unauthorized">("loading");
 
     useEffect(() => {
+        // Allow 15s for cold-start DB connections (Neon serverless)
         const timer = setTimeout(() => {
             if (status === "loading") {
                 router.push("/login?role=coach");
             }
-        }, 5000);
+        }, 15000);
 
         api.auth.me()
             .then((user: any) => {

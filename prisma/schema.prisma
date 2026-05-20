@@ -327,6 +327,7 @@ model CoachAnnouncement {
   targetSwimmerIds Json?  // JSON array of swimmer IDs, null = all
   targetGroup    String?  // Optional group filter e.g. "Advanced"
   createdAt      DateTime @default(now())
+  isStarred      Boolean  @default(false)
 
   blocks         AnnouncementBlock[]
 

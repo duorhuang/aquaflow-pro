@@ -18,6 +18,8 @@ export default function TargetedFeedbacksPage() {
     const [periodStart, setPeriodStart] = useState(getLocalDateISOString(new Date()));
     const [periodEnd, setPeriodEnd] = useState(getLocalDateISOString(new Date()));
     const [isSending, setIsSending] = useState(false);
+    const [sendStatus, setSendStatus] = useState<"success" | "error" | null>(null);
+    const [replyErrors, setReplyErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         load();
@@ -77,11 +79,13 @@ export default function TargetedFeedbacksPage() {
             setMessage("");
             setTargetIds([]);
             setSelectedGroups([]);
+            setSendStatus("success");
+            setTimeout(() => setSendStatus(null), 3000);
             await load();
-            alert("✅ 专项反馈要求已发出！");
         } catch (e) {
             console.error(e);
-            alert("❌ 发送失败: 服务器响应异常，请检查网络后再试。");
+            setSendStatus("error");
+            setTimeout(() => setSendStatus(null), 3000);
         } finally {
             setIsSending(false);
         }
@@ -182,7 +186,13 @@ export default function TargetedFeedbacksPage() {
                     );
                 })}
 
-                <div className="flex justify-end">
+                <div className="flex justify-end items-center gap-3">
+                    {sendStatus === "success" && (
+                        <span className="text-sm text-green-400">✅ 已发出</span>
+                    )}
+                    {sendStatus === "error" && (
+                        <span className="text-sm text-red-400">发送失败，请重试</span>
+                    )}
                     <button
                         onClick={handleSend}
                         disabled={!message || isSending}
@@ -238,13 +248,17 @@ export default function TargetedFeedbacksPage() {
                                                     try {
                                                         await api.feedbackReminders.replyToTargeted(resp.id, val);
                                                         console.log("Reply saved");
+                                                        setReplyErrors(prev => { const next = { ...prev }; delete next[resp.id]; return next; });
                                                     } catch (err) {
-                                                        alert("回复失败，请检查网络");
+                                                        setReplyErrors(prev => ({ ...prev, [resp.id]: "回复失败" }));
                                                     }
                                                 }
                                             }}
                                             className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-xs text-white placeholder-muted-foreground/50 focus:ring-1 focus:ring-orange-500 outline-none resize-none h-16"
                                         />
+                                        {replyErrors[resp.id] && (
+                                            <p className="text-[10px] text-red-400">{replyErrors[resp.id]}</p>
+                                        )}
                                         {resp.repliedAt && (
                                             <p className="text-[9px] text-muted-foreground italic text-right">上次回复于: {new Date(resp.repliedAt).toLocaleString()}</p>
                                         )}

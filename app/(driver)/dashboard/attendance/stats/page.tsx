@@ -20,7 +20,7 @@ export default function AttendanceStatsPage() {
 
     // Filter attendance for the current month
     const monthlyAttendance = useMemo(() => {
-        return attendance.filter(record => {
+        return (attendance || []).filter(record => {
             const date = new Date(record.date);
             return date.getFullYear() === year && date.getMonth() === month;
         });

@@ -9,6 +9,7 @@ export function TargetedFeedbackForm({ swimmerId }: { swimmerId: string }) {
     const [isLoading, setIsLoading] = useState(true);
     const [responses, setResponses] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState<Record<string, boolean>>({});
+    const [submitErrors, setSubmitErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         loadReminders();
@@ -42,7 +43,7 @@ export function TargetedFeedbackForm({ swimmerId }: { swimmerId: string }) {
             setReminders(reminders.filter(r => r.id !== reminderId));
         } catch (e) {
             console.error(e);
-            alert("提交失败，请重试");
+            setSubmitErrors({ ...submitErrors, [reminderId]: "提交失败，请重试" });
         } finally {
             setSubmitting({ ...submitting, [reminderId]: false });
         }
@@ -116,6 +117,9 @@ export function TargetedFeedbackForm({ swimmerId }: { swimmerId: string }) {
                                 </>
                             )}
                         </button>
+                        {submitErrors[r.id] && (
+                            <p className="text-xs text-red-400 text-center mt-2">{submitErrors[r.id]}</p>
+                        )}
                     </div>
                 </div>
             ))}

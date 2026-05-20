@@ -1,0 +1,86 @@
+ .claude/scheduled_tasks.lock                       |   1 -
+ .eslintignore                                      |   1 -
+ .../v3/cache/miniflare-CacheObject/metadata.sqlite | Bin 4096 -> 0 bytes
+ .../miniflare-CacheObject/metadata.sqlite-shm      | Bin 32768 -> 0 bytes
+ .../miniflare-CacheObject/metadata.sqlite-wal      | Bin 8272 -> 0 bytes
+ .../v3/r2/miniflare-R2BucketObject/metadata.sqlite | Bin 4096 -> 0 bytes
+ .../miniflare-R2BucketObject/metadata.sqlite-shm   | Bin 32768 -> 0 bytes
+ .../miniflare-R2BucketObject/metadata.sqlite-wal   | Bin 8272 -> 0 bytes
+ .xdg-cache/.wrangler/metrics.json                  |   3 -
+ CLAUDE.md                                          | 118 ++++--
+ app/(athlete)/profile/page.tsx                     |   4 +-
+ app/(athlete)/workout/page.tsx                     | 198 +++++++--
+ app/(driver)/dashboard/attendance/page.tsx         |  14 +-
+ app/(driver)/dashboard/attendance/stats/page.tsx   |   2 +-
+ app/(driver)/dashboard/feedbacks/page.tsx          |  18 +-
+ app/(driver)/dashboard/feedbacks/targeted/page.tsx |  22 +-
+ app/(driver)/dashboard/page.tsx                    |  65 ++-
+ app/(driver)/dashboard/plan/[id]/page.tsx          |  40 ++
+ app/(driver)/dashboard/quick-plan/page.tsx         |   2 +-
+ app/(driver)/dashboard/schedule/page.tsx           |  23 +-
+ app/(driver)/dashboard/weekly-plan/page.tsx        |  31 +-
+ app/(driver)/settings/page.tsx                     |  33 +-
+ app/api/announcements/route.ts                     |  94 ++++-
+ app/api/attendance/route.ts                        |  86 ----
+ app/api/auth/login/route.ts                        |  58 ++-
+ app/api/auth/logout/route.ts                       |  13 +-
+ app/api/auth/me/route.ts                           |  28 +-
+ app/api/auth/register-coach/route.ts               |  42 --
+ app/api/block-feedbacks/route.ts                   |  47 ++-
+ app/api/diagnostic/route.ts                        |   1 -
+ app/api/feedback-reminders/route.ts                |  41 +-
+ app/api/feedbacks/route.ts                         |  21 +-
+ app/api/keep-alive/route.ts                        |  27 +-
+ app/api/performances/route.ts                      |  46 ++-
+ app/api/plan-analysis/route.ts                     |  27 +-
+ app/api/plans/route.ts                             |  64 +--
+ app/api/swimmers/route.ts                          |  89 ++--
+ app/api/templates/route.ts                         |  42 +-
+ app/api/upload/route.ts                            |  22 +-
+ app/api/weekly-feedbacks/route.ts                  |  26 +-
+ app/api/weekly-plans/route.ts                      | 125 +++---
+ app/api/weekly-plans/sessions/route.ts             |  51 ++-
+ app/layout.tsx                                     |   6 +
+ app/poolside/page.tsx                              |   4 +-
+ cleanup-test-data.ts                               |   2 +-
+ components/DbStatus.tsx                            |  13 +-
+ components/athlete/BlockFeedbackPanel.tsx          |   2 +-
+ components/athlete/FeedbackForm.tsx                |  10 +-
+ components/athlete/LoginForm.tsx                   | 130 ++++--
+ components/athlete/PerformanceTracker.tsx          |   5 +-
+ components/athlete/TargetedFeedbackForm.tsx        |   6 +-
+ components/athlete/TrainingHistory.tsx             | 114 +++++-
+ components/athlete/WeeklyFeedbackForm.tsx          |   4 +-
+ components/auth/CoachGuard.tsx                     |   3 +-
+ components/common/BlockRenderer.tsx                |  38 +-
+ components/dashboard/AnnouncementComposer.tsx      |  22 +-
+ components/dashboard/AthletesFeedbackPanel.tsx     |   8 +-
+ components/dashboard/AttendanceStats.tsx           |   2 +-
+ components/dashboard/BlockEditor.tsx               |  13 +-
+ components/dashboard/PlanEditor.tsx                |   7 +-
+ components/dashboard/SessionRenderer.tsx           |  11 +-
+ components/dashboard/SwimmerModal.tsx              |  15 +-
+ components/dashboard/SwimmerStatusPanel.tsx        |   8 +-
+ components/dashboard/TeamStatsPanel.tsx            |   2 +-
+ components/feed/AnnouncementCard.tsx               |  48 ++-
+ components/layout/MobileNav.tsx                    |  11 +-
+ components/layout/Sidebar.tsx                      |  21 +-
+ lib/api-client.ts                                  |  33 +-
+ lib/api-handler.ts                                 |  31 +-
+ lib/auth.ts                                        |   5 +-
+ lib/db-pool.ts                                     |  21 +
+ lib/dictionary.ts                                  |   4 +
+ lib/prisma.ts                                      |  82 ++--
+ lib/store.tsx                                      | 447 +++++++++++++++------
+ lib/utils.ts                                       |   7 -
+ lib/validation.ts                                  |   2 +-
+ middleware.ts                                      |   6 +-
+ next_build_final.log                               |  22 -
+ next_build_single.log                              |   7 -
+ prisma/schema.prisma                               |   1 +
+ test-db.js                                         |  18 -
+ tests/api-flow.test.ts                             |  13 +-
+ tests/edge-mock.test.ts                            |  28 +-
+ tests/light-check.js                               |  34 --
+ types/index.ts                                     |  23 +-
+ 85 files changed, 1852 insertions(+), 962 deletions(-)

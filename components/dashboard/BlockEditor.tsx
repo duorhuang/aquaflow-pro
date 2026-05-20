@@ -13,6 +13,7 @@ interface BlockEditorProps {
 
 export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
     const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
+    const [uploadError, setUploadError] = useState<string | null>(null);
     const imageInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
     const videoInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
     const blocksRef = useRef(blocks);
@@ -37,17 +38,19 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
             updateBlock(blockIndex, { content: result.url });
         } catch (e) {
             console.error("Upload failed:", e);
-            alert("上传失败，请重试");
+            setUploadError("上传失败，请重试");
+            setTimeout(() => setUploadError(null), 3000);
         } finally {
             setUploadingIndex(null);
         }
     };
 
-    const detectPlatform = (url: string): "xiaohongshu" | "douyin" | "bilibili" | "qq" | "direct" | null => {
+    const detectPlatform = (url: string): "xiaohongshu" | "douyin" | "bilibili" | "qq" | "youtube" | "direct" | null => {
         if (/xhslink\.com|xiaohongshu\.com/.test(url)) return "xiaohongshu";
         if (/douyin\.com|iesdouyin\.com/.test(url)) return "douyin";
         if (/bilibili\.com\/video\/BV/.test(url)) return "bilibili";
         if (/v\.qq\.com\//.test(url)) return "qq";
+        if (/youtube\.com\/|youtu\.be\//.test(url)) return "youtube";
         return null;
     };
 
@@ -56,6 +59,7 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
         douyin: { label: "抖音", color: "white" },
         bilibili: { label: "B站", color: "blue" },
         qq: { label: "腾讯视频", color: "blue" },
+        youtube: { label: "YouTube", color: "red" },
     };
 
     return (
@@ -247,6 +251,11 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
             {uploadingIndex !== null && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" /> 上传中...
+                </div>
+            )}
+            {uploadError && (
+                <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                    {uploadError}
                 </div>
             )}
         </div>

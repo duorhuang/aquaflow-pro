@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { ChevronLeft, Plus, Save, Trash2, Clock, X, Dumbbell } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Clock, X, Dumbbell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TrainingBlock, TrainingPlan, GroupLevel, PlanItem, Equipment } from "@/types";
 

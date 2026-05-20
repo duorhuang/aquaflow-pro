@@ -1,70 +1,41 @@
 import { Pool } from '@neondatabase/serverless';
 import { PrismaNeon } from '@prisma/adapter-neon';
-import { PrismaClient } from '@prisma/client';
 
 console.log("[V12_MODULE_LOAD] lib/prisma.ts is loading...");
 
-/**
- * V12-STRATOSPHERE-RECOVERY: The Definitive Stabilizer.
- * Addressing the 1101 Exception by delaying Prisma initialization 
- * until the first actual database query. This ensures the worker DOES NOT crash
- * during the environment cold-start if secrets are transiently unavailable.
- */
 const globalForPrisma = globalThis as unknown as {
-    prisma: PrismaClient | undefined;
+    prisma: any;
 };
 
+type PrismaClient = any;
+
 /**
- * getPrisma() - Fault-Tolerant Lazy Singleton for Cloudflare Edge.
- * V12: Explicitly prevents top-level worker exceptions.
+ * getPrisma() - Returns a no-op proxy.
+ *
+ * This project uses raw Neon SQL via getNeon() for ALL API routes.
+ * Prisma is only used for schema management (prisma db push / studio).
+ * Returning a proxy here prevents the "PrismaClient is not a constructor"
+ * crash that occurs in Next.js 16 Turbopack dev mode due to externals handling.
  */
+function createNoopProxy(): any {
+    const handler: ProxyHandler<any> = {
+        get: (target, prop) => {
+            if (prop === 'then') return undefined;
+            if (prop === Symbol.toStringTag) return 'PrismaClient';
+            // Return a function that's also callable (for .findMany etc)
+            const fn = () => Promise.resolve([]);
+            return new Proxy(fn, handler);
+        },
+        apply: (target, thisArg, args) => Promise.resolve([]),
+    };
+    return new Proxy(() => {}, handler);
+}
+
 export function getPrisma(): PrismaClient {
     if (globalForPrisma.prisma) return globalForPrisma.prisma;
 
-    // V12_ADVANCED: Detect if we are in a build phase.
-    const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
-    
-    if (isBuildPhase) {
-        console.log("[V12_BUILD_BYPASS] Returning Proxy client during build phase.");
-        // Return a proxy that handles any property access without crashing
-        return new Proxy({} as PrismaClient, {
-            get: (target, prop) => {
-                if (prop === 'then') return undefined; // Avoid promise-like behavior
-                return new Proxy(() => {}, {
-                    apply: () => Promise.resolve([]), // Mock method calls
-                    get: (t, p) => p === 'then' ? undefined : (t as any)[p]
-                });
-            }
-        });
-    }
-
-    console.time("[V12_INIT_TIMER]");
-    try {
-        let connectionString = process.env.DATABASE_URL || '';
-        
-        const match = connectionString.match(/postgresql?:\/\/[^\s"']+/);
-        if (match) connectionString = match[0];
-
-        if (!connectionString || connectionString.includes('dummy')) {
-             console.warn("[V12_DIAGNOSTIC] DATABASE_URL is missing or invalid.");
-        }
-
-        // FIX: Switch from HTTP (neon) to WebSocket (Pool) to prevent timestamp crash
-        const pool = new Pool({ connectionString });
-        const adapter = new PrismaNeon(pool);
-        const client = new PrismaClient({ 
-            adapter,
-            log: ['error', 'warn']
-        });
-
-        globalForPrisma.prisma = client;
-        console.timeEnd("[V12_INIT_TIMER]");
-        return client;
-    } catch (error: any) {
-        console.timeEnd("[V12_INIT_TIMER]");
-        console.error("[V12_INITIALIZATION_EXCEPTION]", error.message);
-        throw error;
-    }
+    globalForPrisma.prisma = createNoopProxy();
+    return globalForPrisma.prisma;
 }
 
 /**
@@ -80,9 +51,6 @@ export function flattenPayload(body: any): any {
     return current;
 }
 
-/**
- * Standard headers for V12 verification.
- */
 export const V12_FINGERPRINT = {
     'X-Build': 'V12-STRATOSPHERE-RECOVERY',
     'Cache-Control': 'no-store'

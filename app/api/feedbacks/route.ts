@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
-import { requireAnyAuth, requireCoach } from '@/lib/auth-api';
-import { neon } from '@neondatabase/serverless';
+import { requireAnyAuth } from '@/lib/auth-api';
+import { getNeon } from '@/lib/db-pool';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +11,7 @@ export async function GET(req: Request) {
         const auth = await requireAnyAuth(req);
         if (auth instanceof NextResponse) return auth;
 
-        const sql = neon(process.env.DATABASE_URL!);
+        const sql = getNeon();
         const feedbacks = await sql`
             SELECT "Feedback".*,
                    row_to_json("Swimmer") as swimmer
@@ -20,10 +20,10 @@ export async function GET(req: Request) {
             ORDER BY "Feedback"."createdAt" DESC
         `;
 
-        const normalized = (feedbacks || []).map((f: any) => ({
-            ...f,
-            swimmer: f.swimmer === null ? null : f.swimmer,
-        }));
+        const normalized = (feedbacks || []).map((f: any) => {
+            const swimmer = f.swimmer && Object.keys(f.swimmer).length > 1 ? f.swimmer : null;
+            return { ...f, swimmer };
+        });
 
         return NextResponse.json(normalized, { headers: V12_FINGERPRINT });
     });
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
         const auth = await requireAnyAuth(request);
         if (auth instanceof NextResponse) return auth;
 
-        const sql = neon(process.env.DATABASE_URL!);
+        const sql = getNeon();
         const data = flattenPayload(await request.json());
 
         // Upsert: update if same swimmer+date exists, create otherwise
@@ -57,10 +57,11 @@ export async function POST(request: Request) {
                 RETURNING *
             `;
         } else {
+            const feedbackId = data.id || crypto.randomUUID();
             feedback = await sql`
                 INSERT INTO "Feedback" ("id", "swimmerId", "planId", "date", "rpe", "soreness", "comments", "timestamp", "goodPoints", "improvementAreas", "createdAt")
                 VALUES (
-                    ${data.id},
+                    ${feedbackId},
                     ${String(data.swimmerId)},
                     ${data.planId},
                     ${String(data.date)},
@@ -75,6 +76,6 @@ export async function POST(request: Request) {
                 RETURNING *
             `;
         }
-        return NextResponse.json(feedback, { headers: V12_FINGERPRINT });
+        return NextResponse.json(feedback[0], { headers: V12_FINGERPRINT });
     });
 }

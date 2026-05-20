@@ -40,7 +40,7 @@ export default function AthleteProfilePage() {
         setSaving(true);
         setSaved(false);
         try {
-            updateSwimmer(currentUser.id, {
+            await updateSwimmer(currentUser.id, {
                 name,
                 mainStroke,
                 readiness,
@@ -58,7 +58,7 @@ export default function AthleteProfilePage() {
 
     const handleLogout = async () => {
         try { await api.auth.logout(); } catch {}
-        localStorage.clear();
+        localStorage.removeItem("aquaflow_athlete_id");
         router.push("/login");
     };
 

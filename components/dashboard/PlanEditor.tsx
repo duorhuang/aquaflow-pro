@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { TrainingPlan, PlanItem, GroupLevel, Equipment, TrainingBlock, PlanSegment, BlockTemplate } from "@/types";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, GripVertical, Save, ArrowLeft, Waves, Info, Layers, Clock, List, Copy, Timer, Hourglass, BookOpen, X, MessageSquareQuote, ImageIcon, FileText } from "lucide-react";
+import { Plus, Trash2, Save, ArrowLeft, Waves, Info, Layers, Clock, List, Copy, Timer, Hourglass, BookOpen, X, MessageSquareQuote, ImageIcon, FileText } from "lucide-react";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,7 +14,10 @@ import { useToast } from "@/components/common/Toast";
 import { AIInsight } from "@/components/dashboard/AIInsight";
 import { WorkoutLibrary } from "@/components/dashboard/WorkoutLibrary";
 import { getLocalDateISOString } from "@/lib/date-utils";
-import { PhotoUpload } from "@/components/plan/PhotoUpload";
+import dynamic from "next/dynamic";
+const PhotoUpload = dynamic(() => import("@/components/plan/PhotoUpload").then(m => ({ default: m.PhotoUpload })), {
+    loading: () => <div className="w-full h-[220px] rounded-2xl border-2 border-dashed border-white/10 bg-white/5 flex items-center justify-center text-muted-foreground text-sm">Loading upload...</div>,
+});
 
 // UID Helper (Deterministic-ish for client)
 const uid = () => {

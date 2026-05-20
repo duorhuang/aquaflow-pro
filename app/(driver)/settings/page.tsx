@@ -9,13 +9,18 @@ export default function SettingsPage() {
     const { hydrateMockData, clearData } = useStore();
     const { language, toggleLanguage } = useLanguage();
     const [showGuide, setShowGuide] = useState(false);
+    const [importError, setImportError] = useState<string | null>(null);
 
     const handleExportData = () => {
         const data = {
-            plans: localStorage.getItem('aquaflow_plans'),
-            swimmers: localStorage.getItem('aquaflow_swimmers'),
-            attendance: localStorage.getItem('aquaflow_attendance'),
-            feedbacks: localStorage.getItem('aquaflow_feedbacks'),
+            plans: localStorage.getItem('aquaflow_local_plans'),
+            swimmers: localStorage.getItem('aquaflow_local_swimmers'),
+            attendance: localStorage.getItem('aquaflow_local_attendance'),
+            feedbacks: localStorage.getItem('aquaflow_local_feedbacks'),
+            weeklyPlans: localStorage.getItem('aquaflow_local_weeklyPlans'),
+            performances: localStorage.getItem('aquaflow_local_performances'),
+            announcements: localStorage.getItem('aquaflow_local_announcements'),
+            templates: localStorage.getItem('aquaflow_local_templates'),
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -38,13 +43,18 @@ export default function SettingsPage() {
             reader.onload = (event) => {
                 try {
                     const data = JSON.parse(event.target?.result as string);
-                    if (data.plans) localStorage.setItem('aquaflow_plans', data.plans);
-                    if (data.swimmers) localStorage.setItem('aquaflow_swimmers', data.swimmers);
-                    if (data.attendance) localStorage.setItem('aquaflow_attendance', data.attendance);
-                    if (data.feedbacks) localStorage.setItem('aquaflow_feedbacks', data.feedbacks);
+                    if (data.plans) localStorage.setItem('aquaflow_local_plans', data.plans);
+                    if (data.swimmers) localStorage.setItem('aquaflow_local_swimmers', data.swimmers);
+                    if (data.attendance) localStorage.setItem('aquaflow_local_attendance', data.attendance);
+                    if (data.feedbacks) localStorage.setItem('aquaflow_local_feedbacks', data.feedbacks);
+                    if (data.weeklyPlans) localStorage.setItem('aquaflow_local_weeklyPlans', data.weeklyPlans);
+                    if (data.performances) localStorage.setItem('aquaflow_local_performances', data.performances);
+                    if (data.announcements) localStorage.setItem('aquaflow_local_announcements', data.announcements);
+                    if (data.templates) localStorage.setItem('aquaflow_local_templates', data.templates);
                     window.location.reload();
                 } catch (err) {
-                    alert('Invalid backup file');
+                    setImportError("无效的备份文件格式");
+                    setTimeout(() => setImportError(null), 3000);
                 }
             };
             reader.readAsText(file);
@@ -75,6 +85,11 @@ export default function SettingsPage() {
                     <SettingsIcon className="w-5 h-5 text-primary" />
                     数据管理
                 </h2>
+                {importError && (
+                    <div className="mb-4 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                        {importError}
+                    </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <button
                         onClick={handleExportData}

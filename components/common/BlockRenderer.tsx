@@ -15,6 +15,7 @@ interface BlockRendererProps {
 }
 
 const getVideoEmbed = (url: string): { type: "iframe" | "html5"; src: string; platform?: string } | null => {
+    // YouTube is handled via link card in the render logic (blocked in China)
     // Bilibili — embed via iframe
     const bilibiliMatch = url.match(/bilibili\.com\/video\/(BV[a-zA-Z0-9]+)/);
     if (bilibiliMatch) return { type: "iframe", src: `https://player.bilibili.com/player.html?bvid=${bilibiliMatch[1]}&autoplay=0` };
@@ -30,11 +31,12 @@ const getVideoEmbed = (url: string): { type: "iframe" | "html5"; src: string; pl
     return null;
 };
 
-const detectPlatform = (url: string): { type: "xiaohongshu" | "douyin" | "bilibili" | "qq" | "direct" } | null => {
+const detectPlatform = (url: string): { type: "xiaohongshu" | "douyin" | "bilibili" | "qq" | "youtube" | "direct" } | null => {
     if (/xhslink\.com|xiaohongshu\.com|小红书/.test(url)) return { type: "xiaohongshu" };
     if (/douyin\.com|iesdouyin\.com/.test(url)) return { type: "douyin" };
     if (/bilibili\.com\/video\/BV/.test(url)) return { type: "bilibili" };
     if (/v\.qq\.com\//.test(url)) return { type: "qq" };
+    if (/youtube\.com\/|youtu\.be\//.test(url)) return { type: "youtube" };
     return null;
 };
 
@@ -123,7 +125,7 @@ export function BlockRenderer({ block, onImageClick }: BlockRendererProps) {
                         </div>
                     );
                 }
-                // Embed the douyin page directly as fallback
+                // Use parsed embed URL if available, otherwise fall back to original link
                 return (
                     <div className="space-y-1">
                         <div className="flex items-center gap-2 mb-1">
@@ -132,12 +134,39 @@ export function BlockRenderer({ block, onImageClick }: BlockRendererProps) {
                         </div>
                         <div className="relative rounded-xl overflow-hidden bg-black/40" style={{ paddingBottom: "177.78%" }}>
                             <iframe
-                                src={block.content}
+                                src={embed?.src || block.content}
                                 className="absolute inset-0 w-full h-full border-0 rounded-xl"
                                 allowFullScreen
                                 allow="autoplay"
                             />
                         </div>
+                    </div>
+                );
+            }
+
+            // YouTube — BLOCKED in China, render as link card
+            if (platform?.type === "youtube") {
+                return (
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Play className="w-3.5 h-3.5 text-red-400" />
+                            <span className="text-[10px] text-muted-foreground uppercase">YouTube</span>
+                        </div>
+                        <a
+                            href={block.content}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-colors group"
+                        >
+                            <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center shrink-0">
+                                <ExternalLink className="w-5 h-5 text-red-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold text-white">YouTube 视频</p>
+                                <p className="text-xs text-muted-foreground">在中国大陆无法直接播放，点击在新页面查看</p>
+                            </div>
+                            <ExternalLink className="w-4 h-4 text-red-400/50 shrink-0 group-hover:text-red-400 transition-colors" />
+                        </a>
                     </div>
                 );
             }
@@ -154,7 +183,7 @@ export function BlockRenderer({ block, onImageClick }: BlockRendererProps) {
                             </div>
                             <button
                                 onClick={() => setVideoLoaded(true)}
-                                className="w-full flex items-center gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl hover:bg-blue-500/20 transition-colors"
+                                className="w-full flex items-center gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl hover:bg-white/10 transition-colors"
                             >
                                 <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center shrink-0">
                                     <Play className="w-5 h-5 text-blue-400 fill-blue-400" />
@@ -205,6 +234,7 @@ export function BlockRenderer({ block, onImageClick }: BlockRendererProps) {
             );
 
         case "link":
+            if (!block.content) return null;
             const url = block.content.startsWith("http") ? block.content : `https://${block.content}`;
             const displayUrl = block.content;
             return (

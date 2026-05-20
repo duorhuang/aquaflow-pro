@@ -19,6 +19,7 @@ export default function SchedulePage() {
     const [reminderMsg, setReminderMsg] = useState("");
     const [reminderGroup, setReminderGroup] = useState("Advanced");
     const [sendingReminder, setSendingReminder] = useState(false);
+    const [reminderStatus, setReminderStatus] = useState<"success" | "error" | null>(null);
 
     // Get calendar data
     const year = currentDate.getFullYear();
@@ -113,12 +114,12 @@ export default function SchedulePage() {
                 periodStart: dateStr,
                 periodEnd: dateStr,
             });
-            alert("✅ 每日提醒已发送！");
+            setReminderStatus("success");
             setReminderMsg("");
             setShowReminder(false);
         } catch (e) {
             console.error("Failed to send reminder:", e);
-            alert("发送失败，请重试");
+            setReminderStatus("error");
         } finally {
             setSendingReminder(false);
         }
@@ -144,8 +145,11 @@ export default function SchedulePage() {
     };
 
     // Get swimmers with issues
+    const isValidInjury = (note: string | undefined) =>
+        typeof note === 'string' && note.trim().length > 0 && note !== 'null';
+
     const swimmersWithIssues = swimmers.filter(s =>
-        (s.readiness && s.readiness < 70) || (s.injuryNote && s.injuryNote.trim())
+        (s.readiness && s.readiness < 70) || isValidInjury(s.injuryNote)
     );
 
     return (
@@ -184,7 +188,7 @@ export default function SchedulePage() {
                                 {s.readiness && s.readiness < 70 && (
                                     <span className="text-red-300">Readiness: {s.readiness}%</span>
                                 )}
-                                {s.injuryNote && (
+                                {isValidInjury(s.injuryNote) && (
                                     <span className="text-orange-300 max-w-[150px] truncate">({s.injuryNote})</span>
                                 )}
                             </div>
@@ -420,6 +424,17 @@ export default function SchedulePage() {
                                             <div className="text-xs text-muted-foreground">向队员发送训练提示</div>
                                         </div>
                                     </button>
+
+                                    {reminderStatus === "success" && (
+                                        <div className="bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 text-sm text-green-400">
+                                            ✅ 提醒已发送
+                                        </div>
+                                    )}
+                                    {reminderStatus === "error" && (
+                                        <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400">
+                                            发送失败，请重试
+                                        </div>
+                                    )}
 
                                     {showReminder && (
                                         <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 space-y-3 animate-in slide-in-from-top-2">

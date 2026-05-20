@@ -1,7 +1,7 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { Activity, MessageSquare, TrendingUp, AlertTriangle, CheckCircle, Users, ChevronDown, ChevronUp } from "lucide-react";
+import { MessageSquare, TrendingUp, AlertTriangle, CheckCircle, Users, ChevronDown, ChevronUp, Activity } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { getLocalDateISOString } from "@/lib/date-utils";
@@ -13,12 +13,12 @@ export function AthletesFeedbackPanel() {
     const today = getLocalDateISOString();
 
     // Get feedbacks from today
-    const todayFeedbacks = feedbacks.filter(f => f.date === today);
+    const todayFeedbacks = (feedbacks || []).filter(f => f.date === today);
     const todayFeedbackCount = new Set(todayFeedbacks.map(f => f.swimmerId)).size;
 
     // Get latest feedback for each swimmer with trend analysis
-    const swimmerFeedbacks = swimmers.map(swimmer => {
-        const swimmerFeedbackList = feedbacks
+    const swimmerFeedbacks = (swimmers || []).map(swimmer => {
+        const swimmerFeedbackList = (feedbacks || [])
             .filter(f => f.swimmerId === swimmer.id)
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 

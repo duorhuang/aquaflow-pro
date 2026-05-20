@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Trash2 } from "lucide-react";
+import { ExternalLink, Trash2, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BlockRenderer, ImageLightbox } from "@/components/common/BlockRenderer";
 import { formatTimeAgo } from "@/lib/date-utils";
@@ -10,9 +10,10 @@ interface AnnouncementCardProps {
     announcement: any;
     isCoach?: boolean;
     onDelete?: (id: string) => void;
+    onStar?: (id: string) => void;
 }
 
-export function AnnouncementCard({ announcement, isCoach, onDelete }: AnnouncementCardProps) {
+export function AnnouncementCard({ announcement, isCoach, onDelete, onStar }: AnnouncementCardProps) {
     const [expandedImages, setExpandedImages] = useState<string | null>(null);
     const timeAgo = formatTimeAgo(announcement.createdAt);
 
@@ -26,18 +27,41 @@ export function AnnouncementCard({ announcement, isCoach, onDelete }: Announceme
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-xs font-bold text-white">
                         教
                     </div>
-                    <div>
-                        <p className="text-sm font-bold text-white">教练发布</p>
-                        <p className="text-[10px] text-muted-foreground">{timeAgo}</p>
+                    <div className="flex items-center gap-2">
+                        <div>
+                            <p className="text-sm font-bold text-white">教练发布</p>
+                            <p className="text-[10px] text-muted-foreground">{timeAgo}</p>
+                        </div>
+                        {announcement.isStarred && (
+                            <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+                        )}
                     </div>
                 </div>
-                {isCoach && onDelete && (
-                    <button
-                        onClick={() => onDelete(announcement.id)}
-                        className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                    </button>
+                {isCoach && (
+                    <div className="flex items-center gap-1">
+                        {onStar && (
+                            <button
+                                onClick={() => onStar(announcement.id)}
+                                className={cn(
+                                    "p-1.5 rounded-lg transition-colors",
+                                    announcement.isStarred
+                                        ? "text-yellow-400 hover:text-yellow-300"
+                                        : "text-muted-foreground hover:text-yellow-400"
+                                )}
+                                title={announcement.isStarred ? "取消收藏" : "收藏"}
+                            >
+                                <Star className={cn("w-4 h-4", announcement.isStarred && "fill-yellow-400")} />
+                            </button>
+                        )}
+                        {onDelete && (
+                            <button
+                                onClick={() => onDelete(announcement.id)}
+                                className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
                 )}
             </div>
 

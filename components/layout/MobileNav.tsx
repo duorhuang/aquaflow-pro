@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu, X, Waves, LayoutDashboard, Users, Calendar, Settings, LogOut, PlusCircle, UserCheck } from "lucide-react";
+import { Menu, X, Waves, LayoutDashboard, Users, Calendar, Settings, LogOut, PlusCircle, UserCheck, FolderOpen } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api-client";
 
 const NAV_ITEMS = [
     { label: "仪表盘", href: "/dashboard", icon: LayoutDashboard },
@@ -12,7 +13,8 @@ const NAV_ITEMS = [
     { label: "运动员", href: "/dashboard/athletes", icon: Users },
     { label: "出勤管理", href: "/dashboard/attendance", icon: UserCheck },
     { label: "Schedule", href: "/dashboard/schedule", icon: Calendar },
-    { label: "设置", href: "/settings", icon: Settings },
+    { label: "反馈档案", href: "/dashboard/archive", icon: FolderOpen },
+    { label: "设置", href: "/dashboard/settings", icon: Settings },
 ];
 
 export function MobileNav() {
@@ -69,9 +71,8 @@ export function MobileNav() {
 
                     <div className="mt-auto mb-8 border-t border-white/10 pt-6">
                         <button
-                            onClick={() => {
-                                localStorage.removeItem("aquaflow_coach_session");
-                                localStorage.removeItem("aquaflow_athlete_id"); // Ensure isolation
+                            onClick={async () => {
+                                try { await api.auth.logout(); } catch {}
                                 window.location.href = '/login?role=coach';
                             }}
                             className="flex items-center gap-4 px-4 py-4 w-full rounded-xl text-red-400 hover:bg-red-500/10 transition-colors"

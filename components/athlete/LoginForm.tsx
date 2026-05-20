@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, User } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,56 +16,112 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
+    // Warm up DB on mount to avoid cold-start latency on first login
+    useEffect(() => {
+        let isMounted = true;
+        const wakeDb = async () => {
+            try {
+                await fetch('/api/auth/me', { cache: 'no-store' });
+            } catch {
+                // Silent — DB warming is best-effort
+            }
+        };
+        wakeDb();
+
+        // Keep DB warm with periodic ping while on login page
+        const interval = setInterval(() => {
+            if (isMounted) wakeDb();
+        }, 45000); // every 45s (Neon idle timeout is ~5min)
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
+    }, []);
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
         setIsLoading(true);
 
-        try {
-            const res = await fetch("/api/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password, role: mode }),
-            });
+        // Retry login up to 3 times with exponential backoff for cold DB starts
+        const MAX_RETRIES = 3;
+        let lastError: string = "Network error";
 
-            const contentType = res.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                // If status is 200 but no JSON, the cookie was set — redirect anyway
-                if (res.ok) {
-                    if (mode === "coach") {
-                        router.push("/dashboard");
-                    } else {
-                        router.push("/workout");
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 20000);
+
+                const res = await fetch("/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password, role: mode }),
+                    signal: controller.signal,
+                });
+                clearTimeout(timeout);
+
+                const contentType = res.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    if (res.ok) {
+                        redirectAfterLogin(mode);
+                        return;
                     }
+                    const text = await res.text();
+                    lastError = 'Server error. Please try again in a moment.';
+                    console.error('Login API returned non-JSON response:', text.substring(0, 200));
+                    if (attempt < MAX_RETRIES - 1) {
+                        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+                        continue;
+                    }
+                    setError(lastError);
+                    setIsLoading(false);
                     return;
                 }
-                const text = await res.text();
-                setError('Server error. Please try again in a moment.');
-                console.error('Login API returned non-JSON response:', text.substring(0, 200));
-                setIsLoading(false);
-                return;
-            }
 
-            const data = await res.json();
+                const data = await res.json();
 
-            if (!res.ok) {
-                setError(data.error || "Login failed");
-                setIsLoading(false);
-                return;
-            }
-
-            // Server sets HttpOnly cookie, just redirect
-            if (mode === "coach") {
-                router.push("/dashboard");
-            } else {
-                if (data.user?.id) {
-                    localStorage.setItem("aquaflow_athlete_id", data.user.id);
+                if (!res.ok) {
+                    if (res.status === 401 || res.status === 400) {
+                        setError(data.error || "Login failed");
+                        setIsLoading(false);
+                        return;
+                    }
+                    lastError = data.error || "Server error, retrying...";
+                    if (attempt < MAX_RETRIES - 1) {
+                        await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+                        continue;
+                    }
+                    setError(lastError);
+                    setIsLoading(false);
+                    return;
                 }
-                router.push("/workout");
+
+                redirectAfterLogin(mode, data);
+                return;
+            } catch (err: any) {
+                lastError = err.name === 'AbortError'
+                    ? `服务器响应较慢${attempt < MAX_RETRIES - 1 ? '，正在重试...' : '，请稍后再试'}`
+                    : err.message || "Network error";
+                if (attempt < MAX_RETRIES - 1) {
+                    await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+                    continue;
+                }
+                setError(lastError);
+                setIsLoading(false);
+                return;
             }
-        } catch (err: any) {
-            setError(err.message || "Network error");
-            setIsLoading(false);
+        }
+    };
+
+    const redirectAfterLogin = (role: string, data?: any) => {
+        if (role === "coach") {
+            router.push("/dashboard");
+        } else {
+            if (data?.user?.id) {
+                localStorage.setItem("aquaflow_athlete_id", data.user.id);
+            }
+            router.push("/workout");
         }
     };
 
@@ -110,7 +166,7 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                         : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-[1.02]"
                 )}
             >
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? "Connecting to server..." : "Login"}
             </button>
         </form>
     );

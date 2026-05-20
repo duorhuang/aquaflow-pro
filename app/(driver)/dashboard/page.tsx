@@ -1,7 +1,7 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { PlanCard } from "@/components/dashboard/PlanCard";
 import { TodayAttendance } from "@/components/dashboard/TodayAttendance";
 import { SwimmerStatusPanel } from "@/components/dashboard/SwimmerStatusPanel";
@@ -11,7 +11,8 @@ import { RecentPerformances } from "@/components/dashboard/RecentPerformances";
 import { AthletesFeedbackPanel } from "@/components/dashboard/AthletesFeedbackPanel";
 import { TeamFeedbackSummary } from "@/components/dashboard/TeamFeedbackSummary";
 import { AnnouncementComposer } from "@/components/dashboard/AnnouncementComposer";
-import { Plus, LogOut, MessageSquare, FolderOpen, Send } from "lucide-react";
+import { AnnouncementCard } from "@/components/feed/AnnouncementCard";
+import { LogOut, MessageSquare, FolderOpen, Send, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
@@ -20,8 +21,9 @@ import { api } from "@/lib/api-client";
 
 export default function DashboardPage() {
     const { t } = useLanguage();
-    const { getVisiblePlans, isLoaded } = useStore();
+    const { getVisiblePlans, isLoaded, announcements, archivedAnnouncements, deleteAnnouncement, starAnnouncement } = useStore();
     const router = useRouter();
+    const [showArchive, setShowArchive] = useState(false);
 
     // Get visible plans (active < 14 days OR starred) and sort
     const visiblePlans = useMemo(() => {
@@ -30,7 +32,6 @@ export default function DashboardPage() {
 
     const handleLogout = async () => {
         try { await api.auth.logout(); } catch {}
-        localStorage.removeItem("aquaflow_coach_session");
         router.push('/login?role=coach');
     };
 
@@ -86,6 +87,62 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                     <TodayAttendance />
                     <AnnouncementComposer />
+
+                    {/* Coach Announcements Feed */}
+                    {announcements.length > 0 && (
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                                    <MessageSquare className="w-3.5 h-3.5 text-primary" />
+                                    教练动态
+                                </h3>
+                            </div>
+                            {announcements.map((a: any) => (
+                                <AnnouncementCard
+                                    key={a.id}
+                                    announcement={a}
+                                    isCoach
+                                    onDelete={deleteAnnouncement}
+                                    onStar={starAnnouncement}
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Archived Announcements */}
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                                 历史存档
+                            </h3>
+                            {archivedAnnouncements.length > 0 && (
+                                <button
+                                    onClick={() => setShowArchive(!showArchive)}
+                                    className="text-[10px] text-muted-foreground hover:text-white flex items-center gap-1"
+                                >
+                                    {showArchive ? (
+                                        <>收起 <ChevronUp className="w-3 h-3" /></>
+                                    ) : (
+                                        <>查看全部 ({archivedAnnouncements.length}) <ChevronDown className="w-3 h-3" /></>
+                                    )}
+                                </button>
+                            )}
+                        </div>
+                        {archivedAnnouncements.length === 0 && (
+                            <p className="text-[10px] text-muted-foreground/50 italic">超过 7 天的非收藏动态会自动归档到这里</p>
+                        )}
+                        {showArchive && archivedAnnouncements.map((a: any) => (
+                            <div key={a.id} className="opacity-60">
+                                <AnnouncementCard
+                                    announcement={a}
+                                    isCoach
+                                    onDelete={deleteAnnouncement}
+                                    onStar={starAnnouncement}
+                                />
+                            </div>
+                        ))}
+                    </div>
+
                     <TeamFeedbackSummary />
                     <TeamStatsPanel />
                     <Link href="/dashboard/feedbacks" className="bg-gradient-to-br from-primary/20 to-blue-600/20 border border-primary/20 rounded-3xl p-6 flex flex-col justify-between hover:scale-[1.02] transition-transform cursor-pointer group">

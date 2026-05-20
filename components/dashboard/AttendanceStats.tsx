@@ -25,7 +25,7 @@ export function AttendanceStats() {
 
     // Get last 7 days or valid days for simple visualization
     // Let's look at the whole month stats simply
-    const maxAttendance = swimmers.length;
+    const maxAttendance = Math.max(swimmers.length, 1);
 
     return (
         <div className="bg-card/50 border border-border rounded-2xl p-6 backdrop-blur-md space-y-4">

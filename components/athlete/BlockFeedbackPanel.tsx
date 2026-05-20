@@ -30,7 +30,7 @@ export function BlockFeedbackPanel({
                     setIsSubmitted(true);
                 }
             })
-            .catch(() => {});
+            .catch((e) => console.warn("Failed to load existing feedback:", e));
     }, [planId, blockId, swimmerId]);
 
     const handleSubmit = async () => {

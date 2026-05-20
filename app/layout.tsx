@@ -32,6 +32,12 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <head>
+        {/* DNS prefetch for China-accessible video embeds */}
+        <link rel="dns-prefetch" href="//player.bilibili.com" />
+        <link rel="dns-prefetch" href="//v.qq.com" />
+        <link rel="dns-prefetch" href="//open.douyin.com" />
+        <link rel="dns-prefetch" href="//xhslink.com" />
+        <link rel="dns-prefetch" href="//xiaohongshu.com" />
       </head>
       <body className="antialiased" suppressHydrationWarning={true}>
         <LanguageProvider>

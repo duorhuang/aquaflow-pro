@@ -34,7 +34,7 @@ export function validateSwimmer(data: { name?: string; username?: string; passwo
         const p = required(data.password, "Password");
         if (p) errors.password = p;
     } else {
-        const p = minLength(data.password, 4, "Password");
+        const p = minLength(data.password, 6, "Password");
         if (p) errors.password = p;
     }
     return errors;

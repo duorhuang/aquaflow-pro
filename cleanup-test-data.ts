@@ -52,7 +52,7 @@ async function cleanup() {
   });
   console.log(`   Found ${allAnnouncements.length} announcements total`);
   for (const ann of allAnnouncements) {
-    const textBlocks = ann.blocks.filter(b => b.type === "text");
+    const textBlocks = ann.blocks.filter((b: any) => b.type === "text");
     for (const block of textBlocks) {
       if (block.content === "hello" || block.content === "hi") {
         console.log(`   → Deleting announcement ${ann.id} (contains "${block.content}")`);

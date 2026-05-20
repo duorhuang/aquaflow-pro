@@ -16,7 +16,6 @@ export async function GET() {
                 isProd,
                 phase,
                 dbUrlSet: dbUrl !== 'NOT_SET',
-                dbUrlPrefix: dbUrl.substring(0, 10) + '...',
             },
             runtime: 'Edge-V12'
         }, { headers: V12_FINGERPRINT });

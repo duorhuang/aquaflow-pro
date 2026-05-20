@@ -12,6 +12,7 @@ export default function FeedbacksPage() {
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
     const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
     const [savingId, setSavingId] = useState<string | null>(null);
+    const [replyStatus, setReplyStatus] = useState<Record<string, 'success' | 'error'>>({});
 
     useEffect(() => {
         load();
@@ -44,19 +45,16 @@ export default function FeedbacksPage() {
 
     const handlePublishReply = async (id: string) => {
         const replyText = replyDrafts[id] || "";
-        if (!replyText.trim()) {
-            alert("评语不能为空");
-            return;
-        }
+        if (!replyText.trim()) return;
 
         setSavingId(id);
         try {
             await api.weeklyFeedbacks.reply(id, replyText);
-            alert("✅ 已发送反馈回复给队员！");
+            setReplyStatus(prev => ({ ...prev, [id]: 'success' }));
             await load();
         } catch (e) {
             console.error(e);
-            alert("❌ 发送失败: 服务器连接异常。此问题通常与数据库冷启动或网络延迟有关，请重试。");
+            setReplyStatus(prev => ({ ...prev, [id]: 'error' }));
         } finally {
             setSavingId(null);
         }
@@ -144,7 +142,13 @@ export default function FeedbacksPage() {
                                             placeholder="在此输入教练寄语与反馈，队员将在其面板中看到..."
                                             className="w-full h-24 bg-black/40 border border-border rounded-xl p-3 text-sm text-white placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                                         />
-                                        <div className="flex justify-end">
+                                        <div className="flex justify-end gap-2">
+                                            {replyStatus[f.id] === 'success' && (
+                                                <span className="text-xs text-green-400 self-center">已发送 ✓</span>
+                                            )}
+                                            {replyStatus[f.id] === 'error' && (
+                                                <span className="text-xs text-red-400 self-center">发送失败，请重试</span>
+                                            )}
                                             <button 
                                                 onClick={() => handlePublishReply(f.id)}
                                                 disabled={savingId === f.id}

@@ -113,8 +113,8 @@ export default function WeeklyPlanPage() {
         try {
             const plans = await api.weeklyPlans.getAll();
             setLoadedPlans(plans);
-        } catch (e) {
-            console.error(e);
+        } catch (e: any) {
+            if (!e.message?.includes('timed out')) console.error(e);
         }
     };
 
@@ -128,13 +128,14 @@ export default function WeeklyPlanPage() {
 
     const toggleTargetGroup = (groupLevel: GroupLevel) => {
         const groupIds = (swimmers || []).filter(s => s.group === groupLevel).map(s => s.id);
-        if (groupIds.length === 0) return;
         if (targetGroups.includes(groupLevel)) {
             setTargetGroups(prev => prev.filter(g => g !== groupLevel));
             setTargetSwimmerIds(prev => prev.filter(id => !groupIds.includes(id)));
         } else {
             setTargetGroups(prev => [...prev, groupLevel]);
-            setTargetSwimmerIds(prev => [...new Set([...prev, ...groupIds])]);
+            if (groupIds.length > 0) {
+                setTargetSwimmerIds(prev => [...new Set([...prev, ...groupIds])]);
+            }
         }
     };
 
@@ -243,7 +244,11 @@ export default function WeeklyPlanPage() {
             }
 
             const totalSessions = sessions.length;
-            setPublishProgress({ current: 0, total: totalSessions });
+            // Total = 1 (weekly plan itself) + sessions + 1 (overview if present)
+            const totalItems = 1 + totalSessions + (overviewContentHtml || overviewImageUrl ? 1 : 0);
+            setPublishProgress({ current: 1, total: totalItems });
+
+            let failedSessions: string[] = [];
 
             for (let i = 0; i < sessions.length; i++) {
                 const s = sessions[i];
@@ -253,7 +258,7 @@ export default function WeeklyPlanPage() {
                         label: s.label,
                         date: s.date,
                         notes: s.notes,
-                        sortOrder: s.sortOrder,
+                        sortOrder: s.sortOrder ?? i,
                         editorMode: s.editorMode || "legacy",
                     };
 
@@ -272,13 +277,18 @@ export default function WeeklyPlanPage() {
                     } else if (s.isUpdated) {
                         await api.weeklyPlans.updateSession(s.id, sessionData);
                     }
-                } catch (sessionErr) {
+                } catch (sessionErr: any) {
                     console.error("Failed to save session", s.label, sessionErr);
+                    failedSessions.push(s.label);
                 }
-                setPublishProgress({ current: i + 1, total: totalSessions });
+                setPublishProgress({ current: i + 2, total: totalItems });
             }
 
-            toast("success", "计划发布成功！");
+            if (failedSessions.length > 0) {
+                toast("error", `周计划已保存，但 ${failedSessions.length} 个会话保存失败：${failedSessions.join('、')}。请刷新后重试。`);
+            } else {
+                toast("success", `计划发布成功！共发布 ${totalItems} 项内容。`);
+            }
             loadPlans();
             if (!selectedPlanId) setSelectedPlanId(planId);
         } catch (e: any) {
@@ -628,7 +638,6 @@ export default function WeeklyPlanPage() {
                         <div className="flex flex-wrap gap-2 mb-4">
                             {GROUP_LEVELS.map(groupLevel => {
                                 const count = (swimmers || []).filter(s => s.group === groupLevel).length;
-                                if (count === 0) return null;
                                 const isSelected = targetGroups.includes(groupLevel);
                                 const isPartial = !isSelected && isGroupPartiallySelected(groupLevel);
                                 return (
@@ -643,7 +652,7 @@ export default function WeeklyPlanPage() {
                                                 : 'bg-transparent border-white/20 text-muted-foreground hover:bg-white/5'
                                         }`}
                                     >
-                                        <Users className="w-3 h-3" /> {groupLevel} ({count})
+                                        <Users className="w-3 h-3" /> {groupLevel} {count > 0 ? `(${count})` : ''}
                                     </button>
                                 );
                             })}

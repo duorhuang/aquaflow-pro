@@ -26,10 +26,13 @@ describe('AquaFlow Pro Logic Tests', () => {
     });
 
     describe('API Client', () => {
+        const mockHeaders = { get: (key: string) => 'application/json' };
+
         it('should fetch plans correctly', async () => {
             const mockPlans = [{ id: '1', date: '2026-04-10' }];
             (global.fetch as any).mockResolvedValueOnce({
                 ok: true,
+                headers: mockHeaders,
                 json: async () => mockPlans
             });
 
@@ -39,12 +42,18 @@ describe('AquaFlow Pro Logic Tests', () => {
         });
 
         it('should throw error on API failure', async () => {
-            (global.fetch as any).mockResolvedValueOnce({
+            const errorResponse = {
                 ok: false,
                 status: 500,
                 statusText: 'Internal Server Error',
+                headers: mockHeaders,
                 json: async () => ({ error: 'V12 Crash' })
-            });
+            };
+            // Mock 3 responses since api-client retries 3 times
+            (global.fetch as any)
+                .mockResolvedValueOnce(errorResponse)
+                .mockResolvedValueOnce(errorResponse)
+                .mockResolvedValueOnce(errorResponse);
 
             await expect(api.plans.getAll()).rejects.toThrow('V12 Crash');
         });

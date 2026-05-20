@@ -158,7 +158,7 @@ export function TeamStatsPanel() {
             <div className="space-y-2">
                 <h4 className="text-xs font-medium text-muted-foreground mb-2">组别里程对比</h4>
                 {Object.entries(groupStats).map(([group, stats]) => {
-                    const percentage = (stats.distance / totalDistance) * 100;
+                    const percentage = totalDistance > 0 ? (stats.distance / totalDistance) * 100 : 0;
                     const barWidth = (stats.distance / maxGroupDistance) * 100;
 
                     return (

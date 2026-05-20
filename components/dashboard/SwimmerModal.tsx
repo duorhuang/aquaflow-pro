@@ -28,6 +28,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
     const [password, setPassword] = useState("");
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Load data if editing
     useEffect(() => {
@@ -47,6 +48,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
             setPassword("123456");
         }
         setIsSubmitting(false);
+        setError(null);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [swimmerToEdit, isOpen]);
 
@@ -84,7 +86,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
             }
             onClose();
         } catch (error: any) {
-            alert("Failed to save swimmer. Please try again.\n" + (error.message || "Unknown error"));
+            setError(error.message || "保存失败，请重试");
         } finally {
             setIsSubmitting(false);
         }
@@ -98,7 +100,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                 await deleteSwimmer(swimmerToEdit.id);
                 onClose();
             } catch (error: any) {
-                alert("Failed to delete swimmer.\n" + (error.message || "Unknown error"));
+                setError(error.message || "删除失败，请重试");
             } finally {
                 setIsSubmitting(false);
             }
@@ -116,6 +118,15 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                         <X className="w-5 h-5 text-muted-foreground" />
                     </button>
                 </div>
+
+                {error && (
+                    <div className="mb-4 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400 flex items-center justify-between">
+                        <span>{error}</span>
+                        <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300 ml-2">
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Name */}

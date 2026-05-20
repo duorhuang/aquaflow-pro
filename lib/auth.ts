@@ -159,5 +159,8 @@ export function setSessionCookie(token: string, maxAge = 7 * 24 * 60 * 60): stri
  * Create a Set-Cookie header value to clear the session cookie.
  */
 export function clearSessionCookie(): string {
-  return 'aquaflow_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0; Secure';
+  const isProd = process.env.NODE_ENV === 'production';
+  const parts = ['aquaflow_session=', 'Path=/', 'HttpOnly', 'SameSite=Strict', 'Max-Age=0'];
+  if (isProd) parts.push('Secure');
+  return parts.join('; ');
 }

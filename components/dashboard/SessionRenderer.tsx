@@ -5,6 +5,15 @@ import { ImageViewer } from "@/components/common/ImageViewer";
 import { BlockRenderer, ImageLightbox } from "@/components/common/BlockRenderer";
 import { cn } from "@/lib/utils";
 
+function sanitizeHtml(html: string): string {
+    return html
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+        .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+        .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
+        .replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+}
+
 interface SessionRendererProps {
     session: Record<string, any>;
     className?: string;
@@ -42,7 +51,7 @@ export function SessionRenderer({ session, className }: SessionRendererProps) {
                     "[&>ol]:list-decimal [&>ol]:pl-5 [&>ol:my-2]",
                     className
                 )}
-                dangerouslySetInnerHTML={{ __html: session.contentHtml }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(session.contentHtml) }}
             />
         );
     }

@@ -14,6 +14,8 @@ export const DICTIONARY = {
             save: "Save",
             publish: "Publish",
             delete: "Delete",
+            attendance: "Attendance",
+            schedule: "Schedule",
         },
         dashboard: {
             activePlans: "Active Plans",
@@ -123,6 +125,8 @@ export const DICTIONARY = {
             save: "保存",
             publish: "发布",
             delete: "删除",
+            attendance: "出勤管理",
+            schedule: "日程安排",
         },
         dashboard: {
             activePlans: "当前计划",

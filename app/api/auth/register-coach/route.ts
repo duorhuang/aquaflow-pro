@@ -1,42 +1,38 @@
-import { hashPassword, generateJWT, setSessionCookie } from '@/lib/auth';
-import { neon } from '@neondatabase/serverless';
+import { NextResponse } from 'next/server';
+import { flattenPayload } from '@/lib/prisma';
+import { hashPassword } from '@/lib/auth-api';
+import { getNeon } from '@/lib/db-pool';
 
-export const dynamic = 'force-dynamic';
-
-/**
- * Create the first coach account. Only works when no CoachUser exists.
- */
 export async function POST(request: Request) {
-  try {
-    const sql = neon(process.env.DATABASE_URL!);
-    const count = await sql`SELECT COUNT(*) FROM "CoachUser"`;
-    if (parseInt(count[0].count, 10) > 0) {
-      return Response.json({ error: 'Coach account already exists' }, { status: 409 });
+    try {
+        const sql = getNeon();
+        const data = flattenPayload(await request.json());
+        const { username, password, name, inviteCode } = data;
+
+        if (!username || !password) {
+            return NextResponse.json({ error: 'Username and password required' }, { status: 400 });
+        }
+        
+        const validInviteCode = process.env.COACH_INVITE_CODE || 'duor2024';
+        if (inviteCode !== validInviteCode) {
+            return NextResponse.json({ error: 'Invalid invite code' }, { status: 403 });
+        }
+
+        const hashedPassword = await hashPassword(String(password));
+        
+        const existing = await sql`SELECT id FROM "CoachUser" WHERE "username" = ${String(username)}`;
+        if (existing.length > 0) {
+            return NextResponse.json({ error: 'Username taken' }, { status: 400 });
+        }
+
+        const user = await sql`
+            INSERT INTO "CoachUser" ("id", "username", "password", "name", "createdAt")
+            VALUES (${crypto.randomUUID()}, ${String(username)}, ${hashedPassword}, ${name ? String(name) : null}, NOW())
+            RETURNING id, username, name
+        `;
+
+        return NextResponse.json(user[0]);
+    } catch (e: any) {
+        return NextResponse.json({ error: e.message }, { status: 500 });
     }
-
-    const body = await request.json();
-    const { username, password, name } = body;
-
-    if (!username || !password) {
-      return Response.json({ error: 'Username and password required' }, { status: 400 });
-    }
-
-    const hashed = await hashPassword(password);
-
-    const coach = await sql`
-      INSERT INTO "CoachUser" ("username", "password", "name", "createdAt")
-      VALUES (${username}, ${hashed}, ${name || username}, NOW())
-      RETURNING *
-    `;
-    const inserted = coach[0];
-
-    const token = await generateJWT({ userId: inserted.id, role: 'coach' });
-    return Response.json(
-      { success: true, user: { id: inserted.id, name: inserted.name, role: 'coach' } },
-      { headers: { 'Set-Cookie': setSessionCookie(token) } }
-    );
-  } catch (error: any) {
-    console.error('[REGISTER_COACH_ERROR]', error.message);
-    return Response.json({ error: 'Internal error' }, { status: 500 });
-  }
 }

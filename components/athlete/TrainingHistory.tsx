@@ -1,51 +1,115 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { Calendar, CheckCircle, XCircle, MessageSquare, ChevronDown, ChevronUp, Layers } from "lucide-react";
+import { Calendar, CheckCircle, XCircle, MessageSquare, ChevronDown, ChevronUp, Layers, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { TrainingPlan, TrainingBlock, PlanItem } from "@/types";
+import { TrainingPlan, TrainingBlock, PlanItem, Feedback } from "@/types";
 import { getLocalDateISOString } from "@/lib/date-utils";
+import { SessionRenderer } from "@/components/dashboard/SessionRenderer";
+import Link from "next/link";
 
 interface TrainingHistoryProps {
     swimmerId: string;
 }
 
+// Check if a weekly plan is visible to this swimmer
+function isWeeklyPlanVisible(wp: any, swimmer: any): boolean {
+    if (!swimmer) return false;
+    const targetGroup: string[] = Array.isArray(wp.targetGroup)
+        ? wp.targetGroup
+        : typeof wp.targetGroup === 'string' ? (() => { try { return JSON.parse(wp.targetGroup || '[]'); } catch { return []; } })() : [];
+    const targetSwimmerIds: string[] = Array.isArray(wp.targetSwimmerIds)
+        ? wp.targetSwimmerIds
+        : typeof wp.targetSwimmerIds === 'string' ? (() => { try { return JSON.parse(wp.targetSwimmerIds || '[]'); } catch { return []; } })() : [];
+    const hasGroupTarget = targetGroup.length > 0;
+    const hasIndividualTarget = targetSwimmerIds.length > 0;
+    if (!hasGroupTarget && !hasIndividualTarget) return true;
+    if (hasGroupTarget && targetGroup.includes(swimmer.group)) return true;
+    if (hasIndividualTarget && targetSwimmerIds.includes(swimmer.id)) return true;
+    return false;
+}
+
+interface HistoryEntry {
+    date: string;
+    planId: string;
+    type: 'standalone' | 'weekly';
+    plan: TrainingPlan & Record<string, any>;
+    attended: boolean;
+    feedback?: Feedback | undefined;
+    weeklyPlanTitle?: string;
+}
+
 export function TrainingHistory({ swimmerId }: TrainingHistoryProps) {
-    const { plans, attendance, feedbacks, swimmers } = useStore();
+    const { plans, attendance, feedbacks, swimmers, weeklyPlans } = useStore();
     const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
 
     const swimmer = swimmers.find(s => s.id === swimmerId);
     if (!swimmer) return null;
 
-    // Get past 30 days of training
-    // NOTE: We want to show everything up to yesterday. Today is shown in 'Today' tab.
+    // Get past 7 days of training (recent week only — older sessions accessible via archive)
     const now = new Date();
     const todayStr = getLocalDateISOString(now);
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const history = plans
+    // 1. Standalone daily plans
+    const standaloneHistory: HistoryEntry[] = plans
         .filter(p => {
             const planDate = new Date(p.date);
-            // p.date < todayStr ensures we don't duplicate "Today"
             return p.date < todayStr &&
-                planDate >= thirtyDaysAgo &&
+                planDate >= sevenDaysAgo &&
                 p.group === swimmer.group;
         })
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .map(plan => {
             const attended = attendance.some(a =>
-                a.swimmerId === swimmerId &&
-                a.date === plan.date
+                a.swimmerId === swimmerId && a.date === plan.date
             );
-
             const feedback = feedbacks.find(f =>
-                f.swimmerId === swimmerId &&
-                f.planId === plan.id
+                f.swimmerId === swimmerId && f.planId === plan.id
             );
-
-            return { plan, attended, feedback };
+            return { date: plan.date, planId: plan.id, type: 'standalone' as const, plan: plan as TrainingPlan & Record<string, any>, attended, feedback };
         });
+
+    // 2. Weekly plan sessions (derive from published weekly plans)
+    const weeklyHistory: HistoryEntry[] = [];
+    for (const wp of weeklyPlans) {
+        if (!isWeeklyPlanVisible(wp, swimmer)) continue;
+        const sessions = wp.sessions?.filter((s: any) => s.date < todayStr) || [];
+        for (const session of sessions) {
+            const sessionDate = new Date(session.date);
+            if (sessionDate < sevenDaysAgo) continue;
+            const attended = attendance.some(a => a.swimmerId === swimmerId && a.date === session.date);
+            weeklyHistory.push({
+                date: session.date,
+                planId: `weekly-${session.id}`,
+                type: 'weekly' as const,
+                plan: {
+                    id: `weekly-${session.id}`,
+                    date: session.date,
+                    group: swimmer.group,
+                    totalDistance: 0,
+                    focus: session.label,
+                    imageUrl: session.imageUrl || session.imageData,
+                    blocks: [],
+                    targetedNotes: {},
+                    status: "Published",
+                    editorMode: session.editorMode,
+                    contentBlocks: session.contentBlocks,
+                    contentHtml: session.contentHtml,
+                    imageData: session.imageData,
+                    imageType: session.imageType,
+                    notes: session.notes,
+                },
+                attended,
+                weeklyPlanTitle: wp.title || `${wp.weekStart}周`,
+            });
+        }
+    }
+
+    // Merge and sort by date
+    const history = [...standaloneHistory, ...weeklyHistory]
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return (
         <div className="space-y-4">
@@ -54,13 +118,13 @@ export function TrainingHistory({ swimmerId }: TrainingHistoryProps) {
                     <Calendar className="w-5 h-5 text-primary" />
                     训练历史
                 </h3>
-                <span className="text-xs text-muted-foreground">
-                    归档记录
-                </span>
+                <Link href="/archive" className="text-xs text-primary hover:underline flex items-center gap-1">
+                    归档记录 <ChevronRight className="w-3 h-3" />
+                </Link>
             </div>
 
             <div className="space-y-3">
-                {history.map(({ plan, attended, feedback }) => {
+                {history.map(({ plan, attended, feedback, type, weeklyPlanTitle }) => {
                     const isExpanded = expandedPlanId === plan.id;
 
                     return (
@@ -92,6 +156,11 @@ export function TrainingHistory({ swimmerId }: TrainingHistoryProps) {
                                                 weekday: 'short'
                                             })}
                                         </span>
+                                        {type === 'weekly' && weeklyPlanTitle && (
+                                            <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30">
+                                                周计划: {weeklyPlanTitle}
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className={cn(
@@ -152,6 +221,11 @@ export function TrainingHistory({ swimmerId }: TrainingHistoryProps) {
                                                 </div>
                                             </div>
                                         ))}
+
+                                        {/* Session media content (images, videos, notes from coach) */}
+                                        {(plan.contentBlocks?.length || plan.contentHtml || plan.imageData || plan.notes) && (
+                                            <SessionRenderer session={plan} />
+                                        )}
                                     </div>
 
                                     {/* Feedback & Notes Section */}

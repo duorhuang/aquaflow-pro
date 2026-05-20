@@ -26,6 +26,9 @@ npx prisma generate      # Generate Prisma client (runs on postinstall)
 npx prisma studio        # Open Prisma Studio for DB browsing
 npx prisma db push       # Push schema changes to DB
 
+# Type checking
+npx tsc --noEmit         # Run TypeScript type check (build ignores TS errors)
+
 # Tests
 npx vitest               # Run all tests
 npx vitest --watch       # Run tests in watch mode
@@ -38,76 +41,117 @@ npx vitest <filename>    # Run specific test file
 
 - `app/` - Route-based pages using Next.js 16 App Router
   - `app/(driver)/` - Coach dashboard pages (route group with shared layout, requires `role: coach`)
-  - `app/(athlete)/` - Athlete-facing pages (workout view, login)
-  - `app/api/` - REST API route handlers (all Edge Runtime)
+    - `dashboard/` - Main dashboard, new-plan, plan/[id], athletes, attendance, attendance/stats, feedbacks, feedbacks/targeted, quick-plan, schedule, weekly-plan
+    - `settings/` - Coach settings page
+  - `app/(athlete)/` - Athlete-facing pages (route group, requires `role: athlete`)
+    - `login/` - Athlete login page
+    - `workout/` - Workout/training view
+    - `profile/` - Athlete profile
+    - `archive/` - Training archive/history
+  - `app/api/` - REST API route handlers (all Edge Runtime, `force-dynamic`)
   - `app/poolside/` - Poolside quick-access page
   - `app/setup/` - Initial setup page
 
 ### Data Layer
 
-- **Prisma ORM** with Neon Postgres via WebSocket (`@prisma/adapter-neon` + `@neondatabase/serverless`)
-- `lib/prisma.ts` - Fault-tolerant lazy-initialized Prisma singleton with build-phase bypass. Always use `getPrisma()` to get the client; the deprecated `prisma` export is a no-op stub.
-- `lib/api-handler.ts` - Standard API error wrapper (`withApiHandler`) that catches Edge Runtime exceptions
-- `lib/api-client.ts` - HTTP request encapsulation for frontend
-- `lib/store.tsx` - Global state management (React Context + useReducer):
+**Two database access layers coexist:**
+
+1. **Raw SQL via Neon** (`lib/db-pool.ts`) — **Primary method used by API routes**
+   - `getNeon()` — Returns a `neon()` tagged-template SQL function for parameterized queries
+   - `getPool()` — Returns a `Pool` instance for dynamic queries (e.g., runtime-determined columns)
+   - All API routes use `getNeon()` with raw SQL, NOT Prisma
+
+2. **Prisma ORM** (`lib/prisma.ts`) — Fault-tolerant lazy-initialized singleton
+   - `getPrisma()` — Always use this to get the Prisma client; top-level instantiation crashes in Cloudflare Edge
+   - Includes build-phase bypass via Proxy for production builds
+   - Uses `@prisma/adapter-neon` with `@neondatabase/serverless` WebSocket `Pool`
+   - The `prisma` export is a no-op stub (deprecated)
+
+**Additional data utilities:**
+- `lib/api-handler.ts` — `withApiHandler()` wraps route handlers, catches Edge Runtime exceptions, detects Neon quota errors (HTTP 402) and returns 503
+- `lib/api-client.ts` — Frontend HTTP client with 30s timeout, exponential backoff retry (3 attempts), content-type validation, and `silent4xx` mode for polling
+- `lib/store.tsx` — Global state management (React Context + useReducer):
   - 30s polling sync across all API endpoints
   - 15s Mutation Guard prevents polling from overwriting optimistic updates
   - All CRUD operations go through store methods, never direct `fetch()`
-- `lib/db.ts` - Additional DB utilities
-- `lib/data.ts` - Data access helpers
+  - localStorage persistence with 7-day TTL for offline resilience
+  - Quota-exceeded detection (`isQuotaError`) sets `dbOffline` flag to stop polling
+  - Optimistic updates with automatic rollback on server failure
+- `lib/data.ts` — Mock data (MOCK_PLANS, MOCK_SWIMMERS, DEFAULT_TEMPLATES)
+- `lib/db-pool.ts` - Neon SQL client singleton + Pool for raw queries
 
 ### Authentication
 
-- **PBKDF2-SHA256** password hashing (100,000 iterations)
+- **PBKDF2-SHA256** password hashing (100,000 iterations) via Web Crypto API
 - **Custom JWT** with HMAC-SHA256 (Web Crypto API), 7-day expiration
-- Cookie-based sessions (`aquaflow_session`)
-- Middleware (`app/middleware.ts`) protects routes:
-  - `/dashboard/*` - Coach only
-  - `/workout/*`, `/profile/*` - Athlete only
-  - Public: `/`, `/login`, `/poolside`, `/setup`, `/api/auth`
+- Cookie-based sessions (`aquaflow_session`), HttpOnly + SameSite=Strict
+- **Middleware** (`middleware.ts`) — Edge middleware protects routes:
+  - `/dashboard/*` — Coach only (redirects to `/login?role=coach`)
+  - `/workout/*`, `/athlete/*`, `/profile/*`, `/archive/*` — Athlete only (redirects to `/login?role=athlete`)
+  - Public: `/`, `/login`, `/poolside`, `/setup`, `/api/auth/*`
+- **API route guards** (`lib/auth-api.ts`):
+  - `requireCoach(request)` — Returns JWTPayload or 401/403 NextResponse
+  - `requireAthlete(request)` — Returns JWTPayload or 401/403 NextResponse
+  - `requireAnyAuth(request)` — Returns JWTPayload or 401 NextResponse
+  - `getOptionalAuth(request)` — Returns JWTPayload or null (no redirect)
+- **Login rate limiting** — 10 attempts per IP per 5 minutes (in-memory Map in login route)
+- **Coach registration** — `/api/auth/register-coach` for initial coach setup
 
 ### Key Dependencies
 
 - **Next.js 16** with React 19
 - **Tailwind CSS v4** + shadcn/ui ("new-york" style, see `components.json`)
 - **Framer Motion** for animations
-- **Prisma** for database ORM
-- **Neon Serverless** Postgres
+- **Neon Serverless** Postgres (`@neondatabase/serverless`)
+- **Prisma** ORM (defined but API routes use raw Neon SQL)
 - **opennextjs-cloudflare** + **Wrangler** for Cloudflare deployment
+- **lucide-react** for icons
 
 ### Deployment
 
-Deployed via `opennextjs-cloudflare build && wrangler deploy` to Cloudflare Pages. Custom domain: `sw.sportsflow.best` (configured in `wrangler.toml`). R2 bucket `aquaflow-uploads` for file uploads.
+Deployed via `opennextjs-cloudflare build && wrangler deploy --minify` to Cloudflare Pages. Custom domain: `sw.sportsflow.best` (configured in `wrangler.toml`). R2 bucket `aquaflow-uploads` for file uploads.
+
+- `serverExternalPackages` in `next.config.ts`: `@prisma/client`, `.prisma/client`
+- `ignoreBuildErrors: true` in TypeScript config for deployment stability
 
 ## Patterns & Conventions
 
 ### API Routes
-- All routes wrap handlers with `withApiHandler()` to catch Edge Runtime exceptions
-- All responses carry `V12_FINGERPRINT` headers
-- All POST bodies go through `flattenPayload()` to prevent nested data bugs
+- All routes export `dynamic = 'force-dynamic'` (Edge Runtime)
+- All handlers wrap with `withApiHandler()` to catch Edge Runtime exceptions
+- All responses carry `V12_FINGERPRINT` headers (`X-Build: V12-STRATOSPHERE-RECOVERY`, `Cache-Control: no-store`)
+- All POST/PUT bodies go through `flattenPayload()` to prevent nested data bugs (iteratively peels `{ data: { data: { ... } } }`)
 - GET list responses return bare arrays `[]`, not `{ data: [...] }`
+- JSON fields (blocks, targetedNotes, etc.) are `JSON.stringify`'d on write, `JSON.parse`'d on read
+- Role guards checked at the top of each handler: `if (auth instanceof NextResponse) return auth`
 
 ### Database
+- API routes use `getNeon()` for raw SQL — tagged template literals with `${param}` for parameterization
+- Table names are double-quoted (e.g., `"TrainingPlan"`, `"Swimmer"`) due to PascalCase naming
 - Prisma client must be obtained via `getPrisma()` — top-level instantiation will crash in Cloudflare Edge
 - Dates stored as `YYYY-MM-DD` strings throughout the codebase
+- Use `lib/date-utils.ts` for date handling: `getLocalDateISOString()` for local-time date strings, `parseUTCDate()` for server timestamps
 
 ### Styling
 - Dark mode is default and only mode (no `dark:` prefix needed)
 - Use CSS variables for colors (`bg-primary`, `text-muted-foreground`), never hardcode hex values
 - Design system: deep-sea dark theme (`#0a192f` background) with teal accent (`#64ffda`)
 - Card border radius: `rounded-2xl` or `rounded-3xl`; buttons: `rounded-full` or `rounded-xl`
+- Use `cn()` from `lib/utils.ts` for conditional className merging (clsx + tailwind-merge)
 
 ### State Management
 - Global state accessed via `useStore()` — never direct API fetch from components
 - Local UI state uses component `useState`
+- `recordMutation()` called before any write to block 30s polling for 15s
 
 ### Build
 - TypeScript build errors are intentionally ignored in `next.config.ts` for deployment stability
 - Run `npx tsc --noEmit` before deploying to catch type issues
+- Turbopack enabled in next.config.ts
 
 ## Database Schema
 
-Core models: `Swimmer`, `TrainingPlan`, `Feedback`, `AttendanceRecord`, `PerformanceRecord`, `BlockTemplate`, `PlanAnalysis`, `WeeklyPlan`, `DailySession`, `WeeklyFeedback`, `DailyFeedback`, `FeedbackReminder`, `TargetedFeedback`, `CoachAnnouncement`, `CoachUser`. See `prisma/schema.prisma` for full definitions.
+Core models: `CoachUser`, `Swimmer`, `TrainingPlan`, `Feedback`, `AttendanceRecord`, `PerformanceRecord`, `BlockTemplate`, `PlanAnalysis`, `WeeklyPlan`, `DailySession`, `WeeklyFeedback`, `DailyFeedback`, `FeedbackReminder`, `TargetedFeedback`, `CoachAnnouncement`, `AnnouncementBlock`. See `prisma/schema.prisma` for full definitions.
 
 Key composite unique constraints:
 - `WeeklyFeedback(swimmerId, weekStart)` — one weekly summary per swimmer per week
@@ -119,20 +163,32 @@ After modifying the schema, run `npx prisma db push` to sync.
 
 ## Component Organization
 
-- `components/athlete/` - Athlete-facing components (LoginForm, AttendanceCalendar, FeedbackForm, WeeklyFeedbackForm, PerformanceTracker)
-- `components/dashboard/` - Coach dashboard components (PlanEditor ~60KB/largest, AttendanceTracker, AthletesFeedbackPanel, SwimmerStatusPanel)
-- `components/common/` - Shared components (ErrorBoundary, ImageViewer, LanguageToggle)
+- `components/athlete/` - Athlete-facing components (LoginForm, TrainingHistory, FeedbackForm, WeeklyFeedbackForm, PerformanceTracker, PerformanceChart, BlockFeedbackPanel, CoachReplyPanel, TargetedFeedbackForm)
+- `components/dashboard/` - Coach dashboard components (PlanEditor ~60KB/largest, BlockEditor, PlanCard, AttendanceStats, TodayAttendance, AthletesFeedbackPanel, SwimmerStatusPanel, TeamStatsPanel, TeamFeedbackSummary, AnnouncementComposer, AIInsight, PaceCalculator, RichTextEditor, SessionRenderer, WorkoutLibrary, RefreshButton, SwimmerModal)
+- `components/common/` - Shared components (BlockRenderer, ImageViewer, LanguageToggle, Toast)
 - `components/auth/` - Authentication guards (CoachGuard)
 - `components/layout/` - Layout components (Sidebar for desktop, MobileNav for mobile)
+- `components/DbStatus.tsx` - Database status indicator
+- `components/feed/` - Feed-related components
+- `components/plan/` - Plan-related components
 
 ## Key Files Reference
 
 | File | Purpose |
 |------|---------|
-| `lib/prisma.ts` | Lazy Prisma singleton — always use `getPrisma()` |
-| `lib/api-handler.ts` | API error wrapper |
-| `lib/store.tsx` | Global state with 30s polling + mutation guard |
-| `lib/auth.ts` | JWT auth utilities |
-| `lib/api-client.ts` | HTTP client |
-| `app/middleware.ts` | Route protection with edge-compatible JWT verification |
+| `lib/db-pool.ts` | Neon SQL client singleton — used by all API routes |
+| `lib/prisma.ts` | Lazy Prisma singleton + `flattenPayload()` + `V12_FINGERPRINT` |
+| `lib/api-handler.ts` | API error wrapper with Neon quota detection |
+| `lib/store.tsx` | Global state with 30s polling + mutation guard + localStorage |
+| `lib/auth.ts` | JWT auth utilities (hmacSign, hmacVerify, hashPassword, verifyPassword) |
+| `lib/auth-api.ts` | API route role guards (requireCoach, requireAthlete) |
+| `lib/api-client.ts` | HTTP client with retry/backoff |
+| `lib/dictionary.ts` | Bilingual dictionary (en/zh) |
+| `lib/i18n.tsx` | Language provider (LanguageProvider, useLanguage) |
+| `lib/date-utils.ts` | Date formatting with timezone safety |
+| `lib/validation.ts` | Form validation helpers |
+| `lib/utils.ts` | `cn()` className utility |
+| `middleware.ts` | Edge route protection with JWT verification |
 | `wrangler.toml` | Cloudflare deployment config + R2 bindings |
+| `next.config.ts` | Next.js config with turbopack + build error ignore |
+| `types/index.ts` | All TypeScript type definitions |

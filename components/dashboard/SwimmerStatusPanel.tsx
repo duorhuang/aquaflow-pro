@@ -9,7 +9,7 @@ export function SwimmerStatusPanel() {
 
     // Get latest feedback for each swimmer
     const getLatestFeedback = (swimmerId: string) => {
-        const swimmerFeedbacks = feedbacks
+        const swimmerFeedbacks = (feedbacks || [])
             .filter(f => f.swimmerId === swimmerId)
             .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
         return swimmerFeedbacks[0];
@@ -28,7 +28,11 @@ export function SwimmerStatusPanel() {
                 {swimmers.map(swimmer => {
                     const latestFeedback = getLatestFeedback(swimmer.id);
                     const readiness = swimmer.readiness || 95;
-                    const hasInjury = swimmer.injuryNote && swimmer.injuryNote.trim().length > 0;
+                    const isValidInjury = swimmer.injuryNote
+                        && typeof swimmer.injuryNote === 'string'
+                        && swimmer.injuryNote.trim().length > 0
+                        && swimmer.injuryNote !== 'null';
+                    const hasInjury = isValidInjury || swimmer.status === "Injured";
 
                     // Determine status color
                     const statusColor = hasInjury ? "red" :
