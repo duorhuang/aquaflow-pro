@@ -713,9 +713,55 @@ export default function WeeklyPlanPage() {
                     </div>
                 </div>
 
-                {/* Sidebar - History */}
-                <div className="space-y-4">
-                    <h3 className="font-bold text-lg text-white">已有周计划</h3>
+                {/* Sidebar - Overview & History */}
+                <div className="space-y-6">
+                    {/* Full Week Overview (全周总览) */}
+                    <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-purple-500/20 rounded-xl p-5">
+                        <h3 className="font-bold text-lg text-white flex items-center gap-2 mb-4">
+                            <Blocks className="w-5 h-5 text-purple-400" />
+                            全周总览
+                        </h3>
+                        <div className="grid grid-cols-7 gap-1">
+                            {DAY_NAMES.map((dayName, idx) => {
+                                const daySessions = getSessionsForDay(idx);
+                                const hasTraining = daySessions.length > 0;
+                                return (
+                                    <div key={idx} className="flex flex-col items-center">
+                                        <div className="text-[10px] text-muted-foreground mb-1">{dayName}</div>
+                                        <div className={`w-full aspect-square rounded-md flex flex-col items-center justify-center transition-all ${
+                                            hasTraining 
+                                                ? 'bg-purple-500/20 border border-purple-500/50 shadow-[0_0_10px_rgba(168,85,247,0.15)]' 
+                                                : 'bg-black/40 border border-white/5'
+                                        }`}>
+                                            {hasTraining ? (
+                                                <span className="text-xs font-bold text-purple-300">{daySessions.length}</span>
+                                            ) : (
+                                                <span className="text-white/20 text-xs">-</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div className="mt-4 flex justify-between items-center bg-black/30 rounded-lg p-3">
+                            <div className="text-center">
+                                <p className="text-[10px] text-muted-foreground">训练天数</p>
+                                <p className="text-lg font-bold text-white">
+                                    {new Set(sessions.map(s => getDayOfWeek(s.date))).size} <span className="text-xs font-normal text-muted-foreground">天</span>
+                                </p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-[10px] text-muted-foreground">总训练数</p>
+                                <p className="text-lg font-bold text-purple-400">
+                                    {sessions.length} <span className="text-xs font-normal text-muted-foreground">节</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* History */}
+                    <div className="space-y-4">
+                        <h3 className="font-bold text-lg text-white">已有周计划</h3>
                     <div className="space-y-3">
                         {loadedPlans.map(p => (
                             <div key={p.id} onClick={() => selectPlan(p.id)} className={`p-4 rounded-xl cursor-pointer border transition-all ${selectedPlanId === p.id ? 'bg-purple-500/20 border-purple-500/50' : 'bg-card/40 border-border hover:border-white/20'}`}>
@@ -741,7 +787,7 @@ export default function WeeklyPlanPage() {
                     </div>
                 </div>
             </div>
-
+        </div>
             {/* Hidden file input for legacy mode uploads */}
             <input
                 type="file"
