@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
@@ -35,6 +35,8 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
     const [isSaving, setIsSaving] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [saveStatus, setSaveStatus] = useState<string | null>(null);
+    const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+    const isInitialLoad = useRef(true);
 
     useEffect(() => {
         const initDays = () => {
@@ -54,6 +56,7 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
 
         const loadData = async () => {
             setIsLoading(true);
+            isInitialLoad.current = true;
             try {
                 const res = await api.weeklyFeedbacks?.getBySwimmerAndWeek(swimmerId, weekStart);
                 if (res) {
@@ -80,15 +83,53 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                 setDailyFeedbacks(initDays());
             } finally {
                 setIsLoading(false);
+                // Allow state updates to settle before enabling autosave
+                setTimeout(() => {
+                    isInitialLoad.current = false;
+                }, 500);
             }
         };
         
         loadData();
     }, [swimmerId, weekStart]);
 
+    // Debounced Auto-sync Draft
+    useEffect(() => {
+        if (isLoading || isInitialLoad.current) return;
+
+        setAutoSaveStatus("saving");
+        const timer = setTimeout(async () => {
+            try {
+                await api.weeklyFeedbacks?.save({
+                    swimmerId,
+                    weekStart,
+                    summary,
+                    dailyFeedbacks,
+                    isSubmitted: isSubmitted
+                });
+                
+                // Smart auto-attendance on successful auto-save
+                const todayStr = new Date().toISOString().split('T')[0];
+                const todayFeedback = dailyFeedbacks.find(d => d.date === todayStr);
+                if (todayFeedback && todayFeedback.reflection && todayFeedback.reflection.trim().length > 0) {
+                    markAttendance(swimmerId, todayStr, "AthletePresent");
+                }
+
+                setAutoSaveStatus("saved");
+                setTimeout(() => setAutoSaveStatus("idle"), 2000);
+            } catch (e) {
+                console.error("Auto-sync draft failed:", e);
+                setAutoSaveStatus("error");
+            }
+        }, 2000); // 2 seconds debounce
+
+        return () => clearTimeout(timer);
+    }, [summary, dailyFeedbacks, isLoading, swimmerId, weekStart, isSubmitted, markAttendance]);
+
     const handleSave = async (submitContent: boolean = false) => {
         setIsSaving(true);
         setSaveStatus(null);
+        isInitialLoad.current = true;
 
         // Optimistic UI: Immediately show "Sent" state if submitting, 
         // to make the app feel instant.
@@ -109,6 +150,7 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                 setSaveStatus("错误：未填写任何内容，无法提交！请填写反馈。");
                 setIsSubmitted(prevSubmitted); // Rollback
                 setIsSaving(false);
+                isInitialLoad.current = false;
                 return;
             }
 
@@ -128,8 +170,10 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                 setIsSubmitted(true);
                 setSaveStatus("✨ 提交成功！教练已收到您的本周总结。");
                 markAttendance(swimmerId, undefined, "AthletePresent");
+                setAutoSaveStatus("saved");
             } else {
                 setSaveStatus("✅ 草稿已保存。今日已自动为你打卡！");
+                setAutoSaveStatus("saved");
                 
                 // Smart auto-attendance
                 const todayStr = new Date().toISOString().split('T')[0];
@@ -150,6 +194,9 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
             setSaveStatus(`❌ ${errorMsg}`);
         } finally {
             setIsSaving(false);
+            setTimeout(() => {
+                isInitialLoad.current = false;
+            }, 500);
             if (!submitContent) {
                 setTimeout(() => setSaveStatus(null), 4000);
             }
@@ -174,9 +221,28 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                 </div>
             )}
             {/* Header */}
-            <div>
-                <h2 className="text-2xl font-bold text-white mb-2">本周训练打卡</h2>
-                <p className="text-sm text-muted-foreground">每天训练后记录感受（点击展开当天），周末统一提交给教练。教练只能看到有内容的评价。</p>
+            <div className="flex justify-between items-start gap-4 flex-wrap">
+                <div className="flex-1 min-w-[250px]">
+                    <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3 flex-wrap">
+                        <span>本周训练打卡</span>
+                        {autoSaveStatus === "saving" && (
+                            <span className="text-[11px] font-normal text-muted-foreground flex items-center gap-1.5 bg-white/5 border border-white/5 px-2.5 py-1 rounded-full animate-pulse">
+                                <Loader2 className="w-3 h-3 animate-spin text-primary" /> 正在自动同步草稿...
+                            </span>
+                        )}
+                        {autoSaveStatus === "saved" && (
+                            <span className="text-[11px] font-normal text-green-400 flex items-center gap-1 bg-green-500/10 border border-green-500/20 px-2.5 py-1 rounded-full">
+                                <Check className="w-3 h-3" /> 草稿已自动保存
+                            </span>
+                        )}
+                        {autoSaveStatus === "error" && (
+                            <span className="text-[11px] font-normal text-red-400 flex items-center gap-1 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-full">
+                                ⚠️ 自动同步失败
+                            </span>
+                        )}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">每天训练后记录感受（点击展开当天），周末统一提交给教练。教练只能看到有内容的评价。</p>
+                </div>
             </div>
 
             {/* Daily ACCORDION */}

@@ -103,7 +103,7 @@ export function CoachReplyPanel({ swimmerId }: { swimmerId: string }) {
                             <span className="text-xs text-muted-foreground">{formatDateLocal(f.date)}</span>
                         </div>
                         <p className="text-white text-sm leading-relaxed whitespace-pre-wrap font-medium italic">
-                            教练回执: "{f.content}"
+                            教练回执: &ldquo;{f.content}&rdquo;
                         </p>
                     </div>
                 </div>

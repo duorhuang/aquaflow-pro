@@ -13,6 +13,13 @@ export interface Swimmer {
     level?: number;
     currentStreak?: number;
     lastCheckIn?: string; // YYYY-MM-DD
+    gender?: string;
+    totalXp?: number;
+    balance?: number;
+    equippedItems?: any; // JSON slot maps or item lists
+    inventory?: string[];
+    wishlist?: string[];
+    injuryBodyMap?: any; // JSON SVG map data
     // Data Profile (WeChat Sync)
     mainStroke?: "Free" | "Back" | "Breast" | "Fly" | "IM";
     bestTimes?: Record<string, string>; // e.g. "50Free": "25.5"

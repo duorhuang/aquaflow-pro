@@ -89,7 +89,7 @@ export async function POST(request: Request) {
                     "isSubmitted" = ${isSubmitted ?? false},
                     "submittedAt" = ${isSubmitted ? new Date().toISOString() : null},
                     "coachReply" = ${coachReply},
-                    "isReplied" = ${isReplied},
+                    "isReplied" = ${isReplied ?? existing[0].isReplied ?? false},
                     "repliedAt" = ${coachReply ? new Date().toISOString() : null},
                     "updatedAt" = NOW()
                 WHERE "swimmerId" = ${swimmerId} AND "weekStart" = ${weekStart}
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
                     ${isSubmitted ?? false},
                     ${isSubmitted ? new Date().toISOString() : null},
                     ${coachReply},
-                    ${isReplied},
+                    ${isReplied ?? false},
                     ${coachReply ? new Date().toISOString() : null},
                     ${data.weeklyPlanId || null},
                     NOW(),

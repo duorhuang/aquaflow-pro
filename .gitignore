@@ -47,3 +47,10 @@ build-output.log
 # debug scripts
 test-db.js
 tests/light-check.js
+
+# scratch and temp reports
+/scratch/
+eslint_errors.txt
+eslint_report.json
+lib/validation.44032d339db6
+

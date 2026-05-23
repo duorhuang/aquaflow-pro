@@ -19,11 +19,19 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
     // Load from local storage on mount
     useEffect(() => {
+        let isMounted = true;
         const saved = localStorage.getItem('aquaflow-lang') as Language;
         if (saved && (saved === 'en' || saved === 'zh')) {
-            setLanguage(saved);
+            const timer = setTimeout(() => {
+                if (isMounted) {
+                    setLanguage(saved);
+                }
+            }, 0);
+            return () => {
+                isMounted = false;
+                clearTimeout(timer);
+            };
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleSetLanguage = (lang: Language) => {

@@ -94,7 +94,7 @@ export function PaceCalculator() {
 
             <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                 <p className="text-[10px] text-yellow-200 leading-relaxed">
-                    💡 提示: 输入您的 "Base Interval" (如 100m 包干 1:40)，此处即显示长距离对应的包干时间。
+                    💡 提示: 输入您的 &ldquo;Base Interval&rdquo; (如 100m 包干 1:40)，此处即显示长距离对应的包干时间。
                 </p>
             </div>
         </div>

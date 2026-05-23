@@ -127,7 +127,7 @@ export function AthletesFeedbackPanel() {
                                 </div>
                                 {latestFeedback?.comments && (
                                     <p className="text-xs text-muted-foreground mt-1 italic">
-                                        "{latestFeedback.comments}"
+                                        &ldquo;{latestFeedback.comments}&rdquo;
                                     </p>
                                 )}
                             </div>
@@ -197,7 +197,7 @@ export function AthletesFeedbackPanel() {
                                 {/* Comment */}
                                 {latestFeedback?.comments && expandedSwimmer !== swimmer.id && (
                                     <p className="text-xs text-muted-foreground mt-1 italic truncate">
-                                        "{latestFeedback.comments}"
+                                        &ldquo;{latestFeedback.comments}&rdquo;
                                     </p>
                                 )}
                             </div>

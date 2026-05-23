@@ -272,7 +272,7 @@ export function PerformanceList({ swimmerId }: PerformanceListProps) {
                     <div className="text-center py-8 text-muted-foreground">
                         <Trophy className="w-12 h-12 mx-auto mb-2 opacity-50" />
                         <p>还没有成绩记录</p>
-                        <p className="text-xs mt-1">点击"添加成绩"开始记录</p>
+                        <p className="text-xs mt-1">点击&ldquo;添加成绩&rdquo;开始记录</p>
                     </div>
                 ) : (
                     filteredPerformances.map((perf) => (
@@ -324,7 +324,7 @@ export function PerformanceList({ swimmerId }: PerformanceListProps) {
                                     )}
                                     {perf.notes && (
                                         <p className="text-xs text-muted-foreground mt-1 italic">
-                                            "{perf.notes}"
+                                            &ldquo;{perf.notes}&rdquo;
                                         </p>
                                     )}
                                 </div>

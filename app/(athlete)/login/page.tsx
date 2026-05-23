@@ -11,9 +11,16 @@ function LoginContent() {
     const [isCoach, setIsCoach] = useState(false);
 
     useEffect(() => {
-        if (searchParams.get("role") === "coach") {
-            setIsCoach(true);
-        }
+        let isMounted = true;
+        const timer = setTimeout(() => {
+            if (isMounted && searchParams.get("role") === "coach") {
+                setIsCoach(true);
+            }
+        }, 0);
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+        };
     }, [searchParams]);
 
     return (

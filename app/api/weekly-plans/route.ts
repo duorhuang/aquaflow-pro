@@ -31,7 +31,12 @@ export async function GET(req: Request) {
             const plan = await sql`SELECT * FROM "WeeklyPlan" WHERE "id" = ${id}`;
             if (plan.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-            const sessions = await sql`SELECT * FROM "DailySession" WHERE "weeklyPlanId" = ${id}`;
+            const sessions = await sql`SELECT * FROM "DailySession" WHERE "weeklyPlanId" = ${id} ORDER BY "sortOrder" ASC`;
+            for (const s of sessions) {
+                if (s.contentBlocks && typeof s.contentBlocks === 'string') {
+                    try { s.contentBlocks = JSON.parse(s.contentBlocks); } catch {}
+                }
+            }
             const p = parseJsonFields(plan[0]);
             return NextResponse.json({ ...p, sessions }, { headers: V12_FINGERPRINT });
         }
@@ -54,15 +59,12 @@ export async function GET(req: Request) {
         // Fetch sessions only for returned plans — skip if no plans
         const sessionsByPlanId: Record<string, any[]> = {};
         if (plans.length > 0) {
-            // Fetch all sessions and filter in memory — avoids parameterization issues with Neon tagged template
-            const sessions = await sql`SELECT * FROM "DailySession" ORDER BY "sortOrder" ASC`;
+            const planIds = plans.map((p: any) => p.id);
+            // Fetch ONLY id and weeklyPlanId to calculate sessions length for the sidebar list
+            // This avoids loading massive contentBlocks, notes, contentHtml, and base64 imageData into database memory
+            const sessions = await sql`SELECT "id", "weeklyPlanId" FROM "DailySession" WHERE "weeklyPlanId" = ANY(${planIds})`;
             for (const s of sessions) {
-                if (s.contentBlocks && typeof s.contentBlocks === 'string') {
-                    try { s.contentBlocks = JSON.parse(s.contentBlocks); } catch {}
-                }
-                if (plans.some((p: any) => p.id === s.weeklyPlanId)) {
-                    (sessionsByPlanId[s.weeklyPlanId] ||= []).push(s);
-                }
+                (sessionsByPlanId[s.weeklyPlanId] ||= []).push(s);
             }
         }
 

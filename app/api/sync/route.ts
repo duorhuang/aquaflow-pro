@@ -46,10 +46,24 @@ export async function GET(request: Request) {
             return rest;
         });
 
+        // Fetch sessions for weekly plans in a single batch
+        const weeklyPlanIds = weeklyPlansRaw.map((wp: any) => wp.id);
+        const sessionsByWeeklyPlanId: Record<string, any[]> = {};
+        if (weeklyPlanIds.length > 0) {
+            const sessions = await sql`SELECT * FROM "DailySession" WHERE "weeklyPlanId" = ANY(${weeklyPlanIds}) ORDER BY "sortOrder" ASC`;
+            for (const s of sessions) {
+                if (s.contentBlocks && typeof s.contentBlocks === 'string') {
+                    try { s.contentBlocks = JSON.parse(s.contentBlocks); } catch {}
+                }
+                (sessionsByWeeklyPlanId[s.weeklyPlanId] ||= []).push(s);
+            }
+        }
+
         // Weekly plans fetch target groups
         const weeklyPlans = weeklyPlansRaw.map((w: any) => {
             try { w.targetGroup = typeof w.targetGroup === 'string' ? JSON.parse(w.targetGroup) : w.targetGroup; } catch {}
             try { w.targetSwimmerIds = typeof w.targetSwimmerIds === 'string' ? JSON.parse(w.targetSwimmerIds) : w.targetSwimmerIds; } catch {}
+            w.sessions = sessionsByWeeklyPlanId[w.id] || [];
             return w;
         });
 

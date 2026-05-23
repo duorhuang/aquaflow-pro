@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
 import { Send, Target, MessageSquare, Calendar, Loader2, Users } from "lucide-react";
@@ -21,18 +21,27 @@ export default function TargetedFeedbacksPage() {
     const [sendStatus, setSendStatus] = useState<"success" | "error" | null>(null);
     const [replyErrors, setReplyErrors] = useState<Record<string, string>>({});
 
-    useEffect(() => {
-        load();
-    }, []);
-
-    const load = async () => {
+    const load = useCallback(async () => {
         try {
             const res = await api.feedbackReminders.getAll(true);
             setReminders(res);
         } catch (e) {
             console.error(e);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        let isMounted = true;
+        const timer = setTimeout(() => {
+            if (isMounted) {
+                load();
+            }
+        }, 0);
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+        };
+    }, [load]);
 
     const toggleTarget = (id: string) => {
         if (targetIds.includes(id)) {

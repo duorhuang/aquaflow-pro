@@ -12,7 +12,7 @@ import { AthletesFeedbackPanel } from "@/components/dashboard/AthletesFeedbackPa
 import { TeamFeedbackSummary } from "@/components/dashboard/TeamFeedbackSummary";
 import { AnnouncementComposer } from "@/components/dashboard/AnnouncementComposer";
 import { AnnouncementCard } from "@/components/feed/AnnouncementCard";
-import { LogOut, MessageSquare, FolderOpen, Send, ChevronDown, ChevronUp } from "lucide-react";
+import { LogOut, MessageSquare, FolderOpen, Send, ChevronDown, ChevronUp, Trophy, Activity } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
@@ -204,7 +204,7 @@ export default function DashboardPage() {
                         <Link href="/dashboard/athletes">
                             <div className="bg-card/30 border border-border rounded-xl p-4 hover:bg-card/50 transition-all cursor-pointer">
                                 <p className="text-sm font-medium text-white">👥 队员管理</p>
-                                <p className="text-xs text-muted-foreground mt-1">编辑队员信息</p>
+                                <p className="text-xs text-muted-foreground mt-1">管理与编辑队员信息</p>
                             </div>
                         </Link>
                         <Link href="/dashboard/feedbacks/targeted">
@@ -214,6 +214,24 @@ export default function DashboardPage() {
                                     🎯 训练反馈
                                 </p>
                                 <p className="text-xs text-muted-foreground mt-1">发起专项问卷·查看回复</p>
+                            </div>
+                        </Link>
+                        <Link href="/dashboard/meets">
+                            <div className="bg-gradient-to-br from-yellow-500/10 to-amber-600/5 border border-yellow-500/20 rounded-xl p-4 hover:scale-[1.02] transition-all cursor-pointer">
+                                <p className="text-sm font-medium text-white flex items-center gap-2">
+                                    <Trophy className="w-4 h-4 text-yellow-400" />
+                                    🏆 赛事倒计时
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">发布比赛·开启黄金备战</p>
+                            </div>
+                        </Link>
+                        <Link href="/dashboard/injury-monitor">
+                            <div className="bg-gradient-to-br from-red-500/10 to-rose-600/5 border border-red-500/20 rounded-xl p-4 hover:scale-[1.02] transition-all cursor-pointer">
+                                <p className="text-sm font-medium text-white flex items-center gap-2">
+                                    <Activity className="w-4 h-4 text-red-400" />
+                                    🩺 伤病图谱监测
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">团队伤病热力大屏预警</p>
                             </div>
                         </Link>
                     </div>

@@ -150,6 +150,7 @@ export const api = {
     },
     weeklyFeedbacks: {
         getSubmitted: () => fetchAPI<any[]>('/weekly-feedbacks?submitted=true'),
+        getAll: () => fetchAPI<any[]>('/weekly-feedbacks'),
         getBySwimmerAndWeek: (swimmerId: string, weekStart: string) =>
             fetchAPI<any>(`/weekly-feedbacks?swimmerId=${swimmerId}&weekStart=${weekStart}`),
         save: (data: any) => fetchAPI<any>('/weekly-feedbacks', { method: 'POST', body: JSON.stringify(data) }),
@@ -209,6 +210,72 @@ export const api = {
         me: () => fetchAPI<any>('/auth/me'),
         login: (data: any) => fetchAPI<any>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
         logout: () => fetchAPI<any>('/auth/logout', { method: 'POST' }),
+    },
+    shop: {
+        get: (swimmerId?: string) => fetchAPI<any>(`/shop${swimmerId ? `?swimmerId=${swimmerId}` : ''}`),
+        purchase: (swimmerId: string, itemId: string) => fetchAPI<any>('/shop', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'purchase', swimmerId, itemId }),
+        }),
+        equip: (swimmerId: string, equipped: any) => fetchAPI<any>('/shop', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'equip', swimmerId, equipped }),
+        }),
+        wishlistAdd: (swimmerId: string, itemId: string) => fetchAPI<any>('/shop', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'wishlist_add', swimmerId, itemId }),
+        }),
+        wishlistRemove: (swimmerId: string, itemId: string) => fetchAPI<any>('/shop', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'wishlist_remove', swimmerId, itemId }),
+        }),
+    },
+    buddy: {
+        get: (swimmerId: string) => fetchAPI<any>(`/buddy?swimmerId=${swimmerId}`),
+        request: (swimmerId: string, targetSwimmerId: string) => fetchAPI<any>('/buddy', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'request', swimmerId, targetSwimmerId }),
+        }),
+        accept: (swimmerId: string, targetSwimmerId: string) => fetchAPI<any>('/buddy', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'accept', swimmerId, targetSwimmerId }),
+        }),
+        dissolve: (swimmerId: string, targetSwimmerId: string) => fetchAPI<any>('/buddy', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'dissolve', swimmerId, targetSwimmerId }),
+        }),
+    },
+    meets: {
+        getAll: () => fetchAPI<any>('/meets'),
+        create: (data: any) => fetchAPI<any>('/meets', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+        update: (id: string, data: any) => fetchAPI<any>(`/meets?id=${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        }),
+        delete: (id: string) => fetchAPI<any>(`/meets?id=${id}`, {
+            method: 'DELETE',
+        }),
+        getCountdown: () => fetchAPI<any>('/meets'),
+    },
+    activityFeed: {
+        get: (swimmerId: string) => fetchAPI<any>(`/activity-feed?swimmerId=${swimmerId}`),
+        readAll: (swimmerId: string) => fetchAPI<any>('/activity-feed', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'read_all', swimmerId }),
+        }),
+        readOne: (swimmerId: string, itemId: string) => fetchAPI<any>('/activity-feed', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'read_one', swimmerId, itemId }),
+        }),
+    },
+    rewards: {
+        reward: (swimmerId: string, amount: number, message: string) => fetchAPI<any>('/swimmers/reward', {
+            method: 'POST',
+            body: JSON.stringify({ swimmerId, amount, message }),
+        }),
     }
 };
 

@@ -32,24 +32,31 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
 
     // Load data if editing
     useEffect(() => {
-        if (swimmerToEdit) {
-            setName(swimmerToEdit.name);
-            setGroup(swimmerToEdit.group);
-            setUsername(swimmerToEdit.username || "");
-            // Do NOT pre-fill with the stored hash — leave blank so coach must
-            // intentionally type a new password to change it.
-            setPassword("");
-        } else {
-            // Reset for new
-            const randomUser = `swimmer${Date.now().toString().slice(-6)}`;
-            setName("");
-            setGroup("Junior");
-            setUsername(randomUser);
-            setPassword("123456");
-        }
-        setIsSubmitting(false);
-        setError(null);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        let isMounted = true;
+        const timer = setTimeout(() => {
+            if (!isMounted) return;
+            if (swimmerToEdit) {
+                setName(swimmerToEdit.name);
+                setGroup(swimmerToEdit.group);
+                setUsername(swimmerToEdit.username || "");
+                // Do NOT pre-fill with the stored hash — leave blank so coach must
+                // intentionally type a new password to change it.
+                setPassword("");
+            } else {
+                // Reset for new
+                const randomUser = `swimmer${Date.now().toString().slice(-6)}`;
+                setName("");
+                setGroup("Junior");
+                setUsername(randomUser);
+                setPassword("123456");
+            }
+            setIsSubmitting(false);
+            setError(null);
+        }, 0);
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+        };
     }, [swimmerToEdit, isOpen]);
 
     if (!isOpen) return null;

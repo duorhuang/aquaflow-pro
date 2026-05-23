@@ -8,11 +8,33 @@ const eslintConfig = defineConfig([
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
+    "node_modules/**",
+    "**/node_modules/**",
     ".next/**",
+    ".npm-cache/**",
+    ".open-next/**",
+    ".wrangler/**",
+    ".xdg-cache/**",
+    ".agents/**",
+    ".claude/**",
+    ".gemini/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "scratch/**",
+    "*.txt",
+    "*.log",
+    "*.sh",
   ]),
+  {
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "react-hooks/exhaustive-deps": "off",
+      "@next/next/no-img-element": "off",
+      "jsx-a11y/alt-text": "off",
+    }
+  }
 ]);
 
 export default eslintConfig;

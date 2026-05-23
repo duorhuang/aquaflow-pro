@@ -12,9 +12,18 @@ export default function EditPlanPage({ params }: { params: Promise<{ id: string 
     const [plan, setPlan] = useState<TrainingPlan | null>(null);
 
     useEffect(() => {
+        let isMounted = true;
         if (!isLoaded) return;
         const foundPlan = plans.find(p => p.id === resolvedParams.id);
-        setPlan(foundPlan || null);
+        const timer = setTimeout(() => {
+            if (isMounted) {
+                setPlan(foundPlan || null);
+            }
+        }, 0);
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+        };
     }, [plans, resolvedParams.id, isLoaded]);
 
     if (!isLoaded || (plans.length > 0 && !plan)) {

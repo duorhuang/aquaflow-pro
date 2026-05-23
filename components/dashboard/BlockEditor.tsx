@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Image, Video, Link2, Plus, Trash2, Loader2, X, Play, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api-client";
@@ -14,21 +14,17 @@ interface BlockEditorProps {
 export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
     const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
     const [uploadError, setUploadError] = useState<string | null>(null);
-    const imageInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
-    const videoInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
-    const blocksRef = useRef(blocks);
-    blocksRef.current = blocks;
 
     const updateBlock = (index: number, updates: Partial<ContentBlock>) => {
-        onChange(blocksRef.current.map((b, i) => i === index ? { ...b, ...updates } : b));
+        onChange(blocks.map((b, i) => i === index ? { ...b, ...updates } : b));
     };
 
     const removeBlock = (index: number) => {
-        onChange(blocksRef.current.filter((_, i) => i !== index));
+        onChange(blocks.filter((_, i) => i !== index));
     };
 
     const addBlock = (type: ContentBlock["type"]) => {
-        onChange([...blocksRef.current, { type, content: "" }]);
+        onChange([...blocks, { type, content: "" }]);
     };
 
     const handleFileUpload = async (file: File, blockIndex: number, type: "image" | "video") => {
@@ -86,15 +82,7 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                     )}
 
                     {block.type === "image" && (
-                        <div
-                            className={cn(
-                                "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors",
-                                block.content
-                                    ? "border-transparent p-0"
-                                    : "border-white/20 hover:border-primary/50 hover:bg-white/5"
-                            )}
-                            onClick={() => !block.content && imageInputRefs.current.get(i)?.click()}
-                        >
+                        <div>
                             {block.content ? (
                                 <div className="relative">
                                     <img
@@ -111,14 +99,20 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                                     </button>
                                 </div>
                             ) : (
-                                <>
+                                <label
+                                    htmlFor={`image-input-${i}`}
+                                    className={cn(
+                                        "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors block",
+                                        "border-white/20 hover:border-primary/50 hover:bg-white/5"
+                                    )}
+                                >
                                     <Image className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                                     <p className="text-sm text-muted-foreground">点击上传图片</p>
                                     <p className="text-[10px] text-muted-foreground/50 mt-1">JPG, PNG, WebP</p>
-                                </>
+                                </label>
                             )}
                             <input
-                                ref={el => { if (el) imageInputRefs.current.set(i, el); }}
+                                id={`image-input-${i}`}
                                 type="file"
                                 accept="image/*"
                                 className="hidden"
@@ -134,17 +128,17 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                     {block.type === "video" && (
                         <div className="space-y-2">
                             {!block.content ? (
-                                <div
+                                <label
+                                    htmlFor={`video-input-${i}`}
                                     className={cn(
-                                        "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors",
+                                        "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors block",
                                         "border-white/20 hover:border-blue-500/50 hover:bg-white/5"
                                     )}
-                                    onClick={() => videoInputRefs.current.get(i)?.click()}
                                 >
                                     <Video className="w-8 h-8 text-blue-400 mx-auto mb-2" />
                                     <p className="text-sm text-muted-foreground">点击上传视频</p>
                                     <p className="text-[10px] text-muted-foreground/50 mt-1">MP4, MOV (iPhone)</p>
-                                </div>
+                                </label>
                             ) : (() => {
                                 const platform = detectPlatform(block.content);
                                 if (platform && platformLabels[platform]) {
@@ -153,7 +147,7 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                                         return (
                                             <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
                                                 <ExternalLink className="w-4 h-4 shrink-0" style={{ color: `#${color === 'red' ? 'f87171' : '60a5fa'}` }} />
-                                                <span className="text-xs flex-1 truncate" style={{ color: `#${color === 'red' ? 'fca5a5' : '93c5fd'}` }}>{label} 链接</span>
+                                                <span className="text-xs flex-1 truncate" style={{ color: `#${color === 'red' ? 'f87171' : '60a5fa'}` }}>{label} 链接</span>
                                                 <span className="text-[9px] text-muted-foreground">链接形式展示</span>
                                                 <button
                                                     onClick={() => updateBlock(i, { content: "" })}
@@ -193,7 +187,7 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                                 );
                             })()}
                             <input
-                                ref={el => { if (el) videoInputRefs.current.set(i, el); }}
+                                id={`video-input-${i}`}
                                 type="file"
                                 accept="video/*"
                                 className="hidden"

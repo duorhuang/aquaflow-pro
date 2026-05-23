@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/components/common/Toast";
-import { Save, Plus, Trash2, Image as ImageIcon, CheckCircle, Users, Target, FileText, Blocks, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
+import { Save, Plus, Trash2, Image as ImageIcon, CheckCircle, Users, Target, FileText, Blocks, ChevronDown, ChevronRight, Loader2, Folder, FolderOpen } from "lucide-react";
 import { ImageViewer } from "@/components/common/ImageViewer";
 import { BlockEditor } from "@/components/dashboard/BlockEditor";
 import { RichTextEditor } from "@/components/dashboard/RichTextEditor";
@@ -40,6 +40,11 @@ export default function WeeklyPlanPage() {
     const [saving, setSaving] = useState(false);
     const [loadedPlans, setLoadedPlans] = useState<any[]>([]);
     const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+
+    // Caching & loading states for performance optimization
+    const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
+    const [planDetailsCache, setPlanDetailsCache] = useState<Record<string, any>>({});
+    const [archiveExpanded, setArchiveExpanded] = useState(false);
 
     // Weekly overview state
     const [overviewImageUrl, setOverviewImageUrl] = useState("");
@@ -81,42 +86,61 @@ export default function WeeklyPlanPage() {
         }
     };
 
-    useEffect(() => {
-        // Init dates
-        const monday = new Date();
-        const day = monday.getDay();
-        const diffToMonday = monday.getDate() - day + (day === 0 ? -6 : 1);
-        monday.setDate(diffToMonday);
-        setWeekStart(monday.toISOString().split('T')[0]);
-
-        const sunday = new Date(monday);
-        sunday.setDate(monday.getDate() + 6);
-        setWeekEnd(sunday.toISOString().split('T')[0]);
-
-        setTitle(`${monday.toISOString().split('T')[0]} 周训练`);
-
-        // Auto-expand days that have sessions
-        loadPlans();
-    }, []);
-
-    // Recompute expandedDays when sessions change
-    useEffect(() => {
-        const daysWithContent = new Set<number>();
-        sessions.forEach(s => {
-            const dow = getDayOfWeek(s.date);
-            if (dow >= 0) daysWithContent.add(dow);
-        });
-        setExpandedDays(daysWithContent);
-    }, [sessions]);
-
-    const loadPlans = async () => {
+    const loadPlans = useCallback(async () => {
         try {
             const plans = await api.weeklyPlans.getAll();
             setLoadedPlans(plans);
-        } catch (e: any) {
-            if (!e.message?.includes('timed out')) console.error(e);
+        } catch (e: unknown) {
+            const err = e instanceof Error ? e : new Error(String(e));
+            if (!err.message?.includes('timed out')) console.error(e);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        let isMounted = true;
+        const timer = setTimeout(() => {
+            if (!isMounted) return;
+            // Init dates
+            const monday = new Date();
+            const day = monday.getDay();
+            const diffToMonday = monday.getDate() - day + (day === 0 ? -6 : 1);
+            monday.setDate(diffToMonday);
+            setWeekStart(monday.toISOString().split('T')[0]);
+
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            setWeekEnd(sunday.toISOString().split('T')[0]);
+
+            setTitle(`${monday.toISOString().split('T')[0]} 周训练`);
+
+            // Auto-expand days that have sessions
+            loadPlans();
+        }, 0);
+
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+        };
+    }, [loadPlans]);
+
+    // Recompute expandedDays when sessions change
+    useEffect(() => {
+        let isMounted = true;
+        const timer = setTimeout(() => {
+            if (!isMounted) return;
+            const daysWithContent = new Set<number>();
+            sessions.forEach(s => {
+                const dow = getDayOfWeek(s.date);
+                if (dow >= 0) daysWithContent.add(dow);
+            });
+            setExpandedDays(daysWithContent);
+        }, 0);
+
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+        };
+    }, [sessions]);
 
     // -- Targeting helpers --
 
@@ -248,7 +272,7 @@ export default function WeeklyPlanPage() {
             const totalItems = 1 + totalSessions + (overviewContentHtml || overviewImageUrl ? 1 : 0);
             setPublishProgress({ current: 1, total: totalItems });
 
-            let failedSessions: string[] = [];
+            const failedSessions: string[] = [];
 
             for (let i = 0; i < sessions.length; i++) {
                 const s = sessions[i];
@@ -289,6 +313,13 @@ export default function WeeklyPlanPage() {
             } else {
                 toast("success", `计划发布成功！共发布 ${totalItems} 项内容。`);
             }
+            if (planId) {
+                setPlanDetailsCache(prev => {
+                    const next = { ...prev };
+                    delete next[planId];
+                    return next;
+                });
+            }
             loadPlans();
             if (!selectedPlanId) setSelectedPlanId(planId);
         } catch (e: any) {
@@ -309,18 +340,45 @@ export default function WeeklyPlanPage() {
     };
 
     const selectPlan = async (id: string) => {
-        const plan = await api.weeklyPlans.getById(id);
-        setSelectedPlanId(plan.id);
-        setWeekStart(plan.weekStart);
-        setWeekEnd(plan.weekEnd);
-        setGroup(plan.group);
-        setTitle(plan.title || "");
-        setCoachNotes(plan.coachNotes || "");
-        setSessions(plan.sessions || []);
-        setTargetGroups(plan.targetGroup || []);
-        setTargetSwimmerIds(plan.targetSwimmerIds || []);
-        setOverviewImageUrl(plan.overviewImageUrl || "");
-        setOverviewContentHtml(plan.overviewContentHtml || "");
+        // If already cached, load instantly!
+        if (planDetailsCache[id]) {
+            const plan = planDetailsCache[id];
+            setSelectedPlanId(plan.id);
+            setWeekStart(plan.weekStart);
+            setWeekEnd(plan.weekEnd);
+            setGroup(plan.group);
+            setTitle(plan.title || "");
+            setCoachNotes(plan.coachNotes || "");
+            setSessions(plan.sessions || []);
+            setTargetGroups(plan.targetGroup || []);
+            setTargetSwimmerIds(plan.targetSwimmerIds || []);
+            setOverviewImageUrl(plan.overviewImageUrl || "");
+            setOverviewContentHtml(plan.overviewContentHtml || "");
+            return;
+        }
+
+        setLoadingPlanId(id);
+        try {
+            const plan = await api.weeklyPlans.getById(id);
+            setPlanDetailsCache(prev => ({ ...prev, [id]: plan }));
+            
+            setSelectedPlanId(plan.id);
+            setWeekStart(plan.weekStart);
+            setWeekEnd(plan.weekEnd);
+            setGroup(plan.group);
+            setTitle(plan.title || "");
+            setCoachNotes(plan.coachNotes || "");
+            setSessions(plan.sessions || []);
+            setTargetGroups(plan.targetGroup || []);
+            setTargetSwimmerIds(plan.targetSwimmerIds || []);
+            setOverviewImageUrl(plan.overviewImageUrl || "");
+            setOverviewContentHtml(plan.overviewContentHtml || "");
+        } catch (e: any) {
+            console.error("Failed to load plan:", e);
+            toast("error", "加载周计划失败，请重试");
+        } finally {
+            setLoadingPlanId(null);
+        }
     };
 
     const createNew = () => {
@@ -372,10 +430,42 @@ export default function WeeklyPlanPage() {
     };
 
     const isToday = (dayOfWeek: number) => {
+        const dateStr = getDateForDay(dayOfWeek);
+        if (!dateStr) return false;
+        
+        // Use local timezone to get today's date string
         const today = new Date();
-        const todayDow = (today.getDay() + 6) % 7;
-        return todayDow === dayOfWeek;
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
+        
+        return dateStr === todayStr;
     };
+
+    // Partition plans into recent and archived
+    const getPartitionedPlans = () => {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - 60); // 2 months ago
+        const cutoffStr = cutoffDate.toISOString().split("T")[0];
+
+        // Sort descending by weekStart to ensure newest first (sequential chronological order)
+        const sortedPlans = [...loadedPlans].sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+
+        const recentPlans = sortedPlans.filter((p, index) => {
+            // Always display at least 8 plans if they exist
+            if (index < 8) return true;
+            // Display up to 15 plans if they are within the last 2 months (60 days)
+            if (index < 15 && p.weekStart >= cutoffStr) return true;
+            return false;
+        });
+
+        const archivedPlans = sortedPlans.filter(p => !recentPlans.some(rp => rp.id === p.id));
+
+        return { recentPlans, archivedPlans };
+    };
+
+    const { recentPlans, archivedPlans } = getPartitionedPlans();
 
     return (
         <div className="space-y-6 max-w-4xl mx-auto">
@@ -387,7 +477,19 @@ export default function WeeklyPlanPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2 space-y-6">
+                <div className="md:col-span-2 space-y-6 relative">
+                    {loadingPlanId && (
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 rounded-2xl flex flex-col items-center justify-center space-y-4 transition-all duration-300">
+                            <div className="relative">
+                                <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur opacity-70 animate-pulse"></div>
+                                <Loader2 className="w-12 h-12 text-purple-400 animate-spin relative" />
+                            </div>
+                            <div className="flex flex-col items-center space-y-1">
+                                <p className="text-sm font-semibold text-white tracking-wider animate-pulse">正在加载周计划...</p>
+                                <p className="text-xs text-purple-300/70">优化数据拉取中，秒级即达</p>
+                            </div>
+                        </div>
+                    )}
                     {/* Plan metadata */}
                     <div className="bg-card/40 border border-border rounded-xl p-6">
                         <div className="grid grid-cols-2 gap-4 mb-4">
@@ -747,7 +849,7 @@ export default function WeeklyPlanPage() {
                             <div className="text-center">
                                 <p className="text-[10px] text-muted-foreground">训练天数</p>
                                 <p className="text-lg font-bold text-white">
-                                    {new Set(sessions.map(s => getDayOfWeek(s.date))).size} <span className="text-xs font-normal text-muted-foreground">天</span>
+                                    {new Set(sessions.map(s => getDayOfWeek(s.date)).filter(d => d !== -1)).size} <span className="text-xs font-normal text-muted-foreground">天</span>
                                 </p>
                             </div>
                             <div className="text-center">
@@ -763,9 +865,14 @@ export default function WeeklyPlanPage() {
                     <div className="space-y-4">
                         <h3 className="font-bold text-lg text-white">已有周计划</h3>
                     <div className="space-y-3">
-                        {loadedPlans.map(p => (
-                            <div key={p.id} onClick={() => selectPlan(p.id)} className={`p-4 rounded-xl cursor-pointer border transition-all ${selectedPlanId === p.id ? 'bg-purple-500/20 border-purple-500/50' : 'bg-card/40 border-border hover:border-white/20'}`}>
-                                <h4 className="font-bold text-white text-sm">{p.title || `${p.weekStart}周`}</h4>
+                        {recentPlans.map(p => (
+                            <div key={p.id} onClick={() => !loadingPlanId && selectPlan(p.id)} className={`p-4 rounded-xl cursor-pointer border transition-all ${selectedPlanId === p.id ? 'bg-purple-500/20 border-purple-500/50' : 'bg-card/40 border-border hover:border-white/20'} ${loadingPlanId && loadingPlanId !== p.id ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                <div className="flex items-center justify-between">
+                                    <h4 className="font-bold text-white text-sm">{p.title || `${p.weekStart}周`}</h4>
+                                    {loadingPlanId === p.id && (
+                                        <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
+                                    )}
+                                </div>
                                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                                     <span className="text-xs text-muted-foreground">{p.sessions?.length || 0} 个内容</span>
                                     {p.isPublished && <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded-full">已发布</span>}
@@ -784,6 +891,60 @@ export default function WeeklyPlanPage() {
                                 </div>
                             </div>
                         ))}
+
+                        {archivedPlans.length > 0 && (
+                            <div className="mt-4 border-t border-white/10 pt-4 space-y-2">
+                                <button
+                                    onClick={() => setArchiveExpanded(!archiveExpanded)}
+                                    className="w-full flex items-center justify-between px-2 py-1.5 text-xs font-bold text-muted-foreground hover:text-white transition-colors"
+                                >
+                                    <span className="flex items-center gap-1.5">
+                                        {archiveExpanded ? (
+                                            <FolderOpen className="w-3.5 h-3.5 text-purple-400" />
+                                        ) : (
+                                            <Folder className="w-3.5 h-3.5 text-purple-400" />
+                                        )}
+                                        历史归档 ({archivedPlans.length} 个计划)
+                                    </span>
+                                    {archiveExpanded ? (
+                                        <ChevronDown className="w-3.5 h-3.5" />
+                                    ) : (
+                                        <ChevronRight className="w-3.5 h-3.5" />
+                                    )}
+                                </button>
+                                
+                                {archiveExpanded && (
+                                    <div className="space-y-3 pt-2 pl-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        {archivedPlans.map(p => (
+                                            <div key={p.id} onClick={() => !loadingPlanId && selectPlan(p.id)} className={`p-4 rounded-xl cursor-pointer border transition-all ${selectedPlanId === p.id ? 'bg-purple-500/20 border-purple-500/50' : 'bg-card/40 border-border hover:border-white/20'} ${loadingPlanId && loadingPlanId !== p.id ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                <div className="flex items-center justify-between">
+                                                    <h4 className="font-bold text-white text-sm">{p.title || `${p.weekStart}周`}</h4>
+                                                    {loadingPlanId === p.id && (
+                                                        <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                                    <span className="text-xs text-muted-foreground">{p.sessions?.length || 0} 个内容</span>
+                                                    {p.isPublished && <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded-full">已发布</span>}
+                                                    {p.targetGroup && p.targetGroup.length > 0 && p.targetGroup.map((g: string) => (
+                                                        <span key={g} className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] rounded-full">{g}</span>
+                                                    ))}
+                                                    {p.targetSwimmerIds && p.targetSwimmerIds.length > 0 && p.targetSwimmerIds.map((sid: string) => {
+                                                        const sw = (swimmers || []).find(s => s.id === sid);
+                                                        return sw ? (
+                                                            <span key={sid} className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[10px] rounded-full">{sw.name}</span>
+                                                        ) : null;
+                                                    })}
+                                                    {!p.targetGroup && !p.targetSwimmerIds && (
+                                                        <span className="px-2 py-0.5 bg-white/10 text-muted-foreground text-[10px] rounded-full">全队</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

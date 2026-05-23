@@ -1,0 +1,233 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { api } from "@/lib/api-client";
+import { InjuryMap } from "@/components/athlete/InjuryMap";
+import { ArrowLeft, Activity, ShieldAlert, Heart, RefreshCw, UserCheck } from "lucide-react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+
+interface Swimmer {
+    id: string;
+    name: string;
+    group: string;
+    status: string;
+    readiness: number;
+    injuryNote?: string;
+    injuryBodyMap?: string | Record<string, number>;
+}
+
+export default function CoachInjuryMonitorPage() {
+    const router = useRouter();
+    const [swimmers, setSwimmers] = useState<Swimmer[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [heatMapData, setHeatMapData] = useState<Record<string, number>>({});
+    const [injuredSwimmers, setInjuredSwimmers] = useState<Swimmer[]>([]);
+
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const allSwimmers = await api.swimmers.getAll();
+            if (allSwimmers) {
+                setSwimmers(allSwimmers);
+                calculateAnalytics(allSwimmers);
+            }
+        } catch (e) {
+            console.error("Failed to load swimmers for injury monitoring", e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const calculateAnalytics = (list: Swimmer[]) => {
+        // 1. Filter injured/sore swimmers
+        const injured = list.filter(
+            (s) => s.status === "Injured" || (s.injuryNote && s.injuryNote.trim().length > 0)
+        ).sort((a, b) => a.readiness - b.readiness); // lowest readiness first
+        setInjuredSwimmers(injured);
+
+        // 2. Aggregate body map soreness scores
+        const counts: Record<string, number> = {};
+        const sums: Record<string, number> = {};
+
+        list.forEach((s) => {
+            if (s.injuryBodyMap) {
+                try {
+                    const parsed = typeof s.injuryBodyMap === "string" 
+                        ? JSON.parse(s.injuryBodyMap) 
+                        : s.injuryBodyMap;
+
+                    if (parsed && typeof parsed === "object") {
+                        Object.entries(parsed).forEach(([part, score]) => {
+                            const val = Number(score);
+                            if (!isNaN(val) && val > 0) {
+                                sums[part] = (sums[part] || 0) + val;
+                                counts[part] = (counts[part] || 0) + 1;
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error("Error parsing swimmer body map data", e);
+                }
+            }
+        });
+
+        // Compute averages: sum / count, or average relative to the whole team / injured team
+        const averages: Record<string, number> = {};
+        Object.keys(sums).forEach((part) => {
+            // Average soreness on affected swimmers
+            averages[part] = sums[part] / counts[part];
+        });
+
+        setHeatMapData(averages);
+    };
+
+    useEffect(() => {
+        // Auth check
+        api.auth.me().then((me) => {
+            if (!me || me.role !== "coach") {
+                router.push("/login?role=coach");
+            } else {
+                loadData();
+            }
+        }).catch(() => {
+            router.push("/login?role=coach");
+        });
+    }, [router]);
+
+    return (
+        <div className="min-h-screen bg-background p-4 md:p-8">
+            <div className="max-w-5xl mx-auto space-y-6">
+                
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Link href="/dashboard" className="p-2.5 rounded-xl bg-secondary/50 hover:bg-secondary/80 border border-white/5 transition-colors">
+                            <ArrowLeft className="w-5 h-5 text-white" />
+                        </Link>
+                        <div>
+                            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                                <Activity className="w-6 h-6 text-red-500" />
+                                队员伤病与身体负荷监测
+                            </h1>
+                            <p className="text-xs text-muted-foreground mt-0.5">全队 2D 伤病热力图谱汇总与身体异常指标实时预警。</p>
+                        </div>
+                    </div>
+                    
+                    <button
+                        onClick={loadData}
+                        disabled={loading}
+                        className="p-3 bg-secondary/40 border border-white/5 rounded-xl hover:bg-secondary/80 text-muted-foreground hover:text-white transition-all disabled:opacity-50"
+                        title="刷新数据"
+                    >
+                        <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+                    </button>
+                </div>
+
+                {loading ? (
+                    <div className="text-center py-20">
+                        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                        <p className="text-muted-foreground text-xs uppercase tracking-widest font-mono">Analyzing Team Health Maps...</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        
+                        {/* Heat Map Column */}
+                        <div className="lg:col-span-7">
+                            <InjuryMap readOnly={true} teamHeatMapData={heatMapData} />
+                        </div>
+
+                        {/* List Column */}
+                        <div className="lg:col-span-5 space-y-6">
+                            
+                            {/* Readiness Overview Panel */}
+                            <div className="bg-card/40 border border-white/5 rounded-3xl p-5 space-y-4">
+                                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                                    <Heart className="w-4 h-4 text-emerald-400" /> 全队精力准备度
+                                </h3>
+                                
+                                {swimmers.length > 0 ? (
+                                    (() => {
+                                        const avgReadiness = Math.round(
+                                            swimmers.reduce((acc, s) => acc + s.readiness, 0) / swimmers.length
+                                        );
+                                        return (
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <span className="text-3xl font-mono font-bold text-white">{avgReadiness}%</span>
+                                                    <p className="text-[10px] text-muted-foreground mt-1">全队平均精神与状态准备值</p>
+                                                </div>
+                                                <div className={cn(
+                                                    "w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-lg",
+                                                    avgReadiness >= 85
+                                                        ? "bg-green-500/10 text-green-400 border border-green-500/20"
+                                                        : avgReadiness >= 65
+                                                        ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                                                        : "bg-red-500/10 text-red-400 border border-red-500/20"
+                                                )}>
+                                                    {avgReadiness >= 85 ? "🔥" : avgReadiness >= 65 ? "⚡" : "⚠️"}
+                                                </div>
+                                            </div>
+                                        );
+                                    })()
+                                ) : (
+                                    <p className="text-xs text-muted-foreground italic">暂无队员数据</p>
+                                )}
+                            </div>
+
+                            {/* Injured Swimmers Report Panel */}
+                            <div className="bg-card/40 border border-white/5 rounded-3xl p-5 space-y-4">
+                                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                                    <ShieldAlert className="w-4 h-4 text-red-400" /> 受伤/异常报告 ({injuredSwimmers.length})
+                                </h3>
+
+                                <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                                    {injuredSwimmers.map((swimmer) => (
+                                        <div 
+                                            key={swimmer.id} 
+                                            className="p-3.5 bg-slate-950/40 border border-white/5 rounded-2xl space-y-2"
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-white">{swimmer.name}</h4>
+                                                    <span className="text-[10px] text-muted-foreground bg-white/5 px-2 py-0.5 rounded-full border border-white/5">{swimmer.group}</span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className={cn(
+                                                        "text-xs font-mono font-bold",
+                                                        swimmer.readiness <= 60 ? "text-red-400" : "text-yellow-400"
+                                                    )}>
+                                                        Ready: {swimmer.readiness}%
+                                                    </span>
+                                                    <p className="text-[9px] text-red-400 mt-0.5 uppercase tracking-wide">
+                                                        {swimmer.status === "Injured" ? "🔴 受伤中" : "🟠 有酸痛"}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {swimmer.injuryNote && (
+                                                <p className="text-xs text-muted-foreground bg-red-500/5 p-2.5 rounded-xl border border-red-500/10 italic leading-relaxed">
+                                                    “ {swimmer.injuryNote} ”
+                                                </p>
+                                            )}
+                                        </div>
+                                    ))}
+
+                                    {injuredSwimmers.length === 0 && (
+                                        <div className="text-center py-10 bg-white/5 rounded-2xl border border-dashed border-white/10">
+                                            <UserCheck className="w-8 h-8 text-emerald-400/50 mx-auto mb-2" />
+                                            <p className="text-xs text-muted-foreground">完美！全队身体无重大伤病报告 🎉</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                )}
+
+            </div>
+        </div>
+    );
+}

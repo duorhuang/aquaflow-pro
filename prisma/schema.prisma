@@ -27,30 +27,43 @@ model Swimmer {
   readiness Int      @default(100)
   username  String   @unique
   password  String
+  gender    String?  // "male" | "female"
   
-  // Gamification
-  xp            Int?
-  level         Int?
-  currentStreak Int?
-  lastCheckIn   String?
+  // Gamification — XP Dual-Track System
+  xp            Int?     // Legacy field, kept for backward compat
+  totalXp       Int      @default(0)   // Only increases. Used for level calculation
+  balance       Int      @default(0)   // Spendable currency. Decreases on purchase
+  level         Int?     // Auto-calculated from totalXp
+  currentStreak Int?     // Consecutive training-day check-ins
+  lastCheckIn   String?  // ISO date of last check-in
+  
+  // Avatar & Shop
+  inventory     Json?    // Array of purchased ShopItem IDs
+  equippedItems Json?    // {head: "id", eyes: "id", body: "id", lower: "id", feet: "id", hand: "id", background: "id"}
+  wishlist      Json?    // Array of up to 3 ShopItem IDs
   
   // Data Profile
   mainStroke         String?
   bestTimes          Json?
   injuries           Json?
   injuryNote         String?
+  injuryBodyMap      Json?    // {"leftShoulder": 5, "lowerBack": 3, ...} from Body Map
   lastProfileUpdate  String?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  feedbacks        Feedback[]
-  attendance       AttendanceRecord[]
-  performances     PerformanceRecord[]
-  blockFeedbacks   BlockFeedback[]
-  weeklyFeedbacks  WeeklyFeedback[]
-  dailyFeedbacks   DailyFeedback[]
+  feedbacks         Feedback[]
+  attendance        AttendanceRecord[]
+  performances      PerformanceRecord[]
+  blockFeedbacks    BlockFeedback[]
+  weeklyFeedbacks   WeeklyFeedback[]
+  dailyFeedbacks    DailyFeedback[]
   targetedFeedbacks TargetedFeedback[]
+  xpTransactions    XpTransaction[]
+  buddyPairsAs1     BuddyPair[]     @relation("BuddySwimmer1")
+  buddyPairsAs2     BuddyPair[]     @relation("BuddySwimmer2")
+  activityFeed      ActivityFeedItem[]
 }
 
 model TrainingPlan {
@@ -68,6 +81,7 @@ model TrainingPlan {
   imageUrl      String?  // URL of the uploaded plan photo
   analysis      PlanAnalysis?
   isStarred     Boolean  @default(false)
+  trainingType  String?  // "aerobic"|"anaerobic"|"lactate"|"sprint"|"recovery"|"relaxation"|"strength"|"endurance"|"race_prep"
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -346,4 +360,109 @@ model AnnouncementBlock {
   announcement    CoachAnnouncement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
 
   @@index([announcementId])
+}
+
+// ==========================================
+// Meet Management (比赛管理)
+// ==========================================
+
+model Meet {
+  id          String   @id @default(cuid())
+  name        String   // e.g. "2026春季锦标赛"
+  date        String   // YYYY-MM-DD
+  time        String?  // HH:MM (precise start time for countdown)
+  location    String?
+  description String?
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([date])
+}
+
+// ==========================================
+// Avatar Shop & Economy (虚拟商城)
+// ==========================================
+
+model ShopItem {
+  id          String   @id @default(cuid())
+  name        String   // e.g. "奥运金牌冠军泳帽"
+  category    String   // Display category
+  tier        String   // "basic"|"entry"|"advanced"|"premium"|"legendary"|"ultimate"
+  price       Int      // XP cost
+  imageKey    String   // Asset key/path for the sprite layer PNG
+  slotType    String   // "head"|"eyes"|"body"|"lower"|"feet"|"hand"|"background"
+  gender      String   @default("unisex") // "male"|"female"|"unisex"
+  sortOrder   Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([tier])
+  @@index([slotType])
+  @@index([gender])
+}
+
+// ==========================================
+// XP Transaction Ledger (经验值流水)
+// ==========================================
+
+model XpTransaction {
+  id            String   @id @default(cuid())
+  swimmerId     String
+  amount        Int      // Positive = earned, Negative = spent
+  source        String   // "attendance"|"feedback"|"streak"|"buddy"|"coach_reward"|"milestone"|"pb"|"purchase"|"levelup"|"starter_pack"
+  description   String?  // Human-readable note
+  balanceAfter  Int      // Snapshot of balance after this transaction
+  totalXpAfter  Int      // Snapshot of totalXp after this transaction
+  
+  createdAt     DateTime @default(now())
+  
+  swimmer       Swimmer  @relation(fields: [swimmerId], references: [id], onDelete: Cascade)
+  
+  @@index([swimmerId])
+  @@index([createdAt])
+  @@index([source])
+}
+
+// ==========================================
+// Buddy System (死党系统)
+// ==========================================
+
+model BuddyPair {
+  id          String   @id @default(cuid())
+  swimmer1Id  String
+  swimmer2Id  String
+  status      String   @default("pending") // "pending"|"active"|"dissolved"
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  swimmer1    Swimmer  @relation("BuddySwimmer1", fields: [swimmer1Id], references: [id], onDelete: Cascade)
+  swimmer2    Swimmer  @relation("BuddySwimmer2", fields: [swimmer2Id], references: [id], onDelete: Cascade)
+  
+  @@unique([swimmer1Id, swimmer2Id])
+  @@index([swimmer1Id])
+  @@index([swimmer2Id])
+}
+
+// ==========================================
+// Activity Feed (活动通知流)
+// ==========================================
+
+model ActivityFeedItem {
+  id          String   @id @default(cuid())
+  swimmerId   String
+  type        String   // "xp_earned"|"coach_reward"|"buddy_sync"|"milestone"|"levelup"|"meet_reminder"|"purchase"
+  title       String   // e.g. "教练为你打赏了 300 XP！"
+  detail      String?  // Optional extra text
+  xpAmount    Int?     // XP amount involved (if any)
+  isRead      Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  
+  swimmer     Swimmer  @relation(fields: [swimmerId], references: [id], onDelete: Cascade)
+  
+  @@index([swimmerId])
+  @@index([createdAt])
 }

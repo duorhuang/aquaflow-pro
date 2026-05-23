@@ -209,7 +209,7 @@ export default function CoachAttendancePage() {
             {/* Swimmer List */}
             <div className="space-y-2">
                 {filteredSwimmers.length === 0 && (
-                    <p className="text-center text-muted-foreground py-12">暂无队员，请先到"运动员"页面添加。</p>
+                    <p className="text-center text-muted-foreground py-12">暂无队员，请先到&ldquo;运动员&rdquo;页面添加。</p>
                 )}
                 {filteredSwimmers.map((swimmer) => {
                     const status = getAttendanceStatus(swimmer.id);

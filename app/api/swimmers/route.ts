@@ -33,24 +33,88 @@ export async function POST(request: Request) {
         const data = flattenPayload(await request.json());
 
         const hashedPassword = data.password ? await hashPassword(String(data.password)) : '';
+        const swimmerId = crypto.randomUUID();
+        const gender = data.gender === 'female' ? 'female' : 'male';
+
+        // 1. Fetch starter gear from ShopItem to populate inventory and equippedItems
+        const keysToFetch = ['basic_head_0', 'basic_eyes_0'];
+        if (gender === 'male') {
+            keysToFetch.push('basic_lower_m_1');
+        } else {
+            keysToFetch.push('basic_body_f_2', 'basic_lower_f_2');
+        }
+
+        const inventoryIds: string[] = [];
+        const equippedMapping: Record<string, string> = {};
+
+        try {
+            const shopItems = await sql`
+                SELECT id, "imageKey", "slotType" 
+                FROM "ShopItem" 
+                WHERE "imageKey" = ANY(${keysToFetch})
+            `;
+
+            shopItems.forEach((item: any) => {
+                inventoryIds.push(item.id);
+                equippedMapping[item.slotType] = item.id;
+            });
+        } catch (e) {
+            console.error("Starter pack gear fetch failed, continuing with empty defaults:", e);
+        }
+
+        const initialXp = Number(data.xp) !== undefined && !isNaN(Number(data.xp)) ? Number(data.xp) : 200;
+        const initialTotalXp = data.totalXp !== undefined ? Number(data.totalXp) : initialXp;
+        const initialBalance = data.balance !== undefined ? Number(data.balance) : initialXp;
 
         const swimmer = await sql`
-            INSERT INTO "Swimmer" ("id", "name", "group", "username", "password", "status", "readiness", "xp", "level", "createdAt", "updatedAt")
+            INSERT INTO "Swimmer" (
+                "id", "name", "group", "username", "password", "status", "readiness", 
+                "xp", "level", "gender", "totalXp", "balance", 
+                "inventory", "equippedItems", "wishlist", "currentStreak", "createdAt", "updatedAt"
+            )
             VALUES (
-                ${crypto.randomUUID()},
+                ${swimmerId},
                 ${String(data.name)},
                 ${String(data.group)},
                 ${String(data.username)},
                 ${hashedPassword || ''},
                 ${data.status || 'Active'},
                 ${Number(data.readiness) || 100},
-                ${Number(data.xp) || 0},
+                ${initialXp},
                 ${Number(data.level) || 1},
+                ${gender},
+                ${initialTotalXp},
+                ${initialBalance},
+                ${JSON.stringify(inventoryIds)},
+                ${JSON.stringify(equippedMapping)},
+                '[]',
+                0,
                 NOW(),
                 NOW()
             )
             RETURNING *
         `;
+
+        // Create transaction history entry for the starter pack reward
+        try {
+            const txId = crypto.randomUUID();
+            await sql`
+                INSERT INTO "XpTransaction" ("id", "swimmerId", "amount", "source", "description", "balanceAfter", "totalXpAfter", "createdAt")
+                VALUES (
+                    ${txId},
+                    ${swimmerId},
+                    ${initialBalance},
+                    'starter_pack',
+                    '新手入队大礼包',
+                    ${initialBalance},
+                    ${initialTotalXp},
+                    NOW()
+                )
+            `;
+        } catch (txError) {
+            console.error("Failed to write starter pack transaction ledger:", txError);
+        }
+
         return NextResponse.json(swimmer[0], { headers: V12_FINGERPRINT });
     });
 }
@@ -82,27 +146,77 @@ export async function PUT(request: Request) {
 
         if (data.name !== undefined) addField('name', String(data.name));
         else addField('name', current.name);
+        
         if (data.group !== undefined) addField('group', String(data.group));
         else addField('group', current.group);
+        
         if (data.username !== undefined) addField('username', String(data.username));
         else addField('username', current.username);
+        
         if (data.status !== undefined) addField('status', String(data.status));
         else addField('status', current.status);
+        
         if (data.readiness !== undefined) addField('readiness', Number(data.readiness));
         else addField('readiness', current.readiness);
+        
         if (data.xp !== undefined) addField('xp', Number(data.xp));
         else addField('xp', current.xp);
+        
         if (data.level !== undefined) addField('level', Number(data.level));
         else addField('level', current.level);
+        
+        if (data.gender !== undefined) addField('gender', String(data.gender));
+        else addField('gender', current.gender || 'male');
+
+        if (data.totalXp !== undefined) addField('totalXp', Number(data.totalXp));
+        else addField('totalXp', current.totalXp || 0);
+
+        if (data.balance !== undefined) addField('balance', Number(data.balance));
+        else addField('balance', current.balance || 0);
+
+        if (data.inventory !== undefined) {
+            const invVal = typeof data.inventory === 'string' ? data.inventory : JSON.stringify(data.inventory);
+            addField('inventory', invVal);
+        } else {
+            addField('inventory', current.inventory || '[]');
+        }
+
+        if (data.equippedItems !== undefined) {
+            const eqVal = typeof data.equippedItems === 'string' ? data.equippedItems : JSON.stringify(data.equippedItems);
+            addField('equippedItems', eqVal);
+        } else {
+            addField('equippedItems', current.equippedItems || '{}');
+        }
+
+        if (data.wishlist !== undefined) {
+            const wlVal = typeof data.wishlist === 'string' ? data.wishlist : JSON.stringify(data.wishlist);
+            addField('wishlist', wlVal);
+        } else {
+            addField('wishlist', current.wishlist || '[]');
+        }
+
+        if (data.currentStreak !== undefined) addField('currentStreak', Number(data.currentStreak));
+        else addField('currentStreak', current.currentStreak || 0);
+
         if (data.injuryNote === null || data.injuryNote === '') addField('injuryNote', null);
         else if (data.injuryNote !== undefined) addField('injuryNote', String(data.injuryNote));
         else addField('injuryNote', current.injuryNote);
+        
         if (data.lastProfileUpdate === null) addField('lastProfileUpdate', null);
         else if (data.lastProfileUpdate !== undefined) addField('lastProfileUpdate', String(data.lastProfileUpdate));
         else addField('lastProfileUpdate', current.lastProfileUpdate);
+        
         if (data.mainStroke === null) addField('mainStroke', null);
         else if (data.mainStroke !== undefined) addField('mainStroke', String(data.mainStroke));
         else addField('mainStroke', current.mainStroke);
+        
+        if (data.injuryBodyMap !== undefined) {
+            const ibmVal = data.injuryBodyMap === null ? null : typeof data.injuryBodyMap === 'string' ? data.injuryBodyMap : JSON.stringify(data.injuryBodyMap);
+            addField('injuryBodyMap', ibmVal);
+        } else {
+            addField('injuryBodyMap', current.injuryBodyMap ? (typeof current.injuryBodyMap === 'string' ? current.injuryBodyMap : JSON.stringify(current.injuryBodyMap)) : null);
+        }
+
         if (data.password && !String(data.password).includes(':')) {
             addField('password', await hashPassword(String(data.password)));
         }

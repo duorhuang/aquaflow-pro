@@ -172,13 +172,13 @@ export default function SettingsPage() {
                                 Quick Start
                             </h3>
                             <ul className="space-y-1 text-muted-foreground ml-6 list-disc">
-                                <li>Click <strong className="text-white">"创建计划"</strong> to create a new training plan</li>
+                                <li>Click <strong className="text-white">&ldquo;创建计划&rdquo;</strong> to create a new training plan</li>
                                 <li>Add blocks (Warmup, Main Set, Cool Down) and exercises</li>
                                 <li>Assign private notes to specific swimmers</li>
                                 <li>Star important plans to keep them at the top</li>
                             </ul>
                         </div>
-
+ 
                         {/* Team Management */}
                         <div>
                             <h3 className="font-bold text-white mb-2 flex items-center gap-2">
@@ -186,13 +186,13 @@ export default function SettingsPage() {
                                 Team Management
                             </h3>
                             <ul className="space-y-1 text-muted-foreground ml-6 list-disc">
-                                <li>Go to <strong className="text-white">"运动员"</strong> to view all swimmers</li>
+                                <li>Go to <strong className="text-white">&ldquo;运动员&rdquo;</strong> to view all swimmers</li>
                                 <li>Click any swimmer card to edit their details</li>
                                 <li>Monitor readiness scores and training streaks</li>
-                                <li>Add new swimmers with the <strong className="text-white">"Add Swimmer"</strong> button</li>
+                                <li>Add new swimmers with the <strong className="text-white">&ldquo;Add Swimmer&rdquo;</strong> button</li>
                             </ul>
                         </div>
-
+ 
                         {/* Calendar */}
                         <div>
                             <h3 className="font-bold text-white mb-2 flex items-center gap-2">
@@ -207,7 +207,7 @@ export default function SettingsPage() {
                                 <li>Hover over dates to see training details</li>
                             </ul>
                         </div>
-
+ 
                         {/* Tips */}
                         <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
                             <h3 className="font-bold text-primary mb-2">💡 Pro Tips</h3>
@@ -215,7 +215,7 @@ export default function SettingsPage() {
                                 <li>Data syncs automatically across browser tabs</li>
                                 <li>Export your data regularly as backup</li>
                                 <li>Use targeted notes to give personalized feedback</li>
-                                <li>Training plans are never deleted - they're sorted by date</li>
+                                <li>Training plans are never deleted - they&apos;re sorted by date</li>
                             </ul>
                         </div>
                     </div>

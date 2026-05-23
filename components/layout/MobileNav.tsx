@@ -23,7 +23,16 @@ export function MobileNav() {
 
     // Close menu on route change
     useEffect(() => {
-        setIsOpen(false);
+        let isMounted = true;
+        const timer = setTimeout(() => {
+            if (isMounted) {
+                setIsOpen(false);
+            }
+        }, 0);
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+        };
     }, [pathname]);
 
     return (

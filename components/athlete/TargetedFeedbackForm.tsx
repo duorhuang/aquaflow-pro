@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api-client";
 import { Send, Target, Check, Bell, MessageSquare } from "lucide-react";
 
@@ -11,11 +11,7 @@ export function TargetedFeedbackForm({ swimmerId }: { swimmerId: string }) {
     const [submitting, setSubmitting] = useState<Record<string, boolean>>({});
     const [submitErrors, setSubmitErrors] = useState<Record<string, string>>({});
 
-    useEffect(() => {
-        loadReminders();
-    }, [swimmerId]);
-
-    const loadReminders = async () => {
+    const loadReminders = useCallback(async () => {
         setIsLoading(true);
         try {
             // Fetch reminders for this swimmer
@@ -27,7 +23,20 @@ export function TargetedFeedbackForm({ swimmerId }: { swimmerId: string }) {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [swimmerId]);
+
+    useEffect(() => {
+        let isMounted = true;
+        const timer = setTimeout(() => {
+            if (isMounted) {
+                loadReminders();
+            }
+        }, 0);
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+        };
+    }, [loadReminders]);
 
     const handleSubmit = async (reminderId: string) => {
         if (!responses[reminderId]?.trim()) return;
@@ -90,7 +99,7 @@ export function TargetedFeedbackForm({ swimmerId }: { swimmerId: string }) {
                         </div>
 
                         <div className="bg-black/40 border border-white/5 p-4 rounded-2xl mb-6 italic text-orange-100/90 leading-relaxed">
-                            "{r.message}"
+                            &ldquo;{r.message}&rdquo;
                         </div>
                         
                         <div className="space-y-4">

@@ -4,7 +4,7 @@ import { useStore } from "@/lib/store";
 import { api } from "@/lib/api-client";
 import { SessionRenderer } from "@/components/dashboard/SessionRenderer";
 import { ChevronLeft, ChevronRight, FolderOpen, MessageSquare, ThumbsUp, ThumbsDown, MessageCircle, Target, Calendar } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Swimmer } from "@/types";
@@ -53,25 +53,7 @@ export default function TrainingArchivePage() {
     const [feedbackData, setFeedbackData] = useState<{ blockFeedbacks: any[]; weeklyFeedbacks: any[]; targetedFeedbacks: any[] } | null>(null);
     const [feedbackLoading, setFeedbackLoading] = useState(false);
 
-    useEffect(() => {
-        const storedId = localStorage.getItem("aquaflow_athlete_id");
-        if (!storedId) {
-            router.push("/login");
-            return;
-        }
-        const user = swimmers.find(s => s.id === storedId);
-        if (user) setCurrentUser(user);
-        if (storeLoaded) setAuthResolved(true);
-    }, [swimmers, storeLoaded, router]);
-
-    // Load feedback history when tab is switched
-    useEffect(() => {
-        if (activeTab === 'feedback' && currentUser && !feedbackData) {
-            loadFeedbackHistory();
-        }
-    }, [activeTab, currentUser]);
-
-    const loadFeedbackHistory = async () => {
+    const loadFeedbackHistory = useCallback(async () => {
         if (!currentUser) return;
         setFeedbackLoading(true);
         try {
@@ -82,7 +64,43 @@ export default function TrainingArchivePage() {
         } finally {
             setFeedbackLoading(false);
         }
-    };
+    }, [currentUser]);
+
+    useEffect(() => {
+        let isMounted = true;
+        const storedId = localStorage.getItem("aquaflow_athlete_id");
+        if (!storedId) {
+            router.push("/login");
+            return;
+        }
+        const timer = setTimeout(() => {
+            if (!isMounted) return;
+            const user = swimmers.find(s => s.id === storedId);
+            if (user) setCurrentUser(user);
+            if (storeLoaded) setAuthResolved(true);
+        }, 0);
+
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+        };
+    }, [swimmers, storeLoaded, router]);
+
+    // Load feedback history when tab is switched
+    useEffect(() => {
+        let isMounted = true;
+        if (activeTab === 'feedback' && currentUser && !feedbackData) {
+            const timer = setTimeout(() => {
+                if (isMounted) {
+                    loadFeedbackHistory();
+                }
+            }, 0);
+            return () => {
+                isMounted = false;
+                clearTimeout(timer);
+            };
+        }
+    }, [activeTab, currentUser, feedbackData, loadFeedbackHistory]);
 
     // Build merged feedback timeline
     const allFeedbackItems: FeedbackItem[] = [];

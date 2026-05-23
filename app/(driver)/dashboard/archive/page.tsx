@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useStore } from "@/lib/store";
 import { api } from "@/lib/api-client";
 import {
@@ -38,21 +38,34 @@ export default function ArchivePage() {
     // Announcement archive toggle
     const [showArchived, setShowArchived] = useState(false);
 
-    useEffect(() => {
-        loadArchive();
-    }, []);
-
-    const loadArchive = async () => {
-        setLoading(true);
+    const loadArchive = useCallback(async () => {
+        const timer1 = setTimeout(() => {
+            setLoading(true);
+        }, 0);
         try {
             const res = await api.archive.getFeedbacks({ type: 'all' });
             setData(res);
         } catch (e) {
             console.error(e);
         } finally {
-            setLoading(false);
+            const timer2 = setTimeout(() => {
+                setLoading(false);
+            }, 0);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        let isMounted = true;
+        const timer = setTimeout(() => {
+            if (isMounted) {
+                loadArchive();
+            }
+        }, 0);
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+        };
+    }, [loadArchive]);
 
     const toggleExpand = (id: string) => {
         const next = new Set(expandedIds);

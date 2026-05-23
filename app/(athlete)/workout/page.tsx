@@ -8,12 +8,15 @@ import { WeeklyFeedbackForm } from "@/components/athlete/WeeklyFeedbackForm";
 import { TargetedFeedbackForm } from "@/components/athlete/TargetedFeedbackForm";
 import { CoachReplyPanel } from "@/components/athlete/CoachReplyPanel";
 import { AnnouncementCard } from "@/components/feed/AnnouncementCard";
+import { InjuryMap } from "@/components/athlete/InjuryMap";
+import { ActivityFeed } from "@/components/athlete/ActivityFeed";
+import { MeetCountdown } from "@/components/athlete/MeetCountdown";
 import { api } from "@/lib/api-client";
 import { AlertTriangle, LogOut, Calendar, FolderOpen, Activity, History, Quote, MessageSquare, Target, ClipboardList, ArrowRight, TrendingUp, UserCircle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
 import { useStore } from "@/lib/store";
 import { TrainingPlan, Swimmer } from "@/types";
@@ -68,7 +71,23 @@ export default function AthleteWorkoutPage() {
     const [status, setStatus] = useState<"Active" | "Resting" | "Injured">("Active");
     const [statusSaved, setStatusSaved] = useState(false);
 
+    const loadPendingReminders = useCallback(async (swimmerId: string) => {
+        try {
+            const res = await api.feedbackReminders.getForSwimmer(swimmerId);
+            const pending = res.filter((r: any) => !r.isResponded);
+            setPendingReminders(pending.length);
+        } catch (e: unknown) {
+            const err = e instanceof Error ? e : new Error(String(e));
+            // Suppress expected 401 (auth not yet established)
+            if (!err.message?.includes('API Error: 4')) {
+                console.error("Failed to load reminders count", e);
+            }
+        }
+    }, []);
+
     useEffect(() => {
+        let isMounted = true;
+        
         // Check Login Session
         const storedId = localStorage.getItem("aquaflow_athlete_id");
         if (!storedId) {
@@ -76,36 +95,31 @@ export default function AthleteWorkoutPage() {
             return;
         }
 
-        const user = swimmers.find(s => s.id === storedId);
-        if (user) {
-            setCurrentUser(user);
-            setReadiness(user.readiness || 95);
-            setInjuryNote(user.injuryNote || "");
-            if (user.status === "Active" || user.status === "Resting" || user.status === "Injured") {
-                setStatus(user.status);
+        const timer = setTimeout(() => {
+            if (!isMounted) return;
+            const user = swimmers.find(s => s.id === storedId);
+            if (user) {
+                setCurrentUser(user);
+                setReadiness(user.readiness || 95);
+                setInjuryNote(user.injuryNote || "");
+                if (user.status === "Active" || user.status === "Resting" || user.status === "Injured") {
+                    setStatus(user.status);
+                }
             }
-        }
-        // Only resolve authentication AFTER the store is fully populated!
-        if (storeLoaded) {
-            setAuthResolved(true);
-        }
-
-        // Load pending reminder count for badge
-        loadPendingReminders(storedId);
-    }, [swimmers, storeLoaded, router]);
-
-    const loadPendingReminders = async (swimmerId: string) => {
-        try {
-            const res = await api.feedbackReminders.getForSwimmer(swimmerId);
-            const pending = res.filter((r: any) => !r.isResponded);
-            setPendingReminders(pending.length);
-        } catch (e: any) {
-            // Suppress expected 401 (auth not yet established)
-            if (!e.message?.includes('API Error: 4')) {
-                console.error("Failed to load reminders count", e);
+            // Only resolve authentication AFTER the store is fully populated!
+            if (storeLoaded) {
+                setAuthResolved(true);
             }
-        }
-    };
+
+            // Load pending reminder count for badge
+            loadPendingReminders(storedId);
+        }, 0);
+
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+        };
+    }, [swimmers, storeLoaded, router, loadPendingReminders]);
 
     const handleLogout = async () => {
         try { await api.auth.logout(); } catch {}
@@ -333,6 +347,7 @@ export default function AthleteWorkoutPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        <ActivityFeed swimmerId={currentUser.id} />
                         <Link href="/profile" className="p-2 hover:bg-secondary/50 rounded-lg transition-colors text-white" title="Profile">
                             <UserCircle className="w-5 h-5" />
                         </Link>
@@ -349,6 +364,9 @@ export default function AthleteWorkoutPage() {
             </header>
 
             <main className="p-4 max-w-lg mx-auto space-y-6">
+                {/* Meet Countdown Widget */}
+                <MeetCountdown />
+
                 {/* Tab Navigation */}
                 <div className="grid grid-cols-4 gap-2 bg-card/30 border border-border rounded-xl p-2 shrink-0">
                     <button
@@ -548,7 +566,7 @@ export default function AthleteWorkoutPage() {
                                     {/* Coach Note (Only show once if present on the first session) */}
                                     {myNote && (
                                         <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 p-5 rounded-3xl relative overflow-hidden shadow-lg">
-                                            <p className="text-white text-lg font-medium italic">"{myNote}"</p>
+                                            <p className="text-white text-lg font-medium italic">&ldquo;{myNote}&rdquo;</p>
                                         </div>
                                     )}
                                     {/* Render each plan/session */}
@@ -641,7 +659,7 @@ export default function AthleteWorkoutPage() {
                                 <button onClick={() => setStatus("Injured")} className={cn("py-3 rounded-lg font-bold text-sm", status === "Injured" ? "bg-red-500/20 text-red-400 border border-red-500/50" : "bg-secondary")}>受伤中</button>
                             </div>
                             {status === "Injured" && (
-                                <div className="mb-6">
+                                <div className="mb-6 space-y-4">
                                     <textarea
                                         value={injuryNote}
                                         onChange={(e) => setInjuryNote(e.target.value)}
@@ -649,10 +667,13 @@ export default function AthleteWorkoutPage() {
                                         className="w-full bg-secondary/50 border border-border rounded-lg p-3 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/20 resize-none"
                                         rows={3}
                                     />
-                                    <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
+                                    <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
                                         <AlertTriangle className="w-3 h-3" />
                                         老师会看到此报告 · Your teacher will see this report
                                     </p>
+                                    <div className="mt-4">
+                                        <InjuryMap swimmerId={currentUser.id} />
+                                    </div>
                                 </div>
                             )}
                             <button onClick={handleSaveStatus} className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-medium relative">

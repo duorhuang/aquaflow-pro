@@ -27,9 +27,17 @@ export default function PoolsidePage() {
     }, []);
 
     useEffect(() => {
-        setLoading(true);
+        let isMounted = true;
+        const timer1 = setTimeout(() => {
+            if (isMounted) {
+                setLoading(true);
+                setCurrentSetIndex(0);
+            }
+        }, 0);
+
         fetchAPI<any[]>(`/plans?group=${selectedGroup}`)
             .then((plans: any[]) => {
+                if (!isMounted) return;
                 const today = new Date().toISOString().split('T')[0];
                 const todayPlan = plans?.find((p: any) => p.date === today);
                 const fallback = plans?.[0];
@@ -41,9 +49,17 @@ export default function PoolsidePage() {
                     setPlan(null);
                 }
             })
-            .catch(() => setPlan(null))
-            .finally(() => setLoading(false));
-        setCurrentSetIndex(0);
+            .catch(() => {
+                if (isMounted) setPlan(null);
+            })
+            .finally(() => {
+                if (isMounted) setLoading(false);
+            });
+
+        return () => {
+            isMounted = false;
+            clearTimeout(timer1);
+        };
     }, [selectedGroup]);
 
     const items = plan?.allItems || [];

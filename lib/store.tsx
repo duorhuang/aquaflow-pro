@@ -140,9 +140,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     // Load from API on mount
     useEffect(() => {
-        // First, try to load from localStorage
-        const loaded = loadFromStorage();
-        if (loaded) setHasLocalData(true);
+        let isMounted = true;
+        // First, try to load from localStorage asynchronously
+        const timer1 = setTimeout(() => {
+            if (isMounted) {
+                const loaded = loadFromStorage();
+                if (loaded) setHasLocalData(true);
+            }
+        }, 0);
 
         const loadData = async () => {
             const wakeTimeout = setTimeout(() => setDbWaking(true), 2000);
@@ -341,7 +346,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             }
         }, 60000);
 
-        return () => clearInterval(syncInterval);
+        return () => {
+            isMounted = false;
+            clearTimeout(timer1);
+            clearInterval(syncInterval);
+        };
     }, []);
 
     const addPlan = async (plan: TrainingPlan) => {

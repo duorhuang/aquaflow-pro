@@ -85,8 +85,17 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
 
     // Detect mode from initial plan
     useEffect(() => {
+        let isMounted = true;
         if (initialPlan?.imageUrl) {
-            setEditorMode("photo");
+            const timer = setTimeout(() => {
+                if (isMounted) {
+                    setEditorMode("photo");
+                }
+            }, 0);
+            return () => {
+                isMounted = false;
+                clearTimeout(timer);
+            };
         }
     }, [initialPlan]);
 
@@ -320,6 +329,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
     }, [plan, initialPlan]);
 
     useEffect(() => {
+        let isMounted = true;
         if (!initialPlan) {
             const savedDraft = localStorage.getItem("aquaflow_draft_plan");
             const savedTime = localStorage.getItem("aquaflow_draft_timestamp");
@@ -328,7 +338,16 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                 const diffMinutes = (new Date().getTime() - new Date(savedTime).getTime()) / 1000 / 60;
                 if (diffMinutes < 1440) {
                     try {
-                        setPlan(JSON.parse(savedDraft));
+                        const parsed = JSON.parse(savedDraft);
+                        const timer = setTimeout(() => {
+                            if (isMounted) {
+                                setPlan(parsed);
+                            }
+                        }, 0);
+                        return () => {
+                            isMounted = false;
+                            clearTimeout(timer);
+                        };
                     } catch (e) {
                         console.error("Failed to parse draft", e);
                     }
@@ -360,13 +379,9 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                                             onChange={(e) => setPlan({ ...plan, group: e.target.value as GroupLevel })}
                                             className="bg-transparent text-xs font-bold text-white outline-none [&>option]:text-black"
                                         >
-                                            {/* @ts-ignore */}
                                             <option value="Advanced">高级组</option>
-                                            {/* @ts-ignore */}
                                             <option value="Intermediate">中级组</option>
-                                            {/* @ts-ignore */}
                                             <option value="Junior">初级组</option>
-                                            {/* @ts-ignore */}
                                             <option value="External">校外组</option>
                                         </select>
                                     </div>
