@@ -46,7 +46,7 @@ function getCookie(request: NextRequest, name: string): string | undefined {
   return cookie?.value;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes — no auth required

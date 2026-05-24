@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useStore } from "@/lib/store";
 import { api } from "@/lib/api-client";
 import { Swimmer } from "@/types";
@@ -24,6 +25,15 @@ export function SwimmerStatusPanel() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [modalPos, setModalPos] = useState({ x: 0, y: 0 });
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setMounted(true);
+        }, 0);
+        return () => clearTimeout(timer);
+    }, []);
 
     // Get latest feedback for each swimmer
     const getLatestFeedback = (swimmerId: string) => {
@@ -119,7 +129,28 @@ export function SwimmerStatusPanel() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button
-                                        onClick={() => {
+                                        onClick={(e) => {
+                                            const isMobile = window.innerWidth < 640;
+                                            if (isMobile) {
+                                                setModalPos({ x: -1, y: -1 });
+                                            } else {
+                                                const modalWidth = 448;
+                                                const modalHeight = 480;
+                                                let x = e.clientX - modalWidth - 20;
+                                                if (x < 20) {
+                                                    x = e.clientX + 20;
+                                                    if (x + modalWidth > window.innerWidth) {
+                                                        x = window.innerWidth / 2 - modalWidth / 2;
+                                                    }
+                                                }
+                                                let y = e.clientY - modalHeight / 2;
+                                                if (y < 20) y = 20;
+                                                if (y + modalHeight > window.innerHeight - 20) {
+                                                    y = window.innerHeight - modalHeight - 20;
+                                                }
+                                                setModalPos({ x, y });
+                                            }
+                                            
                                             setSelectedSwimmerForReward(swimmer);
                                             setRewardAmount(100);
                                             setRewardMessage("今天训练非常专注，状态拉满！🌟");
@@ -219,9 +250,22 @@ export function SwimmerStatusPanel() {
             </div>
 
             {/* Premium Gold XP Reward Modal */}
-            {selectedSwimmerForReward && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 transition-all">
-                    <div className="bg-slate-900/95 border border-amber-500/30 w-full max-w-md rounded-2xl p-6 shadow-[0_0_35px_rgba(245,158,11,0.25)] animate-in zoom-in-95 duration-200 text-white">
+            {mounted && selectedSwimmerForReward && createPortal(
+                <div 
+                    className={cn(
+                        "fixed inset-0 z-[100] bg-black/40 backdrop-blur-[2px] transition-all",
+                        modalPos.x === -1 && "flex items-center justify-center p-4"
+                    )}
+                    onClick={() => !isSubmitting && setSelectedSwimmerForReward(null)}
+                >
+                    <div 
+                        className={cn(
+                            "bg-slate-900/95 border border-amber-500/30 w-full max-w-md rounded-2xl p-6 shadow-[0_0_35px_rgba(245,158,11,0.25)] animate-in zoom-in-95 duration-200 text-white",
+                            modalPos.x === -1 ? "relative" : "absolute"
+                        )}
+                        style={modalPos.x !== -1 ? { top: `${modalPos.y}px`, left: `${modalPos.x}px` } : undefined}
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         
                         {/* Header */}
                         <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
@@ -334,7 +378,8 @@ export function SwimmerStatusPanel() {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

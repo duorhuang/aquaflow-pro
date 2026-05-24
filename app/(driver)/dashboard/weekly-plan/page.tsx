@@ -4,10 +4,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/components/common/Toast";
-import { Save, Plus, Trash2, Image as ImageIcon, CheckCircle, Users, Target, FileText, Blocks, ChevronDown, ChevronRight, Loader2, Folder, FolderOpen } from "lucide-react";
+import { Save, Plus, Trash2, Image as ImageIcon, CheckCircle, Users, Target, FileText, Blocks, ChevronDown, ChevronRight, Loader2, Folder, FolderOpen, Layers } from "lucide-react";
 import { ImageViewer } from "@/components/common/ImageViewer";
 import { BlockEditor } from "@/components/dashboard/BlockEditor";
 import { RichTextEditor } from "@/components/dashboard/RichTextEditor";
+import { PlanModuleEditor } from "@/components/dashboard/PlanModuleEditor";
 import { cn } from "@/lib/utils";
 import { GroupLevel } from "@/types";
 
@@ -284,6 +285,8 @@ export default function WeeklyPlanPage() {
                         notes: s.notes,
                         sortOrder: s.sortOrder ?? i,
                         editorMode: s.editorMode || "legacy",
+                        trainingType: s.trainingType || null,
+                        primaryStroke: s.primaryStroke || null,
                     };
 
                     if (s.editorMode === "block") {
@@ -605,7 +608,7 @@ export default function WeeklyPlanPage() {
                                                     <div key={s.id} className="bg-black/30 border border-white/10 rounded-xl p-4 group">
                                                         {/* Session header with label, date, mode, delete */}
                                                         <div className="flex items-center justify-between mb-3 gap-2">
-                                                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
                                                                 <input
                                                                     type="text"
                                                                     value={s.label}
@@ -619,11 +622,38 @@ export default function WeeklyPlanPage() {
                                                                     onChange={e => updateSession(s.id, { date: e.target.value })}
                                                                     className="bg-secondary/50 rounded px-2 py-0.5 text-[10px] text-white outline-none"
                                                                 />
+                                                                <select
+                                                                    value={s.trainingType || ""}
+                                                                    onChange={e => updateSession(s.id, { trainingType: e.target.value })}
+                                                                    className="bg-secondary/50 rounded px-2 py-1 text-[10px] text-white outline-none border border-white/10"
+                                                                >
+                                                                    <option value="">类型 (可选)</option>
+                                                                    <option value="aerobic">有氧</option>
+                                                                    <option value="anaerobic">无氧</option>
+                                                                    <option value="lactate">乳酸</option>
+                                                                    <option value="sprint">冲刺</option>
+                                                                    <option value="recovery">恢复</option>
+                                                                    <option value="endurance">耐力</option>
+                                                                    <option value="race_prep">赛前</option>
+                                                                </select>
+                                                                <select
+                                                                    value={s.primaryStroke || ""}
+                                                                    onChange={e => updateSession(s.id, { primaryStroke: e.target.value })}
+                                                                    className="bg-secondary/50 rounded px-2 py-1 text-[10px] text-white outline-none border border-white/10"
+                                                                >
+                                                                    <option value="">主项 (可选)</option>
+                                                                    <option value="Free">自由泳</option>
+                                                                    <option value="Back">仰泳</option>
+                                                                    <option value="Breast">蛙泳</option>
+                                                                    <option value="Fly">蝶泳</option>
+                                                                    <option value="IM">混合泳</option>
+                                                                    <option value="Choice">自选</option>
+                                                                </select>
                                                             </div>
                                                             <div className="flex items-center gap-1.5">
                                                                 {/* Mode toggle */}
                                                                 <div className="flex bg-black/30 rounded-lg p-0.5">
-                                                                    {(["legacy", "block", "rich"] as const).map(m => (
+                                                                    {(["legacy", "block", "rich", "plan"] as const).map(m => (
                                                                         <button
                                                                             key={m}
                                                                             onClick={() => {
@@ -640,6 +670,7 @@ export default function WeeklyPlanPage() {
                                                                             {m === "legacy" && <><ImageIcon className="w-3 h-3" /> 照片</>}
                                                                             {m === "block" && <><Blocks className="w-3 h-3" /> 模块</>}
                                                                             {m === "rich" && <><FileText className="w-3 h-3" /> 富文本</>}
+                                                                            {m === "plan" && <><Layers className="w-3 h-3" /> 训练计划</>}
                                                                         </button>
                                                                     ))}
                                                                 </div>
@@ -709,6 +740,28 @@ export default function WeeklyPlanPage() {
                                                                 onChange={(html) => updateSession(s.id, { contentHtml: html })}
                                                                 placeholder="输入训练说明，支持粗体、列表、图片..."
                                                             />
+                                                        )}
+
+                                                        {mode === "plan" && (
+                                                            <div className="pt-2">
+                                                                <div className="mb-4 text-sm font-bold text-primary px-1">
+                                                                    总距离: {s.totalDistance || 0}m
+                                                                </div>
+                                                                <PlanModuleEditor
+                                                                    blocks={s.trainingBlocks || []}
+                                                                    onChange={(blocks) => {
+                                                                        const totalDist = blocks.reduce((acc, block) => {
+                                                                            const blockDist = (block.items || []).reduce((bSum, item) => {
+                                                                                const segDist = item.segments?.reduce((ss, seg) => ss + seg.distance, 0) || 0;
+                                                                                const itemDist = (segDist > 0 ? segDist : item.distance) * item.repeats;
+                                                                                return bSum + itemDist;
+                                                                            }, 0);
+                                                                            return acc + (blockDist * block.rounds);
+                                                                        }, 0);
+                                                                        updateSession(s.id, { trainingBlocks: blocks, totalDistance: totalDist });
+                                                                    }}
+                                                                />
+                                                            </div>
                                                         )}
                                                     </div>
                                                 );

@@ -1,8 +1,8 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { useMemo, useState } from "react";
-import { PlanCard } from "@/components/dashboard/PlanCard";
+import { useMemo, useState, useEffect } from "react";
+import { WeeklyPlanCard } from "@/components/dashboard/WeeklyPlanCard";
 import { TodayAttendance } from "@/components/dashboard/TodayAttendance";
 import { SwimmerStatusPanel } from "@/components/dashboard/SwimmerStatusPanel";
 import { TeamStatsPanel } from "@/components/dashboard/TeamStatsPanel";
@@ -25,10 +25,31 @@ export default function DashboardPage() {
     const router = useRouter();
     const [showArchive, setShowArchive] = useState(false);
 
-    // Get visible plans (active < 14 days OR starred) and sort
-    const visiblePlans = useMemo(() => {
-        return getVisiblePlans().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }, [getVisiblePlans]);
+    const [visiblePlans, setVisiblePlans] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchPlans = async () => {
+            try {
+                const plans = await api.weeklyPlans.getAll();
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                const twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
+                
+                const filteredPlans = plans.filter(plan => {
+                    const planDate = new Date(plan.weekStart);
+                    planDate.setHours(0, 0, 0, 0);
+                    const diffTime = planDate.getTime() - now.getTime();
+                    return diffTime >= -twoWeeksMs && diffTime <= twoWeeksMs;
+                });
+
+                setVisiblePlans(filteredPlans.sort((a, b) => new Date(b.weekStart).getTime() - new Date(a.weekStart).getTime()));
+            } catch (error: any) {
+                if (error.message?.includes('timed out')) return;
+                console.error("Failed to load weekly plans", error);
+            }
+        };
+        fetchPlans();
+    }, []);
 
     const handleLogout = async () => {
         try { await api.auth.logout(); } catch {}
@@ -170,8 +191,8 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="space-y-4">
-                        {visiblePlans.slice(0, 6).map((plan) => (
-                            <PlanCard key={plan.id} plan={plan} />
+                        {visiblePlans.map((plan) => (
+                            <WeeklyPlanCard key={plan.id} plan={plan} />
                         ))}
 
                         {visiblePlans.length === 0 && (

@@ -33,10 +33,13 @@ interface ActivityFeedProps {
 export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
     const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
     const [, setLoading] = useState(true);
+    const fetchingRef = React.useRef(false);
     const [showTray, setShowTray] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
 
     const loadFeed = useCallback(async () => {
+        if (fetchingRef.current) return;
+        fetchingRef.current = true;
         try {
             const data = await api.activityFeed.get(swimmerId);
             if (data) {
@@ -45,9 +48,10 @@ export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
                 setUnreadCount(unread);
             }
         } catch (e) {
-            console.error("Failed to load activity feed", e);
+            console.warn("Failed to load activity feed", e);
         } finally {
             setLoading(false);
+            fetchingRef.current = false;
         }
     }, [swimmerId]);
 
@@ -77,7 +81,7 @@ export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
             setUnreadCount(prev => Math.max(0, prev - 1));
             if (onFeedUpdated) onFeedUpdated();
         } catch (e) {
-            console.error("Failed to mark item read", e);
+            console.warn("Failed to mark item read", e);
         }
     };
 
@@ -89,7 +93,7 @@ export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
             setUnreadCount(0);
             if (onFeedUpdated) onFeedUpdated();
         } catch (e) {
-            console.error("Failed to mark all read", e);
+            console.warn("Failed to mark all read", e);
         }
     };
 
@@ -154,7 +158,7 @@ export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
             {/* FLOATING NOTIFICATION TRAY SLIDEOUT */}
             {showTray && (
                 <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">
-                    <div className="w-full max-w-sm bg-slate-950 border-l border-white/10 h-full flex flex-col justify-between shadow-2xl relative animate-in slide-in-from-right duration-300">
+                    <div className="w-full max-w-sm bg-slate-950 border-l border-white/10 h-screen max-h-[100dvh] flex flex-col justify-between shadow-2xl relative animate-in slide-in-from-right duration-300">
                         
                         {/* Header */}
                         <div className="p-5 border-b border-white/10 flex items-center justify-between">
@@ -181,7 +185,7 @@ export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
                         </div>
 
                         {/* List Area */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
                             {feedItems.length > 0 ? (
                                 feedItems.map(item => {
                                     const styles = getItemVisuals(item.type);

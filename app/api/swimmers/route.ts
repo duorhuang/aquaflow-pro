@@ -37,11 +37,11 @@ export async function POST(request: Request) {
         const gender = data.gender === 'female' ? 'female' : 'male';
 
         // 1. Fetch starter gear from ShopItem to populate inventory and equippedItems
-        const keysToFetch = ['basic_head_0', 'basic_eyes_0'];
+        const keysToFetch = ['head_basic_cap', 'eyes_basic_goggles'];
         if (gender === 'male') {
-            keysToFetch.push('basic_lower_m_1');
+            keysToFetch.push('body_basic_male', 'lower_basic_male');
         } else {
-            keysToFetch.push('basic_body_f_2', 'basic_lower_f_2');
+            keysToFetch.push('body_basic_female', 'lower_basic_female');
         }
 
         const inventoryIds: string[] = [];
@@ -121,13 +121,17 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
     return withApiHandler(async () => {
-        const auth = await requireCoach(request);
+        const auth = await requireAnyAuth(request);
         if (auth instanceof NextResponse) return auth;
 
         const sql = getNeon();
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
+
+        if (auth.role === 'athlete' && auth.userId !== id) {
+            return NextResponse.json({ error: 'Forbidden: Can only update your own profile' }, { status: 403 });
+        }
 
         const data = flattenPayload(await request.json());
 
@@ -202,6 +206,9 @@ export async function PUT(request: Request) {
         else if (data.injuryNote !== undefined) addField('injuryNote', String(data.injuryNote));
         else addField('injuryNote', current.injuryNote);
         
+        if (data.injuryImageUrl === null || data.injuryImageUrl === '') addField('injuryImageUrl', null);
+        else if (data.injuryImageUrl !== undefined) addField('injuryImageUrl', String(data.injuryImageUrl));
+        else addField('injuryImageUrl', current.injuryImageUrl);
         if (data.lastProfileUpdate === null) addField('lastProfileUpdate', null);
         else if (data.lastProfileUpdate !== undefined) addField('lastProfileUpdate', String(data.lastProfileUpdate));
         else addField('lastProfileUpdate', current.lastProfileUpdate);
@@ -225,7 +232,7 @@ export async function PUT(request: Request) {
 
         const query = `UPDATE "Swimmer" SET ${fields.join(', ')} WHERE "id" = $${values.length + 1} RETURNING *`;
         values.push(id);
-        const result = await (sql as any).unsafe(query, values);
+        const result = await sql(query, values);
 
         return NextResponse.json(result[0], { headers: V12_FINGERPRINT });
     });

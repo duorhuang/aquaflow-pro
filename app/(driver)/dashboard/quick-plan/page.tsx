@@ -29,6 +29,8 @@ export default function QuickPlanPage() {
     const [group, setGroup] = useState<GroupLevel>("Advanced");
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [blocks, setBlocks] = useState<TrainingBlock[]>([]);
+    const [trainingType, setTrainingType] = useState<string>("");
+    const [primaryStroke, setPrimaryStroke] = useState<string>("");
 
     // Drawer State
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -80,6 +82,8 @@ export default function QuickPlanPage() {
             focus: "Quick Plan",
             totalDistance: totalDist,
             coachNotes: "Created via Quick Planner",
+            trainingType,
+            primaryStroke,
             blocks
         };
 
@@ -137,6 +141,41 @@ export default function QuickPlanPage() {
                             onChange={(e) => setDate(e.target.value)}
                             className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 transition-all font-mono"
                         />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-xs text-muted-foreground uppercase font-bold mb-2 block">训练类型 (Type)</label>
+                            <select
+                                value={trainingType}
+                                onChange={(e) => setTrainingType(e.target.value)}
+                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 transition-all"
+                            >
+                                <option value="">无 (None)</option>
+                                <option value="aerobic">有氧 Aerobic</option>
+                                <option value="anaerobic">无氧 Anaerobic</option>
+                                <option value="lactate">乳酸 Lactate</option>
+                                <option value="sprint">冲刺 Sprint</option>
+                                <option value="recovery">恢复 Recovery</option>
+                                <option value="endurance">耐力 Endurance</option>
+                                <option value="race_prep">赛前 Race Prep</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-xs text-muted-foreground uppercase font-bold mb-2 block">主项 (Primary Stroke)</label>
+                            <select
+                                value={primaryStroke}
+                                onChange={(e) => setPrimaryStroke(e.target.value)}
+                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 transition-all"
+                            >
+                                <option value="">无 (None)</option>
+                                <option value="Free">自由泳 Free</option>
+                                <option value="Back">仰泳 Back</option>
+                                <option value="Breast">蛙泳 Breast</option>
+                                <option value="Fly">蝶泳 Fly</option>
+                                <option value="IM">混合泳 IM</option>
+                                <option value="Choice">自选 Choice</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 

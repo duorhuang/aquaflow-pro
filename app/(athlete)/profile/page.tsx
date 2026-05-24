@@ -4,22 +4,23 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { api } from "@/lib/api-client";
-import { Waves, LogOut, User, Save, ArrowLeft, ShoppingBag, Users, Settings } from "lucide-react";
+import { Waves, LogOut, User, Save, ArrowLeft, ShoppingBag, Users, Settings, Activity } from "lucide-react";
 import Link from "next/link";
 import { Swimmer } from "@/types";
 import { ShopAndCloset } from "@/components/athlete/ShopAndCloset";
 import { BuddySystem } from "@/components/athlete/BuddySystem";
+import { InjuryMap } from "@/components/athlete/InjuryMap";
 import { cn } from "@/lib/utils";
 
 export default function AthleteProfilePage() {
     const router = useRouter();
     const { swimmers, updateSwimmer, isLoaded } = useStore();
     const [currentUser, setCurrentUser] = useState<any>(null);
-    const [activeTab, setActiveTab] = useState<'shop' | 'buddy' | 'profile'>('shop');
+    const [activeTab, setActiveTab] = useState<'shop' | 'buddy' | 'profile' | 'injury'>('shop');
     const [name, setName] = useState("");
     const [mainStroke, setMainStroke] = useState<Swimmer["mainStroke"] | undefined>(undefined);
     const [readiness, setReadiness] = useState(100);
-    const [injuryNote, setInjuryNote] = useState("");
+    const [gender, setGender] = useState<"male" | "female">("male");
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 
@@ -34,7 +35,7 @@ export default function AthleteProfilePage() {
                 setName(user.name || "");
                 setMainStroke((user.mainStroke || undefined) as Swimmer["mainStroke"] | undefined);
                 setReadiness(user.readiness || 100);
-                setInjuryNote(user.injuryNote || "");
+                setGender(user.gender || "male");
             })
             .catch(() => router.push("/login"));
     }, [router]);
@@ -48,7 +49,7 @@ export default function AthleteProfilePage() {
                 name,
                 mainStroke,
                 readiness,
-                injuryNote,
+                gender,
                 lastProfileUpdate: new Date().toISOString()
             });
             setSaved(true);
@@ -112,7 +113,7 @@ export default function AthleteProfilePage() {
                 )}
 
                 {/* Tab Navigation */}
-                <div className="grid grid-cols-3 gap-2 bg-card/30 border border-border rounded-xl p-2 shrink-0">
+                <div className="grid grid-cols-4 gap-2 bg-card/30 border border-border rounded-xl p-2 shrink-0">
                     <button
                         onClick={() => setActiveTab('shop')}
                         className={cn(
@@ -149,12 +150,30 @@ export default function AthleteProfilePage() {
                         <Settings className="w-4 h-4" />
                         个人资料 👤
                     </button>
+                    <button
+                        onClick={() => setActiveTab('injury')}
+                        className={cn(
+                            "py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5",
+                            activeTab === 'injury'
+                                ? "bg-red-500 text-white shadow-lg"
+                                : "text-muted-foreground hover:text-white"
+                        )}
+                    >
+                        <Activity className="w-4 h-4" />
+                        伤病监测 🩺
+                    </button>
                 </div>
 
                 {/* Tab Content */}
                 {currentUser && activeTab === 'shop' && (
                     <div className="animate-in fade-in duration-300">
                         <ShopAndCloset swimmerId={currentUser.id} />
+                    </div>
+                )}
+
+                {currentUser && activeTab === 'injury' && (
+                    <div className="animate-in fade-in duration-300">
+                        <InjuryMap swimmerId={currentUser.id} readOnly={false} />
                     </div>
                 )}
 
@@ -197,6 +216,18 @@ export default function AthleteProfilePage() {
                         </div>
 
                         <div>
+                            <label className="text-sm text-muted-foreground mb-1 block">性别</label>
+                            <select
+                                value={gender}
+                                onChange={(e) => setGender(e.target.value as "male" | "female")}
+                                className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            >
+                                <option value="male">男 (Male)</option>
+                                <option value="female">女 (Female)</option>
+                            </select>
+                        </div>
+
+                        <div>
                             <label className="text-sm text-muted-foreground mb-1 block">今日状态: {readiness}%</label>
                             <input
                                 type="range"
@@ -205,16 +236,6 @@ export default function AthleteProfilePage() {
                                 value={readiness}
                                 onChange={(e) => setReadiness(Number(e.target.value))}
                                 className="w-full accent-primary"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="text-sm text-muted-foreground mb-1 block">伤病备注</label>
-                            <textarea
-                                value={injuryNote}
-                                onChange={(e) => setInjuryNote(e.target.value)}
-                                placeholder="如有任何不适或伤病，请在此备注说明..."
-                                className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[80px] resize-none"
                             />
                         </div>
 

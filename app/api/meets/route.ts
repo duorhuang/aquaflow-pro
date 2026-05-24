@@ -149,7 +149,7 @@ export async function PUT(request: Request) {
 
         const query = `UPDATE "Meet" SET ${fields.join(', ')} WHERE "id" = $${values.length + 1} RETURNING *`;
         values.push(id);
-        const result = await (sql as any).unsafe(query, values);
+        const result = await sql(query, values);
 
         return NextResponse.json(result[0], { headers: V12_FINGERPRINT });
     });

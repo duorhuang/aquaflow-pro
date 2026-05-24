@@ -37,14 +37,8 @@ export async function GET(request: Request) {
         }
         const swimmer = swimmers[0];
 
-        // 3. Filter items by gender
-        const gender = swimmer.gender || 'male'; // Default male if not chosen yet
-        const filteredItems = allItems.filter((item: any) => {
-            // Unisex slots or unisex items are always visible
-            if (item.gender === 'unisex') return true;
-            // Exclusive slot items are filtered by swimmer gender
-            return item.gender === gender;
-        });
+        // 3. Return all items for frontend dynamic filtering & previewing
+        const filteredItems = allItems;
 
         // Parse JSON fields
         let inventory: string[] = [];

@@ -25,6 +25,7 @@ export interface Swimmer {
     bestTimes?: Record<string, string>; // e.g. "50Free": "25.5"
     injuries?: string[]; // ["Shoulder", "Knee"]
     injuryNote?: string; // Current injury report text
+    injuryImageUrl?: string; // Uploaded injury photo URL
     lastProfileUpdate?: string; // ISO Date of last data confirmation
 }
 
@@ -80,6 +81,8 @@ export interface TrainingPlan {
     targetedNotes?: Record<string, string>;
     imageUrl?: string; // URL of uploaded plan photo
     isStarred?: boolean; // Archived if false & > 14 days
+    trainingType?: string;
+    primaryStroke?: string;
     analysis?: PlanAnalysis;
 }
 
@@ -171,8 +174,12 @@ export interface DailySession {
     notes?: string;
     sortOrder: number;
     contentBlocks?: ContentBlock[];  // Block editor content
+    trainingBlocks?: TrainingBlock[];// Plan editor content
+    totalDistance?: number;          // Total distance for plan editor
     contentHtml?: string;            // Rich text editor content
-    editorMode?: "block" | "rich" | "legacy";
+    editorMode?: "block" | "rich" | "legacy" | "plan";
+    trainingType?: string;
+    primaryStroke?: string;
     createdAt?: string;
 }
 

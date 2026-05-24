@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server';
 import { flattenPayload } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth-api';
 import { getNeon } from '@/lib/db-pool';
+import { withApiHandler } from '@/lib/api-handler';
 
 export async function POST(request: Request) {
-    try {
+    return withApiHandler(async () => {
         const sql = getNeon();
         const data = flattenPayload(await request.json());
         const { username, password, name, inviteCode } = data;
@@ -32,7 +33,5 @@ export async function POST(request: Request) {
         `;
 
         return NextResponse.json(user[0]);
-    } catch (e: any) {
-        return NextResponse.json({ error: e.message }, { status: 500 });
-    }
+    });
 }

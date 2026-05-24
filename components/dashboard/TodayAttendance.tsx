@@ -63,7 +63,7 @@ export function TodayAttendance() {
             </div>
 
             {/* Attended List */}
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
                 {attendedSwimmers.map(swimmer => {
                     const record = todayAttendance.find(a => a.swimmerId === swimmer.id);
                     const time = record ? new Date(record.timestamp).toLocaleTimeString('zh-CN', {

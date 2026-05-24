@@ -261,7 +261,7 @@ export const api = {
         getCountdown: () => fetchAPI<any>('/meets'),
     },
     activityFeed: {
-        get: (swimmerId: string) => fetchAPI<any>(`/activity-feed?swimmerId=${swimmerId}`),
+        get: (swimmerId: string) => fetchAPI<any>(`/activity-feed?swimmerId=${swimmerId}`, undefined, true, 1),
         readAll: (swimmerId: string) => fetchAPI<any>('/activity-feed', {
             method: 'POST',
             body: JSON.stringify({ action: 'read_all', swimmerId }),

@@ -155,36 +155,48 @@
 
 /* Environment dynamic glows and variables override */
 .theme-aerobic {
+  --background: hsl(190 60% 8%);
+  --card: hsl(190 60% 9%);
   --primary: hsl(190 100% 50%);
   --ring: hsl(190 100% 50%);
   --theme-glow: radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.12), transparent 75%);
 }
 
 .theme-anaerobic {
+  --background: hsl(350 60% 8%);
+  --card: hsl(350 60% 9%);
   --primary: hsl(350 100% 55%);
   --ring: hsl(350 100% 55%);
   --theme-glow: radial-gradient(circle at 50% 0%, rgba(255, 23, 68, 0.12), transparent 75%);
 }
 
 .theme-lactate {
+  --background: hsl(280 60% 8%);
+  --card: hsl(280 60% 9%);
   --primary: hsl(280 90% 60%);
   --ring: hsl(280 90% 60%);
   --theme-glow: radial-gradient(circle at 50% 0%, rgba(224, 64, 251, 0.12), transparent 75%);
 }
 
 .theme-sprint {
+  --background: hsl(45 60% 8%);
+  --card: hsl(45 60% 9%);
   --primary: hsl(45 100% 50%);
   --ring: hsl(45 100% 50%);
   --theme-glow: radial-gradient(circle at 50% 0%, rgba(255, 196, 0, 0.12), transparent 75%);
 }
 
 .theme-recovery, .theme-relaxation {
+  --background: hsl(150 60% 8%);
+  --card: hsl(150 60% 9%);
   --primary: hsl(150 90% 55%);
   --ring: hsl(150 90% 55%);
   --theme-glow: radial-gradient(circle at 50% 0%, rgba(0, 230, 118, 0.12), transparent 75%);
 }
 
 .theme-strength, .theme-endurance {
+  --background: hsl(25 60% 8%);
+  --card: hsl(25 60% 9%);
   --primary: hsl(25 90% 55%);
   --ring: hsl(25 90% 55%);
   --theme-glow: radial-gradient(circle at 50% 0%, rgba(255, 109, 0, 0.12), transparent 75%);

@@ -48,6 +48,7 @@ model Swimmer {
   injuries           Json?
   injuryNote         String?
   injuryBodyMap      Json?    // {"leftShoulder": 5, "lowerBack": 3, ...} from Body Map
+  injuryImageUrl     String?
   lastProfileUpdate  String?
   
   createdAt DateTime @default(now())
@@ -82,6 +83,7 @@ model TrainingPlan {
   analysis      PlanAnalysis?
   isStarred     Boolean  @default(false)
   trainingType  String?  // "aerobic"|"anaerobic"|"lactate"|"sprint"|"recovery"|"relaxation"|"strength"|"endurance"|"race_prep"
+  primaryStroke String?  // "Free"|"Back"|"Breast"|"Fly"|"IM"|"Choice"
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -237,8 +239,12 @@ model DailySession {
 
   // Flexible content
   contentBlocks Json?    // Array<{type: "text"|"image"|"video"|"link", content: string, thumbnailUrl?: string}>
+  trainingBlocks Json?   // Array<TrainingBlock> for plan editor mode
+  totalDistance Int?     // Total distance for plan editor mode
   contentHtml   String?  // HTML from WYSIWYG editor
-  editorMode    String   @default("legacy")  // "block" | "rich" | "legacy"
+  editorMode    String   @default("legacy")  // "block" | "rich" | "legacy" | "plan"
+  trainingType  String?  // "aerobic"|"anaerobic"|"lactate"|"sprint"|"recovery"|"relaxation"|"strength"|"endurance"|"race_prep"
+  primaryStroke String?  // "Free"|"Back"|"Breast"|"Fly"|"IM"|"Choice"
 
   createdAt     DateTime @default(now())
 

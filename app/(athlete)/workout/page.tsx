@@ -11,6 +11,7 @@ import { AnnouncementCard } from "@/components/feed/AnnouncementCard";
 import { InjuryMap } from "@/components/athlete/InjuryMap";
 import { ActivityFeed } from "@/components/athlete/ActivityFeed";
 import { MeetCountdown } from "@/components/athlete/MeetCountdown";
+import { AvatarRenderer } from "@/components/athlete/AvatarRenderer";
 import { api } from "@/lib/api-client";
 import { AlertTriangle, LogOut, Calendar, FolderOpen, Activity, History, Quote, MessageSquare, Target, ClipboardList, ArrowRight, TrendingUp, UserCircle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
@@ -67,7 +68,6 @@ export default function AthleteWorkoutPage() {
 
     // Status form
     const [readiness, setReadiness] = useState(95);
-    const [injuryNote, setInjuryNote] = useState("");
     const [status, setStatus] = useState<"Active" | "Resting" | "Injured">("Active");
     const [statusSaved, setStatusSaved] = useState(false);
 
@@ -101,7 +101,6 @@ export default function AthleteWorkoutPage() {
             if (user) {
                 setCurrentUser(user);
                 setReadiness(user.readiness || 95);
-                setInjuryNote(user.injuryNote || "");
                 if (user.status === "Active" || user.status === "Resting" || user.status === "Injured") {
                     setStatus(user.status);
                 }
@@ -130,12 +129,13 @@ export default function AthleteWorkoutPage() {
     const handleSaveStatus = async () => {
         if (!currentUser) return;
         try {
-            await updateSwimmer(currentUser.id, {
+            const updates: any = {
                 readiness,
-                injuryNote,
                 status: status as "Active" | "Resting" | "Injured",
                 lastProfileUpdate: new Date().toISOString()
-            });
+            };
+            // Note: We no longer auto-clear injury data when Active, so athletes can track soreness while active!
+            await updateSwimmer(currentUser.id, updates);
             setStatusSaved(true);
             setTimeout(() => setStatusSaved(false), 3000);
         } catch (e) {
@@ -198,20 +198,23 @@ export default function AthleteWorkoutPage() {
                         id: `derived-${session.id}`,
                         date: dateStr,
                         group: currentUser.group,
-                        totalDistance: 0,
+                        totalDistance: session.totalDistance || 0,
                         focus: session.label,
                         imageUrl: session.imageUrl || session.imageData,
-                        blocks: [],
+                        blocks: session.trainingBlocks || [],
                         isDerived: true,
                         targetedNotes: {},
                         status: "Published",
                         // Pass through session content fields for SessionRenderer
                         editorMode: session.editorMode,
                         contentBlocks: session.contentBlocks,
+                        trainingBlocks: session.trainingBlocks,
                         contentHtml: session.contentHtml,
                         imageData: session.imageData,
                         imageType: session.imageType,
                         notes: session.notes,
+                        trainingType: session.trainingType,
+                        primaryStroke: session.primaryStroke,
                     } as any);
                 });
             }
@@ -294,6 +297,31 @@ export default function AthleteWorkoutPage() {
     const myNote = (selectedPlansObj.length > 0 && selectedPlansObj[0].targetedNotes && currentUser) ? selectedPlansObj[0].targetedNotes[currentUser.id] : null;
     const monthlyStats = getMonthlyStats();
     
+    const getBackgroundClassForTraining = (plans: any[]) => {
+        if (!plans || plans.length === 0) return "bg-background";
+        const p = plans[0];
+        const type = p.trainingType;
+        const stroke = p.primaryStroke;
+
+        if (type === "sprint") return "bg-gradient-to-br from-red-950 via-background to-orange-950";
+        if (type === "recovery") return "bg-gradient-to-br from-emerald-950 via-background to-teal-950";
+        if (type === "aerobic") return "bg-gradient-to-br from-blue-950 via-background to-cyan-950";
+        if (type === "anaerobic") return "bg-gradient-to-br from-purple-950 via-background to-pink-950";
+        if (type === "lactate") return "bg-gradient-to-br from-rose-950 via-background to-red-950";
+        if (type === "endurance") return "bg-gradient-to-br from-indigo-950 via-background to-blue-950";
+        if (type === "race_prep") return "bg-gradient-to-br from-amber-950 via-background to-yellow-950";
+        
+        if (stroke === "Free") return "bg-gradient-to-br from-blue-950 via-background to-sky-950";
+        if (stroke === "Back") return "bg-gradient-to-br from-indigo-950 via-background to-violet-950";
+        if (stroke === "Breast") return "bg-gradient-to-br from-green-950 via-background to-emerald-950";
+        if (stroke === "Fly") return "bg-gradient-to-br from-fuchsia-950 via-background to-purple-950";
+        if (stroke === "IM") return "bg-gradient-to-br from-purple-950 via-background to-indigo-950";
+
+        return "bg-background";
+    };
+
+    const dynamicBgClass = activeTab === 'training' ? getBackgroundClassForTraining(selectedPlansObj) : "bg-background";
+    
     // Find weekly plan that covers the viewing week (date-range match, not exact string)
     const currentWeeklyPlan = weeklyPlans.find(wp => {
         if (!isWeeklyPlanVisible(wp)) return false;
@@ -325,16 +353,26 @@ export default function AthleteWorkoutPage() {
     const progress = (xp % 100);
 
     return (
-        <div className="min-h-screen bg-background pb-24">
+        <div className={cn("min-h-screen pb-24 transition-colors duration-700 ease-in-out", dynamicBgClass)}>
             {/* Header with Logout */}
-            <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border p-4">
+            <header className="sticky top-0 z-50 bg-background/50 backdrop-blur-md border-b border-white/10 p-4">
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center font-bold text-white shadow-lg">
-                            {level}
+                    <Link href="/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                        <div className="relative">
+                            <div className="w-12 h-12 rounded-full border-2 border-primary overflow-hidden flex items-center justify-center shadow-[0_0_15px_rgba(100,255,218,0.3)] bg-slate-900">
+                                <AvatarRenderer 
+                                    gender={currentUser.gender || "male"} 
+                                    equippedItems={currentUser.equippedItems || {}} 
+                                    size={48} 
+                                    animated={false}
+                                />
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-yellow-500 flex items-center justify-center text-[10px] font-bold text-black border border-black">
+                                {level}
+                            </div>
                         </div>
                         <div>
-                            <h1 className="text-lg font-bold text-white">{currentUser.name}</h1>
+                            <h1 className="text-lg font-bold text-white flex items-center gap-1.5">{currentUser.name}</h1>
                             <div className="flex items-center gap-2">
                                 <div className="w-24 h-2 bg-secondary rounded-full overflow-hidden">
                                 <div className="h-full bg-yellow-400 rounded-full transition-all" style={{ width: `${progress}%` }} />
@@ -345,12 +383,13 @@ export default function AthleteWorkoutPage() {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </Link>
                     <div className="flex items-center gap-2">
-                        <ActivityFeed swimmerId={currentUser.id} />
-                        <Link href="/profile" className="p-2 hover:bg-secondary/50 rounded-lg transition-colors text-white" title="Profile">
-                            <UserCircle className="w-5 h-5" />
+                        <Link href="/profile" className="flex items-center gap-1 px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 rounded-xl transition-colors text-yellow-400" title="Profile & Shop">
+                            <span className="text-lg">🛍️</span>
+                            <span className="text-[10px] font-bold hidden sm:inline">商城搭配</span>
                         </Link>
+                        <ActivityFeed swimmerId={currentUser.id} />
                         <LanguageToggle />
                         <button
                             onClick={handleLogout}
@@ -654,28 +693,15 @@ export default function AthleteWorkoutPage() {
                                 <input type="range" min="0" max="100" value={readiness} onChange={(e) => setReadiness(parseInt(e.target.value))} className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary" />
                             </div>
                             <div className="grid grid-cols-3 gap-3 mb-6">
-                                <button onClick={() => { setStatus("Active"); setInjuryNote(""); }} className={cn("py-3 rounded-lg font-bold text-sm", status === "Active" ? "bg-green-500/20 text-green-400 border border-green-500/50" : "bg-secondary")}>训练中</button>
-                                <button onClick={() => { setStatus("Resting"); setInjuryNote(""); }} className={cn("py-3 rounded-lg font-bold text-sm", status === "Resting" ? "bg-orange-500/20 text-orange-400 border border-orange-500/50" : "bg-secondary")}>休息中</button>
+                                <button onClick={() => setStatus("Active")} className={cn("py-3 rounded-lg font-bold text-sm", status === "Active" ? "bg-green-500/20 text-green-400 border border-green-500/50" : "bg-secondary")}>训练中</button>
+                                <button onClick={() => setStatus("Resting")} className={cn("py-3 rounded-lg font-bold text-sm", status === "Resting" ? "bg-orange-500/20 text-orange-400 border border-orange-500/50" : "bg-secondary")}>休息中</button>
                                 <button onClick={() => setStatus("Injured")} className={cn("py-3 rounded-lg font-bold text-sm", status === "Injured" ? "bg-red-500/20 text-red-400 border border-red-500/50" : "bg-secondary")}>受伤中</button>
                             </div>
-                            {status === "Injured" && (
-                                <div className="mb-6 space-y-4">
-                                    <textarea
-                                        value={injuryNote}
-                                        onChange={(e) => setInjuryNote(e.target.value)}
-                                        placeholder="描述你的伤势... Describe your injury"
-                                        className="w-full bg-secondary/50 border border-border rounded-lg p-3 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/20 resize-none"
-                                        rows={3}
-                                    />
-                                    <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
-                                        <AlertTriangle className="w-3 h-3" />
-                                        老师会看到此报告 · Your teacher will see this report
-                                    </p>
-                                    <div className="mt-4">
-                                        <InjuryMap swimmerId={currentUser.id} />
-                                    </div>
+                            <div className="mb-6 space-y-4">
+                                <div className="mt-4">
+                                    <InjuryMap swimmerId={currentUser.id} />
                                 </div>
-                            )}
+                            </div>
                             <button onClick={handleSaveStatus} className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-medium relative">
                                 保存状态
                                 {statusSaved && (

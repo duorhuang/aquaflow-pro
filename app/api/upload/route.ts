@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withApiHandler } from '@/lib/api-handler';
-import { requireCoach } from '@/lib/auth-api';
+import { requireAnyAuth } from '@/lib/auth-api';
 
 /**
  * Convert ArrayBuffer to base64 string without Node.js Buffer.
+ * ...
  */
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
     const bytes = new Uint8Array(buffer);
@@ -21,7 +22,7 @@ export const dynamic = 'force-dynamic';
 // In dev (Node.js): returns base64 data URL as fallback
 export async function POST(request: NextRequest) {
     return withApiHandler(async () => {
-        const auth = await requireCoach(request);
+        const auth = await requireAnyAuth(request);
         if (auth instanceof NextResponse) return auth;
 
         const formData = await request.formData();

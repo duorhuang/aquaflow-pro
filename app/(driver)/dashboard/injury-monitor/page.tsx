@@ -15,6 +15,7 @@ interface Swimmer {
     status: string;
     readiness: number;
     injuryNote?: string;
+    injuryImageUrl?: string;
     injuryBodyMap?: string | Record<string, number>;
 }
 
@@ -210,6 +211,13 @@ export default function CoachInjuryMonitorPage() {
                                                 <p className="text-xs text-muted-foreground bg-red-500/5 p-2.5 rounded-xl border border-red-500/10 italic leading-relaxed">
                                                     “ {swimmer.injuryNote} ”
                                                 </p>
+                                            )}
+
+                                            {swimmer.injuryImageUrl && (
+                                                <div className="mt-2 rounded-xl overflow-hidden border border-white/5 cursor-pointer hover:border-white/20 transition-colors bg-black/40"
+                                                     onClick={() => window.open(swimmer.injuryImageUrl, '_blank')}>
+                                                    <img src={swimmer.injuryImageUrl} alt="Injury Image" className="w-full h-32 object-cover opacity-80 hover:opacity-100 transition-opacity" />
+                                                </div>
                                             )}
                                         </div>
                                     ))}

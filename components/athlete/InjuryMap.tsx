@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
-import { ShieldAlert, Info, Check, Save } from "lucide-react";
+import { ShieldAlert, Info, Check, Save, ImagePlus, Loader2, X } from "lucide-react";
 
 interface InjuryMapProps {
     swimmerId?: string;
@@ -16,78 +16,108 @@ interface InjuryMapProps {
 const BODY_PARTS: Record<string, { label: string; coords: string; path: string }> = {
     head: { 
         label: "头部", 
-        coords: "50,12", 
-        path: "M 46 12 A 4 4 0 1 1 54 12 A 4 4 0 1 1 46 12" 
+        coords: "100,30", 
+        path: "M 100 10 L 115 15 L 120 30 L 110 45 L 100 50 L 90 45 L 80 30 L 85 15 Z" 
     },
     neck: { 
         label: "颈部", 
-        coords: "50,17", 
-        path: "M 48 16.5 L 52 16.5 L 51 20 L 49 20 Z" 
+        coords: "100,52", 
+        path: "M 90 45 L 100 50 L 110 45 L 115 60 L 85 60 Z" 
     },
     shoulderLeft: { 
         label: "左肩", 
-        coords: "40,22", 
-        path: "M 42 20.5 C 38 21 34 23 34 25 C 34 27 38 27 41 24 Z" 
+        coords: "65,70", 
+        path: "M 85 60 L 35 65 L 55 90 Z" 
     },
     shoulderRight: { 
         label: "右肩", 
-        coords: "60,22", 
-        path: "M 58 20.5 C 62 21 66 23 66 25 C 66 27 62 27 59 24 Z" 
+        coords: "135,70", 
+        path: "M 115 60 L 165 65 L 145 90 Z" 
     },
     chest: { 
-        label: "胸肌/上背", 
-        coords: "50,26", 
-        path: "M 42 21 L 58 21 L 56 36 L 44 36 Z" 
+        label: "胸部", 
+        coords: "100,85", 
+        path: "M 85 60 L 115 60 L 145 90 L 100 105 L 55 90 Z" 
     },
-    lowerBack: { 
-        label: "腰腹/下背", 
-        coords: "50,42", 
-        path: "M 44 37.5 L 56 37.5 L 54 48 L 46 48 Z" 
+    abdomen: { 
+        label: "腹部", 
+        coords: "100,135", 
+        path: "M 80 97 L 100 105 L 120 97 L 115 155 L 100 165 L 85 155 Z" 
     },
-    elbowLeft: { 
-        label: "左肘", 
-        coords: "31,34", 
-        path: "M 33.5 25 L 30 35 L 27 34 L 31.5 23 Z" 
+    waistLeft: { 
+        label: "左腰部", 
+        coords: "70,125", 
+        path: "M 55 90 L 80 97 L 85 155 L 70 145 Z" 
     },
-    elbowRight: { 
-        label: "右肘", 
-        coords: "69,34", 
-        path: "M 66.5 25 L 70 35 L 73 34 L 68.5 23 Z" 
-    },
-    handLeft: { 
-        label: "左手腕/手", 
-        coords: "26,45", 
-        path: "M 30 35.5 L 26 48 L 23 47 L 27.5 34.5 Z" 
-    },
-    handRight: { 
-        label: "右手腕/手", 
-        coords: "74,45", 
-        path: "M 70 35.5 L 74 48 L 77 47 L 72.5 34.5 Z" 
+    waistRight: { 
+        label: "右腰部", 
+        coords: "130,125", 
+        path: "M 145 90 L 120 97 L 115 155 L 130 145 Z" 
     },
     hip: { 
         label: "髋部/臀部", 
-        coords: "50,54", 
-        path: "M 44 49 L 56 49 L 58 58 L 42 58 Z" 
+        coords: "100,170", 
+        path: "M 70 145 L 85 155 L 100 165 L 115 155 L 130 145 L 135 175 L 100 195 L 65 175 Z" 
     },
-    kneeLeft: { 
-        label: "左膝", 
-        coords: "42,70", 
-        path: "M 43 59 L 39 74 L 44 74 L 48 59 Z" 
+    armUpperLeft: { 
+        label: "左大臂", 
+        coords: "40,105", 
+        path: "M 35 65 L 55 90 L 45 140 L 25 130 Z" 
     },
-    kneeRight: { 
-        label: "右膝", 
-        coords: "58,70", 
-        path: "M 57 59 L 61 74 L 56 74 L 52 59 Z" 
+    armUpperRight: { 
+        label: "右大臂", 
+        coords: "160,105", 
+        path: "M 165 65 L 145 90 L 155 140 L 175 130 Z" 
     },
-    ankleLeft: { 
-        label: "左踝/脚部", 
-        coords: "38,84", 
-        path: "M 39.5 75 L 36 86 L 41 87 L 43.5 75 Z" 
+    armLowerLeft: { 
+        label: "左小臂", 
+        coords: "30,160", 
+        path: "M 25 130 L 45 140 L 30 190 L 15 180 Z" 
     },
-    ankleRight: { 
-        label: "右踝/脚部", 
-        coords: "62,84", 
-        path: "M 60.5 75 L 64 86 L 59 87 L 56.5 75 Z" 
+    armLowerRight: { 
+        label: "右小臂", 
+        coords: "170,160", 
+        path: "M 175 130 L 155 140 L 170 190 L 185 180 Z" 
+    },
+    handLeft: { 
+        label: "左手", 
+        coords: "20,195", 
+        path: "M 15 180 L 30 190 L 20 215 L 5 205 Z" 
+    },
+    handRight: { 
+        label: "右手", 
+        coords: "180,195", 
+        path: "M 185 180 L 170 190 L 180 215 L 195 205 Z" 
+    },
+    thighLeft: { 
+        label: "左大腿 (含内侧)", 
+        coords: "80,230", 
+        path: "M 65 175 L 98 195 L 90 280 L 70 280 Z" 
+    },
+    thighRight: { 
+        label: "右大腿 (含内侧)", 
+        coords: "120,230", 
+        path: "M 135 175 L 102 195 L 110 280 L 130 280 Z" 
+    },
+    calfLeft: { 
+        label: "左小腿", 
+        coords: "80,320", 
+        path: "M 70 280 L 90 280 L 95 315 L 85 365 L 75 365 L 60 315 Z" 
+    },
+    calfRight: { 
+        label: "右小腿", 
+        coords: "120,320", 
+        path: "M 130 280 L 110 280 L 105 315 L 115 365 L 125 365 L 140 315 Z" 
+    },
+    footLeft: { 
+        label: "左脚", 
+        coords: "75,380", 
+        path: "M 75 365 L 85 365 L 85 395 L 65 395 Z" 
+    },
+    footRight: { 
+        label: "右脚", 
+        coords: "125,380", 
+        path: "M 125 365 L 115 365 L 115 395 L 135 395 Z" 
     }
 };
 
@@ -114,6 +144,9 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
     const [selectedPart, setSelectedPart] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
+    const [injuryNote, setInjuryNote] = useState("");
+    const [injuryImageUrl, setInjuryImageUrl] = useState("");
+    const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -124,15 +157,19 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
             } else if (swimmerId && !readOnly) {
                 // Load swimmer's initial body map from API
                 api.auth.me().then(me => {
-                    if (isMounted && me && me.id === swimmerId && me.injuryBodyMap) {
-                        try {
-                            const parsed = typeof me.injuryBodyMap === "string" 
-                                ? JSON.parse(me.injuryBodyMap) 
-                                : me.injuryBodyMap;
-                            setBodyMap(parsed || {});
-                        } catch {
-                            setBodyMap({});
+                    if (isMounted && me && me.id === swimmerId) {
+                        if (me.injuryBodyMap) {
+                            try {
+                                const parsed = typeof me.injuryBodyMap === "string" 
+                                    ? JSON.parse(me.injuryBodyMap) 
+                                    : me.injuryBodyMap;
+                                setBodyMap(parsed || {});
+                            } catch {
+                                setBodyMap({});
+                            }
                         }
+                        if (me.injuryNote) setInjuryNote(me.injuryNote);
+                        if (me.injuryImageUrl) setInjuryImageUrl(me.injuryImageUrl);
                     }
                 });
             }
@@ -165,7 +202,9 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
         setSaved(false);
         try {
             await api.swimmers.update(swimmerId, {
-                injuryBodyMap: bodyMap
+                injuryBodyMap: bodyMap,
+                injuryNote,
+                injuryImageUrl
             });
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);
@@ -174,6 +213,24 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
             console.error("Failed to save body injury map", e);
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        setUploading(true);
+        try {
+            const res = await api.upload.file(file);
+            if (res.url) {
+                setInjuryImageUrl(res.url);
+            }
+        } catch (error) {
+            console.error("Upload failed", error);
+            alert("图片上传失败，请重试");
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -199,12 +256,12 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                 
                 <div className="relative w-64 aspect-[1/2] bg-slate-950/60 rounded-3xl border border-white/5 p-4 flex items-center justify-center">
                     {/* Glowing grid wires */}
-                    <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#3b82f6_1px,transparent_1px),linear-gradient(to_bottom,#3b82f6_1px,transparent_1px)] bg-[size:16px_16px] rounded-3xl" />
+                    <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#3b82f6_1px,transparent_1px),linear-gradient(to_bottom,#3b82f6_1px,transparent_1px)] bg-[size:16px_16px] rounded-3xl pointer-events-none" />
                     
-                    <svg viewBox="0 0 100 100" className="w-full h-full select-none">
+                    <svg viewBox="0 0 200 400" className="relative z-10 w-full h-full select-none pointer-events-auto">
                         <defs>
                             <filter id="neonPulse" x="-30%" y="-30%" width="160%" height="160%">
-                                <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="blur" />
+                                <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
                                 <feMerge>
                                     <feMergeNode in="blur" />
                                     <feMergeNode in="SourceGraphic" />
@@ -213,8 +270,8 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                         </defs>
 
                         {/* Symmetric grid markers */}
-                        <line x1="50" y1="5" x2="50" y2="95" stroke="#3b82f6" strokeWidth="0.1" strokeDasharray="2,2" opacity="0.3" />
-                        <line x1="10" y1="50" x2="90" y2="50" stroke="#3b82f6" strokeWidth="0.1" strokeDasharray="2,2" opacity="0.3" />
+                        <line x1="100" y1="0" x2="100" y2="400" stroke="#3b82f6" strokeWidth="0.5" strokeDasharray="5,5" opacity="0.3" />
+                        <line x1="0" y1="200" x2="200" y2="200" stroke="#3b82f6" strokeWidth="0.5" strokeDasharray="5,5" opacity="0.3" />
 
                         {/* Interactive Body Path Regions */}
                         {Object.entries(BODY_PARTS).map(([key, part]) => {
@@ -234,7 +291,7 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                                             d={part.path} 
                                             fill="none" 
                                             stroke={color} 
-                                            strokeWidth="2.5" 
+                                            strokeWidth="5" 
                                             opacity="0.4"
                                             filter="url(#neonPulse)"
                                         />
@@ -245,7 +302,7 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                                         d={part.path} 
                                         fill={score > 0 ? `${color}40` : "#1e293b50"} 
                                         stroke={isActive ? "#ffd700" : score > 0 ? color : "#475569"} 
-                                        strokeWidth={isActive ? "1" : "0.5"} 
+                                        strokeWidth={isActive ? "2.5" : "1.5"} 
                                         className="transition-all duration-300"
                                     />
                                     
@@ -253,7 +310,7 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                                     <circle 
                                         cx={part.coords.split(",")[0]} 
                                         cy={part.coords.split(",")[1]} 
-                                        r="1.2" 
+                                        r="3.5" 
                                         fill={score > 0 ? color : "#94a3b8"} 
                                         className="animate-pulse"
                                     />
@@ -352,6 +409,50 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                                 <p className="text-xs">请在左侧人体图上点击任一肌肉或关节部位，对其当前的酸痛痛感进行打分。</p>
                             </div>
                         )}
+
+                        {/* Injury Documentation Section */}
+                        <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-5 space-y-4">
+                            <h5 className="text-sm font-bold text-white mb-2">详细病情与照片记录</h5>
+                            <textarea
+                                value={injuryNote}
+                                onChange={(e) => setInjuryNote(e.target.value)}
+                                placeholder="请描述一下疼痛的具体感觉、发生时间或任何其他相关信息..."
+                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none h-20"
+                            />
+                            
+                            {/* Image Upload Area */}
+                            <div>
+                                {injuryImageUrl ? (
+                                    <div className="relative w-full h-32 rounded-xl overflow-hidden border border-white/10 group bg-black/40">
+                                        <img src={injuryImageUrl} alt="Injury" className="w-full h-full object-contain" />
+                                        <button
+                                            onClick={() => setInjuryImageUrl("")}
+                                            className="absolute top-2 right-2 bg-black/60 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80 text-white"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <label className="flex flex-col items-center justify-center w-full h-20 rounded-xl border border-dashed border-white/20 bg-white/5 hover:bg-white/10 cursor-pointer transition-colors text-muted-foreground hover:text-white">
+                                        {uploading ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : (
+                                            <div className="flex items-center gap-2">
+                                                <ImagePlus className="w-4 h-4" />
+                                                <span className="text-xs">上传受伤部位照片</span>
+                                            </div>
+                                        )}
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
+                                            disabled={uploading}
+                                        />
+                                    </label>
+                                )}
+                            </div>
+                        </div>
 
                         {/* Save Button for Athlete */}
                         <button

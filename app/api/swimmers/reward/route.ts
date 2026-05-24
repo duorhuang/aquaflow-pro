@@ -57,9 +57,11 @@ export async function POST(request: Request) {
         // 3. XP calculation & Level recalculation
         const oldTotalXp = swimmer.totalXp || 0;
         const oldBalance = swimmer.balance || 0;
+        const oldXp = swimmer.xp || 0;
 
         const newTotalXp = oldTotalXp + xpAmount;
         const newBalance = oldBalance + xpAmount;
+        const newXp = oldXp + xpAmount;
         
         const { level: newLevel, title: newTitle } = calculateLevel(newTotalXp);
         const levelChanged = newLevel > (swimmer.level || 1);
@@ -69,6 +71,7 @@ export async function POST(request: Request) {
             UPDATE "Swimmer"
             SET "totalXp" = ${newTotalXp}, 
                 "balance" = ${newBalance}, 
+                "xp" = ${newXp},
                 "level" = ${newLevel},
                 "updatedAt" = NOW()
             WHERE "id" = ${swimmerId}

@@ -8,13 +8,15 @@ import {
     Shirt, 
     Coins, 
     Sparkles, 
-    Heart, 
     Check, 
     Plus, 
     Trash2, 
     ShieldAlert, 
     Bookmark, 
-    BookmarkCheck 
+    BookmarkCheck,
+    ZoomIn,
+    X,
+    Sparkle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,11 +33,12 @@ interface ShopItem {
     tier: string;
     imageKey: string;
     category: string;
+    gender: string; // The character restriction: 'unisex' | 'shinchan' | 'minion' | ...
     description?: string;
 }
 
 const TIER_LABELS: Record<string, { label: string; color: string; bg: string; border: string }> = {
-    basic: { label: "🟢 白菜档", color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20" },
+    basic: { label: "🟢 普通档", color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20" },
     entry: { label: "🔵 入门档", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
     advanced: { label: "🟣 进阶档", color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },
     premium: { label: "🟠 高级档", color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20" },
@@ -44,6 +47,7 @@ const TIER_LABELS: Record<string, { label: string; color: string; bg: string; bo
 };
 
 const SLOT_LABELS: Record<string, string> = {
+    base: "🎭 皮肤",
     head: "🧢 头部",
     eyes: "🥽 眼部",
     body: "👕 身体",
@@ -52,6 +56,15 @@ const SLOT_LABELS: Record<string, string> = {
     hand: "✋ 手持",
     background: "🏊 背景"
 };
+
+const CARTOON_BASES = [
+    { id: "shinchan", name: "蜡笔小新", emoji: "🧒", desc: "经典粗眉，活泼调皮" },
+    { id: "minion", name: "小黄人", emoji: "🍌", desc: "呆萌单眼，超能胶囊" },
+    { id: "loggervick", name: "光头强", emoji: "🌲", desc: "安全帽强哥，伐木达人" },
+    { id: "ggbond", name: "猪猪侠", emoji: "🐷", desc: "红衣大侠，正义之光" },
+    { id: "conan", name: "柯南", emoji: "👓", desc: "智商超群，蓝衣侦探" },
+    { id: "octonauts", name: "巴克队长", emoji: "🐻", desc: "英勇舰长，极地白熊" }
+];
 
 export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps) {
     const [activeTab, setActiveTab] = useState<"shop" | "closet">("shop");
@@ -65,13 +78,14 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
     const [inventory, setInventory] = useState<string[]>([]);
     const [equippedItems, setEquippedItems] = useState<Record<string, string>>({});
     const [wishlist, setWishlist] = useState<string[]>([]);
-    const [gender, setGender] = useState("male");
+    const [gender, setGender] = useState("shinchan"); // The Swimmer.gender field stores active base character!
+    const [activeCharacter, setActiveCharacter] = useState<string>("shinchan"); // Closet active base preview
 
     // Filtering states
     const [selectedSlot, setSelectedSlot] = useState<string>("all");
     const [selectedTier, setSelectedTier] = useState<string>("all");
 
-    // Temporary equip state (for closet preview)
+    // Temporary equip state (for closet preview, containing prefixed keys like 'shinchan_head')
     const [previewEquipped, setPreviewEquipped] = useState<Record<string, string>>({});
     const [isSavingEquip, setIsSavingEquip] = useState(false);
     const [equipSuccess, setEquipSuccess] = useState(false);
@@ -79,6 +93,9 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
     // Purchase feedback states
     const [purchasingId, setPurchasingId] = useState<string | null>(null);
     const [purchaseError, setPurchaseError] = useState("");
+    
+    // Inspect item state
+    const [inspectItem, setInspectItem] = useState<ShopItem | null>(null);
 
     // Fetch shop data
     const loadShopData = useCallback(async () => {
@@ -94,10 +111,12 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
                 setPreviewEquipped(data.equippedItems || {});
                 setWishlist(data.wishlist || []);
                 
-                // Get gender from state/swimmers database
+                // Get active character base from Swimmer profile (gender column)
                 const me = await api.auth.me();
                 if (me) {
-                    setGender(me.gender || "male");
+                    const baseChar = me.gender || "shinchan";
+                    setGender(baseChar);
+                    setActiveCharacter(baseChar);
                 }
             }
         } catch (e: unknown) {
@@ -176,38 +195,52 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
         }
     };
 
-    // Closet: Select item to preview
+    // Closet: Select item to preview (character prefixed mapping)
     const handlePreviewItem = (slot: string, itemId: string) => {
+        const key = `${activeCharacter}_${slot}`;
         setPreviewEquipped(prev => ({
             ...prev,
-            [slot]: prev[slot] === itemId ? "" : itemId // Toggle equip
+            [key]: prev[key] === itemId ? "" : itemId // Toggle equip
         }));
     };
 
-    // Closet: Save equipped items to database
+    // Closet: Save equipped items & active base character to database
     const handleSaveEquipped = async () => {
         setIsSavingEquip(true);
         try {
+            // 1. Save equipped mapping (with character-prefixed keys)
             const res = await api.shop.equip(swimmerId, previewEquipped);
+            
+            // 2. Save active base character selection in swimmer profile (gender column)
+            await api.swimmers.update(swimmerId, { gender: activeCharacter });
+            
             if (res && res.success) {
                 setEquippedItems(res.equippedItems);
+                setGender(activeCharacter);
                 setEquipSuccess(true);
                 setTimeout(() => setEquipSuccess(false), 2000);
                 if (onUpdateSwimmer) onUpdateSwimmer();
             }
         } catch (e: unknown) {
             const err = e instanceof Error ? e : new Error(String(e));
-            setPurchaseError(err.message || "保存试穿失败");
+            setPurchaseError(err.message || "保存搭配方案失败");
             setTimeout(() => setPurchaseError(""), 3000);
         } finally {
             setIsSavingEquip(false);
         }
     };
 
-    // Get item info for equipped item keys
-    const getEquippedItemsFull = () => {
+    // Map character-prefixed database item IDs to full ShopItem objects for AvatarRenderer
+    const getEquippedItemsFull = (characterId: string) => {
         const fullEquipped: Record<string, ShopItem> = {};
-        Object.entries(previewEquipped).forEach(([slot, itemId]) => {
+        const slots = ["base", "head", "eyes", "body", "lower", "feet", "hand", "background"];
+        slots.forEach(slot => {
+            // First look up specific key: e.g. 'shinchan_head'
+            let itemId = previewEquipped[`${characterId}_${slot}`];
+            // Fall back to generic key (for simple legacy/universal support)
+            if (!itemId) {
+                itemId = previewEquipped[slot];
+            }
             if (itemId) {
                 const item = items.find(i => i.id === itemId);
                 if (item) fullEquipped[slot] = item;
@@ -216,11 +249,36 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
         return fullEquipped;
     };
 
-    // Filtering lists
-    const filteredItems = items.filter(item => {
+    // Filter Shop Items to only show unisex items OR items matching currently activeCharacter
+    const visibleShopItems = items.filter(item => {
+        // 1. Slot Filter
         if (selectedSlot !== "all" && item.slotType !== selectedSlot) return false;
+        // 2. Tier Filter
         if (selectedTier !== "all" && item.tier !== selectedTier) return false;
-        return true;
+        
+        // 3. Skins/Characters filter: base skins only show for activeCharacter
+        if (item.slotType === "base") {
+            return item.gender === activeCharacter;
+        }
+        
+        // 4. Character exclusive check: unisex OR active character exclusive items
+        return item.gender === "unisex" || item.gender === activeCharacter;
+    });
+
+    // Filter Closet Items (Owned) to show items matching activeCharacter or unisex
+    const visibleClosetItems = items.filter(item => {
+        // 1. Must be owned (in swimmer inventory)
+        if (!inventory.includes(item.id)) return false;
+        // 2. Slot Filter
+        if (selectedSlot !== "all" && item.slotType !== selectedSlot) return false;
+        
+        // 3. Base skins only show for activeCharacter
+        if (item.slotType === "base") {
+            return item.gender === activeCharacter;
+        }
+        
+        // 4. Matches active character base
+        return item.gender === "unisex" || item.gender === activeCharacter;
     });
 
     // Wishlist details
@@ -230,7 +288,19 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
         return (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                 <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-                <p className="font-mono text-xs uppercase tracking-widest animate-pulse">Syncing Shop & Wardrobe...</p>
+                <p className="font-mono text-xs uppercase tracking-widest animate-pulse">正在进入水下商城...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-6 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-3xl flex items-center gap-3">
+                <ShieldAlert className="w-6 h-6 shrink-0" />
+                <div>
+                    <h5 className="font-bold">加载商城失败</h5>
+                    <p className="text-xs mt-1">{error}</p>
+                </div>
             </div>
         );
     }
@@ -358,6 +428,41 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
                 </button>
             </div>
 
+            {/* 6 CARTOON BASES SELECTOR (卡通角色选择器 - 商城和衣橱均显示，提供极速动态切换) */}
+            <div className="space-y-2">
+                <h4 className="text-[10px] text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                    <Sparkle className="w-3.5 h-3.5 text-purple-400" /> 选择你的动漫伙伴 (Select Cartoon Base)
+                </h4>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                    {CARTOON_BASES.map(cb => {
+                        const isCurrentBase = activeCharacter === cb.id;
+                        const isEquippedBase = gender === cb.id;
+                        return (
+                            <button
+                                key={cb.id}
+                                onClick={() => {
+                                    setActiveCharacter(cb.id);
+                                }}
+                                className={cn(
+                                    "flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all relative overflow-hidden group hover:scale-[1.03] duration-150",
+                                    isCurrentBase 
+                                        ? "border-purple-500 bg-purple-500/10 text-white shadow-[0_0_15px_rgba(168,85,247,0.15)]" 
+                                        : "border-slate-800 bg-slate-900/40 text-slate-400 hover:border-slate-700 hover:text-white"
+                                )}
+                            >
+                                <span className="text-2xl mb-1.5 group-hover:scale-110 transition-transform">{cb.emoji}</span>
+                                <span className="text-xs font-bold truncate max-w-full">{cb.name}</span>
+                                {isEquippedBase && (
+                                    <span className="absolute bottom-1 right-2 text-[7px] text-emerald-400 font-bold bg-emerald-950/60 px-1 rounded border border-emerald-500/20">
+                                        已选定
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
             {/* CONTENT VIEWS */}
             {activeTab === "shop" ? (
                 // ====================
@@ -407,7 +512,7 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
 
                     {/* Shop Grid list */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {filteredItems.map(item => {
+                        {visibleShopItems.map(item => {
                             const isOwned = inventory.includes(item.id);
                             const isInWishlist = wishlist.includes(item.id);
                             const tier = TIER_LABELS[item.tier] || { label: "普通", color: "text-white", bg: "bg-white/5", border: "border-white/10" };
@@ -443,11 +548,20 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
                                     </div>
 
                                     {/* Preview Renderer (Single Item Preview Box) */}
-                                    <div className="aspect-square bg-slate-950/50 rounded-2xl flex items-center justify-center relative overflow-hidden border border-white/5">
+                                    <div 
+                                        className="aspect-square bg-slate-950/50 rounded-2xl flex items-center justify-center relative overflow-hidden border border-white/5 cursor-pointer hover:border-white/20 transition-all group/inspect"
+                                        onClick={() => setInspectItem(item)}
+                                    >
+                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/inspect:opacity-100 transition-opacity z-30 backdrop-blur-sm">
+                                            <div className="flex flex-col items-center text-white/90">
+                                                <ZoomIn className="w-8 h-8 mb-2" />
+                                                <span className="text-xs font-bold">点击放大查看细节</span>
+                                            </div>
+                                        </div>
                                         <AvatarRenderer 
-                                            gender={gender} 
+                                            gender={activeCharacter} 
                                             equippedItems={{ [item.slotType]: item }} 
-                                            size={100} 
+                                            size={120} 
                                             className="border-none bg-transparent"
                                             animated={false}
                                         />
@@ -496,10 +610,10 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
                             );
                         })}
 
-                        {filteredItems.length === 0 && (
+                        {visibleShopItems.length === 0 && (
                             <div className="col-span-full py-12 text-center text-muted-foreground border border-dashed border-border rounded-3xl">
                                 <ShoppingBag className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                                <p className="text-sm">没有找到该槽位或档位的商品 🛒</p>
+                                <p className="text-sm">没有找到适配 {CARTOON_BASES.find(c => c.id === activeCharacter)?.name} 的该类别商品 🛒</p>
                             </div>
                         )}
                     </div>
@@ -514,15 +628,15 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
                         <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest text-center">👚 3D 试衣镜 PREVIEW</h4>
                         
                         <AvatarRenderer 
-                            gender={gender} 
-                            equippedItems={getEquippedItemsFull()} 
+                            gender={activeCharacter} 
+                            equippedItems={getEquippedItemsFull(activeCharacter)} 
                             size={240} 
                         />
 
                         {/* Equipped list readout */}
                         <div className="w-full space-y-1.5 pt-2">
                             {Object.entries(SLOT_LABELS).map(([slot, label]) => {
-                                const itemId = previewEquipped[slot];
+                                const itemId = previewEquipped[`${activeCharacter}_${slot}`] || previewEquipped[slot];
                                 const item = items.find(i => i.id === itemId);
                                 return (
                                     <div key={slot} className="flex justify-between items-center text-xs p-2 bg-white/5 rounded-lg border border-white/5">
@@ -553,7 +667,7 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
                             ) : (
                                 <Shirt className="w-4 h-4" />
                             )}
-                            {isSavingEquip ? "保存穿戴中..." : equipSuccess ? "穿戴方案已存入数据库" : "保存当前搭配穿戴"}
+                            {isSavingEquip ? "保存穿戴中..." : equipSuccess ? "搭配已同步至服务器" : "保存当前角色搭配"}
                         </button>
                     </div>
 
@@ -578,40 +692,40 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
                         </div>
 
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            {/* Base Uniform starter clothes for gender */}
-                            {selectedSlot === "all" || selectedSlot === "head" ? (
+                            {/* Default basic items reset (for head & eyes) */}
+                            {(selectedSlot === "all" || selectedSlot === "head") && (
                                 <div 
                                     onClick={() => handlePreviewItem("head", "")}
                                     className={cn(
                                         "bg-card/10 border rounded-2xl p-3 flex flex-col items-center justify-center space-y-2 cursor-pointer hover:border-white/20 transition-all text-center h-28 relative",
-                                        !previewEquipped["head"] ? "border-purple-500/50 bg-purple-500/5" : "border-white/5"
+                                        !previewEquipped[`${activeCharacter}_head`] ? "border-purple-500/50 bg-purple-500/5" : "border-white/5"
                                     )}
                                 >
                                     <span className="text-xl">🧢</span>
                                     <h5 className="text-[10px] font-bold text-white">默认泳帽</h5>
                                     <span className="text-[8px] text-muted-foreground uppercase">队服标准件</span>
-                                    {!previewEquipped["head"] && <Check className="w-3.5 h-3.5 text-purple-400 absolute top-1 right-2" />}
+                                    {!previewEquipped[`${activeCharacter}_head`] && <Check className="w-3.5 h-3.5 text-purple-400 absolute top-1 right-2" />}
                                 </div>
-                            ) : null}
+                            )}
 
-                            {selectedSlot === "all" || selectedSlot === "eyes" ? (
+                            {(selectedSlot === "all" || selectedSlot === "eyes") && (
                                 <div 
                                     onClick={() => handlePreviewItem("eyes", "")}
                                     className={cn(
                                         "bg-card/10 border rounded-2xl p-3 flex flex-col items-center justify-center space-y-2 cursor-pointer hover:border-white/20 transition-all text-center h-28 relative",
-                                        !previewEquipped["eyes"] ? "border-purple-500/50 bg-purple-500/5" : "border-white/5"
+                                        !previewEquipped[`${activeCharacter}_eyes`] ? "border-purple-500/50 bg-purple-500/5" : "border-white/5"
                                     )}
                                 >
                                     <span className="text-xl">🥽</span>
                                     <h5 className="text-[10px] font-bold text-white">默认泳镜</h5>
                                     <span className="text-[8px] text-muted-foreground uppercase">队服标准件</span>
-                                    {!previewEquipped["eyes"] && <Check className="w-3.5 h-3.5 text-purple-400 absolute top-1 right-2" />}
+                                    {!previewEquipped[`${activeCharacter}_eyes`] && <Check className="w-3.5 h-3.5 text-purple-400 absolute top-1 right-2" />}
                                 </div>
-                            ) : null}
+                            )}
 
-                            {/* Owned purchased items */}
-                            {items.filter(item => inventory.includes(item.id) && (selectedSlot === "all" || item.slotType === selectedSlot)).map(item => {
-                                const isEquippedInPreview = previewEquipped[item.slotType] === item.id;
+                            {/* Owned purchased items matching the active character base */}
+                            {visibleClosetItems.map(item => {
+                                const isEquippedInPreview = previewEquipped[`${activeCharacter}_${item.slotType}`] === item.id;
                                 const tier = TIER_LABELS[item.tier] || { label: "普通", color: "text-white", bg: "bg-white/5", border: "border-white/10" };
 
                                 return (
@@ -641,6 +755,60 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
                                 );
                             })}
                         </div>
+
+                        {visibleClosetItems.length === 0 && (
+                            <div className="col-span-full py-12 text-center text-muted-foreground border border-dashed border-border rounded-3xl">
+                                <Shirt className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                                <p className="text-sm">你目前没有适配 {CARTOON_BASES.find(c => c.id === activeCharacter)?.name} 的已购装备 👕</p>
+                                <button 
+                                    onClick={() => setActiveTab("shop")}
+                                    className="mt-3 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl transition-colors"
+                                >
+                                    去商城逛逛
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Inspect Item Modal */}
+            {inspectItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" onClick={() => setInspectItem(null)}>
+                    <div 
+                        className="bg-card/90 border border-border rounded-3xl p-6 w-full max-w-md relative animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button 
+                            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+                            onClick={() => setInspectItem(null)}
+                        >
+                            <X className="w-5 h-5 text-white" />
+                        </button>
+                        
+                        <h3 className="text-xl font-bold text-white text-center mb-1">{inspectItem.name}</h3>
+                        <p className="text-center text-xs text-muted-foreground mb-6 uppercase tracking-wider">{SLOT_LABELS[inspectItem.slotType]} · {TIER_LABELS[inspectItem.tier]?.label.split(" ")[1]}</p>
+                        
+                        <div className="aspect-square bg-slate-950/50 rounded-3xl flex items-center justify-center mb-6 overflow-hidden border border-white/10">
+                            <AvatarRenderer 
+                                gender={activeCharacter} 
+                                equippedItems={{ [inspectItem.slotType]: inspectItem }} 
+                                size={400} 
+                                className="border-none bg-transparent"
+                                animated={true}
+                            />
+                        </div>
+                        
+                        <p className="text-center text-sm text-muted-foreground mb-6">
+                            这是物品的高清细节展示。你可以清楚地看到该物品装备后的质感与轮廓设计。
+                        </p>
+                        
+                        <button
+                            onClick={() => setInspectItem(null)}
+                            className="w-full py-3 rounded-xl font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+                        >
+                            关闭展示
+                        </button>
                     </div>
                 </div>
             )}

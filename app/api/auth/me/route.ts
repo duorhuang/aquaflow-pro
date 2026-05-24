@@ -28,7 +28,7 @@ export async function GET(request: Request) {
     }
 
     if (payload.role === 'athlete') {
-      const rows = await sql`SELECT id, name, username, "group", status, xp, level, "currentStreak", "bestTimes", "injuries", "readiness", "injuryNote", "lastProfileUpdate", "mainStroke" FROM "Swimmer" WHERE id = ${payload.userId} LIMIT 1`;
+      const rows = await sql`SELECT id, name, username, "group", status, xp, level, "currentStreak", "bestTimes", "injuries", "readiness", "injuryNote", "injuryBodyMap", "injuryImageUrl", "lastProfileUpdate", "mainStroke" FROM "Swimmer" WHERE id = ${payload.userId} LIMIT 1`;
       const swimmer = rows[0];
       if (!swimmer) return NextResponse.json({ error: 'User not found' }, { status: 401, headers: V12_FINGERPRINT });
       // Parse JSON fields

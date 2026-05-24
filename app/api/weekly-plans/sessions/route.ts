@@ -10,6 +10,9 @@ function parseSessionJson(s: any) {
     if (s.contentBlocks && typeof s.contentBlocks === 'string') {
         try { s.contentBlocks = JSON.parse(s.contentBlocks); } catch { s.contentBlocks = []; }
     }
+    if (s.trainingBlocks && typeof s.trainingBlocks === 'string') {
+        try { s.trainingBlocks = JSON.parse(s.trainingBlocks); } catch { s.trainingBlocks = []; }
+    }
 }
 
 export async function GET(req: Request) {
@@ -60,7 +63,7 @@ export async function POST(request: Request) {
         const data = flattenPayload(await request.json());
 
         const session = await sql`
-            INSERT INTO "DailySession" ("id", "weeklyPlanId", "label", "date", "imageData", "imageType", "notes", "sortOrder", "contentBlocks", "contentHtml", "editorMode", "createdAt")
+            INSERT INTO "DailySession" ("id", "weeklyPlanId", "label", "date", "imageData", "imageType", "notes", "sortOrder", "contentBlocks", "trainingBlocks", "totalDistance", "contentHtml", "editorMode", "trainingType", "primaryStroke", "createdAt")
             VALUES (
                 ${crypto.randomUUID()},
                 ${String(data.weeklyPlanId)},
@@ -71,8 +74,12 @@ export async function POST(request: Request) {
                 ${data.notes},
                 ${Number(data.sortOrder) || 0},
                 ${data.contentBlocks ? JSON.stringify(data.contentBlocks) : null},
+                ${data.trainingBlocks ? JSON.stringify(data.trainingBlocks) : null},
+                ${data.totalDistance !== undefined ? Number(data.totalDistance) : null},
                 ${data.contentHtml ?? null},
                 ${data.editorMode ?? "legacy"},
+                ${data.trainingType ?? null},
+                ${data.primaryStroke ?? null},
                 NOW()
             )
             RETURNING *
@@ -99,6 +106,7 @@ export async function PUT(request: Request) {
         const current = existing[0];
 
         const contentBlocksJson = data.contentBlocks !== undefined ? JSON.stringify(data.contentBlocks) : current.contentBlocks;
+        const trainingBlocksJson = data.trainingBlocks !== undefined ? JSON.stringify(data.trainingBlocks) : current.trainingBlocks;
 
         const session = await sql`
             UPDATE "DailySession" SET
@@ -109,8 +117,12 @@ export async function PUT(request: Request) {
                 "notes" = ${data.notes !== undefined ? data.notes : current.notes},
                 "sortOrder" = ${data.sortOrder !== undefined ? Number(data.sortOrder) : current.sortOrder},
                 "contentBlocks" = ${contentBlocksJson},
+                "trainingBlocks" = ${trainingBlocksJson},
+                "totalDistance" = ${data.totalDistance !== undefined ? Number(data.totalDistance) : current.totalDistance},
                 "contentHtml" = ${data.contentHtml !== undefined ? data.contentHtml : current.contentHtml},
-                "editorMode" = ${data.editorMode !== undefined ? data.editorMode : current.editorMode}
+                "editorMode" = ${data.editorMode !== undefined ? data.editorMode : current.editorMode},
+                "trainingType" = ${data.trainingType !== undefined ? data.trainingType : current.trainingType},
+                "primaryStroke" = ${data.primaryStroke !== undefined ? data.primaryStroke : current.primaryStroke}
             WHERE "id" = ${id}
             RETURNING *
         `;
