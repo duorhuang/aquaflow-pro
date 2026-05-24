@@ -156,6 +156,13 @@ export function AvatarRenderer({
                         <stop offset="65%" stopColor="#78350f" />
                         <stop offset="100%" stopColor="#451a03" />
                     </radialGradient>
+
+                    {/* Premium 2.5D Volumetric Sporty Blue for Swim Cap */}
+                    <linearGradient id="universalCapGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#22b8cf" />
+                        <stop offset="50%" stopColor="#0b7285" />
+                        <stop offset="100%" stopColor="#0c8599" />
+                    </linearGradient>
                 </defs>
 
                 {/* Apply the sketchyPen filter globally to the avatar group to warp lines into a hand-drawn illustration style! */}
@@ -727,16 +734,80 @@ export function AvatarRenderer({
                                     // 通用低价装备：基础防风硅胶泳帽 (100% snug fitting, no flying saucers)
                                     case 'head_universal_cap':
                                     default:
-                                        return (
-                                            <g>
-                                                {activeBase === 'shinchan' && <path d="M 28 22 C 28 9, 72 9, 72 22 Q 50 25 28 22 Z" fill="#4dabf7" stroke="#000" strokeWidth="1.6" />}
-                                                {activeBase === 'minion' && <path d="M 33 22 A 16 16 0 0 1 67 22 Q 50 25 33 22 Z" fill="#4dabf7" stroke="#000" strokeWidth="1.6" />}
-                                                {activeBase === 'loggervick' && <path d="M 32 24 C 32 11, 68 11, 68 24 Q 50 27 32 24 Z" fill="#4dabf7" stroke="#000" strokeWidth="1.6" />}
-                                                {activeBase === 'ggbond' && <path d="M 28 30 C 28 14, 72 14, 72 30 Q 50 33 28 30 Z" fill="#4dabf7" stroke="#000" strokeWidth="1.6" />}
-                                                {activeBase === 'conan' && <path d="M 31 23 C 31 11, 69 11, 69 23 Q 50 26 31 23 Z" fill="#4dabf7" stroke="#000" strokeWidth="1.6" />}
-                                                {activeBase === 'octonauts' && <path d="M 34 22 C 34 10, 66 10, 66 22 Q 50 25 34 22 Z" fill="#4dabf7" stroke="#000" strokeWidth="1.6" />}
-                                            </g>
-                                        );
+                                        return (() => {
+                                            switch (activeBase) {
+                                                case 'shinchan':
+                                                    return (
+                                                        <g>
+                                                            {/* Snug silicone racing cap */}
+                                                            <path d="M 31 22 Q 50 7 69 22 Q 50 25 31 22 Z" fill="url(#universalCapGrad)" stroke="#000" strokeWidth="1.6" />
+                                                            {/* Specular high-gloss reflection highlight */}
+                                                            <path d="M 34 18 Q 50 11 66 18" fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" opacity="0.5" />
+                                                            {/* Seam line */}
+                                                            <path d="M 50 8 Q 50 16 50 23" fill="none" stroke="#1098ad" strokeWidth="0.8" opacity="0.7" />
+                                                            {/* Sporty wave logo */}
+                                                            <path d="M 45 18 Q 50 15 55 18 M 47 20 Q 50 17 53 20" fill="none" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" />
+                                                        </g>
+                                                    );
+                                                case 'minion':
+                                                    return (
+                                                        <g>
+                                                            {/* Snug cap A-shape */}
+                                                            <path d="M 33 22 A 16 16 0 0 1 67 22 Q 50 26 33 22 Z" fill="url(#universalCapGrad)" stroke="#000" strokeWidth="1.6" />
+                                                            {/* Volumetric highlight */}
+                                                            <path d="M 36 17 Q 50 11 64 17" fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" opacity="0.5" />
+                                                            {/* Sporty wave logo */}
+                                                            <path d="M 45 19 Q 50 16 55 19 M 47 21 Q 50 18 53 21" fill="none" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" />
+                                                        </g>
+                                                    );
+                                                case 'loggervick':
+                                                    return (
+                                                        <g>
+                                                            {/* Snug fitting dome cap for Logger Vick */}
+                                                            <path d="M 33 19 C 33 7, 67 7, 67 19 Q 50 22 33 19 Z" fill="url(#universalCapGrad)" stroke="#000" strokeWidth="1.6" />
+                                                            {/* Glossy highlight */}
+                                                            <path d="M 36 13 C 36 9, 64 9, 64 13" fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" opacity="0.5" />
+                                                            {/* Sporty wave logo */}
+                                                            <path d="M 45 16 Q 50 13 55 16 M 47 18 Q 50 15 53 18" fill="none" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" />
+                                                        </g>
+                                                    );
+                                                case 'ggbond':
+                                                    return (
+                                                        <g>
+                                                            {/* Snug dome cap for GG Bond */}
+                                                            <path d="M 28 28 C 28 14, 72 14, 72 28 Q 50 31 28 28 Z" fill="url(#universalCapGrad)" stroke="#000" strokeWidth="1.8" />
+                                                            {/* Glossy highlight */}
+                                                            <path d="M 32 21 C 32 17, 68 17, 68 21" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+                                                            {/* Sporty wave logo */}
+                                                            <path d="M 44 24 Q 50 21 56 24 M 46 26 Q 50 23 54 26" fill="none" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" />
+                                                        </g>
+                                                    );
+                                                case 'conan':
+                                                    return (
+                                                        <g>
+                                                            {/* Snug cap for Conan */}
+                                                            <path d="M 31 20 Q 50 5 69 20 Q 50 24 31 20 Z" fill="url(#universalCapGrad)" stroke="#000" strokeWidth="1.6" />
+                                                            {/* Highlight */}
+                                                            <path d="M 34 15 Q 50 8 66 15" fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" opacity="0.5" />
+                                                            {/* Wave logo */}
+                                                            <path d="M 45 16 Q 50 13 55 16 M 47 18 Q 50 15 53 18" fill="none" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" />
+                                                        </g>
+                                                    );
+                                                case 'octonauts':
+                                                    return (
+                                                        <g>
+                                                            {/* Snug cap for Barnacles */}
+                                                            <path d="M 35 17 Q 50 5 65 17 Q 50 20 35 17 Z" fill="url(#universalCapGrad)" stroke="#000" strokeWidth="1.6" />
+                                                            {/* Highlight */}
+                                                            <path d="M 38 12 Q 50 7 62 12" fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" opacity="0.5" />
+                                                            {/* Wave logo */}
+                                                            <path d="M 45 13 Q 50 10 55 13" fill="none" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" />
+                                                        </g>
+                                                    );
+                                                default:
+                                                    return null;
+                                            }
+                                        })();
                                 }
                             })()}
                         </g>
@@ -747,18 +818,26 @@ export function AvatarRenderer({
                        ========================================== */}
                     {eyesKey && (
                         <g filter="url(#shadow)">
-                            {/* Base Strap */}
-                            <path d="M 28 28 L 33 28 M 67 28 L 72 28" stroke="#1a1a1a" strokeWidth="3" />
+                            {/* Detailed silicone strap wrapping realistically around the head */}
+                            <path d="M 26 28 C 26 28, 18 28, 20 30" stroke="#1f1f1f" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                            <path d="M 74 28 C 74 28, 82 28, 80 30" stroke="#1f1f1f" strokeWidth="2.5" fill="none" strokeLinecap="round" />
                             
                             {(() => {
                                 switch (eyesKey) {
-                                    // 蜡笔小新：动感激光防雾泳镜
+                                    // 蜡笔小新：动感激光防雾泳镜 (高科技炫彩遮罩)
                                     case 'eyes_shinchan_actiongoggles':
                                         if (activeBase !== 'shinchan') return null;
                                         return (
                                             <g>
-                                                <rect x="35" y="24" width="30" height="9" rx="2" fill="none" stroke="#f5222d" strokeWidth="3" />
-                                                <rect x="37" y="26" width="26" height="5" fill="#ff7875" className="anim-neon" filter="url(#neonGlow)" />
+                                                <rect x="33" y="24" width="34" height="9" rx="3.5" fill="#52c41a" stroke="#000" strokeWidth="1.8" />
+                                                <rect x="35" y="26" width="30" height="5" rx="1.5" fill="#f5222d" className="anim-neon" filter="url(#neonGlow)" />
+                                                {/* High tech grid lines */}
+                                                <line x1="38" y1="26" x2="38" y2="31" stroke="#ff4d4f" strokeWidth="0.6" opacity="0.6" />
+                                                <line x1="45" y1="26" x2="45" y2="31" stroke="#ff4d4f" strokeWidth="0.6" opacity="0.6" />
+                                                <line x1="55" y1="26" x2="55" y2="31" stroke="#ff4d4f" strokeWidth="0.6" opacity="0.6" />
+                                                <line x1="62" y1="26" x2="62" y2="31" stroke="#ff4d4f" strokeWidth="0.6" opacity="0.6" />
+                                                {/* Glossy reflection glare */}
+                                                <polygon points="35,26 42,26 38,31 35,31" fill="#fff" opacity="0.4" />
                                             </g>
                                         );
 
@@ -767,77 +846,98 @@ export function AvatarRenderer({
                                         if (activeBase !== 'minion') return null;
                                         return (
                                             <g>
-                                                <circle cx="50" cy="29" r="12" fill="none" stroke="url(#gold)" strokeWidth="3.5" />
-                                                <ellipse cx="50" cy="29" rx="9" ry="3" fill="#ffe066" opacity="0.6" stroke="#000" strokeWidth="0.8" />
+                                                {isOneEyedMinion ? (
+                                                    <g>
+                                                        <circle cx="50" cy="29" r="13" fill="none" stroke="url(#gold)" strokeWidth="3.8" />
+                                                        <circle cx="50" cy="29" r="11" fill="none" stroke="#000" strokeWidth="1" />
+                                                        {/* Glossy glares */}
+                                                        <path d="M 41 22 Q 50 17 59 22" fill="none" stroke="#fff" strokeWidth="1.2" opacity="0.6" />
+                                                        <polygon points="43,26 53,20 48,34 38,34" fill="#fff" opacity="0.25" />
+                                                    </g>
+                                                ) : (
+                                                    <g>
+                                                        <circle cx="44" cy="29" r="9" fill="none" stroke="url(#gold)" strokeWidth="3.2" />
+                                                        <circle cx="44" cy="29" r="7.5" fill="none" stroke="#000" strokeWidth="0.8" />
+                                                        <circle cx="56" cy="29" r="9" fill="none" stroke="url(#gold)" strokeWidth="3.2" />
+                                                        <circle cx="56" cy="29" r="7.5" fill="none" stroke="#000" strokeWidth="0.8" />
+                                                        {/* Glossy glares */}
+                                                        <polygon points="39,26 46,22 43,33 36,33" fill="#fff" opacity="0.25" />
+                                                        <polygon points="51,26 58,22 55,33 48,33" fill="#fff" opacity="0.25" />
+                                                    </g>
+                                                )}
                                             </g>
                                         );
 
-                                    // 猪猪侠：炽热火云流光防雾泳镜
+                                    // 猪猪侠：炽热火云流光防雾泳镜 (火焰翅膀框架)
                                     case 'eyes_ggbond_firegoggles':
                                         if (activeBase !== 'ggbond') return null;
                                         return (
                                             <g>
-                                                <path d="M 33 21 L 48 23 L 52 23 L 67 21 L 64 31 L 36 31 Z" fill="url(#fireGrad)" stroke="#000" strokeWidth="1.6" />
-                                                <line x1="33" y1="21" x2="67" y2="21" stroke="#fff" strokeWidth="2.5" opacity="0.8" />
+                                                {/* Left wing flame */}
+                                                <path d="M 33 21 C 28 20, 22 25, 26 31 L 36 31 Z" fill="url(#fireGrad)" stroke="#000" strokeWidth="1.4" />
+                                                {/* Right wing flame */}
+                                                <path d="M 67 21 C 72 20, 78 25, 74 31 L 64 31 Z" fill="url(#fireGrad)" stroke="#000" strokeWidth="1.4" />
+                                                {/* Lens body */}
+                                                <path d="M 33 21 L 48 23 H 52 L 67 21 L 64 31 H 36 Z" fill="#78350f" stroke="#000" strokeWidth="1.8" />
+                                                <path d="M 35 22.5 L 47 24 H 53 L 65 22.5 L 62 29.5 H 38 Z" fill="url(#fireGrad)" opacity="0.9" />
+                                                {/* Specular Glare */}
+                                                <line x1="33" y1="21" x2="67" y2="21" stroke="#fff" strokeWidth="2.0" opacity="0.85" strokeLinecap="round" />
+                                                <polygon points="36,23 45,23 40,29 36,29" fill="#fff" opacity="0.5" />
+                                                <polygon points="55,23 64,23 59,29 55,29" fill="#fff" opacity="0.5" />
                                             </g>
                                         );
 
-                                    // 柯南：追踪型夜视目镜泳镜
+                                    // 柯南：追踪型夜视目镜泳镜 (战术网格与十字瞄准准心)
                                     case 'eyes_conan_scopegoggles':
                                         if (activeBase !== 'conan') return null;
                                         return (
                                             <g>
-                                                <rect x="31" y="20" width="16" height="12" rx="2" fill="none" stroke="#52c41a" strokeWidth="3.5" />
-                                                <rect x="53" y="20" width="16" height="12" rx="2" fill="none" stroke="#52c41a" strokeWidth="3.5" />
-                                                <line x1="47" y1="26" x2="53" y2="26" stroke="#52c41a" strokeWidth="3.5" />
-                                                <circle cx="61" cy="26" r="4.5" fill="none" stroke="#f5222d" strokeWidth="1.2" />
-                                                <line x1="56" y1="26.5" x2="66" y2="26.5" stroke="#f5222d" strokeWidth="1" />
+                                                {/* Tactical frames */}
+                                                <rect x="31" y="20" width="16" height="12" rx="3.2" fill="none" stroke="#52c41a" strokeWidth="3.2" />
+                                                <rect x="53" y="20" width="16" height="12" rx="3.2" fill="none" stroke="#52c41a" strokeWidth="3.2" />
+                                                <line x1="47" y1="26" x2="53" y2="26" stroke="#52c41a" strokeWidth="3.2" />
+                                                
+                                                {/* Glowing HUD Target crosshair inside right lens */}
+                                                <circle cx="61" cy="26" r="4.5" fill="none" stroke="#ff4d4f" strokeWidth="1.2" className="anim-neon" />
+                                                <line x1="55" y1="26" x2="67" y2="26" stroke="#ff4d4f" strokeWidth="0.8" />
+                                                <line x1="61" y1="20" x2="61" y2="32" stroke="#ff4d4f" strokeWidth="0.8" />
+                                                
+                                                {/* Specular glare */}
+                                                <polygon points="32,21 38,21 34,31 32,31" fill="#fff" opacity="0.4" />
+                                                <polygon points="54,21 60,21 56,31 54,31" fill="#fff" opacity="0.4" />
                                             </g>
                                         );
 
-                                    // 巴克队长：章鱼堡全景高清防水镜
+                                    // 巴克队长：章鱼堡全景高清防水镜 (全景面罩与水滴高光)
                                     case 'eyes_octonauts_goggles':
                                         if (activeBase !== 'octonauts') return null;
                                         return (
                                             <g>
-                                                <rect x="34" y="19" width="32" height="11" rx="4" fill="rgba(59,201,219,0.5)" stroke="#096dd9" strokeWidth="2.6" />
-                                                <path d="M 36 21 H 64" stroke="#fff" strokeWidth="2.5" opacity="0.7" />
+                                                <rect x="33" y="18" width="34" height="12" rx="4" fill="rgba(34, 184, 207, 0.4)" stroke="#096dd9" strokeWidth="2.8" />
+                                                {/* Thick seal border */}
+                                                <rect x="34.5" y="19.5" width="31" height="9" rx="2.5" fill="none" stroke="#3bc9db" strokeWidth="1" />
+                                                {/* Glossy reflection waves */}
+                                                <path d="M 35 20 Q 50 16 65 20" fill="none" stroke="#ffffff" strokeWidth="2" opacity="0.8" />
+                                                <polygon points="35,21 44,21 39,28 35,28" fill="#fff" opacity="0.45" />
+                                                {/* Micro water droplets bubbles */}
+                                                <circle cx="37" cy="26" r="0.8" fill="#fff" opacity="0.7" />
+                                                <circle cx="63" cy="22" r="0.6" fill="#fff" opacity="0.7" />
                                             </g>
                                         );
 
-                                    // 通用低价装备：基础训练黑框泳镜
+                                    // 通用低价装备：标准防滑反光黑框泳镜
                                     case 'eyes_universal_goggles':
                                     default:
                                         return (
                                             <g>
-                                                {(activeBase === 'shinchan' || activeBase === 'loggervick' || activeBase === 'conan') && (
-                                                    <g>
-                                                        <rect x="34" y="23" width="13" height="9" rx="2" fill="rgba(59,201,219,0.4)" stroke="#000" strokeWidth="2.2" />
-                                                        <rect x="53" y="23" width="13" height="9" rx="2" fill="rgba(59,201,219,0.4)" stroke="#000" strokeWidth="2.2" />
-                                                        <line x1="47" y1="27" x2="53" y2="27" stroke="#000" strokeWidth="2.2" />
-                                                    </g>
-                                                )}
-                                                {activeBase === 'minion' && (
-                                                    <g>
-                                                        <rect x="35" y="25" width="13" height="10" rx="2" fill="rgba(59,201,219,0.4)" stroke="#000" strokeWidth="2.2" />
-                                                        <rect x="52" y="25" width="13" height="10" rx="2" fill="rgba(59,201,219,0.4)" stroke="#000" strokeWidth="2.2" />
-                                                        <line x1="48" y1="29" x2="52" y2="29" stroke="#000" strokeWidth="2.2" />
-                                                    </g>
-                                                )}
-                                                {activeBase === 'ggbond' && (
-                                                    <g>
-                                                        <rect x="33" y="21" width="14" height="10" rx="2" fill="rgba(59,201,219,0.4)" stroke="#000" strokeWidth="2.2" />
-                                                        <rect x="53" y="21" width="14" height="10" rx="2" fill="rgba(59,201,219,0.4)" stroke="#000" strokeWidth="2.2" />
-                                                        <line x1="47" y1="25" x2="53" y2="25" stroke="#000" strokeWidth="2.2" />
-                                                    </g>
-                                                )}
-                                                {activeBase === 'octonauts' && (
-                                                    <g>
-                                                        <rect x="35" y="20" width="12" height="9" rx="2" fill="rgba(59,201,219,0.4)" stroke="#000" strokeWidth="2.2" />
-                                                        <rect x="53" y="20" width="12" height="9" rx="2" fill="rgba(59,201,219,0.4)" stroke="#000" strokeWidth="2.2" />
-                                                        <line x1="47" y1="24" x2="53" y2="24" stroke="#000" strokeWidth="2.2" />
-                                                    </g>
-                                                )}
+                                                <g stroke="#1f1f1f" strokeWidth="2.2" fill="rgba(30, 41, 59, 0.65)" strokeLinejoin="round">
+                                                    <rect x="34" y="23" width="13" height="9" rx="2.5" />
+                                                    <rect x="53" y="23" width="13" height="9" rx="2.5" />
+                                                    <line x1="47" y1="27" x2="53" y2="27" strokeWidth="3" />
+                                                </g>
+                                                {/* Anti-fog glass reflections */}
+                                                <polygon points="35,24 41,24 37,31 35,31" fill="#fff" opacity="0.5" />
+                                                <polygon points="54,24 60,24 56,31 54,31" fill="#fff" opacity="0.5" />
                                             </g>
                                         );
                                 }
@@ -852,14 +952,19 @@ export function AvatarRenderer({
                         <g>
                             {(() => {
                                 switch (bodyKey) {
-                                    // 蜡笔小新：动感超人流线型泳衣
+                                    // 蜡笔小新：动感超人流线型泳衣 (三色立体线条与皮带)
                                     case 'body_shinchan_actionsuit':
                                         if (activeBase !== 'shinchan') return null;
                                         return (
                                             <g>
-                                                <path d="M 36 50 C 36 50, 50 51, 64 50 L 62 67 C 50 68, 50 68, 38 67 Z" fill="#52c41a" stroke="#000" strokeWidth="1.6" />
+                                                <path d="M 36 50 C 36 50, 50 52, 64 50 L 62 67 C 50 69, 50 69, 38 67 Z" fill="#52c41a" stroke="#000" strokeWidth="1.8" />
+                                                {/* White center strip */}
                                                 <path d="M 45 50 L 50 67 L 55 50 Z" fill="#ffffff" stroke="#000" strokeWidth="1.2" />
-                                                <polygon points="50,53 47,57 53,57" fill="#f5222d" stroke="#000" strokeWidth="1" />
+                                                {/* Red triangle crest */}
+                                                <polygon points="50,53 47,58 53,58" fill="#f5222d" stroke="#000" strokeWidth="0.8" />
+                                                {/* Suit fabric folds */}
+                                                <path d="M 39 55 Q 42 59 45 56" fill="none" stroke="#389e0d" strokeWidth="1.2" />
+                                                <path d="M 61 55 Q 58 59 55 56" fill="none" stroke="#389e0d" strokeWidth="1.2" />
                                             </g>
                                         );
 
@@ -868,19 +973,25 @@ export function AvatarRenderer({
                                         if (activeBase !== 'minion') return null;
                                         return (
                                             <g>
-                                                <path d="M 34 52 Q 50 55 66 52 L 66 71 A 16 16 0 0 1 34 71 Z" fill="#2f54eb" stroke="#000" strokeWidth="1.6" />
-                                                <path d="M 38 52 V 71 M 62 52 V 71" stroke="#fadb14" strokeWidth="2.5" />
+                                                <path d="M 34 52 Q 50 55 66 52 L 66 71 A 16 16 0 0 1 34 71 Z" fill="#2d59ca" stroke="#000" strokeWidth="1.8" />
+                                                {/* Yellow highlights/stitches */}
+                                                <path d="M 38 52 V 71 M 62 52 V 71" stroke="#fcd34d" strokeWidth="2.5" strokeDasharray="1.5,1.5" />
+                                                <path d="M 34 58 H 66" stroke="#1d3d94" strokeWidth="1.5" />
                                             </g>
                                         );
 
-                                    // 猪猪侠：红色披风紧身竞技泳衣
+                                    // 猪猪侠：红色披风紧身竞技泳衣 (黄金护胸)
                                     case 'body_ggbond_capesuit':
                                         if (activeBase !== 'ggbond') return null;
                                         return (
                                             <g>
-                                                <path d="M 33 46 C 33 46, 50 48, 67 46 L 63 68 C 50 72, 50 72, 37 68 Z" fill="#ff4d4f" stroke="#000" strokeWidth="1.6" />
-                                                <path d="M 42 46 L 50 62 L 58 46 Z" fill="url(#gold)" stroke="#000" strokeWidth="1.2" />
-                                                <polygon points="50,48 48,53 52,53" fill="#ff4d4f" />
+                                                <path d="M 33 46 C 33 46, 50 48, 67 46 L 63 68 C 50 71.5, 50 71.5, 37 68 Z" fill="#e11d48" stroke="#000" strokeWidth="1.8" />
+                                                {/* Gold-plated breastplate */}
+                                                <path d="M 41 46 L 50 63 L 59 46 Z" fill="url(#gold)" stroke="#d97706" strokeWidth="1.4" />
+                                                <polygon points="50,48 48,53 52,53" fill="#be123c" />
+                                                {/* Flowing cape shadow */}
+                                                <path d="M 33 48 C 28 50, 26 62, 30 68" fill="none" stroke="#be123c" strokeWidth="3" opacity="0.6" strokeLinecap="round" />
+                                                <path d="M 67 48 C 72 50, 74 62, 70 68" fill="none" stroke="#be123c" strokeWidth="3" opacity="0.6" strokeLinecap="round" />
                                             </g>
                                         );
 
@@ -898,55 +1009,106 @@ export function AvatarRenderer({
                         <g filter="url(#shadow)">
                             {(() => {
                                 switch (feetKey) {
-                                    // 光头强：伐木工防滑高弹橡胶脚蹼
+                                    // 光头强：专业深海重型潜水脚蹼 (带筋条与水流槽)
                                     case 'feet_loggervick_rubberfeet':
                                         if (activeBase !== 'loggervick') return null;
                                         return (
-                                            <g>
-                                                <path d="M 42 78 L 22 95 L 45 92 Z" fill="#78350f" stroke="#000" strokeWidth="1.6" />
-                                                <path d="M 58 78 L 78 95 L 55 92 Z" fill="#78350f" stroke="#000" strokeWidth="1.6" />
+                                            <g fill="#7c2d12" stroke="#000" strokeWidth="1.6" strokeLinejoin="round">
+                                                {/* Left Fin */}
+                                                <path d="M 40 76 L 18 95 L 43 91 Z" />
+                                                {/* Foot pocket & side ribs */}
+                                                <path d="M 40 76 L 33 84 L 42 83 Z" fill="#451a03" />
+                                                <line x1="18" y1="95" x2="33" y2="84" stroke="#000" strokeWidth="2.5" />
+                                                <line x1="28" y1="93" x2="37" y2="83" stroke="#d97706" strokeWidth="1.2" />
+
+                                                {/* Right Fin */}
+                                                <path d="M 60 76 L 82 95 L 57 91 Z" />
+                                                {/* Foot pocket & side ribs */}
+                                                <path d="M 60 76 L 67 84 L 58 83 Z" fill="#451a03" />
+                                                <line x1="82" y1="95" x2="67" y2="84" stroke="#000" strokeWidth="2.5" />
+                                                <line x1="72" y1="93" x2="63" y2="83" stroke="#d97706" strokeWidth="1.2" />
                                             </g>
                                         );
 
-                                    // 猪猪侠：火云铁翼超能强力脚蹼
+                                    // 猪猪侠：火云铁翼超能强力脚蹼 (羽翼刀刃)
                                     case 'feet_ggbond_firefeet':
                                         if (activeBase !== 'ggbond') return null;
                                         return (
-                                            <g>
-                                                <path d="M 42 78 L 22 95 L 45 92 Z" fill="url(#fireGrad)" stroke="#000" strokeWidth="1.6" />
-                                                <path d="M 58 78 L 78 95 L 55 92 Z" fill="url(#fireGrad)" stroke="#000" strokeWidth="1.6" />
+                                            <g fill="url(#fireGrad)" stroke="#000" strokeWidth="1.6" strokeLinejoin="round">
+                                                {/* Left wing blade */}
+                                                <path d="M 40 76 L 16 96 L 30 92 L 43 90 Z" />
+                                                <polygon points="16,96 22,86 26,90" fill="#fadb14" stroke="#000" strokeWidth="1" />
+                                                {/* Foot pocket */}
+                                                <path d="M 40 76 L 34 84 L 42 83 Z" fill="#9f1239" />
+
+                                                {/* Right wing blade */}
+                                                <path d="M 60 76 L 84 96 L 70 92 L 57 90 Z" />
+                                                <polygon points="84,96 78,86 74,90" fill="#fadb14" stroke="#000" strokeWidth="1" />
+                                                {/* Foot pocket */}
+                                                <path d="M 60 76 L 66 84 L 58 83 Z" fill="#9f1239" />
                                             </g>
                                         );
 
-                                    // 柯南：涡轮喷射水下助推脚套
+                                    // 柯南：涡轮喷射水下助推器 (金属外壳与尾焰喷口)
                                     case 'feet_conan_turbofeet':
                                         if (activeBase !== 'conan') return null;
                                         return (
                                             <g>
-                                                <rect x="35" y="75" width="10" height="16" rx="3" fill="#e8eaed" stroke="#000" strokeWidth="1.6" />
-                                                <rect x="55" y="75" width="10" height="16" rx="3" fill="#e8eaed" stroke="#000" strokeWidth="1.6" />
-                                                <circle cx="40" cy="90" r="2.5" fill="#3bc9db" className="anim-neon" filter="url(#neonGlow)" />
-                                                <circle cx="60" cy="90" r="2.5" fill="#3bc9db" className="anim-neon" filter="url(#neonGlow)" />
+                                                {/* Left Boot */}
+                                                <rect x="34" y="74" width="11" height="17" rx="3.5" fill="#e2e8f0" stroke="#000" strokeWidth="1.8" />
+                                                <circle cx="39.5" cy="88" r="2.5" fill="#22b8cf" className="anim-neon" filter="url(#neonGlow)" />
+                                                <line x1="34" y1="79" x2="45" y2="79" stroke="#94a3b8" strokeWidth="1.2" />
+                                                {/* Bolt rivets */}
+                                                <circle cx="36" cy="76" r="0.5" fill="#444" />
+                                                <circle cx="43" cy="76" r="0.5" fill="#444" />
+
+                                                {/* Right Boot */}
+                                                <rect x="55" y="74" width="11" height="17" rx="3.5" fill="#e2e8f0" stroke="#000" strokeWidth="1.8" />
+                                                <circle cx="60.5" cy="88" r="2.5" fill="#22b8cf" className="anim-neon" filter="url(#neonGlow)" />
+                                                <line x1="55" y1="79" x2="66" y2="79" stroke="#94a3b8" strokeWidth="1.2" />
+                                                {/* Bolt rivets */}
+                                                <circle cx="57" cy="76" r="0.5" fill="#444" />
+                                                <circle cx="64" cy="76" r="0.5" fill="#444" />
                                             </g>
                                         );
 
-                                    // 巴克队长：极地防寒速干加厚脚蹼
+                                    // 巴克队长：极地防寒速干加厚脚蹼 (熊爪刺绣徽章)
                                     case 'feet_octonauts_feet':
                                         if (activeBase !== 'octonauts') return null;
                                         return (
-                                            <g>
-                                                <path d="M 42 76 L 28 92 L 45 88 Z" fill="#096dd9" stroke="#000" strokeWidth="1.5" />
-                                                <path d="M 58 76 L 72 92 L 55 88 Z" fill="#096dd9" stroke="#000" strokeWidth="1.5" />
+                                            <g fill="#0b7285" stroke="#000" strokeWidth="1.6" strokeLinejoin="round">
+                                                {/* Left polar fin */}
+                                                <path d="M 40 75 L 20 92 L 43 89 Z" />
+                                                <path d="M 40 75 L 34 83 L 42 82 Z" fill="#0891b2" />
+                                                {/* Bear paw print logo */}
+                                                <circle cx="30" cy="86" r="1.5" fill="#fff" stroke="none" />
+                                                <circle cx="28" cy="83" r="0.6" fill="#fff" stroke="none" />
+                                                <circle cx="30" cy="82" r="0.6" fill="#fff" stroke="none" />
+                                                <circle cx="32" cy="83" r="0.6" fill="#fff" stroke="none" />
+
+                                                {/* Right polar fin */}
+                                                <path d="M 60 75 L 80 92 L 57 89 Z" />
+                                                <path d="M 60 75 L 66 83 L 58 82 Z" fill="#0891b2" />
+                                                {/* Bear paw print logo */}
+                                                <circle cx="70" cy="86" r="1.5" fill="#fff" stroke="none" />
+                                                <circle cx="68" cy="83" r="0.6" fill="#fff" stroke="none" />
+                                                <circle cx="70" cy="82" r="0.6" fill="#fff" stroke="none" />
+                                                <circle cx="72" cy="83" r="0.6" fill="#fff" stroke="none" />
                                             </g>
                                         );
 
-                                    // 通用低价装备：防滑简约运动拖鞋
+                                    // 通用低价装备：防滑高弹运动泳拖 (防滑纹路细节)
                                     case 'feet_universal_slippers':
                                     default:
                                         return (
-                                            <g>
-                                                <rect x="32" y="78" width="12" height="4.5" fill="#495057" stroke="#000" strokeWidth="1.5" rx="1.5" />
-                                                <rect x="56" y="78" width="12" height="4.5" fill="#495057" stroke="#000" strokeWidth="1.5" rx="1.5" />
+                                            <g stroke="#000" strokeWidth="1.5">
+                                                {/* Left Slipper */}
+                                                <rect x="31" y="77" width="13" height="5.5" fill="#343a40" rx="1.8" />
+                                                <path d="M 33 77 Q 37.5 74 42 77" fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" />
+                                                
+                                                {/* Right Slipper */}
+                                                <rect x="56" y="77" width="13" height="5.5" fill="#343a40" rx="1.8" />
+                                                <path d="M 58 77 Q 62.5 74 67 77" fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" />
                                             </g>
                                         );
                                 }
@@ -961,60 +1123,99 @@ export function AvatarRenderer({
                         <g className="anim-prop" filter="url(#shadow)">
                             {(() => {
                                 switch (handKey) {
-                                    // 蜡笔小新：小熊饼干防水速干浮板
+                                    // 蜡笔小新：小熊饼干经典浮板 (手绘粉色恐龙)
                                     case 'hand_shinchan_chocobi':
                                         if (activeBase !== 'shinchan') return null;
                                         return (
                                             <g>
-                                                <polygon points="68,44 76,40 84,44 84,62 76,66 68,62" fill="#52c41a" stroke="#000" strokeWidth="1.6" />
-                                                <polygon points="70,45 76,42 82,45 82,61 76,64 70,61" fill="#237804" />
-                                                <polygon points="76,48 78,53 83,53 79,56 81,61 76,58 71,61 73,56 69,53 74,53" fill="#ff85c0" stroke="#000" strokeWidth="1" />
+                                                {/* Hexagonal cookie box */}
+                                                <polygon points="68,44 76,39 84,44 84,63 76,68 68,63" fill="#52c41a" stroke="#000" strokeWidth="1.8" strokeLinejoin="round" />
+                                                {/* Top and side panel outlines */}
+                                                <line x1="76" y1="39" x2="76" y2="68" stroke="#237804" strokeWidth="1.4" />
+                                                
+                                                {/* Cute pink dinosaur logo (Wani-yama-san) */}
+                                                <path d="M 72 56 C 72 50, 80 50, 80 56 C 80 61, 72 61, 72 56 Z" fill="#ff85c0" stroke="#000" strokeWidth="0.8" />
+                                                <polygon points="76,51 77,53 79,53 77,54 78,57 76,55 74,57 75,54 73,53 75,53" fill="#fadb14" stroke="#000" strokeWidth="0.6" />
+                                                <circle cx="75" cy="54" r="0.5" fill="#000" />
+                                                <circle cx="77" cy="54" r="0.5" fill="#000" />
                                             </g>
                                         );
 
-                                    // 小黄人：香蕉型安全游泳圈
+                                    // 小黄人：香蕉造型游泳充气救生圈 (带风嘴气门)
                                     case 'hand_minion_bananaring':
                                         if (activeBase !== 'minion') return null;
                                         return (
                                             <g>
-                                                <path d="M 64 56 Q 74 38 84 56 Q 74 74 64 56" fill="none" stroke="#ffe066" strokeWidth="14" strokeLinecap="round" />
-                                                <path d="M 64 56 Q 74 38 84 56 Q 74 74 64 56" fill="none" stroke="#000" strokeWidth="16" strokeLinecap="round" opacity="0.15" />
-                                                <path d="M 64 56 Q 74 38 84 56 Q 74 74 64 56" fill="none" stroke="#f59f00" strokeWidth="11" strokeLinecap="round" />
+                                                {/* Volumetric Inflatable Ring */}
+                                                <path d="M 64 56 Q 74 38 84 56 Q 74 74 64 56" fill="none" stroke="#f59f00" strokeWidth="15" strokeLinecap="round" />
+                                                <path d="M 64 56 Q 74 38 84 56 Q 74 74 64 56" fill="none" stroke="#ffe066" strokeWidth="10" strokeLinecap="round" />
+                                                {/* Glossy inflatable reflections */}
+                                                <path d="M 66 53 Q 74 41 82 53" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" opacity="0.6" />
+                                                {/* Banana ends */}
+                                                <circle cx="64" cy="56" r="2.5" fill="#5c3a21" stroke="#000" strokeWidth="0.8" />
+                                                <circle cx="84" cy="56" r="2.5" fill="#5c3a21" stroke="#000" strokeWidth="0.8" />
+                                                {/* Mini inflation valve */}
+                                                <rect x="76" y="66" width="2" height="3.5" rx="0.5" fill="#ffffff" stroke="#000" strokeWidth="0.8" transform="rotate(15 76 66)" />
                                             </g>
                                         );
 
-                                    // 光头强：迷你电锯阻力训练划水掌
+                                    // 光头强：大功率电锯阻力训练桨 (带锯齿链条与风栅)
                                     case 'hand_loggervick_chainsaw':
                                         if (activeBase !== 'loggervick') return null;
                                         return (
-                                            <g>
-                                                <rect x="67" y="44" width="11" height="21" rx="3" fill="#ffa94d" stroke="#000" strokeWidth="1.6" />
-                                                <path d="M 78 44 L 81 46 L 78 48 L 81 50 L 78 52 L 81 54 L 78 56 L 81 58 L 78 60 L 81 62" stroke="#000" strokeWidth="1.8" fill="none" />
+                                            <g stroke="#000" strokeWidth="1.6" strokeLinejoin="round">
+                                                {/* Chainsaw guide bar */}
+                                                <rect x="68" y="42" width="10" height="23" rx="3.5" fill="#ced4da" />
+                                                {/* Metal highlights */}
+                                                <line x1="73" y1="42" x2="73" y2="65" stroke="#ffffff" strokeWidth="1.2" />
+                                                {/* Jagged sharp silver chain teeth */}
+                                                <path d="M 78 42 L 81 44 L 78 46 L 81 48 L 78 50 L 81 52 L 78 54 L 81 56 L 78 58 L 81 60 L 78 62" fill="none" strokeWidth="1.8" />
+                                                {/* Orange engine body */}
+                                                <rect x="63" y="55" width="12" height="11" rx="2" fill="#ff781e" />
+                                                {/* Ventilation engine grille */}
+                                                <line x1="65" y1="58" x2="71" y2="58" stroke="#000" strokeWidth="1" />
+                                                <line x1="65" y1="61" x2="71" y2="61" stroke="#000" strokeWidth="1" />
+                                                <line x1="65" y1="64" x2="71" y2="64" stroke="#000" strokeWidth="1" />
                                             </g>
                                         );
 
-                                    // 柯南：麻醉枪防水防寒战术手表
+                                    // 柯南：麻醉枪战术雷达定位手表 (金属表盘与发射灯)
                                     case 'hand_conan_watch':
                                         if (activeBase !== 'conan') return null;
                                         return (
                                             <g>
-                                                <rect x="25" y="55" width="7" height="4.5" fill="#333" stroke="#000" strokeWidth="1.2" rx="1" />
-                                                <circle cx="28.5" cy="57" r="3.2" fill="#e8eaed" stroke="#000" strokeWidth="1.4" />
-                                                <circle cx="28.5" cy="57" r="0.8" fill="#f5222d" className="anim-neon" />
+                                                {/* Strap */}
+                                                <rect x="25" y="55" width="7.5" height="5" fill="#495057" stroke="#000" strokeWidth="1.2" rx="1" />
+                                                {/* Bezel */}
+                                                <circle cx="28.5" cy="57.5" r="4.2" fill="#adb5bd" stroke="#000" strokeWidth="1.6" />
+                                                {/* Radar screen glass */}
+                                                <circle cx="28.5" cy="57.5" r="2.8" fill="rgba(82, 196, 26, 0.4)" stroke="#52c41a" strokeWidth="0.8" />
+                                                {/* Target indicator */}
+                                                <circle cx="28.5" cy="57.5" r="0.8" fill="#f5222d" className="anim-neon" />
+                                                {/* Radar grid sweep line */}
+                                                <line x1="28.5" y1="57.5" x2="30.5" y2="55.5" stroke="#52c41a" strokeWidth="0.6" />
                                             </g>
                                         );
 
-                                    // 巴克队长：GUP-A艇内嵌水下螺旋桨
+                                    // 巴克队长：GUP-A艇内嵌旋涡式双向螺旋桨 (螺旋桨叶与气泡)
                                     case 'hand_octonauts_propeller':
                                         if (activeBase !== 'octonauts') return null;
                                         return (
                                             <g>
-                                                <rect x="66" y="46" width="11" height="16" rx="3" fill="#3bc9db" stroke="#000" strokeWidth="1.6" />
-                                                <path d="M 71 46 Q 66 38 71 46 Q 76 38 71 46 M 71 61 Q 66 69 71 61 Q 76 69 71 61" stroke="#000" strokeWidth="2.8" strokeLinecap="round" />
+                                                {/* Streamlined main shroud body */}
+                                                <rect x="66" y="47" width="11" height="15" rx="3.5" fill="#3bc9db" stroke="#000" strokeWidth="1.8" />
+                                                <line x1="71.5" y1="47" x2="71.5" y2="62" stroke="#ffffff" strokeWidth="1.2" opacity="0.6" />
+                                                
+                                                {/* Three spinning prop blades */}
+                                                <path d="M 71.5 47 Q 65 37 71.5 47 Q 78 37 71.5 47 M 71.5 62 Q 65 72 71.5 62 Q 78 72 71.5 62" stroke="#0b7285" strokeWidth="3" strokeLinecap="round" fill="none" />
+                                                
+                                                {/* Swirling jet air bubbles */}
+                                                <circle cx="78" cy="40" r="0.8" fill="#fff" opacity="0.7" />
+                                                <circle cx="65" cy="68" r="0.6" fill="#fff" opacity="0.7" />
                                             </g>
                                         );
 
-                                    // 通用低价装备：标准蓝色训练浮板
+                                    // 通用低价装备：标准双扣手执防潮发泡浮板 (双握手把口)
                                     case 'hand_universal_kickboard':
                                     default:
                                         return (

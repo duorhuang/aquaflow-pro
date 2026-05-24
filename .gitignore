@@ -12,6 +12,8 @@
 build/
 dist/
 .open-next/
+.next-old-*/
+.open-next-old-*/
 
 # misc
 .DS_Store

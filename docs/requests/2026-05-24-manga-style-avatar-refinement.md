@@ -44,6 +44,16 @@ The user shared a screenshot showing critical visual regression and proportion b
 - **Double-Hatting Rendering Bug**: When equipping a unisex swimming cap (`head_universal_cap`), it was rendered *on top of* the base character's signature headwear (e.g. Logger Vick's orange construction helmet), resulting in a bizarre, deformed flying-saucer double-hat.
 - **Extreme Proportion Defect**: The peanut face was drawn too narrow, causing the mouth to overflow the head, the eyes to squish/overlap into a cyclops-like shape, and the nose to look like a massive pink bulb.
 
+### Refinement of Shop Accessories (2.5D Premium Swimwear)
+The user noted that swimwear accessories still looked like "simple geometric shapes" (e.g. caps being simple semicircles, fins being simple flat triangles). We will completely overhaul all equipped gear to make them look **incredibly premium, detailed, 2.5D, and textured**:
+- **Multi-Layered Volumetric SVG**: Re-architect all swimwear layers to use multi-layered overlapping paths for rich depth.
+- **Volumetric Gradients & Glossy Highlights**: Utilize detailed color gradients combined with semi-transparent white highlight contours (`opacity="0.6" fill="#fff"`) to represent high-gloss reflections on silicone caps, glass goggles, and carbon-fiber fins.
+- **Micro-Details & Textures**:
+  - **Caps (`head`)**: Add seam lines, brand logos (dynamic waves, wings), and edge-trim details.
+  - **Goggles (`eyes`)**: Add anti-fog lens glare shapes, ergonomic double-rimmed frames, nose bridges, and textured straps wrapping realistically around the head.
+  - **Fins (`feet`)**: Ditch simple triangles. Draw realistic professional swim fins with defined foot pockets, thick reinforcing side-stabilizers, water-channeling ribbed blades, and custom emblems (e.g., GG Bond's flame stabilizers, Barnacles' bear paw prints).
+  - **Kickboards/Accessories (`hand`)**: Add cutout dual-grip handles, EVA foam shading, and high-fidelity graphics (e.g., Shin-chan's Chocobi box with the pink dinosaur logo).
+
 ### Resolution Architecture Refinement
 - **Decoupled Hat Layering**: Discard default headwear (helmets, captain caps) from the base character rendering block. Base character block will *only* render bald heads/hair. All custom helmets/caps will render *only* inside the `headKey` switch block (or as default when `headKey` is empty).
 - **Proportional Correction**: Re-dimension facial elements (eyes, nose, mouth) and head widths to ensure balanced, authentic proportions (e.g., Logger Vick head width expanded to 36 units, eyes separated cleanly at `cx="41.5"` and `cx="58.5"`, mouth fits naturally within cheek boundaries).

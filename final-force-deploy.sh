@@ -25,10 +25,10 @@ pkill -f "next-build" || true
 pkill -f "prisma" || true
 
 # 3. Cache Clearing
-echo "🗑️ Wiping build caches..."
-rm -rf .next
-rm -rf .open-next
-rm -rf dist
+echo "🗑️ Wiping build caches (fast rename)..."
+mv .next .next-old-$$ 2>/dev/null || true
+mv .open-next .open-next-old-$$ 2>/dev/null || true
+rm -rf dist 2>/dev/null || true
 
 # 4. Prisma Hardening
 echo "💎 Re-generating Prisma Client (Force)..."
