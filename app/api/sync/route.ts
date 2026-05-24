@@ -55,6 +55,9 @@ export async function GET(request: Request) {
                 if (s.contentBlocks && typeof s.contentBlocks === 'string') {
                     try { s.contentBlocks = JSON.parse(s.contentBlocks); } catch {}
                 }
+                if (s.trainingBlocks && typeof s.trainingBlocks === 'string') {
+                    try { s.trainingBlocks = JSON.parse(s.trainingBlocks); } catch {}
+                }
                 (sessionsByWeeklyPlanId[s.weeklyPlanId] ||= []).push(s);
             }
         }

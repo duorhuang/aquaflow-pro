@@ -36,6 +36,9 @@ export async function GET(req: Request) {
                 if (s.contentBlocks && typeof s.contentBlocks === 'string') {
                     try { s.contentBlocks = JSON.parse(s.contentBlocks); } catch {}
                 }
+                if (s.trainingBlocks && typeof s.trainingBlocks === 'string') {
+                    try { s.trainingBlocks = JSON.parse(s.trainingBlocks); } catch {}
+                }
             }
             const p = parseJsonFields(plan[0]);
             return NextResponse.json({ ...p, sessions }, { headers: V12_FINGERPRINT });
