@@ -46,7 +46,9 @@ function getCookie(request: NextRequest, name: string): string | undefined {
   return cookie?.value;
 }
 
-export async function proxy(request: NextRequest) {
+export const runtime = 'experimental-edge';
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes — no auth required
