@@ -46,7 +46,6 @@ function getCookie(request: NextRequest, name: string): string | undefined {
   return cookie?.value;
 }
 
-export const runtime = 'experimental-edge';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

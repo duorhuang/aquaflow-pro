@@ -5,6 +5,7 @@ import { requireAnyAuth } from '@/lib/auth-api';
 import { getNeon } from '@/lib/db-pool';
 import * as crypto from 'crypto';
 
+
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
@@ -91,16 +92,16 @@ export async function POST(request: Request) {
         const { action, swimmerId, targetSwimmerId, pairId } = data;
 
         if (!swimmerId) {
-            return NextResponse.json({ error: 'Swimmer ID required' }, { status: 400 });
+            return NextResponse.json({ error: '需要提供队员 ID' }, { status: 400 });
         }
 
         const swimmers = await sql`SELECT name FROM "Swimmer" WHERE id = ${swimmerId}`;
-        if (swimmers.length === 0) return NextResponse.json({ error: 'Swimmer not found' }, { status: 404 });
+        if (swimmers.length === 0) return NextResponse.json({ error: '未找到该队员' }, { status: 404 });
         const swimmerName = swimmers[0].name;
 
         if (action === 'request') {
-            if (!targetSwimmerId) return NextResponse.json({ error: 'Target Swimmer ID required' }, { status: 400 });
-            if (swimmerId === targetSwimmerId) return NextResponse.json({ error: 'Cannot buddy with yourself' }, { status: 400 });
+            if (!targetSwimmerId) return NextResponse.json({ error: '需要提供目标队员 ID' }, { status: 400 });
+            if (swimmerId === targetSwimmerId) return NextResponse.json({ error: '不能和自己结为死党' }, { status: 400 });
 
             // Sort IDs to maintain unique pair constraints
             const [s1, s2] = [swimmerId, targetSwimmerId].sort();
@@ -111,7 +112,7 @@ export async function POST(request: Request) {
                 WHERE "swimmer1Id" = ${s1} AND "swimmer2Id" = ${s2}
             `;
             if (existing.length > 0) {
-                return NextResponse.json({ error: 'Buddy pairing request already exists or is active' }, { status: 400 });
+                return NextResponse.json({ error: '死党结对申请已存在，或者对方已经是你的死党啦！' }, { status: 400 });
             }
 
             const id = crypto.randomUUID();

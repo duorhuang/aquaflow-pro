@@ -184,11 +184,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                     archivedAnnouncements: fetchedArchivedAnnouncements,
                 } = syncData || {};
 
-                const allFailed = fetchedPlans === null && fetchedSwimmers === null;
+                const allFailed = !syncData || (fetchedPlans === null && fetchedSwimmers === null);
 
-                // If all fetches failed (401 or quota), and no local data, exit
-                if (allFailed && !hasLocalData && !offlineRef.current) {
-                    return;
+                // If all fetches failed (401 or quota), exit early or handle local cache
+                if (allFailed) {
+                    setSyncStatus('error');
+                    if (!hasLocalData && !offlineRef.current) {
+                        return;
+                    }
                 }
 
                 // If DB is offline (quota), keep localStorage data and don't overwrite

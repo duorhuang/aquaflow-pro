@@ -40,7 +40,7 @@ function sanitizeHtml(html: string): string {
 export default function AthleteWorkoutPage() {
     const { t } = useLanguage();
     const router = useRouter();
-    const { plans, swimmers, attendance, updateSwimmer, weeklyPlans, announcements, archivedAnnouncements, getVisibleAnnouncements, isLoaded: storeLoaded } = useStore();
+    const { plans, swimmers, attendance, updateSwimmer, weeklyPlans, announcements, archivedAnnouncements, getVisibleAnnouncements, isLoaded: storeLoaded, syncStatus } = useStore();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [currentUser, setCurrentUser] = useState<Swimmer | null>(null);
     const [authResolved, setAuthResolved] = useState(false);
@@ -267,6 +267,40 @@ export default function AthleteWorkoutPage() {
                     <p className="text-muted-foreground animate-pulse font-mono text-xs uppercase tracking-widest">
                         Syncing AquaFlow Core...
                     </p>
+                </div>
+            </div>
+        );
+    }
+
+    // Server offline or Connection Failure Check
+    if (syncStatus === 'error' && (!swimmers || swimmers.length === 0)) {
+        return (
+            <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-6 text-center">
+                <div className="space-y-6 max-w-sm glass-panel border border-white/5 bg-slate-900/40 p-8 rounded-3xl shadow-[0_0_50px_rgba(239,68,68,0.08)]">
+                    <div className="w-16 h-16 bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto shadow-[0_0_20px_rgba(239,68,68,0.1)]">
+                        <AlertTriangle className="w-8 h-8 text-red-500 animate-pulse" />
+                    </div>
+                    <div className="space-y-2">
+                        <h2 className="text-xl font-bold text-white tracking-wide">网络连接失败</h2>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                            无法连接到 AquaFlow 核心服务器。<br />
+                            可能由于数据库正在休眠唤醒中，或当前网络存在波动。
+                        </p>
+                    </div>
+                    <div className="space-y-3 pt-2">
+                        <button 
+                            onClick={() => window.location.reload()}
+                            className="w-full bg-primary hover:bg-primary/95 text-black font-semibold py-3 rounded-xl transition-all duration-300 shadow-[0_0_15px_rgba(100,255,218,0.2)] hover:shadow-[0_0_25px_rgba(100,255,218,0.35)]"
+                        >
+                            ⚡️ 重新尝试连接
+                        </button>
+                        <button 
+                            onClick={handleLogout}
+                            className="w-full bg-white/5 hover:bg-white/10 text-white font-medium py-3 rounded-xl border border-white/5 transition-all duration-300"
+                        >
+                            返回登录页
+                        </button>
+                    </div>
                 </div>
             </div>
         );

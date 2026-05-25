@@ -6,7 +6,6 @@ import { LanguageProvider } from "@/lib/i18n";
 import { StoreProvider } from "@/lib/store";
 import { DbStatus } from "@/components/DbStatus";
 
-export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: "AquaFlow Pro - 游泳队管理系统",

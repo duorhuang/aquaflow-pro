@@ -5,6 +5,7 @@ import { requireAnyAuth } from '@/lib/auth-api';
 import { getNeon } from '@/lib/db-pool';
 import * as crypto from 'crypto';
 
+
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {

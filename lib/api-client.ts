@@ -235,15 +235,15 @@ export const api = {
         request: (swimmerId: string, targetSwimmerId: string) => fetchAPI<any>('/buddy', {
             method: 'POST',
             body: JSON.stringify({ action: 'request', swimmerId, targetSwimmerId }),
-        }),
+        }, false),
         accept: (swimmerId: string, targetSwimmerId: string) => fetchAPI<any>('/buddy', {
             method: 'POST',
             body: JSON.stringify({ action: 'accept', swimmerId, targetSwimmerId }),
-        }),
+        }, false),
         dissolve: (swimmerId: string, targetSwimmerId: string) => fetchAPI<any>('/buddy', {
             method: 'POST',
             body: JSON.stringify({ action: 'dissolve', swimmerId, targetSwimmerId }),
-        }),
+        }, false),
     },
     meets: {
         getAll: () => fetchAPI<any>('/meets'),

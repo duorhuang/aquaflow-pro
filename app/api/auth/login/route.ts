@@ -12,7 +12,8 @@ const MAX_ATTEMPTS = 10;
 const WINDOW_MS = 5 * 60 * 1000;
 
 function getClientIP(request: Request): string {
-  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+  return request.headers.get('cf-connecting-ip')
+    || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     || request.headers.get('x-real-ip')
     || 'unknown';
 }
