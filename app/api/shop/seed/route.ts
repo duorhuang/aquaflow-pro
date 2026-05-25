@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
 import { getNeon } from '@/lib/db-pool';
-
+import * as crypto from 'crypto';
 export const dynamic = 'force-dynamic';
 
 export async function POST() {

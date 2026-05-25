@@ -6,6 +6,21 @@ export const getLocalDateISOString = (date = new Date()) => {
     return `${year}-${month}-${day}`;
 };
 
+/**
+ * Calculate gamification level from total XP.
+ * Shared between store (client) and attendance route (server) for consistency.
+ */
+export const calculateLevel = (xp: number): number => {
+    if (xp >= 25000) return 8;
+    if (xp >= 15000) return 7;
+    if (xp >= 10000) return 6;
+    if (xp >= 6000) return 5;
+    if (xp >= 3500) return 4;
+    if (xp >= 1500) return 3;
+    if (xp >= 500) return 2;
+    return 1;
+};
+
 export const formatTime = (isoString: string) => {
     return new Date(isoString).toLocaleTimeString('zh-CN', {
         hour: '2-digit',

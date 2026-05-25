@@ -3,7 +3,7 @@ import { flattenPayload } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth-api';
 import { getNeon } from '@/lib/db-pool';
 import { withApiHandler } from '@/lib/api-handler';
-
+import * as crypto from 'crypto';
 export async function POST(request: Request) {
     return withApiHandler(async () => {
         const sql = getNeon();

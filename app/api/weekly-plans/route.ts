@@ -3,7 +3,7 @@ import { flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
 import { requireAnyAuth, requireCoach } from '@/lib/auth-api';
 import { getNeon } from '@/lib/db-pool';
-
+import * as crypto from 'crypto';
 export const dynamic = 'force-dynamic';
 
 function parseJsonFields(plan: any) {

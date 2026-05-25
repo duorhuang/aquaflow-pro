@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { TrainingPlan, Swimmer, Feedback, AttendanceRecord, PerformanceRecord, BlockTemplate, TrainingBlock } from "@/types";
 import { MOCK_PLANS, MOCK_SWIMMERS, DEFAULT_TEMPLATES } from "./data";
-import { getLocalDateISOString } from "@/lib/date-utils";
+import { getLocalDateISOString, calculateLevel } from "@/lib/date-utils";
 import { api, fetchAPI } from "./api-client";
 
 const uid = () => Math.random().toString(36).substr(2, 9);
@@ -184,7 +184,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                     archivedAnnouncements: fetchedArchivedAnnouncements,
                 } = syncData || {};
 
-                const allFailed = !syncData || (fetchedPlans === null && fetchedSwimmers === null);
+                const allFailed = !syncData || (!fetchedPlans && !fetchedSwimmers);
 
                 // If all fetches failed (401 or quota), exit early or handle local cache
                 if (allFailed) {
@@ -495,11 +495,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             console.error("Sync error", e);
             setAttendance(prev => { const next = [...prev, ...recordsToRemove]; persistToStorage('attendance', next); return next; });
         }
-    };
-
-    const calculateLevel = (xp: number) => {
-        if (xp < 10) return 1;
-        return Math.floor(Math.log2(xp / 10 + 1)) + 1;
     };
 
     const adjustXP = async (swimmerId: string, amount: number) => {

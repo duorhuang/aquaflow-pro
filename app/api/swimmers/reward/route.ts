@@ -3,19 +3,20 @@ import { flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
 import { withApiHandler } from '@/lib/api-handler';
 import { requireCoach } from '@/lib/auth-api';
 import { getNeon } from '@/lib/db-pool';
-
+import * as crypto from 'crypto';
+import { calculateLevel } from '@/lib/date-utils';
 export const dynamic = 'force-dynamic';
 
-export function calculateLevel(totalXp: number): { level: number, title: string } {
-    if (totalXp >= 25000) return { level: 8, title: '👑 传奇冠军' };
-    if (totalXp >= 15000) return { level: 7, title: '🔱 海神之子' };
-    if (totalXp >= 10000) return { level: 6, title: '⚡ 闪电泳者' };
-    if (totalXp >= 6000) return { level: 5, title: '🏊 精英泳者' };
-    if (totalXp >= 3500) return { level: 4, title: '🦈 资深泳者' };
-    if (totalXp >= 1500) return { level: 3, title: '🐬 进阶泳者' };
-    if (totalXp >= 500) return { level: 2, title: '🐟 初级泳者' };
-    return { level: 1, title: '🐣 游泳新手' };
-}
+const LEVEL_TITLES: Record<number, string> = {
+    1: '🐣 游泳新手',
+    2: '🐟 初级泳者',
+    3: '🐬 进阶泳者',
+    4: '🦈 资深泳者',
+    5: '🏊 精英泳者',
+    6: '⚡ 闪电泳者',
+    7: '🔱 海神之子',
+    8: '👑 传奇冠军',
+};
 
 export async function POST(request: Request) {
     return withApiHandler(async () => {
@@ -63,7 +64,8 @@ export async function POST(request: Request) {
         const newBalance = oldBalance + xpAmount;
         const newXp = oldXp + xpAmount;
         
-        const { level: newLevel, title: newTitle } = calculateLevel(newTotalXp);
+        const newLevel = calculateLevel(newTotalXp);
+        const newTitle = LEVEL_TITLES[newLevel] || LEVEL_TITLES[1];
         const levelChanged = newLevel > (swimmer.level || 1);
 
         // 4. Update Swimmer record

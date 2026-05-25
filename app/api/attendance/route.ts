@@ -4,6 +4,7 @@ import { withApiHandler } from '@/lib/api-handler';
 import { requireAnyAuth } from '@/lib/auth-api';
 import { getNeon } from '@/lib/db-pool';
 import * as crypto from 'crypto';
+import { calculateLevel } from '@/lib/date-utils';
 
 
 export const dynamic = 'force-dynamic';
@@ -193,17 +194,6 @@ export async function POST(request: Request) {
         const newTotalXp = (swimmer.totalXp || 0) + totalXpEarned;
         const newBalance = (swimmer.balance || 0) + totalXpEarned;
 
-        // Level ladder calculations
-        const calculateLevel = (xp: number) => {
-            if (xp >= 25000) return 8;
-            if (xp >= 15000) return 7;
-            if (xp >= 10000) return 6;
-            if (xp >= 6000) return 5;
-            if (xp >= 3500) return 4;
-            if (xp >= 1500) return 3;
-            if (xp >= 500) return 2;
-            return 1;
-        };
         const newLevel = calculateLevel(newTotalXp);
         const levelChanged = newLevel > (swimmer.level || 1);
 
