@@ -157,7 +157,7 @@ export function TrainingHistory({ swimmerId }: TrainingHistoryProps) {
                                             })}
                                         </span>
                                         {type === 'weekly' && weeklyPlanTitle && (
-                                            <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30">
+                                            <span className="text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30">
                                                 周计划: {weeklyPlanTitle}
                                             </span>
                                         )}

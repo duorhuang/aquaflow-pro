@@ -3,11 +3,24 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
-import { CheckCircle, Clock, ChevronDown, ChevronUp, Send, Loader2, MessageSquare, AlertCircle } from "lucide-react";
+import { useLanguage } from "@/lib/i18n";
+import { CheckCircle, Clock, ChevronDown, ChevronUp, Send, Loader2, MessageSquare, AlertCircle, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
+
+function Breadcrumb() {
+    return (
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-white font-medium">反馈收件箱</span>
+        </nav>
+    );
+}
 
 export default function FeedbacksPage() {
     const { swimmers } = useStore();
+    const { t } = useLanguage();
     const [feedbacks, setFeedbacks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -113,10 +126,12 @@ export default function FeedbacksPage() {
 
     return (
         <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-300">
+            <Breadcrumb />
+
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                        📥 队员反馈收件箱
+                        <MessageSquare className="w-6 h-6" /> 队员反馈收件箱
                     </h1>
                     <p className="text-sm text-muted-foreground mt-1">查看队员的每日训练日记与周总结，在此写评语</p>
                 </div>
@@ -140,7 +155,7 @@ export default function FeedbacksPage() {
                             : "border-transparent text-muted-foreground hover:text-white"
                     )}
                 >
-                    📥 待批复
+                        <Clock className="w-4 h-4" /> {t.dashboard.pending || "Pending"}
                     <span className={cn(
                         "px-2 py-0.5 text-xs rounded-full font-bold transition-all",
                         activeTab === 'pending'
@@ -230,12 +245,12 @@ export default function FeedbacksPage() {
                                             {swimmer?.name || "未知队员"}
                                             {f.isSubmitted ? (
                                                 f.isReplied ? (
-                                                    <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded-full border border-green-500/30">已批复</span>
+                                                    <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">已批复</span>
                                                 ) : (
-                                                    <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-[10px] rounded-full border border-yellow-500/30">待批复</span>
+                                                    <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full border border-yellow-500/30">待批复</span>
                                                 )
                                             ) : (
-                                                <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] rounded-full border border-blue-500/30">进行中草稿</span>
+                                                <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full border border-blue-500/30">进行中草稿</span>
                                             )}
                                         </h3>
                                         <p className="text-xs text-muted-foreground mt-0.5">
@@ -249,7 +264,7 @@ export default function FeedbacksPage() {
                                 <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto">
                                     {/* Weekly Tracking Bar */}
                                     <div className="flex gap-1.5 items-center">
-                                        <span className="text-[10px] text-muted-foreground mr-1 hidden sm:inline">周打卡进度:</span>
+                                        <span className="text-xs text-muted-foreground mr-1 hidden sm:inline">周打卡进度:</span>
                                         {weekDates.map((date, idx) => {
                                             const df = f.dailyFeedbacks?.find((day: any) => day.date === date);
                                             const hasReflection = df && df.reflection && df.reflection.trim().length > 0;
@@ -260,7 +275,7 @@ export default function FeedbacksPage() {
                                                     key={date}
                                                     title={`${date} (${DAY_LABELS_SHORT[idx]}): ${hasReflection ? '已写日志' : '未写日志'}`}
                                                     className={cn(
-                                                        "w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold transition-all border",
+                                                        "w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold transition-all border",
                                                         hasReflection
                                                             ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.1)]"
                                                             : hasAnyData
@@ -302,14 +317,14 @@ export default function FeedbacksPage() {
                                                         <div key={date} className="p-3 bg-secondary/20 border border-emerald-500/10 rounded-xl relative overflow-hidden transition-all hover:bg-secondary/30 flex flex-col justify-between min-h-[90px]">
                                                             <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
                                                                 <div className="flex items-center gap-2">
-                                                                    <span className="text-[10px] font-bold text-black px-1.5 py-0.5 bg-emerald-400 rounded">
+                                                                    <span className="text-xs font-bold text-black px-1.5 py-0.5 bg-emerald-400 rounded">
                                                                         {DAY_LABELS_SHORT[idx]}
                                                                     </span>
-                                                                    <span className="text-[10px] text-muted-foreground">{date}</span>
+                                                                    <span className="text-xs text-muted-foreground">{date}</span>
                                                                 </div>
                                                                 <div className="flex items-center gap-2.5">
-                                                                    <span className="text-[10px] text-blue-400 font-medium">疲劳: {day.rpe}/10</span>
-                                                                    <span className="text-[10px] text-orange-400 font-medium">酸痛: {day.soreness}/10</span>
+                                                                    <span className="text-xs text-blue-400 font-medium">疲劳: {day.rpe}/10</span>
+                                                                    <span className="text-xs text-orange-400 font-medium">酸痛: {day.soreness}/10</span>
                                                                 </div>
                                                             </div>
                                                             <p className="text-xs text-white whitespace-pre-wrap leading-relaxed flex-1 mt-1">{day.reflection}</p>
@@ -320,20 +335,20 @@ export default function FeedbacksPage() {
                                                         <div key={date} className="p-3 bg-white/2 border border-white/5 rounded-xl opacity-40 flex flex-col justify-between min-h-[90px]">
                                                             <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
                                                                 <div className="flex items-center gap-2">
-                                                                    <span className="text-[10px] font-bold text-muted-foreground px-1.5 py-0.5 bg-white/10 rounded">
+                                                                    <span className="text-xs font-bold text-muted-foreground px-1.5 py-0.5 bg-white/10 rounded">
                                                                         {DAY_LABELS_SHORT[idx]}
                                                                     </span>
-                                                                    <span className="text-[10px] text-muted-foreground/60">{date}</span>
+                                                                    <span className="text-xs text-muted-foreground/60">{date}</span>
                                                                 </div>
                                                                 <span className="text-[9px] text-muted-foreground/50 bg-white/5 px-1.5 py-0.5 rounded">未填写</span>
                                                             </div>
                                                             {day && (day.rpe || day.soreness) ? (
-                                                                <div className="flex gap-2.5 text-[10px] text-muted-foreground/70 mt-1">
+                                                                <div className="flex gap-2.5 text-xs text-muted-foreground/70 mt-1">
                                                                     <span>疲劳: {day.rpe ?? '--'}</span>
                                                                     <span>酸痛: {day.soreness ?? '--'}</span>
                                                                 </div>
                                                             ) : (
-                                                                <p className="text-[10px] text-muted-foreground/40 italic mt-1">暂无打卡日志</p>
+                                                                <p className="text-xs text-muted-foreground/40 italic mt-1">暂无打卡日志</p>
                                                             )}
                                                         </div>
                                                     );

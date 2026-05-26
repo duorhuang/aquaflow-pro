@@ -67,7 +67,7 @@ export function RecentPerformances() {
                                     <div className="text-xs text-muted-foreground flex items-center gap-1">
                                         <span>{EVENT_LABELS[perf.event]}</span>
                                         {perf.isPB && (
-                                            <span className="text-[10px] bg-yellow-500/20 text-yellow-500 px-1.5 rounded font-bold">PB</span>
+                                            <span className="text-xs bg-yellow-500/20 text-yellow-500 px-1.5 rounded font-bold">PB</span>
                                         )}
                                     </div>
                                 </div>
@@ -78,7 +78,7 @@ export function RecentPerformances() {
                                 </div>
                                 {perf.improvement !== undefined && (
                                     <div className={cn(
-                                        "text-[10px] flex items-center justify-end gap-0.5",
+                                        "text-xs flex items-center justify-end gap-0.5",
                                         perf.improvement < 0 ? "text-green-400" : "text-red-400"
                                     )}>
                                         {perf.improvement < 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}

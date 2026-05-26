@@ -61,10 +61,10 @@ export function WeeklyPlanCard({ plan }: WeeklyPlanCardProps) {
                     </div>
                     <div className="col-span-2 text-xs text-muted-foreground flex gap-2 items-center mt-2">
                         {hasStructured && (
-                            <span className="bg-primary/20 text-primary px-2 py-0.5 rounded-full text-[10px] font-bold">结构化课表</span>
+                            <span className="bg-primary/20 text-primary px-2 py-0.5 rounded-full text-xs font-bold">结构化课表</span>
                         )}
                         {!plan.isPublished && (
-                            <span className="bg-white/10 text-white/50 px-2 py-0.5 rounded-full text-[10px]">草稿</span>
+                            <span className="bg-white/10 text-white/50 px-2 py-0.5 rounded-full text-xs">草稿</span>
                         )}
                     </div>
                 </div>

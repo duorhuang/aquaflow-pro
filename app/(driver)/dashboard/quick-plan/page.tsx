@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { ChevronLeft, Plus, Trash2, Clock, X, Dumbbell } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Clock, X, Dumbbell, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { TrainingBlock, TrainingPlan, GroupLevel, PlanItem, Equipment } from "@/types";
 
@@ -20,6 +21,16 @@ const EQUIPMENT_MAP: Record<Equipment, string> = {
 };
 const EQUIPMENT = Object.keys(EQUIPMENT_MAP) as Equipment[];
 const TYPES: TrainingBlock["type"][] = ["Warmup", "Pre-Set", "Main Set", "Drill Set", "Cool Down"];
+
+function Breadcrumb() {
+    return (
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-white font-medium">快速计划</span>
+        </nav>
+    );
+}
 
 export default function QuickPlanPage() {
     const router = useRouter();
@@ -70,7 +81,7 @@ export default function QuickPlanPage() {
         setDistance(100);
     };
 
-    const handlePublish = () => {
+    const handlePublish = async () => {
         const totalDist = blocks.reduce((sum, b) =>
             sum + b.items.reduce((s, i) => s + (i.repeats * i.distance), 0), 0);
 
@@ -87,12 +98,20 @@ export default function QuickPlanPage() {
             blocks
         };
 
-        addPlan(newPlan);
+        try {
+            await addPlan(newPlan);
+        } catch {
+            // Plan saved locally but API sync failed — still redirect so coach sees it
+        }
         router.push("/dashboard");
     };
 
     return (
         <div className="min-h-screen bg-background pb-24 flex flex-col">
+            <div className="px-4 pt-4 max-w-4xl mx-auto w-full">
+                <Breadcrumb />
+            </div>
+
             {/* Header - Fixed Overlap Issues */}
             <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-4 py-3 flex items-center justify-between shadow-sm">
                 <button onClick={() => router.back()} className="p-2 -ml-2 text-muted-foreground hover:text-white transition-colors">
@@ -100,7 +119,7 @@ export default function QuickPlanPage() {
                 </button>
                 <div className="flex flex-col items-center">
                     <h1 className="font-bold text-lg leading-tight">新建计划</h1>
-                    <span className="text-[10px] text-muted-foreground">Quick Plan</span>
+                    <span className="text-xs text-muted-foreground">Quick Plan</span>
                 </div>
                 <button
                     onClick={handlePublish}
@@ -183,7 +202,7 @@ export default function QuickPlanPage() {
                 <div className="space-y-3">
                     <label className="text-xs text-muted-foreground uppercase font-bold flex items-center justify-between">
                         <span>训练流程 (Flow)</span>
-                        <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-white">{blocks.length} blocks</span>
+                        <span className="text-xs bg-white/10 px-2 py-0.5 rounded text-white">{blocks.length} blocks</span>
                     </label>
 
                     {blocks.length === 0 ? (
@@ -205,7 +224,7 @@ export default function QuickPlanPage() {
                                         <Trash2 className="w-4 h-4" />
                                     </button>
                                     <div className="flex items-center gap-2 mb-3">
-                                        <span className="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center text-[10px] font-bold text-muted-foreground">{idx + 1}</span>
+                                        <span className="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center text-xs font-bold text-muted-foreground">{idx + 1}</span>
                                         <div className="text-xs text-primary font-bold uppercase tracking-wider">{block.type}</div>
                                     </div>
 
@@ -225,7 +244,7 @@ export default function QuickPlanPage() {
                                                         </span>
                                                     )}
                                                     {item.equipment && item.equipment.map((eq: Equipment) => (
-                                                        <span key={eq} className="text-[10px] bg-secondary px-2 py-0.5 rounded text-muted-foreground border border-white/5">
+                                                        <span key={eq} className="text-xs bg-secondary px-2 py-0.5 rounded text-muted-foreground border border-white/5">
                                                             {EQUIPMENT_MAP[eq]}
                                                         </span>
                                                     ))}

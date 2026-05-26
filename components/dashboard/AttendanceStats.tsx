@@ -73,13 +73,13 @@ export function AttendanceStats() {
                     <div className="text-2xl font-bold text-white">
                         {Object.keys(attendanceByDate).length}
                     </div>
-                    <div className="text-[10px] text-muted-foreground uppercase">Active Days</div>
+                    <div className="text-xs text-muted-foreground uppercase">Active Days</div>
                 </div>
                 <div className="text-center flex-1">
                     <div className="text-2xl font-bold text-white">
                         {attendance.filter(a => new Date(a.date).getMonth() === currentMonth).length}
                     </div>
-                    <div className="text-[10px] text-muted-foreground uppercase">Total Check-ins</div>
+                    <div className="text-xs text-muted-foreground uppercase">Total Check-ins</div>
                 </div>
             </div>
 

@@ -164,19 +164,19 @@ export function PerformanceChart({ performances, event }: PerformanceChartProps)
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="bg-white/5 rounded-lg p-2">
-                    <p className="text-[10px] text-muted-foreground mb-1">最佳</p>
+                    <p className="text-xs text-muted-foreground mb-1">最佳</p>
                     <p className="text-sm font-mono font-bold text-green-400">
                         {formatTime(minTime.toString())}
                     </p>
                 </div>
                 <div className="bg-white/5 rounded-lg p-2">
-                    <p className="text-[10px] text-muted-foreground mb-1">最新</p>
+                    <p className="text-xs text-muted-foreground mb-1">最新</p>
                     <p className="text-sm font-mono font-bold text-white">
                         {formatTime(lastTime.toString())}
                     </p>
                 </div>
                 <div className="bg-white/5 rounded-lg p-2">
-                    <p className="text-[10px] text-muted-foreground mb-1">记录数</p>
+                    <p className="text-xs text-muted-foreground mb-1">记录数</p>
                     <p className="text-sm font-bold text-primary">
                         {eventPerfs.length}
                     </p>

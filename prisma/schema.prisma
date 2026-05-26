@@ -398,8 +398,9 @@ model ShopItem {
   tier        String   // "basic"|"entry"|"advanced"|"premium"|"legendary"|"ultimate"
   price       Int      // XP cost
   imageKey    String   // Asset key/path for the sprite layer PNG
-  slotType    String   // "head"|"eyes"|"body"|"lower"|"feet"|"hand"|"background"
-  gender      String   @default("unisex") // "male"|"female"|"unisex"
+  slotType    String   // base|skinTone|expression|hair|hat|top|bottom|shoes|handheld|accessory|background|specialSkin
+  gender      String   @default("unisex") // male|female|unisex
+  previewColor String?  // For skin tone / hair color swatches
   sortOrder   Int      @default(0)
   
   createdAt   DateTime @default(now())

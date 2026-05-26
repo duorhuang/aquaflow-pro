@@ -4,15 +4,18 @@ import React, { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api-client";
 import { AvatarRenderer } from "./AvatarRenderer";
 import { Swimmer } from "@/types";
-import { 
-    Users, 
-    Search, 
-    UserPlus, 
-    Sparkles, 
-    Check, 
-    Trash2, 
-    UserCheck, 
-    ShieldAlert
+import {
+    Users,
+    Search,
+    UserPlus,
+    Sparkles,
+    Check,
+    Trash2,
+    UserCheck,
+    ShieldAlert,
+    Crown,
+    Flame,
+    Award,
 } from "lucide-react";
 
 interface BuddyPair {
@@ -206,7 +209,7 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
                                 </div>
 
                                 <div className="bg-slate-950 p-2.5 rounded-3xl border border-white/5 relative">
-                                    <div className="text-[10px] text-muted-foreground uppercase text-center font-bold">ME</div>
+                                    <div className="text-xs text-muted-foreground uppercase text-center font-bold">ME</div>
                                     <div className="w-[100px] h-[100px] rounded-2xl bg-slate-900 flex items-center justify-center text-2xl font-bold text-muted-foreground border border-dashed border-white/10">
                                         👋😃
                                     </div>
@@ -215,10 +218,10 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
 
                             <div className="text-center space-y-1">
                                 <h3 className="text-lg font-bold text-white flex items-center justify-center gap-1.5">
-                                    👑 {buddySwimmer.name} <span className="text-xs font-normal text-muted-foreground px-2 py-0.5 bg-white/5 rounded">死党</span>
+                                    <Crown className="w-4 h-4 text-yellow-400" /> {buddySwimmer.name} <span className="text-xs font-normal text-muted-foreground px-2 py-0.5 bg-white/5 rounded">死党</span>
                                 </h3>
                                 <p className="text-xs text-muted-foreground font-mono">
-                                    🏅 {buddySwimmer.totalXp} XP · 🔥 {buddySwimmer.currentStreak || 0} 天连胜
+                                    <Award className="w-3 h-3 inline" /> {buddySwimmer.totalXp} XP · <Flame className="w-3 h-3 inline text-yellow-400" /> {buddySwimmer.currentStreak || 0} 天连胜
                                 </p>
                             </div>
                         </div>
@@ -233,13 +236,13 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
                                     <h4 className="text-xs font-bold text-white flex items-center gap-1">
                                         同步打卡加成
                                     </h4>
-                                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                                    <p className="text-xs text-muted-foreground mt-0.5">
                                         你们双方今天都出勤，各得 +20 XP 同步奖励！
                                     </p>
                                 </div>
                             </div>
                             
-                            <span className="text-[10px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30 px-3 py-1 rounded-full whitespace-nowrap">
+                            <span className="text-xs font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30 px-3 py-1 rounded-full whitespace-nowrap">
                                 社交激励生效中
                             </span>
                         </div>
@@ -335,7 +338,7 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
                     {/* Search Results list */}
                     {searchQuery.trim() !== "" && (
                         <div className="bg-card/40 border border-border rounded-3xl p-4 space-y-3 animate-in fade-in duration-300">
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                            <p className="text-xs text-muted-foreground uppercase tracking-widest">
                                 🔍 搜索到 {filteredSwimmers.length} 名队员
                             </p>
                             
@@ -356,7 +359,7 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
 
                                         <button
                                             onClick={() => handleSendRequest(member.id)}
-                                            className="px-3 py-1.5 bg-primary text-primary-foreground hover:brightness-110 rounded-xl text-[10px] font-bold flex items-center gap-1 transition-all"
+                                            className="px-3 py-1.5 bg-primary text-primary-foreground hover:brightness-110 rounded-xl text-xs font-bold flex items-center gap-1 transition-all"
                                         >
                                             <UserPlus className="w-3.5 h-3.5" /> 申请死党
                                         </button>

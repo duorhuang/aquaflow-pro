@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, Calendar, Settings, LogOut, Waves, UserCheck, FolderOpen } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, Settings, LogOut, Waves, UserCheck, FolderOpen, MessageSquare, FolderPlus, Send, Trophy, Activity, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n";
@@ -10,10 +10,16 @@ import { api } from "@/lib/api-client";
 
 const SIDEBAR_ITEMS = [
     { label: "dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "athlete", href: "/dashboard/athletes", icon: Users },
+    { label: "weeklyPlan", href: "/dashboard/weekly-plan", icon: FolderPlus },
+    { label: "quickPlan", href: "/dashboard/quick-plan", icon: PlusCircle },
+    { label: "athletes", href: "/dashboard/athletes", icon: Users },
     { label: "attendance", href: "/dashboard/attendance", icon: UserCheck },
     { label: "schedule", href: "/dashboard/schedule", icon: Calendar },
-    { label: "archive", href: "/dashboard/archive", icon: FolderOpen },
+    { label: "feedbackInbox", href: "/dashboard/feedbacks", icon: MessageSquare },
+    { label: "targetedFeedback", href: "/dashboard/feedbacks/targeted", icon: Send },
+    { label: "meets", href: "/dashboard/meets", icon: Trophy },
+    { label: "injuryMonitor", href: "/dashboard/injury-monitor", icon: Activity },
+    { label: "feedbackArchive", href: "/dashboard/archive", icon: FolderOpen },
     { label: "settings", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -22,7 +28,7 @@ export function Sidebar() {
     const { t } = useLanguage();
 
     return (
-        <div className="w-64 h-screen border-r border-border bg-card/30 backdrop-blur-xl flex flex-col fixed left-0 top-0 z-40">
+        <div className="w-64 h-screen border-r border-border bg-card/30 backdrop-blur-xl flex flex-col fixed left-0 top-0 z-40 pointer-events-auto">
             {/* Brand */}
             <div className="p-8 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
@@ -38,20 +44,14 @@ export function Sidebar() {
             <nav className="flex-1 px-4 space-y-2 mt-4">
                 {SIDEBAR_ITEMS.map((item) => {
                     const isActive = pathname === item.href;
-                    const label = item.label === 'dashboard' ? t.common.dashboard :
-                        item.label === 'athlete' ? t.common.athlete :
-                            item.label === 'attendance' ? t.common.attendance :
-                                item.label === 'schedule' ? t.common.schedule :
-                                    item.label === 'archive' ? '反馈档案' :
-                                        item.label === 'settings' ? t.common.settings :
-                                            item.label;
+                    const label = t.common[item.label as keyof typeof t.common] ?? item.label;
 
                     return (
                         <Link
                             key={item.href}
                             href={item.href}
                             className={cn(
-                                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden",
+                                "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200 group relative overflow-hidden",
                                 isActive
                                     ? "bg-primary/10 text-primary font-semibold shadow-[0_0_20px_rgba(100,255,218,0.1)]"
                                     : "text-muted-foreground hover:bg-white/5 hover:text-white"
@@ -60,7 +60,7 @@ export function Sidebar() {
                             {isActive && (
                                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full" />
                             )}
-                            <item.icon className={cn("w-5 h-5", isActive ? "animate-pulse" : "opacity-70 group-hover:opacity-100")} />
+                            <item.icon className={cn("w-5 h-5", isActive ? "text-primary" : "opacity-70 group-hover:opacity-100")} />
                             <span>{label}</span>
                         </Link>
                     );

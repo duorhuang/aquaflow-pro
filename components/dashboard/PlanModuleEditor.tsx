@@ -366,7 +366,7 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
                           "text-muted-foreground opacity-50",
                       )}
                     />
-                    <span className="text-[10px] text-muted-foreground">m</span>
+                    <span className="text-xs text-muted-foreground">m</span>
                     <select
                       className="w-4 bg-transparent outline-none text-muted-foreground hover:text-white cursor-pointer text-xs"
                       onChange={(e) =>
@@ -442,7 +442,7 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
                           })
                         }
                         className={cn(
-                          "w-12 bg-transparent text-[10px] font-mono outline-none",
+                          "w-12 bg-transparent text-xs font-mono outline-none",
                           item.intervalMode === "Rest"
                             ? "text-yellow-400 placeholder:text-yellow-400/30"
                             : "text-primary placeholder:text-primary/30",
@@ -467,7 +467,7 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
                         {item.segments.map((seg, sIdx) => (
                           <div
                             key={sIdx}
-                            className="flex items-center gap-1.5 text-[10px]"
+                            className="flex items-center gap-1.5 text-xs"
                           >
                             <input
                               type="number"
@@ -546,7 +546,7 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
                   <div className="flex gap-2">
                     <button
                       onClick={() => addSegment(block.id, item.id)}
-                      className="text-[10px] text-muted-foreground hover:text-white flex items-center gap-1"
+                      className="text-xs text-muted-foreground hover:text-white flex items-center gap-1"
                     >
                       <Plus className="w-3 h-3" /> 拆分距离
                     </button>
@@ -557,7 +557,7 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
 
             <button
               onClick={() => addItemToBlock(block.id)}
-              className="w-full mt-2 py-1.5 border border-dashed border-white/10 hover:border-primary/50 hover:bg-white/5 rounded-lg text-[10px] text-muted-foreground hover:text-primary transition-all flex items-center justify-center gap-1"
+              className="w-full mt-2 py-1.5 border border-dashed border-white/10 hover:border-primary/50 hover:bg-white/5 rounded-lg text-xs text-muted-foreground hover:text-primary transition-all flex items-center justify-center gap-1"
             >
               <Plus className="w-3 h-3" /> 添加训练项
             </button>

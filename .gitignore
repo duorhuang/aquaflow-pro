@@ -44,7 +44,8 @@ build-output.log
 # local Wrangler/Claude state
 .wrangler/
 .xdg-cache/
-.claude/scheduled_tasks.lock
+.claude/
+.jez/
 
 # debug scripts
 test-db.js

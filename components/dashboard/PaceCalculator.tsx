@@ -45,7 +45,7 @@ export function PaceCalculator() {
 
                 <div className="grid grid-cols-2 gap-2">
                     <div>
-                        <label className="text-[10px] text-muted-foreground block mb-1">距离 (m)</label>
+                        <label className="text-xs text-muted-foreground block mb-1">距离 (m)</label>
                         <select
                             value={baseDistance}
                             onChange={(e) => setBaseDistance(parseInt(e.target.value))}
@@ -58,7 +58,7 @@ export function PaceCalculator() {
                         </select>
                     </div>
                     <div>
-                        <label className="text-[10px] text-muted-foreground block mb-1">包干时间 (mm:ss)</label>
+                        <label className="text-xs text-muted-foreground block mb-1">包干时间 (mm:ss)</label>
                         <input
                             type="text"
                             value={baseTimeStr}
@@ -70,7 +70,7 @@ export function PaceCalculator() {
                 </div>
 
                 <div className="text-center">
-                    <p className="text-[10px] text-muted-foreground">每百米配速</p>
+                    <p className="text-xs text-muted-foreground">每百米配速</p>
                     <p className="text-xl font-bold text-primary font-mono">{formatTime(pacePer100)}</p>
                 </div>
             </div>
@@ -93,7 +93,7 @@ export function PaceCalculator() {
             </div>
 
             <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                <p className="text-[10px] text-yellow-200 leading-relaxed">
+                <p className="text-xs text-yellow-200 leading-relaxed">
                     💡 提示: 输入您的 &ldquo;Base Interval&rdquo; (如 100m 包干 1:40)，此处即显示长距离对应的包干时间。
                 </p>
             </div>

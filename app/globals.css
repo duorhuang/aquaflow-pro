@@ -119,10 +119,135 @@
 }
 
 /* ==========================================
-   AquaFlow Pro Premium V7 Styles
+   AquaFlow Pro V8 — Swimming Design System
    ========================================== */
 
-/* Glassmorphism Panel styles */
+/* --- Swimming Color Palette --- */
+:root {
+  /* Water / swimming tones */
+  --water-50: hsl(195 50% 95%);
+  --water-100: hsl(195 55% 88%);
+  --water-200: hsl(195 60% 78%);
+  --water-300: hsl(195 65% 65%);
+  --water-400: hsl(195 70% 52%);
+  --water-500: hsl(195 75% 42%);
+  --water-600: hsl(195 80% 35%);
+  --water-700: hsl(195 85% 25%);
+  --water-800: hsl(195 90% 15%);
+  --water-900: hsl(195 95% 8%);
+
+  /* Wave animation colors */
+  --wave-primary: rgba(100, 255, 218, 0.06);
+  --wave-secondary: rgba(56, 189, 248, 0.04);
+  --wave-accent: rgba(100, 255, 218, 0.12);
+
+  /* Card opacity tokens */
+  --card-subtle: rgba(217, 221, 237, 0.08);
+  --card-default: rgba(217, 221, 237, 0.12);
+  --card-elevated: rgba(217, 221, 237, 0.2);
+}
+
+.dark {
+  --water-50: hsl(195 95% 8%);
+  --water-100: hsl(195 90% 15%);
+  --water-200: hsl(195 85% 25%);
+  --water-300: hsl(195 80% 35%);
+  --water-400: hsl(195 75% 42%);
+  --water-500: hsl(195 70% 52%);
+  --water-600: hsl(195 65% 65%);
+  --water-700: hsl(195 60% 78%);
+  --water-800: hsl(195 55% 88%);
+  --water-900: hsl(195 50% 95%);
+
+  --wave-primary: rgba(100, 255, 218, 0.06);
+  --wave-secondary: rgba(56, 189, 248, 0.04);
+  --wave-accent: rgba(100, 255, 218, 0.12);
+
+  --card-subtle: rgba(217, 221, 237, 0.08);
+  --card-default: rgba(217, 221, 237, 0.12);
+  --card-elevated: rgba(217, 221, 237, 0.2);
+}
+
+/* --- Training Type Theme Tokens --- */
+.theme-aerobic {
+  --background: hsl(190 60% 8%);
+  --card: hsl(190 60% 9%);
+  --primary: hsl(190 100% 50%);
+  --ring: hsl(190 100% 50%);
+  --theme-glow: radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.12), transparent 75%);
+  --theme-texture: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 40 Q20 30 40 40 Q60 50 80 40' stroke='rgba(0,229,255,0.05)' fill='none' stroke-width='1'/%3E%3C/svg%3E");
+}
+
+.theme-anaerobic {
+  --background: hsl(350 60% 8%);
+  --card: hsl(350 60% 9%);
+  --primary: hsl(350 100% 55%);
+  --ring: hsl(350 100% 55%);
+  --theme-glow: radial-gradient(circle at 50% 0%, rgba(255, 23, 68, 0.12), transparent 75%);
+  --theme-texture: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 30 L30 15 L60 30 L30 45Z' stroke='rgba(255,23,68,0.04)' fill='none'/%3E%3C/svg%3E");
+}
+
+.theme-lactate {
+  --background: hsl(280 60% 8%);
+  --card: hsl(280 60% 9%);
+  --primary: hsl(280 90% 60%);
+  --ring: hsl(280 90% 60%);
+  --theme-glow: radial-gradient(circle at 50% 0%, rgba(224, 64, 251, 0.12), transparent 75%);
+}
+
+.theme-sprint {
+  --background: hsl(45 60% 8%);
+  --card: hsl(45 60% 9%);
+  --primary: hsl(45 100% 50%);
+  --ring: hsl(45 100% 50%);
+  --theme-glow: radial-gradient(circle at 50% 0%, rgba(255, 196, 0, 0.12), transparent 75%);
+  --theme-texture: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='0' y1='20' x2='40' y2='20' stroke='rgba(255,196,0,0.06)' stroke-width='2'/%3E%3C/svg%3E");
+}
+
+.theme-recovery, .theme-relaxation {
+  --background: hsl(150 60% 8%);
+  --card: hsl(150 60% 9%);
+  --primary: hsl(150 90% 55%);
+  --ring: hsl(150 90% 55%);
+  --theme-glow: radial-gradient(circle at 50% 0%, rgba(0, 230, 118, 0.12), transparent 75%);
+  --theme-texture: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='50' cy='50' r='30' stroke='rgba(0,230,118,0.04)' fill='none'/%3E%3C/svg%3E");
+}
+
+.theme-strength, .theme-endurance {
+  --background: hsl(25 60% 8%);
+  --card: hsl(25 60% 9%);
+  --primary: hsl(25 90% 55%);
+  --ring: hsl(25 90% 55%);
+  --theme-glow: radial-gradient(circle at 50% 0%, rgba(255, 109, 0, 0.12), transparent 75%);
+}
+
+.theme-race_prep, .theme-dark-gold {
+  --background: hsl(220 50% 7%);
+  --card: hsl(220 50% 8%);
+  --primary: hsl(46 80% 54%);
+  --primary-foreground: hsl(220 50% 7%);
+  --ring: hsl(46 80% 54%);
+  --border: hsl(46 30% 18%);
+  --theme-glow: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.16), transparent 75%);
+  --theme-texture: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='10' width='60' height='60' stroke='rgba(212,175,55,0.06)' fill='none' stroke-width='1' rx='4'/%3E%3C/svg%3E");
+}
+
+.bg-theme-glow {
+  background-image: var(--theme-glow, radial-gradient(circle at 50% 0%, rgba(100, 255, 218, 0.08), transparent 70%));
+}
+
+/* --- Background Texture System --- */
+.bg-theme-texture {
+  background-image: var(--theme-texture, none);
+  background-repeat: repeat;
+  background-size: auto;
+}
+
+.bg-overlay {
+  background: var(--bg-overlay, none);
+}
+
+/* --- Glassmorphism Panel Styles --- */
 .glass-panel {
   background: rgba(10, 25, 47, 0.55);
   backdrop-filter: blur(20px);
@@ -153,77 +278,20 @@
   box-shadow: 0 0 12px rgba(100, 255, 218, 0.2);
 }
 
-/* Environment dynamic glows and variables override */
-.theme-aerobic {
-  --background: hsl(190 60% 8%);
-  --card: hsl(190 60% 9%);
-  --primary: hsl(190 100% 50%);
-  --ring: hsl(190 100% 50%);
-  --theme-glow: radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.12), transparent 75%);
-}
-
-.theme-anaerobic {
-  --background: hsl(350 60% 8%);
-  --card: hsl(350 60% 9%);
-  --primary: hsl(350 100% 55%);
-  --ring: hsl(350 100% 55%);
-  --theme-glow: radial-gradient(circle at 50% 0%, rgba(255, 23, 68, 0.12), transparent 75%);
-}
-
-.theme-lactate {
-  --background: hsl(280 60% 8%);
-  --card: hsl(280 60% 9%);
-  --primary: hsl(280 90% 60%);
-  --ring: hsl(280 90% 60%);
-  --theme-glow: radial-gradient(circle at 50% 0%, rgba(224, 64, 251, 0.12), transparent 75%);
-}
-
-.theme-sprint {
-  --background: hsl(45 60% 8%);
-  --card: hsl(45 60% 9%);
-  --primary: hsl(45 100% 50%);
-  --ring: hsl(45 100% 50%);
-  --theme-glow: radial-gradient(circle at 50% 0%, rgba(255, 196, 0, 0.12), transparent 75%);
-}
-
-.theme-recovery, .theme-relaxation {
-  --background: hsl(150 60% 8%);
-  --card: hsl(150 60% 9%);
-  --primary: hsl(150 90% 55%);
-  --ring: hsl(150 90% 55%);
-  --theme-glow: radial-gradient(circle at 50% 0%, rgba(0, 230, 118, 0.12), transparent 75%);
-}
-
-.theme-strength, .theme-endurance {
-  --background: hsl(25 60% 8%);
-  --card: hsl(25 60% 9%);
-  --primary: hsl(25 90% 55%);
-  --ring: hsl(25 90% 55%);
-  --theme-glow: radial-gradient(circle at 50% 0%, rgba(255, 109, 0, 0.12), transparent 75%);
-}
-
-/* Dark Gold "Meet Prep" Premium Theme (Triggered when 7-day countdown active) */
-.theme-race_prep, .theme-dark-gold {
-  --background: hsl(220 50% 7%);
-  --card: hsl(220 50% 8%);
-  --primary: hsl(46 80% 54%); /* Deep Premium Gold */
-  --primary-foreground: hsl(220 50% 7%);
-  --ring: hsl(46 80% 54%);
-  --border: hsl(46 30% 18%);
-  --theme-glow: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.16), transparent 75%);
-}
-
-.bg-theme-glow {
-  background-image: var(--theme-glow, radial-gradient(circle at 50% 0%, rgba(100, 255, 218, 0.08), transparent 70%));
-}
-
-/* Smooth customized gold border glow */
+/* --- Smooth Gold Border Glow --- */
 .gold-glow {
   box-shadow: 0 0 20px rgba(212, 175, 55, 0.25);
   border-color: hsl(46 80% 54%) !important;
 }
 
-/* Premium horizontal scrollbars for Swipable panels (Mobile Optimized) */
+/* --- Premium Gold Text Gradient --- */
+.gold-text-gradient {
+  background: linear-gradient(135deg, #FFE082 0%, #FFB300 50%, #FF8F00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* --- No Scrollbar Utility --- */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -232,8 +300,104 @@
   scrollbar-width: none;
 }
 
-.gold-text-gradient {
-  background: linear-gradient(135deg, #FFE082 0%, #FFB300 50%, #FF8F00 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+/* ==========================================
+   Wave Animation
+   ========================================== */
+
+@keyframes wave-move {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(-25%); }
+  100% { transform: translateX(0); }
+}
+
+.wave-animation {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.wave-animation .wave-layer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  animation: wave-move linear infinite;
+}
+
+.wave-animation .wave-1 {
+  animation-duration: 12s;
+  opacity: 0.15;
+}
+
+.wave-animation .wave-2 {
+  animation-duration: 18s;
+  animation-direction: reverse;
+  opacity: 0.1;
+}
+
+.wave-animation .wave-3 {
+  animation-duration: 25s;
+  opacity: 0.06;
+}
+
+/* ==========================================
+   Water Ripple Click Effect
+   ========================================== */
+
+@keyframes water-ripple {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.water-ripple-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.water-ripple-container .ripple {
+  position: absolute;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  background: rgba(100, 255, 218, 0.25);
+  animation: water-ripple 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+/* ==========================================
+   Premium Glow Pulse (for active elements)
+   ========================================== */
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(100, 255, 218, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(100, 255, 218, 0.4); }
+}
+
+.glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* ==========================================
+   Floating animation (for decorative elements)
+   ========================================== */
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
 }

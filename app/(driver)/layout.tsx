@@ -16,7 +16,7 @@ export default function DriverLayout({
                 <div className="md:hidden">
                     <MobileNav />
                 </div>
-                <main className="md:pl-64 min-h-screen transition-all duration-300 pt-16 md:pt-0">
+                <main className="md:pl-64 min-h-screen pt-16 md:pt-0">
                     <div className="container mx-auto p-4 md:p-8 max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-500">
                         {children}
                     </div>

@@ -3,11 +3,22 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
-import { Send, Target, MessageSquare, Calendar, Loader2, Users } from "lucide-react";
+import { Send, Target, MessageSquare, Calendar, Loader2, Users, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import { getLocalDateISOString } from "@/lib/date-utils";
 import { GroupLevel } from "@/types";
 
 const GROUP_LEVELS: GroupLevel[] = ["Junior", "Intermediate", "Advanced", "External"];
+
+function Breadcrumb() {
+    return (
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-white font-medium">专项反馈</span>
+        </nav>
+    );
+}
 
 export default function TargetedFeedbacksPage() {
     const { swimmers } = useStore();
@@ -20,6 +31,8 @@ export default function TargetedFeedbacksPage() {
     const [isSending, setIsSending] = useState(false);
     const [sendStatus, setSendStatus] = useState<"success" | "error" | null>(null);
     const [replyErrors, setReplyErrors] = useState<Record<string, string>>({});
+    const [savingReplyId, setSavingReplyId] = useState<string | null>(null);
+    const [replySaved, setReplySaved] = useState<Record<string, boolean>>({});
 
     const load = useCallback(async () => {
         try {
@@ -102,6 +115,8 @@ export default function TargetedFeedbacksPage() {
 
     return (
         <div className="space-y-8 max-w-4xl mx-auto">
+            <Breadcrumb />
+
             <div className="flex items-center gap-3">
                 <div className="p-3 bg-orange-500/20 rounded-xl">
                     <Target className="w-6 h-6 text-orange-500" />
@@ -179,7 +194,7 @@ export default function TargetedFeedbacksPage() {
                     if (groupSwimmers.length === 0) return null;
                     return (
                         <div key={group} className="mb-3">
-                            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1.5">{group}</p>
+                            <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1.5">{group}</p>
                             <div className="flex flex-wrap gap-2">
                                 {groupSwimmers.map(s => (
                                     <button
@@ -236,7 +251,7 @@ export default function TargetedFeedbacksPage() {
                                         <div className="flex-1">
                                             <div className="flex justify-between items-center mb-1">
                                                 <p className="text-sm font-bold text-white">{resp.swimmer?.name || "未知"}</p>
-                                                <span className="text-[10px] text-muted-foreground">{new Date(resp.createdAt).toLocaleDateString()}</span>
+                                                <span className="text-xs text-muted-foreground">{new Date(resp.createdAt).toLocaleDateString()}</span>
                                             </div>
                                             <p className="text-sm text-muted-foreground bg-white/5 p-2 rounded-lg">{resp.content}</p>
                                         </div>
@@ -246,27 +261,38 @@ export default function TargetedFeedbacksPage() {
                                     <div className="ml-7 pt-2 border-t border-white/5 space-y-2">
                                         <div className="flex items-center gap-2">
                                             <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-                                            <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">教练批复</p>
+                                            <p className="text-xs font-bold text-orange-400 uppercase tracking-widest">教练批复</p>
                                         </div>
                                         <textarea
                                             placeholder="点击输入批复内容，队员将立即收到通知..."
                                             defaultValue={resp.coachReply || ""}
+                                            disabled={savingReplyId === resp.id}
                                             onBlur={async (e) => {
                                                 const val = e.target.value.trim();
                                                 if (val && val !== resp.coachReply) {
+                                                    setSavingReplyId(resp.id);
                                                     try {
                                                         await api.feedbackReminders.replyToTargeted(resp.id, val);
-                                                        console.log("Reply saved");
+                                                        setReplySaved(prev => ({ ...prev, [resp.id]: true }));
                                                         setReplyErrors(prev => { const next = { ...prev }; delete next[resp.id]; return next; });
+                                                        setTimeout(() => setReplySaved(prev => { const next = { ...prev }; delete next[resp.id]; return next; }), 3000);
                                                     } catch (err) {
                                                         setReplyErrors(prev => ({ ...prev, [resp.id]: "回复失败" }));
+                                                    } finally {
+                                                        setSavingReplyId(null);
                                                     }
                                                 }
                                             }}
-                                            className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-xs text-white placeholder-muted-foreground/50 focus:ring-1 focus:ring-orange-500 outline-none resize-none h-16"
+                                            className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-xs text-white placeholder-muted-foreground/50 focus:ring-1 focus:ring-orange-500 outline-none resize-none h-16 disabled:opacity-60"
                                         />
+                                        {savingReplyId === resp.id && (
+                                            <p className="text-xs text-orange-400 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> 正在保存...</p>
+                                        )}
+                                        {replySaved[resp.id] && (
+                                            <p className="text-xs text-green-400">✓ 已保存</p>
+                                        )}
                                         {replyErrors[resp.id] && (
-                                            <p className="text-[10px] text-red-400">{replyErrors[resp.id]}</p>
+                                            <p className="text-xs text-red-400">{replyErrors[resp.id]}</p>
                                         )}
                                         {resp.repliedAt && (
                                             <p className="text-[9px] text-muted-foreground italic text-right">上次回复于: {new Date(resp.repliedAt).toLocaleString()}</p>

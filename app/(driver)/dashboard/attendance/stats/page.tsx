@@ -2,10 +2,22 @@
 
 import { useStore } from "@/lib/store";
 import { getLocalDateISOString } from "@/lib/date-utils";
-import { ChevronLeft, ChevronRight, Download, Calendar, Users, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Calendar, Users, CheckCircle2, ChevronRight as ChevronRightIcon } from "lucide-react";
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+
+function Breadcrumb() {
+    return (
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+            <ChevronRightIcon className="w-3 h-3" />
+            <Link href="/dashboard/attendance" className="hover:text-white transition-colors">出勤管理</Link>
+            <ChevronRightIcon className="w-3 h-3" />
+            <span className="text-white font-medium">出勤统计</span>
+        </nav>
+    );
+}
 
 export default function AttendanceStatsPage() {
     const { swimmers, attendance } = useStore();
@@ -65,6 +77,8 @@ export default function AttendanceStatsPage() {
 
     return (
         <div className="space-y-6">
+            <Breadcrumb />
+
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card/40 border border-border p-6 rounded-2xl">
                 <div>
@@ -138,7 +152,7 @@ export default function AttendanceStatsPage() {
                                     队员姓名
                                 </th>
                                 {daysArray.map(day => (
-                                    <th key={day} className="p-2 text-center text-[10px] font-bold text-muted-foreground border-l border-border/10 min-w-[32px]">
+                                    <th key={day} className="p-2 text-center text-xs font-bold text-muted-foreground border-l border-border/10 min-w-[32px]">
                                         {day}
                                     </th>
                                 ))}
@@ -152,7 +166,7 @@ export default function AttendanceStatsPage() {
                                 <tr key={swimmer.id} className="hover:bg-white/5 transition-colors group">
                                     <td className="sticky left-0 z-10 bg-card/90 backdrop-blur-md p-4 flex flex-col">
                                         <span className="text-sm font-bold text-white group-hover:text-primary transition-colors">{swimmer.name}</span>
-                                        <span className="text-[10px] text-muted-foreground">{swimmer.group}</span>
+                                        <span className="text-xs text-muted-foreground">{swimmer.group}</span>
                                     </td>
                                     {daysArray.map(day => {
                                         const present = isPresent(swimmer.id, day);

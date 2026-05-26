@@ -73,7 +73,7 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
                             {template.name}
                         </h4>
                     </div>
-                    <span className="text-[10px] text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded uppercase">
+                    <span className="text-xs text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded uppercase">
                         {CATEGORY_MAP[template.category] || template.category}
                     </span>
                 </div>
@@ -81,7 +81,7 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
                     <div className="text-xs font-mono font-bold text-primary">
                         {getBlockDistance(template)}m
                     </div>
-                    <div className="text-[10px] text-muted-foreground">
+                    <div className="text-xs text-muted-foreground">
                         {template.items.length} 项
                     </div>
                 </div>
@@ -90,12 +90,12 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
             {/* Items Preview */}
             <div className="space-y-1 mb-3">
                 {template.items.slice(0, 2).map((item, i) => (
-                    <div key={i} className="text-[10px] text-muted-foreground truncate">
+                    <div key={i} className="text-xs text-muted-foreground truncate">
                         {item.repeats}x{item.distance}m {item.stroke}
                     </div>
                 ))}
                 {template.items.length > 2 && (
-                    <div className="text-[10px] text-muted-foreground opacity-50">...</div>
+                    <div className="text-xs text-muted-foreground opacity-50">...</div>
                 )}
             </div>
 
@@ -182,7 +182,7 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
                                 <button
                                     onClick={() => setShowSection("all")}
                                     className={cn(
-                                        "flex-1 text-[10px] py-1.5 rounded-lg transition-all font-medium",
+                                        "flex-1 text-xs py-1.5 rounded-lg transition-all font-medium",
                                         showSection === "all"
                                             ? "bg-primary/20 text-primary"
                                             : "bg-white/5 text-muted-foreground hover:bg-white/10"
@@ -193,7 +193,7 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
                                 <button
                                     onClick={() => setShowSection("my")}
                                     className={cn(
-                                        "flex-1 text-[10px] py-1.5 rounded-lg transition-all font-medium flex items-center justify-center gap-1",
+                                        "flex-1 text-xs py-1.5 rounded-lg transition-all font-medium flex items-center justify-center gap-1",
                                         showSection === "my"
                                             ? "bg-yellow-500/20 text-yellow-400"
                                             : "bg-white/5 text-muted-foreground hover:bg-white/10"
@@ -204,7 +204,7 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
                                 <button
                                     onClick={() => setShowSection("system")}
                                     className={cn(
-                                        "flex-1 text-[10px] py-1.5 rounded-lg transition-all font-medium flex items-center justify-center gap-1",
+                                        "flex-1 text-xs py-1.5 rounded-lg transition-all font-medium flex items-center justify-center gap-1",
                                         showSection === "system"
                                             ? "bg-blue-500/20 text-blue-400"
                                             : "bg-white/5 text-muted-foreground hover:bg-white/10"
@@ -221,7 +221,7 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
                                         key={cat}
                                         onClick={() => setActiveTab(cat)}
                                         className={cn(
-                                            "text-[10px] px-2 py-1 rounded-full transition-all border",
+                                            "text-xs px-2 py-1 rounded-full transition-all border",
                                             activeTab === cat
                                                 ? "bg-primary text-primary-foreground border-primary"
                                                 : "bg-white/5 text-muted-foreground border-transparent hover:bg-white/10"
@@ -280,7 +280,7 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
                     </div>
                 )}
 
-                <div className="p-3 bg-black/20 border-t border-white/10 text-[10px] text-center text-muted-foreground">
+                <div className="p-3 bg-black/20 border-t border-white/10 text-xs text-center text-muted-foreground">
                     {mainTab === 'Templates'
                         ? "提示: 在训练块上点击「保存为模板」可创建自定义模板"
                         : "提示: 配速计算器仅供参考"

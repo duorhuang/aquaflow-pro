@@ -170,7 +170,7 @@ export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
                                 {unreadCount > 0 && (
                                     <button 
                                         onClick={handleReadAll}
-                                        className="text-[10px] text-primary hover:underline font-bold"
+                                        className="text-xs text-primary hover:underline font-bold"
                                     >
                                         全部已读
                                     </button>
@@ -214,7 +214,7 @@ export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
                                             <div className="flex-1 min-w-0">
                                                 <h4 className="text-xs font-bold text-white line-clamp-1">{item.title}</h4>
                                                 {item.detail && (
-                                                    <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">
+                                                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                                                         {item.detail}
                                                     </p>
                                                 )}
@@ -225,7 +225,7 @@ export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
                                                     </span>
                                                     {item.xpAmount !== null && item.xpAmount !== undefined && (
                                                         <span className={cn(
-                                                            "text-[10px] font-mono font-bold",
+                                                            "text-xs font-mono font-bold",
                                                             item.xpAmount > 0 ? "text-yellow-400" : "text-pink-400"
                                                         )}>
                                                             {item.xpAmount > 0 ? `+${item.xpAmount}` : item.xpAmount} XP

@@ -97,7 +97,7 @@ export function AttendanceCalendar({ swimmerId }: { swimmerId: string }) {
                 </span>
             </div>
 
-            <p className="text-[10px] text-muted-foreground/60 text-center">出勤由教练统一管理</p>
+            <p className="text-xs text-muted-foreground/60 text-center">出勤由教练统一管理</p>
         </div>
     );
 }

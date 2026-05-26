@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, User } from "lucide-react";
+import { Lock, User, Loader2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LoginFormProps {
@@ -15,6 +15,8 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [retryAttempt, setRetryAttempt] = useState(0);
+    const [showPassword, setShowPassword] = useState(false);
 
     // Warm up DB on mount to avoid cold-start latency on first login
     useEffect(() => {
@@ -49,6 +51,7 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
         let lastError: string = "Network error";
 
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            setRetryAttempt(attempt + 1);
             try {
                 const controller = new AbortController();
                 const timeout = setTimeout(() => controller.abort(), 20000);
@@ -63,6 +66,11 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
 
                 const contentType = res.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
+                    if (res.status === 429) {
+                        setError('Too many attempts, please wait a moment.');
+                        setIsLoading(false);
+                        return;
+                    }
                     if (res.ok) {
                         redirectAfterLogin(mode);
                         return;
@@ -87,6 +95,12 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                         setIsLoading(false);
                         return;
                     }
+                    // Don't retry on rate limiting — show the error immediately
+                    if (res.status === 429) {
+                        setError(data.error || "Too many attempts, please wait a moment.");
+                        setIsLoading(false);
+                        return;
+                    }
                     lastError = data.error || "Server error, retrying...";
                     if (attempt < MAX_RETRIES - 1) {
                         await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
@@ -97,6 +111,7 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                     return;
                 }
 
+                // Wait briefly for cookie to commit before redirect (prevents race condition)
                 redirectAfterLogin(mode, data);
                 return;
             } catch (err: any) {
@@ -109,12 +124,16 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                 }
                 setError(lastError);
                 setIsLoading(false);
+                setRetryAttempt(0);
                 return;
             }
         }
     };
 
-    const redirectAfterLogin = (role: string, data?: any) => {
+    const redirectAfterLogin = async (role: string, data?: any) => {
+        // Brief delay ensures browser commits Set-Cookie before navigation
+        // This prevents the edge case where middleware doesn't see the cookie yet
+        await new Promise(r => setTimeout(r, 300));
         if (role === "coach") {
             router.push("/dashboard");
         } else {
@@ -142,13 +161,21 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                 <div className="relative">
                     <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
                     <input
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         placeholder="Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-12 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                         required
                     />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 p-0.5 text-muted-foreground hover:text-white transition-colors"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
                 </div>
             </div>
 
@@ -156,17 +183,28 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                 <p className="text-red-400 text-xs text-center">{error}</p>
             )}
 
+            {mode === "coach" && (
+                <p className="text-center text-xs text-muted-foreground">
+                    忘记密码？请到 <a href="/setup" className="text-primary hover:underline">初始化页面</a> 重置。
+                </p>
+            )}
+
             <button
                 type="submit"
                 disabled={isLoading}
                 className={cn(
-                    "w-full py-3 rounded-xl font-bold transition-all",
+                    "w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2",
                     isLoading
                         ? "bg-secondary text-muted-foreground cursor-wait"
                         : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-[1.02]"
                 )}
             >
-                {isLoading ? "Connecting to server..." : "Login"}
+                {isLoading ? (
+                    <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {retryAttempt > 0 ? `连接中... 第 ${retryAttempt}/3 次尝试` : "Connecting to server..."}
+                    </>
+                ) : "Login"}
             </button>
         </form>
     );

@@ -141,8 +141,13 @@ export async function verifyJWT(token: string): Promise<JWTPayload | null> {
  */
 export function getCookieFromRequest(request: Request, name: string): string | undefined {
   const cookieHeader = request.headers.get('cookie') || '';
-  const match = cookieHeader.match(new RegExp(`(?:^|;)\\s*${name}=([^;]*)`));
-  return match ? decodeURIComponent(match[1]) : undefined;
+  const cookies = Object.fromEntries(
+    cookieHeader.split('; ').filter(Boolean).map(c => {
+      const idx = c.indexOf('=');
+      return idx === -1 ? [c, ''] : [c.slice(0, idx), decodeURIComponent(c.slice(idx + 1))];
+    })
+  );
+  return cookies[name];
 }
 
 /**
@@ -151,7 +156,8 @@ export function getCookieFromRequest(request: Request, name: string): string | u
 export function setSessionCookie(token: string, maxAge = 7 * 24 * 60 * 60): string {
   const isProd = process.env.NODE_ENV === 'production';
   const parts = [`aquaflow_session=${token}`, 'Path=/', 'HttpOnly', 'SameSite=Strict', `Max-Age=${maxAge}`];
-  if (isProd) parts.push('Secure');
+  // Domain set to root so cookie is visible across all subdomains on Cloudflare Pages
+  if (isProd) parts.push('Domain=.sportsflow.best', 'Secure');
   return parts.join('; ');
 }
 
@@ -160,7 +166,7 @@ export function setSessionCookie(token: string, maxAge = 7 * 24 * 60 * 60): stri
  */
 export function clearSessionCookie(): string {
   const isProd = process.env.NODE_ENV === 'production';
-  const parts = ['aquaflow_session=', 'Path=/', 'HttpOnly', 'SameSite=Strict', 'Max-Age=0'];
-  if (isProd) parts.push('Secure');
+  const parts = ['aquaflow_session=', 'Path=/', 'HttpOnly', 'SameSite=Strict', 'Max-Age=0', 'Expires=Thu, 01 Jan 1970 00:00:00 GMT'];
+  if (isProd) parts.push('Domain=.sportsflow.best', 'Secure');
   return parts.join('; ');
 }

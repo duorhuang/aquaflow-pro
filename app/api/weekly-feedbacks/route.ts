@@ -37,27 +37,37 @@ export async function GET(req: Request) {
             );
         }
 
-        let feedbacks: any[];
-        if (submittedOnly) {
-            feedbacks = await sql`
-                SELECT * FROM "WeeklyFeedback"
-                WHERE "isSubmitted" = true
-                ORDER BY "weekStart" DESC
-            `;
-        } else {
-            feedbacks = await sql`
-                SELECT * FROM "WeeklyFeedback"
-                ORDER BY "weekStart" DESC
-            `;
+        const feedbacks: any[] = submittedOnly
+            ? await sql`SELECT * FROM "WeeklyFeedback" WHERE "isSubmitted" = true ORDER BY "weekStart" DESC`
+            : await sql`SELECT * FROM "WeeklyFeedback" ORDER BY "weekStart" DESC`;
+
+        // Include dailyFeedbacks and swimmer for each — batched to avoid N+1
+        const feedbackIds = feedbacks.map((f: any) => f.id);
+        const swimmerIds = [...new Set(feedbacks.map((f: any) => f.swimmerId).filter(Boolean))];
+
+        const [dailyRows, swimmerRows] = await Promise.all([
+            feedbackIds.length > 0
+                ? sql`SELECT * FROM "DailyFeedback" WHERE "weeklyFeedbackId" = ANY(${feedbackIds})`
+                : [],
+            swimmerIds.length > 0
+                ? sql`SELECT * FROM "Swimmer" WHERE "id" = ANY(${swimmerIds})`
+                : [],
+        ]);
+
+        // Group daily feedbacks by weeklyFeedbackId
+        const dailyByFeedback: Record<string, any[]> = {};
+        for (const d of dailyRows) {
+            (dailyByFeedback[d.weeklyFeedbackId] ||= []).push(d);
         }
 
-        // Include dailyFeedbacks and swimmer for each
-        const results = await Promise.all(feedbacks.map(async (f: any) => {
-            const [dailyFeedbacks, swimmer] = await Promise.all([
-                sql`SELECT * FROM "DailyFeedback" WHERE "weeklyFeedbackId" = ${f.id}`,
-                sql`SELECT * FROM "Swimmer" WHERE "id" = ${f.swimmerId}`,
-            ]);
-            return { ...f, dailyFeedbacks, swimmer: swimmer[0] || null };
+        // Index swimmers by id
+        const swimmers: Record<string, any> = {};
+        for (const s of swimmerRows) swimmers[s.id] = s;
+
+        const results = feedbacks.map((f: any) => ({
+            ...f,
+            dailyFeedbacks: dailyByFeedback[f.id] || [],
+            swimmer: swimmers[f.swimmerId] || null,
         }));
 
         return NextResponse.json(results || [], { headers: V12_FINGERPRINT });

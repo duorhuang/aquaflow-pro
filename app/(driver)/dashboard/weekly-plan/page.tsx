@@ -5,6 +5,7 @@ import { api } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/components/common/Toast";
 import { Save, Plus, Trash2, Image as ImageIcon, CheckCircle, Users, Target, FileText, Blocks, ChevronDown, ChevronRight, Loader2, Folder, FolderOpen, Layers } from "lucide-react";
+import Link from "next/link";
 import { ImageViewer } from "@/components/common/ImageViewer";
 import { BlockEditor } from "@/components/dashboard/BlockEditor";
 import { RichTextEditor } from "@/components/dashboard/RichTextEditor";
@@ -14,6 +15,16 @@ import { GroupLevel } from "@/types";
 
 const GROUP_LEVELS: GroupLevel[] = ["Junior", "Intermediate", "Advanced", "External"];
 const DAY_NAMES = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+
+function Breadcrumb() {
+    return (
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-white font-medium">周训练计划</span>
+        </nav>
+    );
+}
 
 // Get ISO day-of-week (0=Monday, 6=Sunday) from a date string
 function getDayOfWeek(dateStr: string): number {
@@ -124,6 +135,20 @@ export default function WeeklyPlanPage() {
         };
     }, [loadPlans]);
 
+    // Autosave draft to localStorage every 30s
+    useEffect(() => {
+        if (!sessions.length && !title && !coachNotes) return;
+        const interval = setInterval(() => {
+            try {
+                localStorage.setItem("aquaflow_weekly_plan_draft", JSON.stringify({
+                    title, coachNotes, sessions, targetGroups, targetSwimmerIds,
+                    weekStart, weekEnd, overviewImageUrl, overviewContentHtml,
+                }));
+            } catch {}
+        }, 30000);
+        return () => clearInterval(interval);
+    }, [title, coachNotes, sessions, targetGroups, targetSwimmerIds, weekStart, weekEnd, overviewImageUrl, overviewContentHtml]);
+
     // Recompute expandedDays when sessions change
     useEffect(() => {
         let isMounted = true;
@@ -185,7 +210,7 @@ export default function WeeklyPlanPage() {
         setSessions(prev => [
             ...prev,
             {
-                id: Math.random().toString(36).substring(7),
+                id: crypto.randomUUID(),
                 isNew: true,
                 label: DAY_NAMES[dayOfWeek],
                 date: dateStr,
@@ -207,6 +232,7 @@ export default function WeeklyPlanPage() {
     };
 
     const removeSession = async (id: string, isNew: boolean) => {
+        if (!confirm("确定删除此训练内容？此操作不可撤销。")) return;
         if (!isNew) {
             try {
                 await api.weeklyPlans.deleteSession(id);
@@ -470,19 +496,44 @@ export default function WeeklyPlanPage() {
 
     const { recentPlans, archivedPlans } = getPartitionedPlans();
 
+    const restoreDraft = () => {
+        try {
+            const raw = localStorage.getItem("aquaflow_weekly_plan_draft");
+            if (!raw) return;
+            const draft = JSON.parse(raw);
+            if (draft.title) setTitle(draft.title);
+            if (draft.coachNotes) setCoachNotes(draft.coachNotes);
+            if (draft.sessions) setSessions(draft.sessions);
+            if (draft.targetGroups) setTargetGroups(draft.targetGroups);
+            if (draft.targetSwimmerIds) setTargetSwimmerIds(draft.targetSwimmerIds);
+            if (draft.weekStart) setWeekStart(draft.weekStart);
+            if (draft.weekEnd) setWeekEnd(draft.weekEnd);
+            if (draft.overviewImageUrl) setOverviewImageUrl(draft.overviewImageUrl);
+            if (draft.overviewContentHtml) setOverviewContentHtml(draft.overviewContentHtml);
+            toast("info", "已恢复上次保存的草稿");
+        } catch {}
+    };
+
     return (
         <div className="space-y-6 max-w-4xl mx-auto">
+            <Breadcrumb />
+
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold text-white">按周上传训练计划</h1>
-                <button onClick={createNew} className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/80">
-                    + 创建新计划
-                </button>
+                <div className="flex gap-2">
+                    <button onClick={restoreDraft} className="px-4 py-2 bg-secondary/50 text-muted-foreground rounded-lg hover:text-white hover:bg-secondary/80 text-sm">
+                        恢复草稿
+                    </button>
+                    <button onClick={createNew} className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/80">
+                        + 创建新计划
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2 space-y-6 relative">
                     {loadingPlanId && (
-                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 rounded-2xl flex flex-col items-center justify-center space-y-4 transition-all duration-300">
+                        <div className="absolute inset-0 bg-black/40 rounded-2xl flex flex-col items-center justify-center space-y-4 transition-all duration-300 z-10">
                             <div className="relative">
                                 <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur opacity-70 animate-pulse"></div>
                                 <Loader2 className="w-12 h-12 text-purple-400 animate-spin relative" />
@@ -588,10 +639,10 @@ export default function WeeklyPlanPage() {
                                             <span className="font-bold text-white">{dayName}</span>
                                             <span className="text-xs text-muted-foreground">{dayValid ? `${dayOfMonth}日` : "—"}</span>
                                             {dayValid && isToday(dayOfWeek) && (
-                                                <span className="px-1.5 py-0.5 bg-primary/20 text-primary text-[10px] rounded-full font-bold">今天</span>
+                                                <span className="px-1.5 py-0.5 bg-primary/20 text-primary text-xs rounded-full font-bold">今天</span>
                                             )}
                                             {daySessions.length > 0 && (
-                                                <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 text-[10px] rounded-full">
+                                                <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded-full">
                                                     {daySessions.length} 个内容
                                                 </span>
                                             )}
@@ -620,12 +671,12 @@ export default function WeeklyPlanPage() {
                                                                     type="date"
                                                                     value={s.date}
                                                                     onChange={e => updateSession(s.id, { date: e.target.value })}
-                                                                    className="bg-secondary/50 rounded px-2 py-0.5 text-[10px] text-white outline-none"
+                                                                    className="bg-secondary/50 rounded px-2 py-0.5 text-xs text-white outline-none"
                                                                 />
                                                                 <select
                                                                     value={s.trainingType || ""}
                                                                     onChange={e => updateSession(s.id, { trainingType: e.target.value })}
-                                                                    className="bg-secondary/50 rounded px-2 py-1 text-[10px] text-white outline-none border border-white/10"
+                                                                    className="bg-secondary/50 rounded px-2 py-1 text-xs text-white outline-none border border-white/10"
                                                                 >
                                                                     <option value="">类型 (可选)</option>
                                                                     <option value="aerobic">有氧</option>
@@ -639,7 +690,7 @@ export default function WeeklyPlanPage() {
                                                                 <select
                                                                     value={s.primaryStroke || ""}
                                                                     onChange={e => updateSession(s.id, { primaryStroke: e.target.value })}
-                                                                    className="bg-secondary/50 rounded px-2 py-1 text-[10px] text-white outline-none border border-white/10"
+                                                                    className="bg-secondary/50 rounded px-2 py-1 text-xs text-white outline-none border border-white/10"
                                                                 >
                                                                     <option value="">主项 (可选)</option>
                                                                     <option value="Free">自由泳</option>
@@ -651,9 +702,9 @@ export default function WeeklyPlanPage() {
                                                                 </select>
                                                             </div>
                                                             <div className="flex items-center gap-1.5">
-                                                                {/* Mode toggle */}
+                                                                {/* Mode toggle with guidance */}
                                                                 <div className="flex bg-black/30 rounded-lg p-0.5">
-                                                                    {(["legacy", "block", "rich", "plan"] as const).map(m => (
+                                                                    {(["plan", "block", "rich", "legacy"] as const).map(m => (
                                                                         <button
                                                                             key={m}
                                                                             onClick={() => {
@@ -661,11 +712,17 @@ export default function WeeklyPlanPage() {
                                                                                 const migrated = m === "block" ? migrateLegacyToBlock({ ...session, editorMode: "block" }) : session;
                                                                                 updateSession(s.id, { editorMode: m, ...(m === "block" && migrated !== session ? { contentBlocks: migrated.contentBlocks } : {}) });
                                                                             }}
-                                                                            className={`px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1 ${
+                                                                            className={`px-2 py-1 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${
                                                                                 mode === m
                                                                                     ? "bg-purple-500/30 text-white"
                                                                                     : "text-muted-foreground hover:text-white"
                                                                             }`}
+                                                                            title={
+                                                                                m === "plan" ? "结构化训练计划（推荐）：分组+距离+配速" :
+                                                                                m === "block" ? "模块化编辑器：图片+文字块混排" :
+                                                                                m === "rich" ? "富文本编辑器：类似Word的排版" :
+                                                                                "照片模式：上传训练照片+备注（旧版）"
+                                                                            }
                                                                         >
                                                                             {m === "legacy" && <><ImageIcon className="w-3 h-3" /> 照片</>}
                                                                             {m === "block" && <><Blocks className="w-3 h-3" /> 模块</>}
@@ -676,7 +733,7 @@ export default function WeeklyPlanPage() {
                                                                 </div>
                                                                 <button
                                                                     onClick={() => removeSession(s.id, s.isNew)}
-                                                                    className="p-1.5 bg-red-500/80 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                    className="p-1.5 bg-red-500/80 rounded-lg text-white transition-opacity md:opacity-0 md:group-hover:opacity-100"
                                                                 >
                                                                     <Trash2 className="w-3.5 h-3.5" />
                                                                 </button>
@@ -789,7 +846,7 @@ export default function WeeklyPlanPage() {
                             发送对象
                         </h2>
 
-                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-2">按组快速选择</p>
+                        <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-2">按组快速选择</p>
                         <div className="flex flex-wrap gap-2 mb-4">
                             {GROUP_LEVELS.map(groupLevel => {
                                 const count = (swimmers || []).filter(s => s.group === groupLevel).length;
@@ -813,14 +870,28 @@ export default function WeeklyPlanPage() {
                             })}
                         </div>
 
-                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-2">指定队员（可选微调）</p>
+                        <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-2">指定队员（可选微调）</p>
+                        <div className="flex gap-2 mb-3">
+                            <button
+                                onClick={() => setTargetSwimmerIds((swimmers || []).map(s => s.id))}
+                                className="text-xs bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 px-3 py-1.5 rounded-lg font-bold transition-colors"
+                            >
+                                全选
+                            </button>
+                            <button
+                                onClick={() => setTargetSwimmerIds([])}
+                                className="text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30 px-3 py-1.5 rounded-lg font-bold transition-colors"
+                            >
+                                清空
+                            </button>
+                        </div>
                         <div className="space-y-3">
                             {GROUP_LEVELS.map(groupLevel => {
                                 const groupSwimmers = (swimmers || []).filter(s => s.group === groupLevel);
                                 if (groupSwimmers.length === 0) return null;
                                 return (
                                     <div key={groupLevel}>
-                                        <p className="text-[10px] text-muted-foreground font-bold mb-1.5">{groupLevel}</p>
+                                        <p className="text-xs text-muted-foreground font-bold mb-1.5">{groupLevel}</p>
                                         <div className="flex flex-wrap gap-2">
                                             {groupSwimmers.map(s => (
                                                 <button
@@ -839,7 +910,7 @@ export default function WeeklyPlanPage() {
                         </div>
 
                         {targetGroups.length === 0 && targetSwimmerIds.length === 0 && (
-                            <p className="text-[10px] text-red-400 mt-3">请至少选择一个组别或队员</p>
+                            <p className="text-xs text-red-400 mt-3">请至少选择一个组别或队员</p>
                         )}
                     </div>
 
@@ -853,7 +924,7 @@ export default function WeeklyPlanPage() {
                                         style={{ width: `${(publishProgress.current / publishProgress.total) * 100}%` }}
                                     />
                                 </div>
-                                <p className="text-[10px] text-primary text-center font-bold mb-2">
+                                <p className="text-xs text-primary text-center font-bold mb-2">
                                     正在发布: {publishProgress.current} / {publishProgress.total} (请勿关闭页面)
                                 </p>
                             </>
@@ -882,7 +953,7 @@ export default function WeeklyPlanPage() {
                                 const hasTraining = daySessions.length > 0;
                                 return (
                                     <div key={idx} className="flex flex-col items-center">
-                                        <div className="text-[10px] text-muted-foreground mb-1">{dayName}</div>
+                                        <div className="text-xs text-muted-foreground mb-1">{dayName}</div>
                                         <div className={`w-full aspect-square rounded-md flex flex-col items-center justify-center transition-all ${
                                             hasTraining 
                                                 ? 'bg-purple-500/20 border border-purple-500/50 shadow-[0_0_10px_rgba(168,85,247,0.15)]' 
@@ -900,13 +971,13 @@ export default function WeeklyPlanPage() {
                         </div>
                         <div className="mt-4 flex justify-between items-center bg-black/30 rounded-lg p-3">
                             <div className="text-center">
-                                <p className="text-[10px] text-muted-foreground">训练天数</p>
+                                <p className="text-xs text-muted-foreground">训练天数</p>
                                 <p className="text-lg font-bold text-white">
                                     {new Set(sessions.map(s => getDayOfWeek(s.date)).filter(d => d !== -1)).size} <span className="text-xs font-normal text-muted-foreground">天</span>
                                 </p>
                             </div>
                             <div className="text-center">
-                                <p className="text-[10px] text-muted-foreground">总训练数</p>
+                                <p className="text-xs text-muted-foreground">总训练数</p>
                                 <p className="text-lg font-bold text-purple-400">
                                     {sessions.length} <span className="text-xs font-normal text-muted-foreground">节</span>
                                 </p>
@@ -919,7 +990,7 @@ export default function WeeklyPlanPage() {
                         <h3 className="font-bold text-lg text-white">已有周计划</h3>
                     <div className="space-y-3">
                         {recentPlans.map(p => (
-                            <div key={p.id} onClick={() => !loadingPlanId && selectPlan(p.id)} className={`p-4 rounded-xl cursor-pointer border transition-all ${selectedPlanId === p.id ? 'bg-purple-500/20 border-purple-500/50' : 'bg-card/40 border-border hover:border-white/20'} ${loadingPlanId && loadingPlanId !== p.id ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                            <div key={p.id} onClick={() => selectPlan(p.id)} className={`p-4 rounded-xl cursor-pointer border transition-all ${selectedPlanId === p.id ? 'bg-purple-500/20 border-purple-500/50' : 'bg-card/40 border-border hover:border-white/20'}`}>
                                 <div className="flex items-center justify-between">
                                     <h4 className="font-bold text-white text-sm">{p.title || `${p.weekStart}周`}</h4>
                                     {loadingPlanId === p.id && (
@@ -928,18 +999,18 @@ export default function WeeklyPlanPage() {
                                 </div>
                                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                                     <span className="text-xs text-muted-foreground">{p.sessions?.length || 0} 个内容</span>
-                                    {p.isPublished && <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded-full">已发布</span>}
+                                    {p.isPublished && <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full">已发布</span>}
                                     {p.targetGroup && p.targetGroup.length > 0 && p.targetGroup.map((g: string) => (
-                                        <span key={g} className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] rounded-full">{g}</span>
+                                        <span key={g} className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full">{g}</span>
                                     ))}
                                     {p.targetSwimmerIds && p.targetSwimmerIds.length > 0 && p.targetSwimmerIds.map((sid: string) => {
                                         const sw = (swimmers || []).find(s => s.id === sid);
                                         return sw ? (
-                                            <span key={sid} className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[10px] rounded-full">{sw.name}</span>
+                                            <span key={sid} className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs rounded-full">{sw.name}</span>
                                         ) : null;
                                     })}
                                     {!p.targetGroup && !p.targetSwimmerIds && (
-                                        <span className="px-2 py-0.5 bg-white/10 text-muted-foreground text-[10px] rounded-full">全队</span>
+                                        <span className="px-2 py-0.5 bg-white/10 text-muted-foreground text-xs rounded-full">全队</span>
                                     )}
                                 </div>
                             </div>
@@ -969,7 +1040,7 @@ export default function WeeklyPlanPage() {
                                 {archiveExpanded && (
                                     <div className="space-y-3 pt-2 pl-1 animate-in fade-in slide-in-from-top-1 duration-200">
                                         {archivedPlans.map(p => (
-                                            <div key={p.id} onClick={() => !loadingPlanId && selectPlan(p.id)} className={`p-4 rounded-xl cursor-pointer border transition-all ${selectedPlanId === p.id ? 'bg-purple-500/20 border-purple-500/50' : 'bg-card/40 border-border hover:border-white/20'} ${loadingPlanId && loadingPlanId !== p.id ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                            <div key={p.id} onClick={() => selectPlan(p.id)} className={`p-4 rounded-xl cursor-pointer border transition-all ${selectedPlanId === p.id ? 'bg-purple-500/20 border-purple-500/50' : 'bg-card/40 border-border hover:border-white/20'}`}>
                                                 <div className="flex items-center justify-between">
                                                     <h4 className="font-bold text-white text-sm">{p.title || `${p.weekStart}周`}</h4>
                                                     {loadingPlanId === p.id && (
@@ -978,18 +1049,18 @@ export default function WeeklyPlanPage() {
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                                                     <span className="text-xs text-muted-foreground">{p.sessions?.length || 0} 个内容</span>
-                                                    {p.isPublished && <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded-full">已发布</span>}
+                                                    {p.isPublished && <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full">已发布</span>}
                                                     {p.targetGroup && p.targetGroup.length > 0 && p.targetGroup.map((g: string) => (
-                                                        <span key={g} className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] rounded-full">{g}</span>
+                                                        <span key={g} className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full">{g}</span>
                                                     ))}
                                                     {p.targetSwimmerIds && p.targetSwimmerIds.length > 0 && p.targetSwimmerIds.map((sid: string) => {
                                                         const sw = (swimmers || []).find(s => s.id === sid);
                                                         return sw ? (
-                                                            <span key={sid} className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[10px] rounded-full">{sw.name}</span>
+                                                            <span key={sid} className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs rounded-full">{sw.name}</span>
                                                         ) : null;
                                                     })}
                                                     {!p.targetGroup && !p.targetSwimmerIds && (
-                                                        <span className="px-2 py-0.5 bg-white/10 text-muted-foreground text-[10px] rounded-full">全队</span>
+                                                        <span className="px-2 py-0.5 bg-white/10 text-muted-foreground text-xs rounded-full">全队</span>
                                                     )}
                                                 </div>
                                             </div>

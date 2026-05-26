@@ -29,6 +29,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     // Load data if editing
     useEffect(() => {
@@ -100,17 +101,15 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
     };
 
     const handleDelete = async () => {
-        if (isSubmitting) return;
-        if (swimmerToEdit && confirm(`确定要删除队员 ${swimmerToEdit.name} 吗？`)) {
-            setIsSubmitting(true);
-            try {
-                await deleteSwimmer(swimmerToEdit.id);
-                onClose();
-            } catch (error: any) {
-                setError(error.message || "删除失败，请重试");
-            } finally {
-                setIsSubmitting(false);
-            }
+        if (isSubmitting || !swimmerToEdit) return;
+        setIsSubmitting(true);
+        try {
+            await deleteSwimmer(swimmerToEdit.id);
+            setShowDeleteConfirm(false);
+            onClose();
+        } catch (error: any) {
+            setError(error.message || "删除失败，请重试");
+            setIsSubmitting(false);
         }
     };
 
@@ -201,14 +200,39 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                     {/* Actions */}
                     <div className="flex gap-3 pt-4">
                         {swimmerToEdit && (
-                            <button
-                                type="button"
-                                onClick={handleDelete}
-                                disabled={isSubmitting}
-                                className="bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-3 rounded-xl font-bold transition-colors disabled:opacity-50"
-                            >
-                                <Trash2 className="w-5 h-5" />
-                            </button>
+                            showDeleteConfirm ? (
+                                <div className="flex gap-2 flex-1">
+                                    <div className="flex-1">
+                                        <p className="text-xs text-red-400 mb-2">确定要删除 {swimmerToEdit.name} 吗？此操作不可恢复。</p>
+                                        <div className="flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowDeleteConfirm(false)}
+                                                className="flex-1 py-2.5 rounded-xl bg-secondary text-white hover:bg-secondary/80 text-sm font-medium"
+                                            >
+                                                取消
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleDelete}
+                                                disabled={isSubmitting}
+                                                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white hover:bg-red-600 text-sm font-bold disabled:opacity-50"
+                                            >
+                                                {isSubmitting ? "删除中..." : "确认删除"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDeleteConfirm(true)}
+                                    disabled={isSubmitting}
+                                    className="bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-3 rounded-xl font-bold transition-colors disabled:opacity-50"
+                                >
+                                    <Trash2 className="w-5 h-5" />
+                                </button>
+                            )
                         )}
                         <button
                             type="submit"

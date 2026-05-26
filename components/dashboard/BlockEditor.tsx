@@ -108,7 +108,7 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                                 >
                                     <Image className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                                     <p className="text-sm text-muted-foreground">点击上传图片</p>
-                                    <p className="text-[10px] text-muted-foreground/50 mt-1">JPG, PNG, WebP</p>
+                                    <p className="text-xs text-muted-foreground/50 mt-1">JPG, PNG, WebP</p>
                                 </label>
                             )}
                             <input
@@ -137,7 +137,7 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                                 >
                                     <Video className="w-8 h-8 text-blue-400 mx-auto mb-2" />
                                     <p className="text-sm text-muted-foreground">点击上传视频</p>
-                                    <p className="text-[10px] text-muted-foreground/50 mt-1">MP4, MOV (iPhone)</p>
+                                    <p className="text-xs text-muted-foreground/50 mt-1">MP4, MOV (iPhone)</p>
                                 </label>
                             ) : (() => {
                                 const platform = detectPlatform(block.content);

@@ -1,12 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { api } from "@/lib/api-client";
 import { InjuryMap } from "@/components/athlete/InjuryMap";
-import { ArrowLeft, Activity, ShieldAlert, Heart, RefreshCw, UserCheck } from "lucide-react";
+import { ArrowLeft, Activity, ShieldAlert, Heart, RefreshCw, UserCheck, ChevronRight, Flame, Zap, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+
+function Breadcrumb() {
+    return (
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-white font-medium">伤病图谱</span>
+        </nav>
+    );
+}
 
 interface Swimmer {
     id: string;
@@ -20,7 +29,6 @@ interface Swimmer {
 }
 
 export default function CoachInjuryMonitorPage() {
-    const router = useRouter();
     const [swimmers, setSwimmers] = useState<Swimmer[]>([]);
     const [loading, setLoading] = useState(true);
     const [heatMapData, setHeatMapData] = useState<Record<string, number>>({});
@@ -85,22 +93,14 @@ export default function CoachInjuryMonitorPage() {
     };
 
     useEffect(() => {
-        // Auth check
-        api.auth.me().then((me) => {
-            if (!me || me.role !== "coach") {
-                router.push("/login?role=coach");
-            } else {
-                loadData();
-            }
-        }).catch(() => {
-            router.push("/login?role=coach");
-        });
-    }, [router]);
+        loadData();
+    }, []);
 
     return (
         <div className="min-h-screen bg-background p-4 md:p-8">
             <div className="max-w-5xl mx-auto space-y-6">
-                
+                <Breadcrumb />
+
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -157,7 +157,7 @@ export default function CoachInjuryMonitorPage() {
                                             <div className="flex items-center justify-between">
                                                 <div>
                                                     <span className="text-3xl font-mono font-bold text-white">{avgReadiness}%</span>
-                                                    <p className="text-[10px] text-muted-foreground mt-1">全队平均精神与状态准备值</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">全队平均精神与状态准备值</p>
                                                 </div>
                                                 <div className={cn(
                                                     "w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-lg",
@@ -167,7 +167,7 @@ export default function CoachInjuryMonitorPage() {
                                                         ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
                                                         : "bg-red-500/10 text-red-400 border border-red-500/20"
                                                 )}>
-                                                    {avgReadiness >= 85 ? "🔥" : avgReadiness >= 65 ? "⚡" : "⚠️"}
+                                                    {avgReadiness >= 85 ? <Flame className="w-4 h-4" /> : avgReadiness >= 65 ? <Zap className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
                                                 </div>
                                             </div>
                                         );
@@ -192,7 +192,7 @@ export default function CoachInjuryMonitorPage() {
                                             <div className="flex justify-between items-start">
                                                 <div>
                                                     <h4 className="text-sm font-bold text-white">{swimmer.name}</h4>
-                                                    <span className="text-[10px] text-muted-foreground bg-white/5 px-2 py-0.5 rounded-full border border-white/5">{swimmer.group}</span>
+                                                    <span className="text-xs text-muted-foreground bg-white/5 px-2 py-0.5 rounded-full border border-white/5">{swimmer.group}</span>
                                                 </div>
                                                 <div className="text-right">
                                                     <span className={cn(

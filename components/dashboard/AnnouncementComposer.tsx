@@ -101,7 +101,7 @@ export function AnnouncementComposer({ className }: { className?: string }) {
             {/* Header */}
             <div className="px-5 py-4 border-b border-white/5">
                 <h3 className="text-sm font-bold text-white">发布新动态</h3>
-                <p className="text-[10px] text-muted-foreground mt-0.5">添加文字、照片、视频或链接，指定可见队员</p>
+                <p className="text-xs text-muted-foreground mt-0.5">添加文字、照片、视频或链接，指定可见队员</p>
             </div>
 
             {/* Blocks */}
@@ -143,7 +143,7 @@ export function AnnouncementComposer({ className }: { className?: string }) {
                                     <>
                                         <Image className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                                         <p className="text-sm text-muted-foreground">点击上传图片</p>
-                                        <p className="text-[10px] text-muted-foreground/50 mt-1">JPG, PNG, WebP</p>
+                                        <p className="text-xs text-muted-foreground/50 mt-1">JPG, PNG, WebP</p>
                                     </>
                                 )}
                                 <input
@@ -176,7 +176,7 @@ export function AnnouncementComposer({ className }: { className?: string }) {
                                     <>
                                         <Video className="w-8 h-8 text-blue-400 mx-auto mb-2" />
                                         <p className="text-sm text-muted-foreground">点击上传视频</p>
-                                        <p className="text-[10px] text-muted-foreground/50 mt-1">MP4, WebM</p>
+                                        <p className="text-xs text-muted-foreground/50 mt-1">MP4, WebM</p>
                                     </>
                                 )}
                                 <input
@@ -228,7 +228,7 @@ export function AnnouncementComposer({ className }: { className?: string }) {
             {/* Targeting */}
             <div className="px-5 py-4 border-t border-white/5 space-y-3">
                 <div>
-                    <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 block">可见组别</label>
+                    <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">可见组别</label>
                     <div className="flex gap-2">
                         {["Advanced", "Intermediate", "Junior", "External"].map(g => (
                             <button
@@ -249,14 +249,14 @@ export function AnnouncementComposer({ className }: { className?: string }) {
 
                 {swimmers.length > 0 && (
                     <div>
-                        <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 block">指定队员 (可选)</label>
+                        <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">指定队员 (可选)</label>
                         <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
                             {swimmers.map(s => (
                                 <button
                                     key={s.id}
                                     onClick={() => toggleSwimmer(s.id)}
                                     className={cn(
-                                        "px-2 py-1 rounded-lg text-[10px] font-medium border transition-colors",
+                                        "px-2 py-1 rounded-lg text-xs font-medium border transition-colors",
                                         targetSwimmerIds.includes(s.id)
                                             ? "bg-yellow-500/20 border-yellow-500 text-yellow-300"
                                             : "bg-white/5 border-white/10 text-muted-foreground hover:border-white/20"

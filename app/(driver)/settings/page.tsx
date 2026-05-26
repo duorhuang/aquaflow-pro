@@ -43,6 +43,13 @@ export default function SettingsPage() {
             reader.onload = (event) => {
                 try {
                     const data = JSON.parse(event.target?.result as string);
+                    const expectedKeys = ['plans','swimmers','attendance','feedbacks','weeklyPlans','performances','announcements','templates'];
+                    const hasAnyExpectedKey = expectedKeys.some(k => k in data && data[k] !== undefined);
+                    if (!hasAnyExpectedKey) {
+                        setImportError("备份文件格式不正确，未找到有效数据");
+                        setTimeout(() => setImportError(null), 5000);
+                        return;
+                    }
                     if (data.plans) localStorage.setItem('aquaflow_local_plans', data.plans);
                     if (data.swimmers) localStorage.setItem('aquaflow_local_swimmers', data.swimmers);
                     if (data.attendance) localStorage.setItem('aquaflow_local_attendance', data.attendance);
@@ -51,10 +58,11 @@ export default function SettingsPage() {
                     if (data.performances) localStorage.setItem('aquaflow_local_performances', data.performances);
                     if (data.announcements) localStorage.setItem('aquaflow_local_announcements', data.announcements);
                     if (data.templates) localStorage.setItem('aquaflow_local_templates', data.templates);
+                    setImportError(null);
                     window.location.reload();
                 } catch (err) {
                     setImportError("无效的备份文件格式");
-                    setTimeout(() => setImportError(null), 3000);
+                    setTimeout(() => setImportError(null), 5000);
                 }
             };
             reader.readAsText(file);

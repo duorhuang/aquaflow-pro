@@ -1,11 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { api } from "@/lib/api-client";
-import { Calendar, MapPin, Trophy, Plus, Trash2, Edit2, ArrowLeft, Check, X } from "lucide-react";
+import { Calendar, MapPin, Trophy, Plus, Trash2, Edit2, ArrowLeft, Check, X, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+
+function Breadcrumb() {
+    return (
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-white font-medium">赛事管理</span>
+        </nav>
+    );
+}
 
 interface Meet {
     id: string;
@@ -20,10 +29,11 @@ interface Meet {
 }
 
 export default function CoachMeetsPage() {
-    const router = useRouter();
     const [meets, setMeets] = useState<Meet[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [deletingMeet, setDeletingMeet] = useState<string | null>(null);
+    const [togglingMeet, setTogglingMeet] = useState<string | null>(null);
     
     // Stable timestamp for pure renders (React 19 / purity rule)
     const [now] = useState(() => Date.now());
@@ -59,17 +69,8 @@ export default function CoachMeetsPage() {
     };
 
     useEffect(() => {
-        // Authenticate as coach
-        api.auth.me().then((me) => {
-            if (!me || me.role !== "coach") {
-                router.push("/login?role=coach");
-            } else {
-                loadMeets();
-            }
-        }).catch(() => {
-            router.push("/login?role=coach");
-        });
-    }, [router]);
+        loadMeets();
+    }, []);
 
     const openCreateModal = () => {
         setEditingMeet(null);
@@ -130,23 +131,29 @@ export default function CoachMeetsPage() {
 
     const handleDelete = async (id: string) => {
         if (!confirm("确定要删除这场赛事吗？此操作不可撤销，且会清除队员倒计时。")) return;
-        
+
+        setDeletingMeet(id);
         try {
             await api.meets.delete(id);
             showNotification("赛事删除成功！");
             loadMeets();
         } catch (e) {
             alert((e as Error).message || "删除赛事失败");
+        } finally {
+            setDeletingMeet(null);
         }
     };
 
     const toggleMeetActive = async (meet: Meet) => {
+        setTogglingMeet(meet.id);
         try {
             await api.meets.update(meet.id, { isActive: !meet.isActive });
             showNotification(meet.isActive ? "赛事倒计时已暂停" : "赛事倒计时已激活！");
             loadMeets();
         } catch (e) {
             alert((e as Error).message || "切换状态失败");
+        } finally {
+            setTogglingMeet(null);
         }
     };
 
@@ -158,7 +165,8 @@ export default function CoachMeetsPage() {
     return (
         <div className="min-h-screen bg-background p-4 md:p-8">
             <div className="max-w-5xl mx-auto space-y-6">
-                
+                <Breadcrumb />
+
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
@@ -238,20 +246,26 @@ export default function CoachMeetsPage() {
                                                         : "bg-slate-500/10 border-slate-500/20 text-muted-foreground"
                                                 )}
                                             >
-                                                {meet.isActive && isNear ? "🏆 黄金备战中" : isUpcoming ? "🕒 即将来临" : "🏁 已结束"}
+                                                {meet.isActive && isNear ? "🔥 黄金备战中" : isUpcoming ? "⏳ 即将来临" : "🏁 已结束"}
                                             </span>
                                             
                                             <div className="flex items-center gap-1.5">
                                                 <button
                                                     onClick={() => toggleMeetActive(meet)}
+                                                    disabled={togglingMeet === meet.id}
                                                     className={cn(
-                                                        "text-[10px] px-2.5 py-1 rounded-full font-bold transition-all border",
+                                                        "text-xs px-2.5 py-1 rounded-full font-bold transition-all border disabled:opacity-50 disabled:cursor-not-allowed",
                                                         meet.isActive
                                                             ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30"
                                                             : "bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20"
                                                     )}
                                                 >
-                                                    {meet.isActive ? "已激活倒计时" : "倒计时已暂停"}
+                                                    {togglingMeet === meet.id ? (
+                                                        <span className="flex items-center gap-1">
+                                                            <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                                                            处理中...
+                                                        </span>
+                                                    ) : meet.isActive ? "已激活倒计时" : "倒计时已暂停"}
                                                 </button>
                                             </div>
                                         </div>
@@ -286,11 +300,11 @@ export default function CoachMeetsPage() {
                                     {/* Action Buttons */}
                                     <div className="flex items-center justify-between border-t border-white/5 mt-6 pt-4">
                                         {isUpcoming && meet.isActive ? (
-                                            <span className="text-[10px] font-mono text-muted-foreground">
+                                            <span className="text-xs font-mono text-muted-foreground">
                                                 还有 <strong className="text-white font-bold">{daysDiff}</strong> 天比赛
                                             </span>
                                         ) : (
-                                            <span className="text-[10px] text-muted-foreground italic">倒计时休眠中</span>
+                                            <span className="text-xs text-muted-foreground italic">倒计时休眠中</span>
                                         )}
                                         
                                         <div className="flex items-center gap-2">
@@ -303,10 +317,15 @@ export default function CoachMeetsPage() {
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(meet.id)}
-                                                className="p-2 hover:bg-red-500/10 rounded-xl transition-colors text-red-400"
+                                                disabled={deletingMeet === meet.id}
+                                                className="p-2 hover:bg-red-500/10 rounded-xl transition-colors text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 title="删除赛事"
                                             >
-                                                <Trash2 className="w-4 h-4" />
+                                                {deletingMeet === meet.id ? (
+                                                    <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                                                ) : (
+                                                    <Trash2 className="w-4 h-4" />
+                                                )}
                                             </button>
                                         </div>
                                     </div>

@@ -5,13 +5,24 @@ import { useStore } from "@/lib/store";
 import { api } from "@/lib/api-client";
 import {
     FolderOpen, MessageSquare, Target, Calendar, ChevronDown, ChevronUp,
-    MessageCircle, ThumbsUp, ThumbsDown, Clock, Filter, Star,
+    MessageCircle, ThumbsUp, ThumbsDown, Clock, Filter, Star, ChevronRight as ChevronRightIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { GroupLevel } from "@/types";
 import { AnnouncementCard } from "@/components/feed/AnnouncementCard";
 
 const GROUP_LEVELS: GroupLevel[] = ["Junior", "Intermediate", "Advanced", "External"];
+
+function Breadcrumb() {
+    return (
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+            <ChevronRightIcon className="w-3 h-3" />
+            <span className="text-white font-medium">反馈档案</span>
+        </nav>
+    );
+}
 
 type TabType = 'block' | 'weekly' | 'targeted' | 'announcements';
 
@@ -115,6 +126,8 @@ export default function ArchivePage() {
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto">
+            <Breadcrumb />
+
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -281,7 +294,7 @@ export default function ArchivePage() {
                                         </div>
                                         <div>
                                             <p className="text-sm font-bold text-white">{bf.swimmer?.name || "未知队员"}</p>
-                                            <p className="text-[10px] text-muted-foreground">
+                                            <p className="text-xs text-muted-foreground">
                                                 {new Date(bf.createdAt).toLocaleDateString()} · {bf.planId?.substring(0, 8)}...
                                             </p>
                                         </div>
@@ -290,7 +303,7 @@ export default function ArchivePage() {
                                         {bf.reaction === 'like' && <ThumbsUp className="w-4 h-4 text-green-400 fill-green-400" />}
                                         {bf.reaction === 'dislike' && <ThumbsDown className="w-4 h-4 text-red-400 fill-red-400" />}
                                         {bf.tags?.length > 0 && (
-                                            <span className="text-[10px] bg-white/10 text-muted-foreground px-2 py-0.5 rounded-full">
+                                            <span className="text-xs bg-white/10 text-muted-foreground px-2 py-0.5 rounded-full">
                                                 {bf.tags.length} 标签
                                             </span>
                                         )}
@@ -308,7 +321,7 @@ export default function ArchivePage() {
                                         {bf.tags && bf.tags.length > 0 && (
                                             <div className="flex flex-wrap gap-1.5">
                                                 {bf.tags.map((tag: string) => (
-                                                    <span key={tag} className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/30">{tag}</span>
+                                                    <span key={tag} className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/30">{tag}</span>
                                                 ))}
                                             </div>
                                         )}
@@ -347,13 +360,13 @@ export default function ArchivePage() {
                                             <p className="text-sm font-bold text-white flex items-center gap-2">
                                                 {wf.swimmer?.name || "未知队员"}
                                                 {wf.isReplied && (
-                                                    <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded-full border border-green-500/30">已批复</span>
+                                                    <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">已批复</span>
                                                 )}
                                                 {!wf.isReplied && (
-                                                    <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[10px] rounded-full border border-orange-500/30">未批复</span>
+                                                    <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs rounded-full border border-orange-500/30">未批复</span>
                                                 )}
                                             </p>
-                                            <p className="text-[10px] text-muted-foreground">
+                                            <p className="text-xs text-muted-foreground">
                                                 {wf.weekStart} 周 · 提交于 {wf.submittedAt ? new Date(wf.submittedAt).toLocaleDateString() : '—'}
                                             </p>
                                         </div>
@@ -366,23 +379,23 @@ export default function ArchivePage() {
                                     <div className="p-4 border-t border-border bg-black/20 space-y-3">
                                         {wf.summary && (
                                             <div className="bg-primary/5 border border-primary/20 p-3 rounded-lg">
-                                                <p className="text-[10px] text-primary font-bold mb-1">周总结</p>
+                                                <p className="text-xs text-primary font-bold mb-1">周总结</p>
                                                 <p className="text-sm text-white whitespace-pre-wrap">{wf.summary}</p>
                                             </div>
                                         )}
                                         {wf.dailyFeedbacks?.filter((df: any) => df.reflection).map((df: any) => (
                                             <div key={df.id} className="bg-white/5 p-3 rounded-lg">
                                                 <div className="flex items-center gap-3 mb-1">
-                                                    <span className="text-[10px] font-bold text-white bg-white/10 px-2 py-0.5 rounded">{df.date}</span>
-                                                    <span className="text-[10px] text-blue-400">RPE: {df.rpe}</span>
-                                                    <span className="text-[10px] text-orange-400">酸痛: {df.soreness}</span>
+                                                    <span className="text-xs font-bold text-white bg-white/10 px-2 py-0.5 rounded">{df.date}</span>
+                                                    <span className="text-xs text-blue-400">RPE: {df.rpe}</span>
+                                                    <span className="text-xs text-orange-400">酸痛: {df.soreness}</span>
                                                 </div>
                                                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{df.reflection}</p>
                                             </div>
                                         ))}
                                         {wf.coachReply && (
                                             <div className="bg-green-500/10 border border-green-500/20 p-3 rounded-lg">
-                                                <p className="text-[10px] text-green-400 font-bold mb-1 flex items-center gap-1">
+                                                <p className="text-xs text-green-400 font-bold mb-1 flex items-center gap-1">
                                                     <MessageCircle className="w-3 h-3" /> 教练批复
                                                     {wf.repliedAt && <span className="text-muted-foreground font-normal ml-1">({new Date(wf.repliedAt).toLocaleDateString()})</span>}
                                                 </p>
@@ -424,16 +437,16 @@ export default function ArchivePage() {
                                             <p className="text-sm font-bold text-white flex items-center gap-2">
                                                 {tf.swimmer?.name || "未知队员"}
                                                 {tf.coachReply && (
-                                                    <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded-full border border-green-500/30">已批复</span>
+                                                    <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">已批复</span>
                                                 )}
                                             </p>
-                                            <p className="text-[10px] text-muted-foreground truncate max-w-[200px]">
+                                            <p className="text-xs text-muted-foreground truncate max-w-[200px]">
                                                 Q: {tf.reminderMessage?.substring(0, 40)}{tf.reminderMessage?.length > 40 ? '...' : ''}
                                             </p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[10px] text-muted-foreground">{new Date(tf.createdAt).toLocaleDateString()}</span>
+                                        <span className="text-xs text-muted-foreground">{new Date(tf.createdAt).toLocaleDateString()}</span>
                                         {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                                     </div>
                                 </div>
@@ -441,27 +454,27 @@ export default function ArchivePage() {
                                     <div className="p-4 border-t border-border bg-black/20 space-y-3">
                                         {tf.reminderMessage && (
                                             <div className="bg-orange-500/10 border border-orange-500/20 p-3 rounded-lg">
-                                                <p className="text-[10px] text-orange-400 font-bold mb-1">教练提问</p>
+                                                <p className="text-xs text-orange-400 font-bold mb-1">教练提问</p>
                                                 <p className="text-sm text-white">{tf.reminderMessage}</p>
                                                 {tf.periodStart && tf.periodEnd && (
-                                                    <p className="text-[10px] text-muted-foreground mt-1">周期: {tf.periodStart} 至 {tf.periodEnd}</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">周期: {tf.periodStart} 至 {tf.periodEnd}</p>
                                                 )}
                                             </div>
                                         )}
                                         <div className="bg-white/5 p-3 rounded-lg">
                                             <div className="flex items-center gap-3 mb-1">
-                                                <span className="text-[10px] font-bold text-white">{tf.swimmer?.name || "未知"}</span>
-                                                <span className="text-[10px] text-muted-foreground">{new Date(tf.createdAt).toLocaleDateString()}</span>
+                                                <span className="text-xs font-bold text-white">{tf.swimmer?.name || "未知"}</span>
+                                                <span className="text-xs text-muted-foreground">{new Date(tf.createdAt).toLocaleDateString()}</span>
                                             </div>
                                             <p className="text-sm text-white whitespace-pre-wrap">{tf.content}</p>
                                             <div className="flex gap-3 mt-1">
-                                                <span className="text-[10px] text-blue-400">RPE: {tf.rpe}</span>
-                                                <span className="text-[10px] text-orange-400">酸痛: {tf.soreness}</span>
+                                                <span className="text-xs text-blue-400">RPE: {tf.rpe}</span>
+                                                <span className="text-xs text-orange-400">酸痛: {tf.soreness}</span>
                                             </div>
                                         </div>
                                         {tf.coachReply && (
                                             <div className="bg-green-500/10 border border-green-500/20 p-3 rounded-lg">
-                                                <p className="text-[10px] text-green-400 font-bold mb-1 flex items-center gap-1">
+                                                <p className="text-xs text-green-400 font-bold mb-1 flex items-center gap-1">
                                                     <MessageCircle className="w-3 h-3" /> 教练批复
                                                     {tf.repliedAt && <span className="text-muted-foreground font-normal ml-1">({new Date(tf.repliedAt).toLocaleDateString()})</span>}
                                                 </p>
@@ -486,7 +499,7 @@ export default function ArchivePage() {
                         </h3>
                         <button
                             onClick={() => setShowArchived(!showArchived)}
-                            className="text-[10px] text-muted-foreground hover:text-white flex items-center gap-1"
+                            className="text-xs text-muted-foreground hover:text-white flex items-center gap-1"
                         >
                             {showArchived ? (
                                 <>查看活跃 <ChevronDown className="w-3 h-3" /></>

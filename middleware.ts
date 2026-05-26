@@ -11,7 +11,10 @@ async function verifyJWTInMiddleware(token: string): Promise<{ userId: string; r
     if (!data || !signature) return null;
 
     const secret = process.env.JWT_SECRET;
-    if (!secret) return null;
+    if (!secret) {
+      console.warn('[auth] JWT_SECRET not configured');
+      return null;
+    }
 
     const key = await crypto.subtle.importKey(
       'raw',
@@ -30,13 +33,20 @@ async function verifyJWTInMiddleware(token: string): Promise<{ userId: string; r
       new TextEncoder().encode(data)
     );
 
-    if (!valid) return null;
+    if (!valid) {
+      console.warn('[auth] JWT signature verification failed');
+      return null;
+    }
 
     const payload = JSON.parse(atob(data));
-    if (payload.exp < Math.floor(Date.now() / 1000)) return null;
+    if (payload.exp < Math.floor(Date.now() / 1000)) {
+      console.warn('[auth] JWT expired, exp=', new Date(payload.exp * 1000).toISOString());
+      return null;
+    }
 
     return { userId: payload.userId, role: payload.role };
-  } catch {
+  } catch (e) {
+    console.warn('[auth] JWT verification error:', e instanceof Error ? e.message : String(e));
     return null;
   }
 }

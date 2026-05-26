@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
+import { flattenPayload, V12_FINGERPRINT } from '@/lib/utils';
 import { withApiHandler } from '@/lib/api-handler';
 import { requireAnyAuth } from '@/lib/auth-api';
 import { getNeon } from '@/lib/db-pool';
@@ -197,27 +197,43 @@ export async function POST(request: Request) {
         } else if (action === 'equip') {
             if (!equipped) return NextResponse.json({ error: 'Equipped mapping required' }, { status: 400 });
 
-            // Check if equipped items are owned
+            // Fetch shop items to resolve imageKey → item ID for ownership validation
+            const allItems = await sql`SELECT * FROM "ShopItem" ORDER BY "price" ASC`;
+            const allItemsMap = new Map(allItems.map((item: any) => [item.imageKey, item]));
+
+            // Validate ownership: equipped values are imageKeys, inventory stores UUIDs
             const owned = new Set(inventory);
-            // Equipped items default dress-code
             const newEquipped = parseObject(equipped);
 
-            for (const [slot, id] of Object.entries(newEquipped)) {
-                if (id && !owned.has(id as string)) {
+            for (const [slot, val] of Object.entries(newEquipped)) {
+                if (!val) continue;
+                const imageKey = typeof val === 'string' ? val : (val as any).imageKey;
+                const itemId = typeof val === 'string' ? allItemsMap.get(imageKey)?.id : (val as any).id;
+                if (imageKey && !allItemsMap.has(imageKey)) {
+                    return NextResponse.json({ error: `Unknown item equipped in ${slot}` }, { status: 400 });
+                }
+                if (itemId && !owned.has(itemId)) {
                     return NextResponse.json({ error: `You do not own the item equipped in ${slot}` }, { status: 400 });
                 }
             }
 
+            // Normalize to bare imageKey strings for DB storage
+            const normalizedEquipped: Record<string, string> = {};
+            for (const [slot, val] of Object.entries(newEquipped)) {
+                if (!val) continue;
+                normalizedEquipped[slot] = typeof val === 'string' ? val : (val as any).imageKey || val;
+            }
+
             const updatedSwimmer = await sql`
                 UPDATE "Swimmer"
-                SET "equippedItems" = ${JSON.stringify(newEquipped)}, "updatedAt" = NOW()
+                SET "equippedItems" = ${JSON.stringify(normalizedEquipped)}, "updatedAt" = NOW()
                 WHERE "id" = ${swimmerId}
                 RETURNING *
             `;
 
             return NextResponse.json({
                 success: true,
-                equippedItems: newEquipped,
+                equippedItems: normalizedEquipped,
                 swimmer: updatedSwimmer[0]
             }, { headers: V12_FINGERPRINT });
 

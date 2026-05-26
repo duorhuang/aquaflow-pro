@@ -57,7 +57,7 @@ export function BlockRenderer({ block, onImageClick }: BlockRendererProps) {
                 <div className="space-y-1">
                     <div className="flex items-center gap-2 mb-1">
                         <ImageIcon className="w-3.5 h-3.5 text-purple-400" />
-                        <span className="text-[10px] text-muted-foreground uppercase">照片</span>
+                        <span className="text-xs text-muted-foreground uppercase">照片</span>
                     </div>
                     <img
                         src={block.content}
@@ -80,7 +80,7 @@ export function BlockRenderer({ block, onImageClick }: BlockRendererProps) {
                     <div className="space-y-1">
                         <div className="flex items-center gap-2 mb-1">
                             <Play className="w-3.5 h-3.5 text-red-400" />
-                            <span className="text-[10px] text-muted-foreground uppercase">小红书</span>
+                            <span className="text-xs text-muted-foreground uppercase">小红书</span>
                         </div>
                         <a
                             href={block.content}
@@ -108,7 +108,7 @@ export function BlockRenderer({ block, onImageClick }: BlockRendererProps) {
                         <div className="space-y-1">
                             <div className="flex items-center gap-2 mb-1">
                                 <Play className="w-3.5 h-3.5 text-white" />
-                                <span className="text-[10px] text-muted-foreground uppercase">抖音</span>
+                                <span className="text-xs text-muted-foreground uppercase">抖音</span>
                             </div>
                             <button
                                 onClick={() => setVideoLoaded(true)}
@@ -130,7 +130,7 @@ export function BlockRenderer({ block, onImageClick }: BlockRendererProps) {
                     <div className="space-y-1">
                         <div className="flex items-center gap-2 mb-1">
                             <Play className="w-3.5 h-3.5 text-white" />
-                            <span className="text-[10px] text-muted-foreground uppercase">抖音</span>
+                            <span className="text-xs text-muted-foreground uppercase">抖音</span>
                         </div>
                         <div className="relative rounded-xl overflow-hidden bg-black/40" style={{ paddingBottom: "177.78%" }}>
                             <iframe
@@ -150,7 +150,7 @@ export function BlockRenderer({ block, onImageClick }: BlockRendererProps) {
                     <div className="space-y-1">
                         <div className="flex items-center gap-2 mb-1">
                             <Play className="w-3.5 h-3.5 text-red-400" />
-                            <span className="text-[10px] text-muted-foreground uppercase">YouTube</span>
+                            <span className="text-xs text-muted-foreground uppercase">YouTube</span>
                         </div>
                         <a
                             href={block.content}
@@ -179,7 +179,7 @@ export function BlockRenderer({ block, onImageClick }: BlockRendererProps) {
                         <div className="space-y-1">
                             <div className="flex items-center gap-2 mb-1">
                                 <Play className="w-3.5 h-3.5 text-blue-400" />
-                                <span className="text-[10px] text-muted-foreground uppercase">视频</span>
+                                <span className="text-xs text-muted-foreground uppercase">视频</span>
                             </div>
                             <button
                                 onClick={() => setVideoLoaded(true)}
@@ -200,7 +200,7 @@ export function BlockRenderer({ block, onImageClick }: BlockRendererProps) {
                     <div className="space-y-1">
                         <div className="flex items-center gap-2 mb-1">
                             <Play className="w-3.5 h-3.5 text-blue-400" />
-                            <span className="text-[10px] text-muted-foreground uppercase">视频</span>
+                            <span className="text-xs text-muted-foreground uppercase">视频</span>
                         </div>
                         <div className="relative rounded-xl overflow-hidden bg-black/40" style={{ paddingBottom: "56.25%" }}>
                             <iframe
@@ -219,7 +219,7 @@ export function BlockRenderer({ block, onImageClick }: BlockRendererProps) {
                 <div className="space-y-1">
                     <div className="flex items-center gap-2 mb-1">
                         <Play className="w-3.5 h-3.5 text-blue-400" />
-                        <span className="text-[10px] text-muted-foreground uppercase">视频</span>
+                        <span className="text-xs text-muted-foreground uppercase">视频</span>
                     </div>
                     <div className="relative rounded-xl overflow-hidden bg-black/40">
                         <video

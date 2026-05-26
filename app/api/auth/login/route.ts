@@ -6,9 +6,11 @@ import { getNeon } from '@/lib/db-pool';
 
 export const dynamic = 'force-dynamic';
 
-// Per-IP rate limiter for login — max 10 attempts per IP per 5 minutes
+// Per-IP rate limiter for login — max 15 failed attempts per IP per 5 minutes
+// NOTE: On Cloudflare Edge this is per-worker, not globally distributed.
+// The higher limit (15 vs 10) provides margin for users routed across workers.
 const ATTEMPTS: Map<string, number[]> = new Map();
-const MAX_ATTEMPTS = 10;
+const MAX_ATTEMPTS = 15;
 const WINDOW_MS = 5 * 60 * 1000;
 
 function getClientIP(request: Request): string {
@@ -21,15 +23,22 @@ function getClientIP(request: Request): string {
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
   let history = ATTEMPTS.get(ip) || [];
-  // Evict old entries
+  // Evict expired entries
   history = history.filter(t => t > now - WINDOW_MS);
   if (history.length >= MAX_ATTEMPTS) {
     ATTEMPTS.set(ip, history);
     return true;
   }
-  history.push(now);
   ATTEMPTS.set(ip, history);
   return false;
+}
+
+function recordAttempt(ip: string) {
+  const now = Date.now();
+  let history = ATTEMPTS.get(ip) || [];
+  history = history.filter(t => t > now - WINDOW_MS);
+  history.push(now);
+  ATTEMPTS.set(ip, history);
 }
 
 async function getCoachUser(username: string) {
@@ -61,13 +70,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400, headers: V12_FINGERPRINT });
     }
 
+    // Only record attempt after we know it's a real login attempt (not a validation error)
+    // We don't record here — recordAfterAuth below records on failed auth only
+    // to avoid penalizing users who mistype username but not password
+
     if (role === 'coach') {
       const coach = await getCoachUser(username);
       if (!coach) {
+        recordAttempt(clientIP);
         return NextResponse.json({ error: 'Invalid credentials' }, { status: 401, headers: V12_FINGERPRINT });
       }
       const valid = await verifyPassword(password, coach.password);
       if (!valid) {
+        recordAttempt(clientIP);
         return NextResponse.json({ error: 'Invalid credentials' }, { status: 401, headers: V12_FINGERPRINT });
       }
       const token = await generateJWT({ userId: coach.id, role: 'coach' });
@@ -82,10 +97,12 @@ export async function POST(request: Request) {
     if (role === 'athlete') {
       const swimmer = await getSwimmer(username);
       if (!swimmer) {
+        recordAttempt(clientIP);
         return NextResponse.json({ error: 'Invalid credentials' }, { status: 401, headers: V12_FINGERPRINT });
       }
       const valid = await verifyPassword(password, swimmer.password);
       if (!valid) {
+        recordAttempt(clientIP);
         return NextResponse.json({ error: 'Invalid credentials' }, { status: 401, headers: V12_FINGERPRINT });
       }
       const token = await generateJWT({ userId: swimmer.id, role: 'athlete' });

@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useStore } from "@/lib/store";
 import { api } from "@/lib/api-client";
 import { Swimmer } from "@/types";
-import { Activity, AlertTriangle, MessageSquare, Award, Sparkles, X, Coins } from "lucide-react";
+import { Activity, AlertTriangle, MessageSquare, Award, Sparkles, X, Coins, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const PRESET_MESSAGES = [
@@ -157,10 +157,10 @@ export function SwimmerStatusPanel() {
                                             setError(null);
                                             setSuccessMessage(null);
                                         }}
-                                        className="px-2.5 py-0.5 text-[10px] font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded flex items-center gap-1 transition-all"
+                                        className="px-2.5 py-0.5 text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded flex items-center gap-1 transition-all"
                                         title="给该队员打赏 XP"
                                     >
-                                        🏆 打赏
+                                        <Trophy className="w-3 h-3" /> 打赏
                                     </button>
                                     <div className={cn(
                                         "text-sm font-bold",
@@ -220,14 +220,14 @@ export function SwimmerStatusPanel() {
                                     <div className="flex-1">
                                         <div className="flex items-center justify-between mb-0.5">
                                             <p className="text-xs font-medium text-primary">最新反馈</p>
-                                            <span className="text-[10px] text-muted-foreground">
+                                            <span className="text-xs text-muted-foreground">
                                                 RPE: {latestFeedback.rpe}/10
                                             </span>
                                         </div>
                                         <p className="text-xs text-muted-foreground line-clamp-2">
                                             {latestFeedback.comments || "无评论"}
                                         </p>
-                                        <p className="text-[10px] text-muted-foreground mt-1">
+                                        <p className="text-xs text-muted-foreground mt-1">
                                             {new Date(latestFeedback.timestamp).toLocaleDateString('zh-CN')}
                                         </p>
                                     </div>

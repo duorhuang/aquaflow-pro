@@ -79,7 +79,7 @@ export function AthletesFeedbackPanel() {
                         <CheckCircle className="w-4 h-4 text-green-400" />
                     </div>
                     <p className="text-lg font-bold text-white">{todayFeedbackCount}/{swimmers.length}</p>
-                    <p className="text-[10px] text-muted-foreground">今日反馈</p>
+                    <p className="text-xs text-muted-foreground">今日反馈</p>
                 </div>
 
                 {/* Attention Needed */}
@@ -91,7 +91,7 @@ export function AthletesFeedbackPanel() {
                         <AlertTriangle className={cn("w-4 h-4", attentionCount > 0 ? "text-red-400" : "text-muted-foreground")} />
                     </div>
                     <p className={cn("text-lg font-bold", attentionCount > 0 ? "text-red-400" : "text-white")}>{attentionCount}</p>
-                    <p className="text-[10px] text-muted-foreground">需关注</p>
+                    <p className="text-xs text-muted-foreground">需关注</p>
                 </div>
 
                 {/* Team Status */}
@@ -100,7 +100,7 @@ export function AthletesFeedbackPanel() {
                         <Users className="w-4 h-4 text-blue-400" />
                     </div>
                     <p className={cn("text-lg font-bold", teamStatus.color)}>{teamStatus.label}</p>
-                    <p className="text-[10px] text-muted-foreground">平均 RPE {teamAvgRpe}</p>
+                    <p className="text-xs text-muted-foreground">平均 RPE {teamAvgRpe}</p>
                 </div>
             </div>
 

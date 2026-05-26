@@ -23,56 +23,40 @@ export async function GET(req: Request) {
 
         let query: any;
         if (archived === 'true') {
-            // Archive view: show only non-starred items older than 7 days
             if (group) {
-                query = sql`
-                    SELECT * FROM "CoachAnnouncement"
-                    WHERE "targetGroup" = ${group}
-                      AND "createdAt" < ${cutoffStr}
-                      AND "isStarred" = false
-                    ORDER BY "createdAt" DESC
-                `;
+                query = sql`SELECT * FROM "CoachAnnouncement" WHERE "targetGroup" = ${group} AND "createdAt" < ${cutoffStr} AND "isStarred" = false ORDER BY "createdAt" DESC`;
             } else {
-                query = sql`
-                    SELECT * FROM "CoachAnnouncement"
-                    WHERE "createdAt" < ${cutoffStr}
-                      AND "isStarred" = false
-                    ORDER BY "createdAt" DESC
-                `;
+                query = sql`SELECT * FROM "CoachAnnouncement" WHERE "createdAt" < ${cutoffStr} AND "isStarred" = false ORDER BY "createdAt" DESC`;
             }
         } else {
-            // Active feed: starred OR within 7 days
             if (group) {
-                query = sql`
-                    SELECT * FROM "CoachAnnouncement"
-                    WHERE "targetGroup" = ${group}
-                      AND ("createdAt" >= ${cutoffStr} OR "isStarred" = true)
-                    ORDER BY "createdAt" DESC
-                `;
+                query = sql`SELECT * FROM "CoachAnnouncement" WHERE "targetGroup" = ${group} AND ("createdAt" >= ${cutoffStr} OR "isStarred" = true) ORDER BY "createdAt" DESC`;
             } else {
-                query = sql`
-                    SELECT * FROM "CoachAnnouncement"
-                    WHERE "createdAt" >= ${cutoffStr} OR "isStarred" = true
-                    ORDER BY "createdAt" DESC
-                `;
+                query = sql`SELECT * FROM "CoachAnnouncement" WHERE "createdAt" >= ${cutoffStr} OR "isStarred" = true ORDER BY "createdAt" DESC`;
             }
         }
 
         const announcements: any[] = await query;
 
-        // Include blocks for each announcement
-        const results = await Promise.all(announcements.map(async (announcement: any) => {
-            const blocks = await sql`
-                SELECT * FROM "AnnouncementBlock"
-                WHERE "announcementId" = ${announcement.id}
-                ORDER BY "sortOrder" ASC
-            `;
-            // Parse JSON fields
+        // Batch blocks lookup to avoid N+1 queries
+        const annIds = announcements.map((a: any) => a.id);
+        const allBlocks = annIds.length > 0
+            ? await sql`SELECT * FROM "AnnouncementBlock" WHERE "announcementId" = ANY(${annIds}) ORDER BY "sortOrder" ASC`
+            : [];
+
+        // Group blocks by announcementId
+        const blocksByAnnouncement: Record<string, any[]> = {};
+        for (const b of allBlocks) {
+            (blocksByAnnouncement[b.announcementId] ||= []).push(b);
+        }
+
+        // Parse JSON fields and attach blocks
+        const results = announcements.map((announcement: any) => {
             if (announcement.targetSwimmerIds && typeof announcement.targetSwimmerIds === 'string') {
                 try { announcement.targetSwimmerIds = JSON.parse(announcement.targetSwimmerIds); } catch { announcement.targetSwimmerIds = []; }
             }
-            return { ...announcement, blocks };
-        }));
+            return { ...announcement, blocks: blocksByAnnouncement[announcement.id] || [] };
+        });
 
         return NextResponse.json(results || [], { headers: V12_FINGERPRINT });
     });

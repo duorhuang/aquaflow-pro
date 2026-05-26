@@ -143,7 +143,7 @@ export function TeamStatsPanel() {
                                     />
                                 </div>
                                 <span className={cn(
-                                    "text-[10px]",
+                                    "text-xs",
                                     stat.isToday ? "text-primary font-bold" : "text-muted-foreground"
                                 )}>
                                     {stat.label}

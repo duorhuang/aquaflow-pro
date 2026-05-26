@@ -1,3 +1,48 @@
+// ==========================================
+// Avatar Shop System Types
+// ==========================================
+
+export type AvatarSlot =
+    | "base"
+    | "skinTone"
+    | "expression"
+    | "hair"
+    | "hat"
+    | "top"
+    | "bottom"
+    | "shoes"
+    | "handheld"
+    | "accessory"
+    | "background"
+    | "specialSkin";
+
+export type AvatarGender = "male" | "female" | "unisex";
+export type AvatarTier = "basic" | "common" | "rare" | "legendary" | "ultimate";
+
+export type SkinTone =
+    | "#fdd1a2"
+    | "#f5d0a9"
+    | "#e0b896"
+    | "#c69c6d"
+    | "#8d5524"
+    | "#5c3a21";
+
+export type ExpressionId = "neutral" | "happy" | "determined" | "excited" | "proud" | "focused";
+
+export interface ShopItem {
+    id: string;
+    name: string;
+    category: string;
+    tier: AvatarTier | string;
+    price: number;
+    imageKey: string;
+    slotType: AvatarSlot | string;
+    gender: AvatarGender;
+    sortOrder?: number;
+    description?: string;
+    previewColor?: string; // For skin tone / hair color swatches
+}
+
 export type GroupLevel = "Junior" | "Intermediate" | "Advanced" | "External";
 
 export interface Swimmer {

@@ -124,10 +124,10 @@ export function MeetCountdown() {
                                 : "bg-primary/20 border-primary/30 text-primary"
                         )}
                     >
-                        {isDarkGold ? "🏆 倒计时备战 · 战鼓擂响" : "📅 下一战赛事预告"}
+                        {isDarkGold ? "🔥 倒计时备战 · 战鼓擂响" : "📅 下一战赛事预告"}
                     </span>
                     {isDarkGold && (
-                        <span className="text-[10px] text-amber-500 font-bold flex items-center gap-1 animate-pulse">
+                        <span className="text-xs text-amber-500 font-bold flex items-center gap-1 animate-pulse">
                             <Sparkles className="w-3.5 h-3.5" /> 黄金备战主题已激活
                         </span>
                     )}

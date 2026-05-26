@@ -14,7 +14,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Username and password required' }, { status: 400 });
         }
         
-        const validInviteCode = process.env.COACH_INVITE_CODE || 'duor2024';
+        const validInviteCode = process.env.COACH_INVITE_CODE;
+        if (!validInviteCode) throw new Error('COACH_INVITE_CODE environment variable is not set');
         if (inviteCode !== validInviteCode) {
             return NextResponse.json({ error: 'Invalid invite code' }, { status: 403 });
         }

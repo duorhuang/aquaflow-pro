@@ -213,7 +213,7 @@ export function PhotoUpload({
                                 <X className="w-3 h-3" /> {error}
                             </p>
                         ) : (
-                            <p className="mt-4 text-[10px] uppercase tracking-widest text-muted-foreground/50 font-bold group-hover:text-muted-foreground transition-colors">
+                            <p className="mt-4 text-xs uppercase tracking-widest text-muted-foreground/50 font-bold group-hover:text-muted-foreground transition-colors">
                                 {description}
                             </p>
                         )}
@@ -252,7 +252,7 @@ export function PhotoUpload({
                                 <span className="text-xs font-medium text-white truncate max-w-[150px]">
                                     {selectedFile?.name}
                                 </span>
-                                <span className="text-[10px] text-muted-foreground">
+                                <span className="text-xs text-muted-foreground">
                                     {(selectedFile!.size / 1024 / 1024).toFixed(2)} MB
                                 </span>
                             </motion.div>

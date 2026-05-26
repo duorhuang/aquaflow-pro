@@ -1,32 +1,40 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu, X, Waves, LayoutDashboard, Users, Calendar, Settings, LogOut, PlusCircle, UserCheck, FolderOpen } from "lucide-react";
+import { Menu, X, Waves, LayoutDashboard, Users, Calendar, Settings, LogOut, PlusCircle, UserCheck, FolderOpen, MessageSquare, Send, Trophy, Activity, FolderPlus } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api-client";
+import { useLanguage } from "@/lib/i18n";
 
 const NAV_ITEMS = [
-    { label: "仪表盘", href: "/dashboard", icon: LayoutDashboard },
-    { label: "快速计划", href: "/dashboard/quick-plan", icon: PlusCircle },
-    { label: "运动员", href: "/dashboard/athletes", icon: Users },
-    { label: "出勤管理", href: "/dashboard/attendance", icon: UserCheck },
-    { label: "Schedule", href: "/dashboard/schedule", icon: Calendar },
-    { label: "反馈档案", href: "/dashboard/archive", icon: FolderOpen },
-    { label: "设置", href: "/dashboard/settings", icon: Settings },
+    { label: "dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { label: "weeklyPlan", href: "/dashboard/weekly-plan", icon: FolderPlus },
+    { label: "quickPlan", href: "/dashboard/quick-plan", icon: PlusCircle },
+    { label: "athletes", href: "/dashboard/athletes", icon: Users },
+    { label: "attendance", href: "/dashboard/attendance", icon: UserCheck },
+    { label: "schedule", href: "/dashboard/schedule", icon: Calendar },
+    { label: "feedbackInbox", href: "/dashboard/feedbacks", icon: MessageSquare },
+    { label: "targetedFeedback", href: "/dashboard/feedbacks/targeted", icon: Send },
+    { label: "meets", href: "/dashboard/meets", icon: Trophy },
+    { label: "injuryMonitor", href: "/dashboard/injury-monitor", icon: Activity },
+    { label: "feedbackArchive", href: "/dashboard/archive", icon: FolderOpen },
+    { label: "settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export function MobileNav() {
     const [isOpen, setIsOpen] = useState(false);
     const pathname = usePathname();
+    const { t } = useLanguage();
 
-    // Close menu on route change
+    // Close menu on route change and scroll to top
     useEffect(() => {
         let isMounted = true;
         const timer = setTimeout(() => {
             if (isMounted) {
                 setIsOpen(false);
+                window.scrollTo(0, 0);
             }
         }, 0);
         return () => {
@@ -38,7 +46,7 @@ export function MobileNav() {
     return (
         <>
             {/* Top Bar */}
-            <div className="fixed top-0 left-0 right-0 h-16 bg-[#0a192f]/90 backdrop-blur-md border-b border-white/10 flex items-center justify-between px-4 z-50">
+            <div className="fixed top-0 left-0 right-0 h-16 bg-background/90 backdrop-blur-md border-b border-white/10 flex items-center justify-between px-4 z-50">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
                         <Waves className="w-5 h-5" />
@@ -56,10 +64,11 @@ export function MobileNav() {
 
             {/* Full Screen Menu Overlay */}
             {isOpen && (
-                <div className="fixed inset-0 z-40 bg-[#0a192f] pt-24 px-6 animate-in fade-in slide-in-from-top-4 duration-200 flex flex-col">
+                <div className="fixed inset-0 z-40 bg-background pt-24 px-6 animate-in fade-in slide-in-from-top-4 duration-200 flex flex-col">
                     <nav className="flex flex-col gap-2">
                         {NAV_ITEMS.map((item) => {
                             const isActive = pathname === item.href;
+                            const label = t.common[item.label as keyof typeof t.common] ?? item.label;
                             return (
                                 <Link
                                     key={item.href}
@@ -72,7 +81,7 @@ export function MobileNav() {
                                     )}
                                 >
                                     <item.icon className={cn("w-6 h-6", isActive && "text-primary")} />
-                                    {item.label}
+                                    {label}
                                 </Link>
                             );
                         })}
@@ -87,7 +96,7 @@ export function MobileNav() {
                             className="flex items-center gap-4 px-4 py-4 w-full rounded-xl text-red-400 hover:bg-red-500/10 transition-colors"
                         >
                             <LogOut className="w-6 h-6" />
-                            Sign Out
+                            {t.common.logout}
                         </button>
                     </div>
                 </div>

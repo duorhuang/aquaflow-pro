@@ -6,6 +6,16 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { getLocalDateISOString } from "@/lib/date-utils";
 import Link from "next/link";
+
+function Breadcrumb() {
+    return (
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-white font-medium">日程安排</span>
+        </nav>
+    );
+}
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api-client";
 
@@ -154,6 +164,8 @@ export default function SchedulePage() {
 
     return (
         <div className="space-y-6">
+            <Breadcrumb />
+
             {/* Header */}
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-white">训练日程表</h1>
@@ -264,7 +276,7 @@ export default function SchedulePage() {
 
                                     {hasTraining && (
                                         <div className="flex-1 flex flex-col justify-end gap-1 mt-1">
-                                            <div className="text-[10px] font-mono font-bold text-white/80">
+                                            <div className="text-xs font-mono font-bold text-white/80">
                                                 {totalDistance}m
                                             </div>
                                             {trainings.map((training, idx) => (

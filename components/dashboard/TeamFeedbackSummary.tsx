@@ -58,7 +58,7 @@ export function TeamFeedbackSummary() {
                                 )}
                             </div>
                             <span className={cn(
-                                "text-[10px] flex items-center gap-1 font-medium",
+                                "text-xs flex items-center gap-1 font-medium",
                                 f.readAt ? "text-muted-foreground" : "text-green-400"
                             )}>
                                 {f.readAt ? <CheckCircle className="w-3 h-3 text-muted-foreground/50" /> : <Clock className="w-3 h-3" />}

@@ -1,31 +1,36 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { WeeklyPlanCard } from "@/components/dashboard/WeeklyPlanCard";
 import { TodayAttendance } from "@/components/dashboard/TodayAttendance";
 import { SwimmerStatusPanel } from "@/components/dashboard/SwimmerStatusPanel";
-import { TeamStatsPanel } from "@/components/dashboard/TeamStatsPanel";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
 import { RecentPerformances } from "@/components/dashboard/RecentPerformances";
 import { AthletesFeedbackPanel } from "@/components/dashboard/AthletesFeedbackPanel";
 import { TeamFeedbackSummary } from "@/components/dashboard/TeamFeedbackSummary";
+import { TeamStatsPanel } from "@/components/dashboard/TeamStatsPanel";
 import { AnnouncementComposer } from "@/components/dashboard/AnnouncementComposer";
+import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
 import { AnnouncementCard } from "@/components/feed/AnnouncementCard";
-import { LogOut, MessageSquare, FolderOpen, Send, ChevronDown, ChevronUp, Trophy, Activity } from "lucide-react";
+import { LogOut, MessageSquare, FolderPlus, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api-client";
+import { PanelSkeleton } from "@/components/common/Skeleton";
 
 export default function DashboardPage() {
     const { t } = useLanguage();
-    const { getVisiblePlans, isLoaded, announcements, archivedAnnouncements, deleteAnnouncement, starAnnouncement } = useStore();
+    const { isLoaded, announcements, archivedAnnouncements, deleteAnnouncement, starAnnouncement } = useStore();
     const router = useRouter();
     const [showArchive, setShowArchive] = useState(false);
+    const [archiveLimit, setArchiveLimit] = useState(5);
+    const [showMore, setShowMore] = useState(false);
 
     const [visiblePlans, setVisiblePlans] = useState<any[]>([]);
+    const [plansLoading, setPlansLoading] = useState(true);
 
     useEffect(() => {
         const fetchPlans = async () => {
@@ -34,7 +39,7 @@ export default function DashboardPage() {
                 const now = new Date();
                 now.setHours(0, 0, 0, 0);
                 const twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
-                
+
                 const filteredPlans = plans.filter(plan => {
                     const planDate = new Date(plan.weekStart);
                     planDate.setHours(0, 0, 0, 0);
@@ -46,6 +51,8 @@ export default function DashboardPage() {
             } catch (error: any) {
                 if (error.message?.includes('timed out')) return;
                 console.error("Failed to load weekly plans", error);
+            } finally {
+                setPlansLoading(false);
             }
         };
         fetchPlans();
@@ -57,17 +64,17 @@ export default function DashboardPage() {
     };
 
     return (
-        <div className="min-h-screen bg-background p-4 md:p-8">
+        <div className="min-h-screen bg-background px-4 md:px-8 lg:px-12 py-6">
             {/* Header */}
             <header className="mb-8">
                 {/* Database Cold Start Warning */}
                 {!isLoaded && (
-                    <div className="mb-6 p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-between animate-pulse">
+                    <div className="mb-6 p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/15 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+                            <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
                             <div>
-                                <p className="text-sm font-bold text-indigo-400">正在连接云端数据库...</p>
-                                <p className="text-xs text-indigo-300/70">首次启动可能需要 15-20 秒，请稍候。</p>
+                                <p className="text-sm text-indigo-400">正在连接云端数据库...</p>
+                                <p className="text-xs text-indigo-300/60">首次启动可能需要 15-20 秒，请稍候。</p>
                             </div>
                         </div>
                     </div>
@@ -75,10 +82,10 @@ export default function DashboardPage() {
 
                 <div className="flex items-center justify-between mb-4">
                     <div>
-                        <h1 className="text-3xl font-bold text-white mb-1">
+                        <h1 className="text-2xl font-bold text-white mb-1">
                             AquaFlow Pro
                         </h1>
-                        <p className="text-sm text-muted-foreground">教练仪表板</p>
+                        <p className="text-sm text-muted-foreground">{t.common.dashboard}</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <RefreshButton />
@@ -88,23 +95,23 @@ export default function DashboardPage() {
                             className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all"
                         >
                             <LogOut className="w-4 h-4" />
-                            <span className="text-sm font-medium">登出</span>
+                            <span className="text-sm font-medium">{t.common.logout}</span>
                         </button>
                     </div>
                 </div>
             </header>
 
-            {/* Mobile Quick Actions */}
+            {/* Mobile Quick Action */}
             <div className="md:hidden w-full mb-6">
-                <Link href="/dashboard/weekly-plan" className="block w-full bg-gradient-to-r from-primary to-blue-400 text-black font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-4 duration-500">
-                    <FolderOpen className="w-6 h-6" />
-                    <span className="text-lg">新建培训夹 (Weekly Upload)</span>
+                <Link href="/dashboard/weekly-plan" className="block w-full bg-gradient-to-r from-primary to-blue-400 text-black font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-3">
+                    <FolderPlus className="w-6 h-6" />
+                    {t.common.weeklyPlan}
                 </Link>
             </div>
 
             {/* Main Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column: Attendance & Status */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+                {/* Left Column: Today's Operations */}
                 <div className="space-y-6">
                     <TodayAttendance />
                     <AnnouncementComposer />
@@ -115,7 +122,7 @@ export default function DashboardPage() {
                             <div className="flex items-center justify-between">
                                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                                     <MessageSquare className="w-3.5 h-3.5 text-primary" />
-                                    教练动态
+                                    {t.dashboard.coachFeed}
                                 </h3>
                             </div>
                             {announcements.map((a: any) => (
@@ -133,26 +140,26 @@ export default function DashboardPage() {
                     {/* Archived Announcements */}
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                                 历史存档
+                            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                                {t.dashboard.archivedFeed}
                             </h3>
                             {archivedAnnouncements.length > 0 && (
                                 <button
                                     onClick={() => setShowArchive(!showArchive)}
-                                    className="text-[10px] text-muted-foreground hover:text-white flex items-center gap-1"
+                                    className="text-xs text-muted-foreground hover:text-white flex items-center gap-1"
                                 >
                                     {showArchive ? (
-                                        <>收起 <ChevronUp className="w-3 h-3" /></>
+                                        <>{t.dashboard.collapse} <ChevronUp className="w-3 h-3" /></>
                                     ) : (
-                                        <>查看全部 ({archivedAnnouncements.length}) <ChevronDown className="w-3 h-3" /></>
+                                        <>{t.dashboard.viewAll} ({archivedAnnouncements.length}) <ChevronDown className="w-3 h-3" /></>
                                     )}
                                 </button>
                             )}
                         </div>
                         {archivedAnnouncements.length === 0 && (
-                            <p className="text-[10px] text-muted-foreground/50 italic">超过 7 天的非收藏动态会自动归档到这里</p>
+                            <p className="text-xs text-muted-foreground/50 italic">{t.dashboard.archiveHint}</p>
                         )}
-                        {showArchive && archivedAnnouncements.map((a: any) => (
+                        {showArchive && archivedAnnouncements.slice(0, archiveLimit).map((a: any) => (
                             <div key={a.id} className="opacity-60">
                                 <AnnouncementCard
                                     announcement={a}
@@ -162,107 +169,73 @@ export default function DashboardPage() {
                                 />
                             </div>
                         ))}
+                        {showArchive && archivedAnnouncements.length > archiveLimit && (
+                            <button
+                                onClick={() => setArchiveLimit(prev => prev + 10)}
+                                className="w-full text-center text-xs text-muted-foreground hover:text-white py-2"
+                            >
+                                {t.dashboard.loadMore} ({archivedAnnouncements.length - archiveLimit} 条)
+                            </button>
+                        )}
                     </div>
-
-                    <TeamFeedbackSummary />
-                    <TeamStatsPanel />
-                    <Link href="/dashboard/feedbacks" className="bg-gradient-to-br from-primary/20 to-blue-600/20 border border-primary/20 rounded-3xl p-6 flex flex-col justify-between hover:scale-[1.02] transition-transform cursor-pointer group">
-                        <div className="flex justify-between items-start">
-                            <div className="p-3 bg-primary/20 rounded-xl text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                                <MessageSquare className="w-6 h-6" />
-                            </div>
-                            <span className="text-xs font-bold bg-primary/20 text-primary px-2 py-1 rounded-full group-hover:bg-white/20 transition-colors">NEW</span>
-                        </div>
-                        <div className="mt-4">
-                            <h3 className="text-lg font-bold text-white mb-1">📥 队员反馈收件箱</h3>
-                            <p className="text-xs text-muted-foreground">查看队员每日反思与周总结，写评语</p>
-                        </div>
-                    </Link>
                 </div>
 
-                {/* Middle Column: Plans */}
+                {/* Middle Column: Training Plans */}
                 <div className="lg:col-span-1 space-y-6">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-semibold text-white">{t.dashboard.recentPlans}</h2>
                         <Link href="/dashboard/weekly-plan" className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full font-medium hover:brightness-110 transition-all shadow-[0_0_15px_rgba(100,255,218,0.3)]">
-                            <FolderOpen className="w-4 h-4" />
-                            {t.dashboard.createPlan} (按周)
+                            <FolderPlus className="w-4 h-4" />
+                            {t.dashboard.createPlan}
                         </Link>
                     </div>
 
-                    <div className="space-y-4">
-                        {visiblePlans.map((plan) => (
-                            <WeeklyPlanCard key={plan.id} plan={plan} />
-                        ))}
+                    {plansLoading ? (
+                        <div className="space-y-4">
+                            <PanelSkeleton />
+                            <PanelSkeleton />
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {visiblePlans.map((plan) => (
+                                <WeeklyPlanCard key={plan.id} plan={plan} />
+                            ))}
 
-                        {visiblePlans.length === 0 && (
-                            <div className="bg-card/30 border border-border rounded-2xl p-8 text-center">
-                                <p className="text-muted-foreground mb-4">还没有训练计划</p>
-                                <Link href="/dashboard/weekly-plan" className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded-full font-medium hover:brightness-110 transition-all">
-                                    创建第一个周计划
-                                </Link>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Quick Links */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <Link href="/dashboard/weekly-plan">
-                            <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/20 rounded-xl p-4 hover:scale-[1.02] transition-all cursor-pointer group">
-                                <p className="text-sm font-medium text-white flex items-center gap-2">
-                                    <FolderOpen className="w-4 h-4 text-purple-400" />
-                                    📂 周训练管理
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">上传照片·发布计划</p>
-                            </div>
-                        </Link>
-                        <Link href="/dashboard/schedule">
-                            <div className="bg-card/30 border border-border rounded-xl p-4 hover:bg-card/50 transition-all cursor-pointer">
-                                <p className="text-sm font-medium text-white">📅 日历视图</p>
-                                <p className="text-xs text-muted-foreground mt-1">查看训练安排</p>
-                            </div>
-                        </Link>
-                        <Link href="/dashboard/athletes">
-                            <div className="bg-card/30 border border-border rounded-xl p-4 hover:bg-card/50 transition-all cursor-pointer">
-                                <p className="text-sm font-medium text-white">👥 队员管理</p>
-                                <p className="text-xs text-muted-foreground mt-1">管理与编辑队员信息</p>
-                            </div>
-                        </Link>
-                        <Link href="/dashboard/feedbacks/targeted">
-                            <div className="bg-card/30 border border-border rounded-xl p-4 hover:bg-card/50 transition-all cursor-pointer">
-                                <p className="text-sm font-medium text-white flex items-center gap-2">
-                                    <Send className="w-4 h-4 text-orange-400" />
-                                    🎯 训练反馈
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">发起专项问卷·查看回复</p>
-                            </div>
-                        </Link>
-                        <Link href="/dashboard/meets">
-                            <div className="bg-gradient-to-br from-yellow-500/10 to-amber-600/5 border border-yellow-500/20 rounded-xl p-4 hover:scale-[1.02] transition-all cursor-pointer">
-                                <p className="text-sm font-medium text-white flex items-center gap-2">
-                                    <Trophy className="w-4 h-4 text-yellow-400" />
-                                    🏆 赛事倒计时
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">发布比赛·开启黄金备战</p>
-                            </div>
-                        </Link>
-                        <Link href="/dashboard/injury-monitor">
-                            <div className="bg-gradient-to-br from-red-500/10 to-rose-600/5 border border-red-500/20 rounded-xl p-4 hover:scale-[1.02] transition-all cursor-pointer">
-                                <p className="text-sm font-medium text-white flex items-center gap-2">
-                                    <Activity className="w-4 h-4 text-red-400" />
-                                    🩺 伤病图谱监测
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">团队伤病热力大屏预警</p>
-                            </div>
-                        </Link>
-                    </div>
+                            {visiblePlans.length === 0 && (
+                                <div className="bg-card/30 border border-border rounded-2xl p-8 text-center">
+                                    <p className="text-muted-foreground mb-4">{t.dashboard.noPlansYet}</p>
+                                    <Link href="/dashboard/weekly-plan" className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded-full font-medium hover:brightness-110 transition-all">
+                                        {t.dashboard.createFirstPlan}
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Right Column: Swimmer Status */}
                 <div className="space-y-6">
-                    <SwimmerStatusPanel />
-                    <AthletesFeedbackPanel />
-                    <RecentPerformances />
+                    {isLoaded ? <SwimmerStatusPanel /> : <PanelSkeleton />}
+                    {isLoaded ? <AthletesFeedbackPanel /> : <PanelSkeleton />}
+
+                    {/* Collapsible "More" section */}
+                    <div>
+                        <button
+                            onClick={() => setShowMore(!showMore)}
+                            className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold text-muted-foreground uppercase tracking-wider hover:bg-white/5 transition-colors"
+                        >
+                            <span>{showMore ? t.dashboard.hideMore : t.dashboard.showMore}</span>
+                            {showMore ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        </button>
+                        {showMore && (
+                            <div className="space-y-6 mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <RecentPerformances />
+                                <TeamFeedbackSummary />
+                                <TeamStatsPanel />
+                                <OnboardingChecklist />
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

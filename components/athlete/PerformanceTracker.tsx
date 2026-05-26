@@ -254,7 +254,7 @@ export function PerformanceList({ swimmerId }: PerformanceListProps) {
             {/* Personal Bests Summary */}
             {Object.keys(pbs).length > 0 && (
                 <div className="bg-primary/10 border border-primary/20 rounded-xl p-4">
-                    <h4 className="text-sm font-bold text-primary mb-2">🏆 个人最佳</h4>
+                    <h4 className="text-sm font-bold text-primary mb-2 flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5" /> 个人最佳</h4>
                     <div className="grid grid-cols-2 gap-2">
                         {Object.entries(pbs).slice(0, 4).map(([event, perf]) => (
                             <div key={event} className="text-xs">

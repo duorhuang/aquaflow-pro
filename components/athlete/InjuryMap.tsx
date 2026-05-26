@@ -321,7 +321,7 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                 </div>
                 
                 {!readOnly && (
-                    <p className="text-[10px] text-muted-foreground mt-3 flex items-center gap-1">
+                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
                         <Info className="w-3.5 h-3.5 text-primary" /> 点击身体各个关节/肌肉区域来上报酸痛度
                     </p>
                 )}
@@ -375,7 +375,7 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                         {selectedPart ? (
                             <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-5 space-y-4 animate-in fade-in duration-300">
                                 <div>
-                                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">当前选择区域</span>
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wider">当前选择区域</span>
                                     <h5 className="text-base font-bold text-white">{BODY_PARTS[selectedPart]?.label}</h5>
                                 </div>
 

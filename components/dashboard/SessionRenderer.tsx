@@ -4,15 +4,7 @@ import { useState } from "react";
 import { ImageViewer } from "@/components/common/ImageViewer";
 import { BlockRenderer, ImageLightbox } from "@/components/common/BlockRenderer";
 import { cn } from "@/lib/utils";
-
-function sanitizeHtml(html: string): string {
-    return html
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-        .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-        .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
-        .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
-        .replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
-}
+import { sanitizeHtml } from "@/lib/sanitize-html";
 
 interface SessionRendererProps {
     session: Record<string, any>;
@@ -92,7 +84,7 @@ export function SessionRenderer({ session, className }: SessionRendererProps) {
                                         <span className="font-bold text-white">{item.repeats}</span>
                                         <span className="text-muted-foreground text-xs">x</span>
                                         <span className="font-bold text-white">{item.distance}</span>
-                                        <span className="text-[10px] text-muted-foreground">m</span>
+                                        <span className="text-xs text-muted-foreground">m</span>
                                     </div>
                                     <div className="flex-1">
                                         <div className="text-sm text-white/90">
@@ -106,7 +98,7 @@ export function SessionRenderer({ session, className }: SessionRendererProps) {
                                                     </span>
                                                 ))}
                                                 {item.interval && (
-                                                    <span className={cn("text-[10px] font-mono", item.intervalMode === 'Rest' ? "text-yellow-400" : "text-primary")}>
+                                                    <span className={cn("text-xs font-mono", item.intervalMode === 'Rest' ? "text-yellow-400" : "text-primary")}>
                                                         {item.intervalMode === 'Rest' ? '休息' : '包干'} {item.interval}
                                                     </span>
                                                 )}
@@ -116,7 +108,7 @@ export function SessionRenderer({ session, className }: SessionRendererProps) {
                                         {item.segments && item.segments.length > 0 && (
                                             <div className="mt-2 space-y-1 border-t border-white/5 pt-2">
                                                 {item.segments.map((seg: any, sIdx: number) => (
-                                                    <div key={sIdx} className="text-[10px] text-muted-foreground flex gap-2">
+                                                    <div key={sIdx} className="text-xs text-muted-foreground flex gap-2">
                                                         <span className="text-white/60 w-8">{seg.distance}m</span>
                                                         <span>{seg.type === 'Swim' ? '配合' : seg.type === 'Kick' ? '打腿' : '分解'}</span>
                                                         {seg.description && <span>- {seg.description}</span>}
@@ -145,6 +137,9 @@ export function SessionRenderer({ session, className }: SessionRendererProps) {
             )}
             {session.notes && (
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{session.notes}</p>
+            )}
+            {!session.imageData && !session.notes && !session.contentHtml && !session.contentBlocks?.length && !session.trainingBlocks?.length && !session.blocks?.length && (
+                <p className="text-sm text-muted-foreground italic">教练未发布具体内容，请联系教练确认。</p>
             )}
         </div>
     );

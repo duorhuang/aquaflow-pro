@@ -26,61 +26,32 @@ export async function GET(req: Request) {
 
         let feedbacks: any[];
         if (planId && blockId && effectiveSwimmerId) {
-            feedbacks = await sql`
-                SELECT * FROM "BlockFeedback"
-                WHERE "planId" = ${planId} AND "blockId" = ${blockId} AND "swimmerId" = ${effectiveSwimmerId}
-                ORDER BY "createdAt" DESC
-            `;
+            feedbacks = await sql`SELECT * FROM "BlockFeedback" WHERE "planId" = ${planId} AND "blockId" = ${blockId} AND "swimmerId" = ${effectiveSwimmerId} ORDER BY "createdAt" DESC`;
         } else if (planId && blockId) {
-            feedbacks = await sql`
-                SELECT * FROM "BlockFeedback"
-                WHERE "planId" = ${planId} AND "blockId" = ${blockId}
-                ORDER BY "createdAt" DESC
-            `;
+            feedbacks = await sql`SELECT * FROM "BlockFeedback" WHERE "planId" = ${planId} AND "blockId" = ${blockId} ORDER BY "createdAt" DESC`;
         } else if (planId && effectiveSwimmerId) {
-            feedbacks = await sql`
-                SELECT * FROM "BlockFeedback"
-                WHERE "planId" = ${planId} AND "swimmerId" = ${effectiveSwimmerId}
-                ORDER BY "createdAt" DESC
-            `;
+            feedbacks = await sql`SELECT * FROM "BlockFeedback" WHERE "planId" = ${planId} AND "swimmerId" = ${effectiveSwimmerId} ORDER BY "createdAt" DESC`;
         } else if (blockId && effectiveSwimmerId) {
-            feedbacks = await sql`
-                SELECT * FROM "BlockFeedback"
-                WHERE "blockId" = ${blockId} AND "swimmerId" = ${effectiveSwimmerId}
-                ORDER BY "createdAt" DESC
-            `;
+            feedbacks = await sql`SELECT * FROM "BlockFeedback" WHERE "blockId" = ${blockId} AND "swimmerId" = ${effectiveSwimmerId} ORDER BY "createdAt" DESC`;
         } else if (planId) {
-            feedbacks = await sql`
-                SELECT * FROM "BlockFeedback"
-                WHERE "planId" = ${planId}
-                ORDER BY "createdAt" DESC
-            `;
+            feedbacks = await sql`SELECT * FROM "BlockFeedback" WHERE "planId" = ${planId} ORDER BY "createdAt" DESC`;
         } else if (blockId) {
-            feedbacks = await sql`
-                SELECT * FROM "BlockFeedback"
-                WHERE "blockId" = ${blockId}
-                ORDER BY "createdAt" DESC
-            `;
+            feedbacks = await sql`SELECT * FROM "BlockFeedback" WHERE "blockId" = ${blockId} ORDER BY "createdAt" DESC`;
         } else if (effectiveSwimmerId) {
-            feedbacks = await sql`
-                SELECT * FROM "BlockFeedback"
-                WHERE "swimmerId" = ${effectiveSwimmerId}
-                ORDER BY "createdAt" DESC
-            `;
+            feedbacks = await sql`SELECT * FROM "BlockFeedback" WHERE "swimmerId" = ${effectiveSwimmerId} ORDER BY "createdAt" DESC`;
         } else {
-            feedbacks = await sql`
-                SELECT * FROM "BlockFeedback"
-                ORDER BY "createdAt" DESC
-            `;
+            feedbacks = await sql`SELECT * FROM "BlockFeedback" ORDER BY "createdAt" DESC`;
         }
 
-        // Include swimmer info
-        const results = await Promise.all(feedbacks.map(async (f: any) => {
-            const swimmer = await sql`
-                SELECT "id", "name", "group" FROM "Swimmer" WHERE "id" = ${f.swimmerId}
-            `;
-            return { ...f, swimmer: swimmer[0] || null };
-        }));
+        // Batch swimmer lookup to avoid N+1 queries
+        const swimmerIds = [...new Set(feedbacks.map((f: any) => f.swimmerId).filter(Boolean))];
+        const swimmers: Record<string, any> = {};
+        if (swimmerIds.length > 0) {
+            const swimmerRows = await sql`SELECT "id", "name", "group" FROM "Swimmer" WHERE "id" = ANY(${swimmerIds})`;
+            for (const s of swimmerRows) swimmers[s.id] = { id: s.id, name: s.name, group: s.group };
+        }
+
+        const results = feedbacks.map((f: any) => ({ ...f, swimmer: swimmers[f.swimmerId] || null }));
 
         return NextResponse.json(results || [], { headers: V12_FINGERPRINT });
     });

@@ -1,15 +1,18 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { User, UserPlus, Activity, TrendingUp } from "lucide-react";
+import { User, UserPlus, Activity, TrendingUp, Search, ChevronRight, Flame } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { SwimmerModal } from "@/components/dashboard/SwimmerModal";
 import { cn } from "@/lib/utils";
+import { GROUP_LEVEL_ORDER } from "@/lib/group-constants";
 
 export default function AthletesPage() {
     const { swimmers } = useStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSwimmer, setEditingSwimmer] = useState<typeof swimmers[0] | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
 
     const handleEditSwimmer = (swimmer: typeof swimmers[0]) => {
         setEditingSwimmer(swimmer);
@@ -31,7 +34,7 @@ export default function AthletesPage() {
         const isActive = status === "Active";
         return (
             <span className={cn(
-                "text-[10px] px-2 py-0.5 rounded-full font-bold",
+                "text-xs px-2 py-0.5 rounded-full font-bold",
                 isActive ? "bg-green-500/20 text-green-400" : "bg-orange-500/20 text-orange-400"
             )}>
                 {status}
@@ -39,12 +42,22 @@ export default function AthletesPage() {
         );
     };
 
-    const [activeTab, setActiveTab] = useState<"All" | "Junior" | "Intermediate" | "Advanced" | "External">("All");
+    const [activeTab, setActiveTab] = useState<typeof GROUP_LEVEL_ORDER[number]>("All");
 
-    const filteredSwimmers = swimmers.filter(s => activeTab === "All" || s.group === activeTab);
+    const filteredSwimmers = swimmers.filter(s =>
+        (activeTab === "All" || s.group === activeTab) &&
+        (searchQuery === "" || s.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
 
     return (
         <div className="space-y-6">
+            {/* Breadcrumb */}
+            <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+                <ChevronRight className="w-3 h-3" />
+                <span className="text-white font-medium">队员管理</span>
+            </nav>
+
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-white mb-1">Team Roster</h1>
@@ -61,7 +74,7 @@ export default function AthletesPage() {
 
             {/* Group Filter Tabs */}
             <div className="flex p-1 bg-card/30 border border-border rounded-xl overflow-x-auto no-scrollbar">
-                {(["All", "Advanced", "Intermediate", "Junior", "External"] as const).map((tab) => (
+                {GROUP_LEVEL_ORDER.map((tab) => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
@@ -75,6 +88,18 @@ export default function AthletesPage() {
                         {tab === "All" ? "All Swimmers" : `${tab} Group`}
                     </button>
                 ))}
+            </div>
+
+            {/* Search */}
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                    type="text"
+                    placeholder="搜索队员姓名..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-secondary/50 border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -116,8 +141,8 @@ export default function AthletesPage() {
                                     {s.currentStreak && s.currentStreak > 0 && (
                                         <div className="flex items-center gap-2">
                                             <span className="text-xs text-muted-foreground">Streak:</span>
-                                            <span className="text-xs font-bold text-yellow-400">
-                                                🔥 {s.currentStreak} days
+                                            <span className="text-xs font-bold text-yellow-400 flex items-center gap-1">
+                                                <Flame className="w-3 h-3" /> {s.currentStreak} days
                                             </span>
                                         </div>
                                     )}

@@ -4,19 +4,29 @@ import { useState, useMemo } from "react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { getLocalDateISOString } from "@/lib/date-utils";
+import { GROUP_LEVEL_ORDER, GROUP_LABELS } from "@/lib/group-constants";
 import {
     AlertTriangle,
     CheckCircle2,
-    XCircle,
     Calendar,
     UserCheck,
-    UserX,
     ChevronLeft,
     ChevronRight,
     BarChart3,
     TrendingUp,
+    Clock,
 } from "lucide-react";
 import Link from "next/link";
+
+function Breadcrumb() {
+    return (
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-white font-medium">出勤管理</span>
+        </nav>
+    );
+}
 
 export default function CoachAttendancePage() {
     const { swimmers, attendance, markAttendance, unmarkAttendance, batchMarkAttendance, batchUnmarkAttendance } = useStore();
@@ -33,7 +43,7 @@ export default function CoachAttendancePage() {
     const isToday = selectedDate === getLocalDateISOString(new Date());
 
     // Group filter
-    const [groupFilter, setGroupFilter] = useState<"All" | "Junior" | "Intermediate" | "Advanced" | "External">("All");
+    const [groupFilter, setGroupFilter] = useState<typeof GROUP_LEVEL_ORDER[number]>("All");
 
     // Filtered swimmers
     const filteredSwimmers = useMemo(() => {
@@ -43,23 +53,24 @@ export default function CoachAttendancePage() {
     // Check attendance for one swimmer on selected date
     const getAttendanceStatus = (swimmerId: string) => {
         const record = (attendance || []).find(a => a.swimmerId === swimmerId && a.date === selectedDate);
-        return record ? record.status : "Absent";
+        return record ? record.status : "Pending";
     };
 
     // Stats
     const presentCount = filteredSwimmers.filter(s => getAttendanceStatus(s.id) === "Present").length;
     const athletePresentCount = filteredSwimmers.filter(s => getAttendanceStatus(s.id) === "AthletePresent").length;
-    const absentCount = filteredSwimmers.length - presentCount - athletePresentCount;
-    const attendanceRate = filteredSwimmers.length > 0 ? Math.round((presentCount / filteredSwimmers.length) * 100) : 0;
+    const pendingCount = filteredSwimmers.length - presentCount - athletePresentCount;
+    const attendanceRate = filteredSwimmers.length > 0 ? Math.round(((presentCount + athletePresentCount) / filteredSwimmers.length) * 100) : 0;
 
-    // Toggle check-in
+    // Toggle check-in: Pending → Present → Absent → Pending
     const handleToggle = async (swimmerId: string) => {
         const status = getAttendanceStatus(swimmerId);
-        if (status === "Present") {
-            await unmarkAttendance(swimmerId, selectedDate);
-        } else {
-            // Either Absent or AthletePresent -> upgrade to Present
+        if (status === "Pending" || status === "AthletePresent") {
             await markAttendance(swimmerId, selectedDate, "Present");
+        } else if (status === "Present") {
+            await markAttendance(swimmerId, selectedDate, "AthletePresent");
+        } else {
+            await unmarkAttendance(swimmerId, selectedDate);
         }
     };
 
@@ -72,7 +83,7 @@ export default function CoachAttendancePage() {
     };
 
     const handleDeselectAll = async () => {
-        const toUnmark = filteredSwimmers.filter(s => getAttendanceStatus(s.id) !== "Absent").map(s => s.id);
+        const toUnmark = filteredSwimmers.filter(s => getAttendanceStatus(s.id) === "Present" || getAttendanceStatus(s.id) === "AthletePresent").map(s => s.id);
         if (toUnmark.length > 0) {
             await batchUnmarkAttendance(toUnmark, selectedDate);
         }
@@ -84,16 +95,10 @@ export default function CoachAttendancePage() {
         return d.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric", weekday: "long" });
     })();
 
-    const GROUP_LABELS: Record<string, string> = {
-        All: "全部",
-        Junior: "初级组",
-        Intermediate: "中级组",
-        Advanced: "高级组",
-        External: "校外组",
-    };
-
     return (
         <div className="space-y-6 max-w-4xl mx-auto">
+            <Breadcrumb />
+
             {/* Header */}
             <div className="flex items-center gap-3">
                 <div className="p-3 bg-emerald-500/20 rounded-xl">
@@ -144,7 +149,7 @@ export default function CoachAttendancePage() {
             <div className="grid grid-cols-4 gap-4">
                 <div className="bg-card border border-border rounded-xl p-4 text-center">
                     <div className="flex items-center justify-center gap-2 mb-1">
-                        <UserCheck className="w-4 h-4 text-emerald-400" />
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                         <span className="text-xs text-muted-foreground font-bold">已确认</span>
                     </div>
                     <p className="text-2xl font-bold text-emerald-400">{presentCount}</p>
@@ -158,10 +163,10 @@ export default function CoachAttendancePage() {
                 </div>
                 <div className="bg-card border border-border rounded-xl p-4 text-center">
                     <div className="flex items-center justify-center gap-2 mb-1">
-                        <UserX className="w-4 h-4 text-red-400" />
-                        <span className="text-xs text-muted-foreground font-bold">缺席</span>
+                        <Clock className="w-4 h-4 text-slate-400" />
+                        <span className="text-xs text-muted-foreground font-bold">未标记</span>
                     </div>
-                    <p className="text-2xl font-bold text-red-400">{absentCount}</p>
+                    <p className="text-2xl font-bold text-slate-400">{pendingCount}</p>
                 </div>
                 <div className="bg-card border border-border rounded-xl p-4 text-center">
                     <div className="flex items-center justify-center gap-2 mb-1">
@@ -175,7 +180,7 @@ export default function CoachAttendancePage() {
             {/* Group Filter + Batch Actions */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex p-1 bg-card/30 border border-border rounded-xl overflow-x-auto no-scrollbar">
-                    {(["All", "Advanced", "Intermediate", "Junior", "External"] as const).map((tab) => (
+                    {GROUP_LEVEL_ORDER.map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setGroupFilter(tab)}
@@ -215,17 +220,20 @@ export default function CoachAttendancePage() {
                     const status = getAttendanceStatus(swimmer.id);
                     const isPresent = status === "Present";
                     const isAthletePresent = status === "AthletePresent";
+                    const isPending = status === "Pending";
 
                     return (
                         <button
                             key={swimmer.id}
                             onClick={() => handleToggle(swimmer.id)}
                             className={cn(
-                                "w-full flex items-center justify-between p-4 rounded-xl border transition-all duration-200",
+                                "w-full flex items-center justify-between p-4 rounded-xl border transition-all duration-200 active:scale-[0.98]",
                                 isPresent
                                     ? "bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20"
                                     : isAthletePresent
                                         ? "bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/20"
+                                    : isPending
+                                        ? "bg-card/30 border-dashed border-border/50 hover:bg-white/5"
                                         : "bg-card border-border hover:bg-white/5"
                             )}
                         >
@@ -236,19 +244,21 @@ export default function CoachAttendancePage() {
                                         ? "bg-emerald-500 text-white shadow-[0_0_12px_rgba(16,185,129,0.4)]"
                                         : isAthletePresent
                                             ? "bg-orange-500 text-white shadow-[0_0_12px_rgba(251,146,60,0.4)]"
-                                            : "bg-secondary text-muted-foreground"
+                                            : isPending
+                                                ? "bg-secondary/50 text-slate-400"
+                                                : "bg-secondary text-muted-foreground"
                                 )}>
                                     {swimmer.name.charAt(0)}
                                 </div>
                                 <div className="text-left">
                                     <p className="font-bold text-white">{swimmer.name}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        {isAthletePresent ? "已自查 · 待确认" : ""}{GROUP_LABELS[swimmer.group] || swimmer.group}
+                                        {isPending ? "未标记 · 点击打卡" : isAthletePresent ? "已自查 · 待确认" : ""}{GROUP_LABELS[swimmer.group] || swimmer.group}
                                     </p>
                                     {swimmer.status === "Injured" && (
                                         <div className="flex items-center gap-1 mt-1">
                                             <AlertTriangle className="w-3 h-3 text-red-400" />
-                                            <span className="text-[10px] text-red-400 font-medium">
+                                            <span className="text-xs text-red-400 font-medium">
                                                 {swimmer.injuryNote || "受伤中"}
                                             </span>
                                         </div>
@@ -260,7 +270,7 @@ export default function CoachAttendancePage() {
                             ) : isAthletePresent ? (
                                 <UserCheck className="w-6 h-6 text-orange-400" />
                             ) : (
-                                <XCircle className="w-6 h-6 text-muted-foreground/30" />
+                                <Clock className="w-6 h-6 text-slate-400/30" />
                             )}
                         </button>
                     );

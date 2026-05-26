@@ -115,7 +115,7 @@ export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
                                 onChange={(e) => setRpe(parseInt(e.target.value))}
                                 className="w-full accent-primary h-2 bg-secondary rounded-lg appearance-none cursor-pointer"
                             />
-                            <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                            <div className="flex justify-between text-xs text-muted-foreground mt-1">
                                 <span>很轻松</span>
                                 <span>适中</span>
                                 <span>非常累</span>
@@ -135,7 +135,7 @@ export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
                                 onChange={(e) => setSoreness(parseInt(e.target.value))}
                                 className="w-full accent-orange-400 h-2 bg-secondary rounded-lg appearance-none cursor-pointer"
                             />
-                            <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                            <div className="flex justify-between text-xs text-muted-foreground mt-1">
                                 <span>无酸痛</span>
                                 <span>轻微</span>
                                 <span>很酸痛</span>

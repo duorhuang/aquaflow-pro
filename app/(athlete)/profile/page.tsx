@@ -4,17 +4,22 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { api } from "@/lib/api-client";
-import { Waves, LogOut, User, Save, ArrowLeft, ShoppingBag, Users, Settings, Activity } from "lucide-react";
-import Link from "next/link";
+import { Waves, LogOut, User, Save, ShoppingBag, Users, Settings, Activity, Palette } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Swimmer } from "@/types";
 import { ShopAndCloset } from "@/components/athlete/ShopAndCloset";
 import { BuddySystem } from "@/components/athlete/BuddySystem";
 import { InjuryMap } from "@/components/athlete/InjuryMap";
-import { cn } from "@/lib/utils";
+import { BottomTabBar } from "@/components/athlete/BottomTabBar";
+import { BackgroundPicker } from "@/components/athlete/BackgroundPicker";
+import { WaveAnimation } from "@/components/common/WaveAnimation";
+import { useBackgroundTheme } from "@/hooks/useBackgroundTheme";
+import { useLanguage } from "@/lib/i18n";
 
 export default function AthleteProfilePage() {
     const router = useRouter();
     const { swimmers, updateSwimmer, isLoaded } = useStore();
+    const { t } = useLanguage();
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [activeTab, setActiveTab] = useState<'shop' | 'buddy' | 'profile' | 'injury'>('shop');
     const [name, setName] = useState("");
@@ -23,6 +28,16 @@ export default function AthleteProfilePage() {
     const [gender, setGender] = useState<"male" | "female">("male");
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
+    const [showBgPicker, setShowBgPicker] = useState(false);
+
+    // Background theme
+    const {
+        theme: bgTheme,
+        mode: bgMode,
+        gradientClass,
+        setManualTheme: setBgTheme,
+        setAutoMode: setBgAuto,
+    } = useBackgroundTheme();
 
     useEffect(() => {
         api.auth.me()
@@ -72,95 +87,116 @@ export default function AthleteProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-background p-4 md:p-8">
-            <div className="max-w-2xl mx-auto space-y-6">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Link href="/workout" className="p-2 rounded-lg bg-secondary/50 hover:bg-secondary/80">
-                            <ArrowLeft className="w-5 h-5 text-white" />
-                        </Link>
-                        <div>
-                            <h1 className="text-2xl font-bold text-white">个人中心</h1>
-                            <p className="text-muted-foreground text-sm">{currentUser?.name}</p>
-                        </div>
-                    </div>
-                    <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20">
-                        <LogOut className="w-4 h-4" /> 登出
-                    </button>
-                </div>
+        <div className={cn("min-h-screen pb-24 transition-colors duration-700 ease-in-out bg-gradient-to-br", gradientClass)}>
+            {/* Background texture overlay */}
+            <div className="fixed inset-0 bg-theme-texture pointer-events-none z-0 opacity-30" aria-hidden="true" />
 
+            {/* Header */}
+            <header className="sticky top-0 z-50 bg-background/50 backdrop-blur-md border-b border-white/10">
+                <div className="flex items-center justify-between p-4 max-w-2xl mx-auto">
+                    <div>
+                        <h1 className="text-lg font-bold text-white">{t.common.profile || "Profile"}</h1>
+                        <p className="text-xs text-muted-foreground">{currentUser?.name}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <button
+                            onClick={() => setShowBgPicker(true)}
+                            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-muted-foreground hover:text-white"
+                            title="更换背景"
+                            aria-label="Change background theme"
+                        >
+                            <Palette className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={() => router.push("/workout")}
+                            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white"
+                            aria-label="Back to workout"
+                        >
+                            <Waves className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 min-h-[44px]"
+                        >
+                            <LogOut className="w-3.5 h-3.5" />
+                            <span className="text-sm hidden sm:inline">{t.common.logout}</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <main className="p-4 max-w-2xl mx-auto space-y-6">
                 {/* Stats */}
                 {currentUser && (
-                    <div className="grid grid-cols-4 gap-3">
-                        <div className="bg-secondary/30 rounded-xl p-4 text-center border border-white/5">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="bg-card/50 rounded-2xl p-4 text-center border border-border/50">
                             <p className="text-2xl font-bold text-primary">{currentUser.totalXp || 0}</p>
-                            <p className="text-[10px] text-muted-foreground">总 XP</p>
+                            <p className="text-xs text-muted-foreground mt-1">{t.archive.totalXp}</p>
                         </div>
-                        <div className="bg-secondary/30 rounded-xl p-4 text-center border border-white/5">
+                        <div className="bg-card/50 rounded-2xl p-4 text-center border border-border/50">
                             <p className="text-2xl font-bold text-emerald-400">{currentUser.balance || 0}</p>
-                            <p className="text-[10px] text-muted-foreground">XB 余额</p>
+                            <p className="text-xs text-muted-foreground mt-1">{t.archive.xbBalance}</p>
                         </div>
-                        <div className="bg-secondary/30 rounded-xl p-4 text-center border border-white/5">
+                        <div className="bg-card/50 rounded-2xl p-4 text-center border border-border/50">
                             <p className="text-2xl font-bold text-yellow-400">Lv.{currentUser.level || 1}</p>
-                            <p className="text-[10px] text-muted-foreground">等级</p>
+                            <p className="text-xs text-muted-foreground mt-1">{t.archive.level}</p>
                         </div>
-                        <div className="bg-secondary/30 rounded-xl p-4 text-center border border-white/5">
+                        <div className="bg-card/50 rounded-2xl p-4 text-center border border-border/50">
                             <p className="text-2xl font-bold text-orange-400">{currentUser.currentStreak || 0}</p>
-                            <p className="text-[10px] text-muted-foreground">连胜天数</p>
+                            <p className="text-xs text-muted-foreground mt-1">{t.archive.streak}</p>
                         </div>
                     </div>
                 )}
 
-                {/* Tab Navigation */}
-                <div className="grid grid-cols-4 gap-2 bg-card/30 border border-border rounded-xl p-2 shrink-0">
+                {/* Inline Tab Navigation (profile-specific sub-tabs) */}
+                <div className="grid grid-cols-4 gap-2 bg-card/50 border border-border/50 rounded-xl p-2">
                     <button
                         onClick={() => setActiveTab('shop')}
                         className={cn(
-                            "py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5",
+                            "py-3 rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1 min-h-[44px]",
                             activeTab === 'shop'
                                 ? "bg-primary text-primary-foreground shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
                         <ShoppingBag className="w-4 h-4" />
-                        衣橱与商店 🛍
+                        {t.archive.wardrobe}
                     </button>
                     <button
                         onClick={() => setActiveTab('buddy')}
                         className={cn(
-                            "py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5",
+                            "py-3 rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1 min-h-[44px]",
                             activeTab === 'buddy'
                                 ? "bg-purple-500 text-white shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
                         <Users className="w-4 h-4" />
-                        死党系统 🤝
+                        {t.archive.buddy}
                     </button>
                     <button
                         onClick={() => setActiveTab('profile')}
                         className={cn(
-                            "py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5",
+                            "py-3 rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1 min-h-[44px]",
                             activeTab === 'profile'
                                 ? "bg-blue-500 text-white shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
                         <Settings className="w-4 h-4" />
-                        个人资料 👤
+                        {t.archive.profile}
                     </button>
                     <button
                         onClick={() => setActiveTab('injury')}
                         className={cn(
-                            "py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5",
+                            "py-3 rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1 min-h-[44px]",
                             activeTab === 'injury'
                                 ? "bg-red-500 text-white shadow-lg"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
                         <Activity className="w-4 h-4" />
-                        伤病监测 🩺
+                        {t.archive.injury}
                     </button>
                 </div>
 
@@ -184,29 +220,29 @@ export default function AthleteProfilePage() {
                 )}
 
                 {currentUser && activeTab === 'profile' && (
-                    <div className="bg-secondary/20 rounded-2xl p-6 space-y-4 border border-white/5 animate-in fade-in duration-300">
+                    <div className="bg-card/50 rounded-2xl p-6 space-y-4 border border-border/50 animate-in fade-in duration-300">
                         <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                            <User className="w-5 h-5" /> 个人资料设置
+                            <User className="w-5 h-5" /> {t.archive.profileSettings}
                         </h2>
 
                         <div>
-                            <label className="text-sm text-muted-foreground mb-1 block">姓名</label>
+                            <label className="text-sm text-muted-foreground mb-1.5 block">姓名</label>
                             <input
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[44px]"
                             />
                         </div>
 
                         <div>
-                            <label className="text-sm text-muted-foreground mb-1 block">主项泳姿</label>
+                            <label className="text-sm text-muted-foreground mb-1.5 block">{t.archive.mainStroke}</label>
                             <select
                                 value={mainStroke}
                                 onChange={(e) => setMainStroke((e.target.value || undefined) as Swimmer["mainStroke"] | undefined)}
-                                className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[44px]"
                             >
-                                <option value="">选择泳姿...</option>
+                                <option value="">{t.archive.selectStroke}</option>
                                 <option value="Free">自由泳 (Freestyle)</option>
                                 <option value="Back">仰泳 (Backstroke)</option>
                                 <option value="Breast">蛙泳 (Breaststroke)</option>
@@ -216,11 +252,11 @@ export default function AthleteProfilePage() {
                         </div>
 
                         <div>
-                            <label className="text-sm text-muted-foreground mb-1 block">性别</label>
+                            <label className="text-sm text-muted-foreground mb-1.5 block">{t.archive.gender}</label>
                             <select
                                 value={gender}
                                 onChange={(e) => setGender(e.target.value as "male" | "female")}
-                                className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[44px]"
                             >
                                 <option value="male">男 (Male)</option>
                                 <option value="female">女 (Female)</option>
@@ -228,7 +264,15 @@ export default function AthleteProfilePage() {
                         </div>
 
                         <div>
-                            <label className="text-sm text-muted-foreground mb-1 block">今日状态: {readiness}%</label>
+                            <label className="text-sm text-muted-foreground mb-1.5 block">
+                                {t.archive.todayCondition}: {readiness}% — {
+                                    readiness <= 20 ? "非常疲劳，建议休息" :
+                                    readiness <= 40 ? "疲劳，建议减量" :
+                                    readiness <= 60 ? "一般状态" :
+                                    readiness <= 80 ? "良好" :
+                                    "状态极佳"
+                                }
+                            </label>
                             <input
                                 type="range"
                                 min={0}
@@ -242,14 +286,36 @@ export default function AthleteProfilePage() {
                         <button
                             onClick={handleSave}
                             disabled={saving}
-                            className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-50"
+                            className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-50 min-h-[44px]"
                         >
                             <Save className="w-4 h-4" />
-                            {saving ? "正在保存..." : saved ? "已成功保存！" : "保存修改"}
+                            {saving ? t.archive.saving : saved ? t.archive.savedSuccess : t.archive.saveChanges}
                         </button>
                     </div>
                 )}
-            </div>
+            </main>
+
+            {/* Background Picker Modal */}
+            <BackgroundPicker
+                open={showBgPicker}
+                onClose={() => setShowBgPicker(false)}
+                currentThemeId={bgTheme.id}
+                currentMode={bgMode}
+                onThemeSelect={(id) => {
+                    setBgTheme(id);
+                    setShowBgPicker(false);
+                }}
+                onAutoMode={() => {
+                    setBgAuto();
+                    setShowBgPicker(false);
+                }}
+            />
+
+            {/* Bottom Tab Bar */}
+            <BottomTabBar />
+
+            {/* Wave Animation */}
+            <WaveAnimation />
         </div>
     );
 }
