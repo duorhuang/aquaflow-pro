@@ -20,6 +20,7 @@ export default function PoolsidePage() {
     const [selectedGroup, setSelectedGroup] = useState(GROUPS[0]);
     const [plan, setPlan] = useState<PoolsidePlan | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
@@ -28,12 +29,7 @@ export default function PoolsidePage() {
 
     useEffect(() => {
         let isMounted = true;
-        const timer1 = setTimeout(() => {
-            if (isMounted) {
-                setLoading(true);
-                setCurrentSetIndex(0);
-            }
-        }, 0);
+        setError(null);
 
         fetchAPI<any[]>(`/plans?group=${selectedGroup}`)
             .then((plans: any[]) => {
@@ -49,17 +45,16 @@ export default function PoolsidePage() {
                     setPlan(null);
                 }
             })
-            .catch(() => {
-                if (isMounted) setPlan(null);
+            .catch((e) => {
+                if (!isMounted) return;
+                setError(e.message || 'Failed to load plan');
+                setPlan(null);
             })
             .finally(() => {
                 if (isMounted) setLoading(false);
             });
 
-        return () => {
-            isMounted = false;
-            clearTimeout(timer1);
-        };
+        return () => { isMounted = false; };
     }, [selectedGroup]);
 
     const items = plan?.allItems || [];
@@ -97,9 +92,20 @@ export default function PoolsidePage() {
             {/* Main Content */}
             <div className="flex-1 flex flex-col items-center justify-center p-8 relative">
                 {loading ? (
-                    <div className="text-3xl text-muted-foreground animate-pulse">Loading...</div>
+                    <div className="text-3xl text-muted-foreground animate-pulse">加载中...</div>
+                ) : error ? (
+                    <div className="text-center space-y-4">
+                        <div className="text-2xl text-red-400">加载失败</div>
+                        <div className="text-lg text-muted-foreground">{error}</div>
+                        <button
+                            onClick={() => { setLoading(true); setError(null); }}
+                            className="px-6 py-2 bg-primary text-primary-foreground rounded-full font-bold hover:brightness-110"
+                        >
+                            重试
+                        </button>
+                    </div>
                 ) : !currentSet ? (
-                    <div className="text-3xl text-muted-foreground">No plan found for today</div>
+                    <div className="text-3xl text-muted-foreground">今日暂无训练计划</div>
                 ) : (
                     <>
                         <div className="absolute inset-0 bg-primary/5 animate-pulse" />

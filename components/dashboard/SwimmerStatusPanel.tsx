@@ -86,7 +86,7 @@ export function SwimmerStatusPanel() {
     return (
         <div className="bg-card/50 border border-border rounded-2xl p-6 backdrop-blur-md relative">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <h3 className="text-md font-semibold text-white flex items-center gap-2">
                     <Activity className="w-5 h-5 text-primary" />
                     队员状态监控
                 </h3>
@@ -103,9 +103,9 @@ export function SwimmerStatusPanel() {
                     const hasInjury = isValidInjury || swimmer.status === "Injured";
 
                     // Determine status color
-                    const statusColor = hasInjury ? "red" :
-                        readiness >= 85 ? "green" :
-                            readiness >= 70 ? "yellow" : "orange";
+                    const statusColor = hasInjury ? "error" :
+                        readiness >= 85 ? "success" :
+                            readiness >= 70 ? "warning" : "warning";
 
                     return (
                         <div
@@ -113,7 +113,7 @@ export function SwimmerStatusPanel() {
                             className={cn(
                                 "p-4 rounded-xl border transition-all",
                                 hasInjury
-                                    ? "bg-red-500/10 border-red-500/30"
+                                    ? "bg-error/10 border-error/30"
                                     : "bg-white/5 border-white/10"
                             )}
                         >
@@ -164,10 +164,9 @@ export function SwimmerStatusPanel() {
                                     </button>
                                     <div className={cn(
                                         "text-sm font-bold",
-                                        statusColor === "green" ? "text-green-400" :
-                                            statusColor === "yellow" ? "text-yellow-400" :
-                                                statusColor === "orange" ? "text-orange-400" :
-                                                    "text-red-400"
+                                        statusColor === "success" ? "text-success" :
+                                            statusColor === "warning" ? "text-warning" :
+                                                "text-error"
                                     )}>
                                         {hasInjury ? "⚠️" : readiness >= 85 ? "✅" : readiness >= 70 ? "😐" : "😴"}
                                     </div>
@@ -180,10 +179,9 @@ export function SwimmerStatusPanel() {
                                     <span className="text-xs text-muted-foreground">竞技状态</span>
                                     <span className={cn(
                                         "text-xs font-bold",
-                                        statusColor === "green" ? "text-green-400" :
-                                            statusColor === "yellow" ? "text-yellow-400" :
-                                                statusColor === "orange" ? "text-orange-400" :
-                                                    "text-red-400"
+                                        statusColor === "success" ? "text-success" :
+                                            statusColor === "warning" ? "text-warning" :
+                                                "text-error"
                                     )}>
                                         {readiness}%
                                     </span>
@@ -192,10 +190,9 @@ export function SwimmerStatusPanel() {
                                     <div
                                         className={cn(
                                             "h-full rounded-full transition-all",
-                                            statusColor === "green" ? "bg-green-400" :
-                                                statusColor === "yellow" ? "bg-yellow-400" :
-                                                    statusColor === "orange" ? "bg-orange-400" :
-                                                        "bg-red-400"
+                                            statusColor === "success" ? "bg-success" :
+                                                statusColor === "warning" ? "bg-warning" :
+                                                    "bg-error"
                                         )}
                                         style={{ width: `${readiness}%` }}
                                     />
@@ -204,10 +201,10 @@ export function SwimmerStatusPanel() {
 
                             {/* Injury Note */}
                             {hasInjury && (
-                                <div className="flex items-start gap-2 p-2 bg-red-500/10 border border-red-500/20 rounded-lg mb-2">
-                                    <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                                <div className="flex items-start gap-2 p-2 bg-error/10 border border-error/20 rounded-lg mb-2">
+                                    <AlertTriangle className="w-4 h-4 text-error mt-0.5 flex-shrink-0" />
                                     <div className="flex-1">
-                                        <p className="text-xs font-medium text-red-400 mb-0.5">伤病报告</p>
+                                        <p className="text-xs font-medium text-error mb-0.5">伤病报告</p>
                                         <p className="text-xs text-red-300">{swimmer.injuryNote}</p>
                                     </div>
                                 </div>
@@ -284,17 +281,17 @@ export function SwimmerStatusPanel() {
 
                         {/* Error & Success Alerts */}
                         {error && (
-                            <div className="mb-4 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400 flex items-center justify-between">
+                            <div className="mb-4 bg-error/10 border border-error/30 rounded-xl px-4 py-3 text-sm text-error flex items-center justify-between">
                                 <span>{error}</span>
-                                <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300 ml-2">
+                                <button onClick={() => setError(null)} className="text-error hover:text-error/80 ml-2">
                                     <X className="w-4 h-4" />
                                 </button>
                             </div>
                         )}
                         {successMessage && (
-                            <div className="mb-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 text-sm text-emerald-400 flex items-center justify-between">
+                            <div className="mb-4 bg-success/10 border border-success/30 rounded-xl px-4 py-3 text-sm text-success flex items-center justify-between">
                                 <span className="flex items-center gap-2">
-                                    <Sparkles className="w-4 h-4 text-emerald-400 animate-bounce" />
+                                    <Sparkles className="w-4 h-4 text-success animate-bounce" />
                                     {successMessage}
                                 </span>
                             </div>

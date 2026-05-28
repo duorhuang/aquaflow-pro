@@ -233,9 +233,9 @@ export default function TrainingArchivePage() {
                     <button
                         onClick={() => setActiveTab('training')}
                         className={cn(
-                            "py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 min-h-[44px]",
+                            "py-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-2 min-h-[44px]",
                             activeTab === 'training'
-                                ? "bg-primary text-primary-foreground shadow-lg"
+                                ? "bg-primary text-primary-foreground shadow-md"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
@@ -245,9 +245,9 @@ export default function TrainingArchivePage() {
                     <button
                         onClick={() => setActiveTab('feedback')}
                         className={cn(
-                            "py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 min-h-[44px]",
+                            "py-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-2 min-h-[44px]",
                             activeTab === 'feedback'
-                                ? "bg-purple-500 text-white shadow-lg"
+                                ? "bg-primary text-primary-foreground shadow-md"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
@@ -263,15 +263,15 @@ export default function TrainingArchivePage() {
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             <div className="bg-card/50 p-4 rounded-2xl border border-border/50 text-center">
                                 <p className="text-xs text-muted-foreground uppercase">{t.archive.totalTrainingDays}</p>
-                                <p className="text-lg font-bold text-white">{totalTrainingDays}</p>
+                                <p className="text-lg font-bold text-primary">{totalTrainingDays}</p>
                             </div>
                             <div className="bg-card/50 p-4 rounded-2xl border border-border/50 text-center">
                                 <p className="text-xs text-muted-foreground uppercase">{t.archive.attended}</p>
-                                <p className="text-lg font-bold text-green-400">{attendedDays}</p>
+                                <p className="text-base font-semibold text-success">{attendedDays}</p>
                             </div>
                             <div className="bg-card/50 p-4 rounded-2xl border border-border/50 text-center col-span-2 sm:col-span-1">
                                 <p className="text-xs text-muted-foreground uppercase">{t.archive.weeklyPlans}</p>
-                                <p className="text-lg font-bold text-blue-400">{weeklyPlanCount}</p>
+                                <p className="text-base font-semibold text-info">{weeklyPlanCount}</p>
                             </div>
                         </div>
 
@@ -312,16 +312,16 @@ export default function TrainingArchivePage() {
                                                 <div className="flex items-center gap-3">
                                                     <div className={cn(
                                                         "w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs",
-                                                        entry.attended ? "bg-green-500 text-black" : "bg-white/10 text-white"
+                                                        entry.attended ? "bg-success text-success-foreground" : "bg-white/10 text-white"
                                                     )}>
                                                         {d.getDate()}
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-bold text-white">
+                                                        <p className="text-sm font-semibold text-white">
                                                             {d.toLocaleDateString('zh-CN', { weekday: 'short' })} {t.archive.training}
                                                         </p>
                                                         {entry.type === 'weekly' && entry.weeklyPlanTitle && (
-                                                            <p className="text-xs text-blue-400">{t.archive.weeklyPlan}: {entry.weeklyPlanTitle}</p>
+                                                            <p className="text-xs text-info">{t.archive.weeklyPlan}: {entry.weeklyPlanTitle}</p>
                                                         )}
                                                     </div>
                                                 </div>
@@ -355,15 +355,15 @@ export default function TrainingArchivePage() {
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             <div className="bg-card/50 p-4 rounded-2xl border border-border/50 text-center">
                                 <p className="text-xs text-muted-foreground uppercase">{t.archive.totalFeedback}</p>
-                                <p className="text-lg font-bold text-white">{totalFeedback}</p>
+                                <p className="text-lg font-bold text-primary">{totalFeedback}</p>
                             </div>
                             <div className="bg-card/50 p-4 rounded-2xl border border-border/50 text-center">
                                 <p className="text-xs text-muted-foreground uppercase">{t.archive.coachReplies}</p>
-                                <p className="text-lg font-bold text-green-400">{coachReplies}</p>
+                                <p className="text-base font-semibold text-success">{coachReplies}</p>
                             </div>
                             <div className="bg-card/50 p-4 rounded-2xl border border-border/50 text-center col-span-2 sm:col-span-1">
                                 <p className="text-xs text-muted-foreground uppercase">{t.archive.pendingReplies}</p>
-                                <p className="text-lg font-bold text-orange-400">{totalFeedback - coachReplies}</p>
+                                <p className="text-base font-semibold text-warning">{totalFeedback - coachReplies}</p>
                             </div>
                         </div>
 
@@ -417,7 +417,7 @@ export default function TrainingArchivePage() {
             </main>
 
             {/* Bottom Tab Bar */}
-            <BottomTabBar />
+            <BottomTabBar activeTab="achievements" />
 
             {/* Wave Animation */}
             <WaveAnimation />
@@ -435,16 +435,16 @@ function FeedbackCard({ item }: { item: FeedbackItem }) {
             <div className="bg-card/50 border border-border/50 rounded-2xl overflow-hidden">
                 <div onClick={() => setExpanded(!expanded)} className="p-4 cursor-pointer hover:bg-white/5 transition-colors">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                            <Target className="w-4 h-4 text-blue-400" />
+                        <div className="w-10 h-10 rounded-full bg-info/20 flex items-center justify-center">
+                            <Target className="w-4 h-4 text-info" />
                         </div>
                         <div className="flex-1">
-                            <p className="text-sm font-bold text-white">专项反馈</p>
+                            <p className="text-sm font-semibold text-white">专项反馈</p>
                             <p className="text-xs text-muted-foreground">{d.toLocaleDateString('zh-CN')}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                            {bf.reaction === 'like' && <ThumbsUp className="w-4 h-4 text-green-400 fill-green-400" />}
-                            {bf.reaction === 'dislike' && <ThumbsDown className="w-4 h-4 text-red-400 fill-red-400" />}
+                            {bf.reaction === 'like' && <ThumbsUp className="w-4 h-4 text-success fill-success" />}
+                            {bf.reaction === 'dislike' && <ThumbsDown className="w-4 h-4 text-error fill-error" />}
                             <ChevronRight className={cn("w-4 h-4 text-muted-foreground transition-transform", expanded && "rotate-90")} />
                         </div>
                     </div>
@@ -472,16 +472,16 @@ function FeedbackCard({ item }: { item: FeedbackItem }) {
             <div className="bg-card/50 border border-border/50 rounded-2xl overflow-hidden">
                 <div onClick={() => setExpanded(!expanded)} className="p-4 cursor-pointer hover:bg-white/5 transition-colors">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-                            <Calendar className="w-4 h-4 text-purple-400" />
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                            <Calendar className="w-4 h-4 text-primary" />
                         </div>
                         <div className="flex-1">
-                            <p className="text-sm font-bold text-white">周总结</p>
+                            <p className="text-sm font-semibold text-white">周总结</p>
                             <p className="text-xs text-muted-foreground">{wf.weekStart} 周</p>
                         </div>
                         <div className="flex items-center gap-2">
-                            {wf.isReplied && <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">已批复</span>}
-                            {!wf.isReplied && <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full">待批复</span>}
+                            {wf.isReplied && <span className="text-xs bg-success/20 text-success px-2 py-0.5 rounded-full">已批复</span>}
+                            {!wf.isReplied && <span className="text-xs bg-warning/20 text-warning px-2 py-0.5 rounded-full">待批复</span>}
                             <ChevronRight className={cn("w-4 h-4 text-muted-foreground transition-transform", expanded && "rotate-90")} />
                         </div>
                     </div>
@@ -490,23 +490,23 @@ function FeedbackCard({ item }: { item: FeedbackItem }) {
                     <div className="p-4 border-t border-border bg-black/20 space-y-3">
                         {wf.summary && (
                             <div className="bg-primary/5 border border-primary/20 p-3 rounded-lg">
-                                <p className="text-xs text-primary font-bold mb-1">我的总结</p>
+                                <p className="text-xs text-primary font-medium mb-1">我的总结</p>
                                 <p className="text-sm text-white whitespace-pre-wrap">{wf.summary}</p>
                             </div>
                         )}
                         {wf.dailyFeedbacks?.filter((df: any) => df.reflection).map((df: any) => (
                             <div key={df.id} className="bg-white/5 p-3 rounded-lg">
-                                <p className="text-xs text-muted-foreground font-bold mb-1">{df.date} 日记</p>
+                                <p className="text-xs text-muted-foreground font-medium mb-1">{df.date} 日记</p>
                                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{df.reflection}</p>
                                 <div className="flex gap-3 mt-1">
-                                    <span className="text-xs text-blue-400">RPE: {df.rpe}</span>
-                                    <span className="text-xs text-orange-400">酸痛: {df.soreness}</span>
+                                    <span className="text-xs text-info">RPE: {df.rpe}</span>
+                                    <span className="text-xs text-warning">酸痛: {df.soreness}</span>
                                 </div>
                             </div>
                         ))}
                         {wf.coachReply && (
-                            <div className="bg-green-500/10 border border-green-500/20 p-3 rounded-lg">
-                                <p className="text-xs text-green-400 font-bold mb-1 flex items-center gap-1">
+                            <div className="bg-success/10 border border-success/20 p-3 rounded-lg">
+                                <p className="text-xs text-success font-medium mb-1 flex items-center gap-1">
                                     <MessageCircle className="w-3 h-3" /> 教练批复
                                     {wf.repliedAt && <span className="text-muted-foreground font-normal ml-1">({new Date(wf.repliedAt).toLocaleDateString()})</span>}
                                 </p>
@@ -526,15 +526,15 @@ function FeedbackCard({ item }: { item: FeedbackItem }) {
             <div className="bg-card/50 border border-border/50 rounded-2xl overflow-hidden">
                 <div onClick={() => setExpanded(!expanded)} className="p-4 cursor-pointer hover:bg-white/5 transition-colors">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                            <MessageSquare className="w-4 h-4 text-orange-400" />
+                        <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center">
+                            <MessageSquare className="w-4 h-4 text-warning" />
                         </div>
                         <div className="flex-1">
-                            <p className="text-sm font-bold text-white">专项回复</p>
+                            <p className="text-sm font-semibold text-white">专项回复</p>
                             <p className="text-xs text-muted-foreground">{tf.reminderMessage?.substring(0, 30)}{tf.reminderMessage?.length > 30 ? '...' : ''}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                            {tf.coachReply && <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">已批复</span>}
+                            {tf.coachReply && <span className="text-xs bg-success/20 text-success px-2 py-0.5 rounded-full">已批复</span>}
                             <ChevronRight className={cn("w-4 h-4 text-muted-foreground transition-transform", expanded && "rotate-90")} />
                         </div>
                     </div>
@@ -542,8 +542,8 @@ function FeedbackCard({ item }: { item: FeedbackItem }) {
                 {expanded && (
                     <div className="p-4 border-t border-border bg-black/20 space-y-3">
                         {tf.reminderMessage && (
-                            <div className="bg-orange-500/10 border border-orange-500/20 p-3 rounded-lg">
-                                <p className="text-xs text-orange-400 font-bold mb-1">教练提问</p>
+                            <div className="bg-warning/10 border border-warning/20 p-3 rounded-lg">
+                                <p className="text-xs text-warning font-medium mb-1">教练提问</p>
                                 <p className="text-sm text-white">{tf.reminderMessage}</p>
                                 {tf.periodStart && tf.periodEnd && (
                                     <p className="text-xs text-muted-foreground mt-1">周期: {tf.periodStart} 至 {tf.periodEnd}</p>
@@ -551,16 +551,16 @@ function FeedbackCard({ item }: { item: FeedbackItem }) {
                             </div>
                         )}
                         <div className="bg-white/5 p-3 rounded-lg">
-                            <p className="text-xs text-muted-foreground font-bold mb-1">我的回复</p>
+                            <p className="text-xs text-muted-foreground font-medium mb-1">我的回复</p>
                             <p className="text-sm text-white whitespace-pre-wrap">{tf.content}</p>
                             <div className="flex gap-3 mt-1">
-                                <span className="text-xs text-blue-400">RPE: {tf.rpe}</span>
-                                <span className="text-xs text-orange-400">酸痛: {tf.soreness}</span>
+                                <span className="text-xs text-info">RPE: {tf.rpe}</span>
+                                <span className="text-xs text-warning">酸痛: {tf.soreness}</span>
                             </div>
                         </div>
                         {tf.coachReply && (
-                            <div className="bg-green-500/10 border border-green-500/20 p-3 rounded-lg">
-                                <p className="text-xs text-green-400 font-bold mb-1 flex items-center gap-1">
+                            <div className="bg-success/10 border border-success/20 p-3 rounded-lg">
+                                <p className="text-xs text-success font-medium mb-1 flex items-center gap-1">
                                     <MessageCircle className="w-3 h-3" /> 教练批复
                                     {tf.repliedAt && <span className="text-muted-foreground font-normal ml-1">({new Date(tf.repliedAt).toLocaleDateString()})</span>}
                                 </p>

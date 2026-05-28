@@ -4,14 +4,16 @@ import { useState, useEffect } from "react";
 import { api } from "@/lib/api-client";
 import { Calendar, MapPin, Trophy, Plus, Trash2, Edit2, ArrowLeft, Check, X, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 function Breadcrumb() {
+    const { t } = useLanguage();
     return (
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-white font-medium">赛事管理</span>
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+            <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
+            <ChevronRight className="w-3 h-3" aria-hidden="true" />
+            <span className="text-white font-medium">{t.common.meets}</span>
         </nav>
     );
 }

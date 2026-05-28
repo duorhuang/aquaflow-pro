@@ -197,27 +197,20 @@ export async function POST(request: Request) {
         } else if (action === 'equip') {
             if (!equipped) return NextResponse.json({ error: 'Equipped mapping required' }, { status: 400 });
 
-            // Fetch shop items to resolve imageKey → item ID for ownership validation
-            const allItems = await sql`SELECT * FROM "ShopItem" ORDER BY "price" ASC`;
-            const allItemsMap = new Map(allItems.map((item: any) => [item.imageKey, item]));
-
-            // Validate ownership: equipped values are imageKeys, inventory stores UUIDs
+            // Frontend sends { imageKey, id } objects for each slot
+            // Validate ownership using id (UUID), store imageKey for rendering
             const owned = new Set(inventory);
             const newEquipped = parseObject(equipped);
 
             for (const [slot, val] of Object.entries(newEquipped)) {
                 if (!val) continue;
-                const imageKey = typeof val === 'string' ? val : (val as any).imageKey;
-                const itemId = typeof val === 'string' ? allItemsMap.get(imageKey)?.id : (val as any).id;
-                if (imageKey && !allItemsMap.has(imageKey)) {
-                    return NextResponse.json({ error: `Unknown item equipped in ${slot}` }, { status: 400 });
-                }
+                const itemId = typeof val === 'string' ? val : (val as any).id;
                 if (itemId && !owned.has(itemId)) {
                     return NextResponse.json({ error: `You do not own the item equipped in ${slot}` }, { status: 400 });
                 }
             }
 
-            // Normalize to bare imageKey strings for DB storage
+            // Normalize to bare imageKey strings for DB storage (AvatarRenderer expects imageKeys)
             const normalizedEquipped: Record<string, string> = {};
             for (const [slot, val] of Object.entries(newEquipped)) {
                 if (!val) continue;

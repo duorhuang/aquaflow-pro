@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { flattenPayload } from '@/lib/prisma';
+import { flattenPayload } from '@/lib/utils';
 import { api } from '@/lib/api-client';
 
 describe('AquaFlow Pro Logic Tests', () => {

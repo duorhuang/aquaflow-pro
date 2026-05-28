@@ -1,73 +1,39 @@
 "use client";
 
-import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Waves, MessageSquare, TrendingUp, Activity, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useMemo, useEffect } from 'react';
+import { useMemo, useCallback } from 'react';
+
+interface BottomTabBarProps {
+  activeTab?: string;
+}
 
 interface TabItem {
   id: string;
   label: string;
-  labelEn: string;
   icon: typeof Waves;
   href: string;
-  activeWhen: string;
+  match: string;
 }
 
-export function BottomTabBar() {
+export function BottomTabBar({ activeTab = 'training' }: BottomTabBarProps) {
+  const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentTab = searchParams.get('tab');
 
   const tabs: TabItem[] = useMemo(() => [
-    {
-      id: 'training',
-      label: '训练',
-      labelEn: 'Training',
-      icon: Waves,
-      href: '/workout',
-      activeWhen: '',
-    },
-    {
-      id: 'feedback',
-      label: '反馈',
-      labelEn: 'Feedback',
-      icon: MessageSquare,
-      href: '/workout?tab=feedback',
-      activeWhen: 'feedback',
-    },
-    {
-      id: 'achievements',
-      label: '成绩',
-      labelEn: 'Stats',
-      icon: TrendingUp,
-      href: '/workout?tab=achievements',
-      activeWhen: 'achievements',
-    },
-    {
-      id: 'health',
-      label: '状态',
-      labelEn: 'Health',
-      icon: Activity,
-      href: '/workout?tab=health',
-      activeWhen: 'health',
-    },
-    {
-      id: 'profile',
-      label: '我的',
-      labelEn: 'Profile',
-      icon: UserCircle,
-      href: '/profile',
-      activeWhen: '/profile',
-    },
+    { id: 'training', label: '训练', icon: Waves, href: '/workout', match: 'training' },
+    { id: 'feedback', label: '反馈', icon: MessageSquare, href: '/workout?tab=feedback', match: 'feedback' },
+    { id: 'achievements', label: '成绩', icon: TrendingUp, href: '/workout?tab=achievements', match: 'achievements' },
+    { id: 'health', label: '状态', icon: Activity, href: '/workout?tab=health', match: 'health' },
+    { id: 'profile', label: '我的', icon: UserCircle, href: '/profile', match: 'profile' },
   ], []);
 
-  const activeTab = useMemo(() => {
-    if (pathname === '/profile') return 'profile';
-    if (currentTab) return currentTab;
-    return 'training';
-  }, [pathname, currentTab]);
+  const resolvedTab = activeTab === '/profile' || pathname === '/profile' ? 'profile' : activeTab;
+
+  const handleTabClick = useCallback((href: string) => {
+    router.push(href, { scroll: false });
+  }, [router]);
 
   return (
     <nav
@@ -78,37 +44,27 @@ export function BottomTabBar() {
       <div className="flex items-stretch justify-around pb-[env(safe-area-inset-bottom)]">
         {tabs.map(tab => {
           const Icon = tab.icon;
-          const isActive =
-            tab.activeWhen === '/profile'
-              ? activeTab === 'profile'
-              : tab.activeWhen === ''
-                ? activeTab === 'training'
-                : activeTab === tab.activeWhen || activeTab === tab.id;
+          const isActive = tab.match === resolvedTab || (tab.match === 'training' && !resolvedTab);
 
           return (
-            <Link
+            <button
               key={tab.id}
-              href={tab.href}
+              onClick={() => handleTabClick(tab.href)}
               className={cn(
-                "flex flex-col items-center justify-center min-h-[56px] px-3 py-2 flex-1 transition-all relative",
-                isActive
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-white/80"
+                "flex flex-col items-center justify-center min-h-[44px] px-3 py-2 flex-1 transition-all relative",
+                isActive ? "text-primary" : "text-muted-foreground hover:text-white/80"
               )}
-              aria-label={`${tab.label} / ${tab.labelEn}`}
+              aria-label={tab.label}
               aria-current={isActive ? 'page' : undefined}
             >
               {isActive && (
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full shadow-[0_0_8px_rgba(100,255,218,0.5)]" />
               )}
               <Icon className={cn("w-5 h-5 mb-1", isActive && "drop-shadow-[0_0_6px_rgba(100,255,218,0.4)]")} />
-              <span className={cn(
-                "text-[11px] font-medium leading-none",
-                isActive ? "font-semibold" : ""
-              )}>
+              <span className={cn("text-xs leading-none", isActive ? "font-semibold" : "")}>
                 {tab.label}
               </span>
-            </Link>
+            </button>
           );
         })}
       </div>

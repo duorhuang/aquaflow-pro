@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { V12_FINGERPRINT } from './prisma';
+import { V12_FINGERPRINT } from './utils';
+import { requireCoach, requireAnyAuth, requireAthlete } from './auth-api';
+import type { JWTPayload } from './jwt';
 
 /**
  * V12_STABILITY: Standard API Handler Wrapper.
@@ -41,4 +43,45 @@ export async function withApiHandler(handler: () => Promise<NextResponse>) {
             }
         );
     }
+}
+
+// --- Route handler wrappers: combine auth + error handling ---
+
+type AuthHandlerFn = (req: Request, auth: JWTPayload) => Promise<NextResponse>;
+
+function wrapAuth(handler: AuthHandlerFn, authFn: (req: Request) => Promise<JWTPayload | NextResponse>): () => Promise<NextResponse> {
+  return async () => {
+    // Extract the request from the closure scope
+    const req = (handler as any).__req__;
+    const result = await authFn(req);
+    if (result instanceof NextResponse) return result;
+    return handler(req, result);
+  };
+}
+
+export function handleCoach(req: Request, handler: AuthHandlerFn): Promise<NextResponse> {
+  return withApiHandler(async () => {
+    (handler as any).__req__ = req;
+    const result = await requireCoach(req);
+    if (result instanceof NextResponse) return result;
+    return handler(req, result);
+  });
+}
+
+export function handleAnyAuth(req: Request, handler: AuthHandlerFn): Promise<NextResponse> {
+  return withApiHandler(async () => {
+    (handler as any).__req__ = req;
+    const result = await requireAnyAuth(req);
+    if (result instanceof NextResponse) return result;
+    return handler(req, result);
+  });
+}
+
+export function handleAthlete(req: Request, handler: AuthHandlerFn): Promise<NextResponse> {
+  return withApiHandler(async () => {
+    (handler as any).__req__ = req;
+    const result = await requireAthlete(req);
+    if (result instanceof NextResponse) return result;
+    return handler(req, result);
+  });
 }

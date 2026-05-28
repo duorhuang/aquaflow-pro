@@ -20,7 +20,7 @@ const NAV_ITEMS = [
     { label: "meets", href: "/dashboard/meets", icon: Trophy },
     { label: "injuryMonitor", href: "/dashboard/injury-monitor", icon: Activity },
     { label: "feedbackArchive", href: "/dashboard/archive", icon: FolderOpen },
-    { label: "settings", href: "/dashboard/settings", icon: Settings },
+    { label: "settings", href: "/settings", icon: Settings },
 ];
 
 export function MobileNav() {
@@ -56,7 +56,9 @@ export function MobileNav() {
 
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="p-2 text-white/80 hover:text-white transition-colors"
+                    className="p-2 text-white/80 hover:text-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg"
+                    aria-label={isOpen ? "Close menu" : "Open menu"}
+                    aria-expanded={isOpen}
                 >
                     {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                 </button>
@@ -64,7 +66,12 @@ export function MobileNav() {
 
             {/* Full Screen Menu Overlay */}
             {isOpen && (
-                <div className="fixed inset-0 z-40 bg-background pt-24 px-6 animate-in fade-in slide-in-from-top-4 duration-200 flex flex-col">
+                <div
+                    className="fixed inset-0 z-40 bg-background pt-24 px-6 animate-in fade-in slide-in-from-top-4 duration-200 flex flex-col"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Navigation menu"
+                >
                     <nav className="flex flex-col gap-2">
                         {NAV_ITEMS.map((item) => {
                             const isActive = pathname === item.href;
@@ -74,13 +81,14 @@ export function MobileNav() {
                                     key={item.href}
                                     href={item.href}
                                     className={cn(
-                                        "flex items-center gap-4 px-4 py-4 rounded-xl text-lg font-medium transition-all",
+                                        "flex items-center gap-4 px-4 py-4 rounded-xl text-lg font-medium transition-all min-h-[44px]",
                                         isActive
                                             ? "bg-primary/10 text-primary border border-primary/20"
                                             : "text-slate-400 hover:bg-white/5 hover:text-white"
                                     )}
+                                    aria-current={isActive ? 'page' : undefined}
                                 >
-                                    <item.icon className={cn("w-6 h-6", isActive && "text-primary")} />
+                                    <item.icon className={cn("w-6 h-6", isActive && "text-primary")} aria-hidden="true" />
                                     {label}
                                 </Link>
                             );
@@ -90,10 +98,12 @@ export function MobileNav() {
                     <div className="mt-auto mb-8 border-t border-white/10 pt-6">
                         <button
                             onClick={async () => {
+                                if (!window.confirm('确认要退出登录吗？')) return;
                                 try { await api.auth.logout(); } catch {}
                                 window.location.href = '/login?role=coach';
                             }}
-                            className="flex items-center gap-4 px-4 py-4 w-full rounded-xl text-red-400 hover:bg-red-500/10 transition-colors"
+                            className="flex items-center gap-4 px-4 py-4 w-full rounded-xl text-red-400 hover:bg-red-500/10 transition-colors min-h-[44px]"
+                            aria-label="Log out"
                         >
                             <LogOut className="w-6 h-6" />
                             {t.common.logout}

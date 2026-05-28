@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
+import { useLanguage } from "@/lib/i18n";
 import { Send, Target, MessageSquare, Calendar, Loader2, Users, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { getLocalDateISOString } from "@/lib/date-utils";
@@ -11,11 +12,14 @@ import { GroupLevel } from "@/types";
 const GROUP_LEVELS: GroupLevel[] = ["Junior", "Intermediate", "Advanced", "External"];
 
 function Breadcrumb() {
+    const { t } = useLanguage();
     return (
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-white font-medium">专项反馈</span>
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+            <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
+            <ChevronRight className="w-3 h-3" aria-hidden="true" />
+            <Link href="/dashboard/feedbacks" className="hover:text-white transition-colors">{t.common.feedbackInbox}</Link>
+            <ChevronRight className="w-3 h-3" aria-hidden="true" />
+            <span className="text-white font-medium">{t.common.targetedFeedback}</span>
         </nav>
     );
 }

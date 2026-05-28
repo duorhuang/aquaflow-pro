@@ -1,46 +1,10 @@
 /**
- * Edge-compatible authentication utilities.
- * Uses Web Crypto API (crypto.subtle) for HMAC-SHA256 — no native deps required.
+ * Password hashing utilities — PBKDF2-SHA256 via Web Crypto API.
+ * JWT utilities are in lib/jwt.ts — re-exported below for backward compatibility.
  */
 
-function getSecret(): string {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) throw new Error('JWT_SECRET is not configured');
-  return secret;
-}
-
-async function hmacSign(data: string, secret: string): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-  const signature = await crypto.subtle.sign(
-    'HMAC',
-    key,
-    new TextEncoder().encode(data)
-  );
-  return btoa(String.fromCharCode(...new Uint8Array(signature)));
-}
-
-async function hmacVerify(data: string, signature: string, secret: string): Promise<boolean> {
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['verify']
-  );
-  const signatureBytes = Uint8Array.from(atob(signature), c => c.charCodeAt(0));
-  return crypto.subtle.verify(
-    'HMAC',
-    key,
-    signatureBytes,
-    new TextEncoder().encode(data)
-  );
-}
+export { generateJWT, verifyJWT, getCookieFromRequest, setSessionCookie, clearSessionCookie } from './jwt';
+export type { JWTPayload } from './jwt';
 
 /**
  * Hash a password using PBKDF2-SHA256 with a random salt.
@@ -95,78 +59,4 @@ export async function verifyPassword(password: string, stored: string): Promise<
 
   const hashHex = Array.from(new Uint8Array(derivedBits)).map(b => b.toString(16).padStart(2, '0')).join('');
   return hashHex === expectedHash;
-}
-
-export interface JWTPayload {
-  userId: string;
-  role: 'coach' | 'athlete';
-  exp: number;
-}
-
-/**
- * Create a signed JWT string.
- */
-export async function generateJWT(payload: Omit<JWTPayload, 'exp'>): Promise<string> {
-  const secret = getSecret();
-  const exp = Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60; // 7 days
-  const jwtPayload: JWTPayload = { ...payload, exp };
-  const data = btoa(JSON.stringify(jwtPayload));
-  const signature = await hmacSign(data, secret);
-  return `${data}.${signature}`;
-}
-
-/**
- * Verify and decode a JWT. Returns null if invalid or expired.
- */
-export async function verifyJWT(token: string): Promise<JWTPayload | null> {
-  try {
-    const [data, signature] = token.split('.');
-    if (!data || !signature) return null;
-
-    const secret = getSecret();
-    const valid = await hmacVerify(data, signature, secret);
-    if (!valid) return null;
-
-    const payload: JWTPayload = JSON.parse(atob(data));
-    if (payload.exp < Math.floor(Date.now() / 1000)) return null;
-
-    return payload;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Extract JWT from request cookie header.
- */
-export function getCookieFromRequest(request: Request, name: string): string | undefined {
-  const cookieHeader = request.headers.get('cookie') || '';
-  const cookies = Object.fromEntries(
-    cookieHeader.split('; ').filter(Boolean).map(c => {
-      const idx = c.indexOf('=');
-      return idx === -1 ? [c, ''] : [c.slice(0, idx), decodeURIComponent(c.slice(idx + 1))];
-    })
-  );
-  return cookies[name];
-}
-
-/**
- * Create a Set-Cookie header value for the session cookie.
- */
-export function setSessionCookie(token: string, maxAge = 7 * 24 * 60 * 60): string {
-  const isProd = process.env.NODE_ENV === 'production';
-  const parts = [`aquaflow_session=${token}`, 'Path=/', 'HttpOnly', 'SameSite=Strict', `Max-Age=${maxAge}`];
-  // Domain set to root so cookie is visible across all subdomains on Cloudflare Pages
-  if (isProd) parts.push('Domain=.sportsflow.best', 'Secure');
-  return parts.join('; ');
-}
-
-/**
- * Create a Set-Cookie header value to clear the session cookie.
- */
-export function clearSessionCookie(): string {
-  const isProd = process.env.NODE_ENV === 'production';
-  const parts = ['aquaflow_session=', 'Path=/', 'HttpOnly', 'SameSite=Strict', 'Max-Age=0', 'Expires=Thu, 01 Jan 1970 00:00:00 GMT'];
-  if (isProd) parts.push('Domain=.sportsflow.best', 'Secure');
-  return parts.join('; ');
 }

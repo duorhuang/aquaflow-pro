@@ -1,61 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-/**
- * Edge-compatible JWT verification using crypto.subtle.
- * Cannot import lib/auth.ts here because @noble/hashes may not be available in Edge middleware.
- * This re-implements the minimal HMAC verification needed for middleware.
- */
-async function verifyJWTInMiddleware(token: string): Promise<{ userId: string; role: string } | null> {
-  try {
-    const [data, signature] = token.split('.');
-    if (!data || !signature) return null;
-
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      console.warn('[auth] JWT_SECRET not configured');
-      return null;
-    }
-
-    const key = await crypto.subtle.importKey(
-      'raw',
-      new TextEncoder().encode(secret),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['verify']
-    );
-
-    const signatureBytes = Uint8Array.from(atob(signature), c => c.charCodeAt(0));
-
-    const valid = await crypto.subtle.verify(
-      'HMAC',
-      key,
-      signatureBytes,
-      new TextEncoder().encode(data)
-    );
-
-    if (!valid) {
-      console.warn('[auth] JWT signature verification failed');
-      return null;
-    }
-
-    const payload = JSON.parse(atob(data));
-    if (payload.exp < Math.floor(Date.now() / 1000)) {
-      console.warn('[auth] JWT expired, exp=', new Date(payload.exp * 1000).toISOString());
-      return null;
-    }
-
-    return { userId: payload.userId, role: payload.role };
-  } catch (e) {
-    console.warn('[auth] JWT verification error:', e instanceof Error ? e.message : String(e));
-    return null;
-  }
-}
+import { verifyJWT } from '@/lib/jwt';
 
 function getCookie(request: NextRequest, name: string): string | undefined {
   const cookie = request.cookies.get(name);
   return cookie?.value;
 }
-
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -84,7 +33,7 @@ export async function middleware(request: NextRequest) {
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
-    const payload = await verifyJWTInMiddleware(token);
+    const payload = await verifyJWT(token);
     if (!payload || payload.role !== 'coach') {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('role', 'coach');
@@ -101,7 +50,7 @@ export async function middleware(request: NextRequest) {
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
-    const payload = await verifyJWTInMiddleware(token);
+    const payload = await verifyJWT(token);
     if (!payload || payload.role !== 'athlete') {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('role', 'athlete');
@@ -110,7 +59,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Catch-all: /athlete/* paths not matched by matcher above will fall through to API route guards
   return NextResponse.next();
 }
 

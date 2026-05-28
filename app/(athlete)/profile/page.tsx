@@ -1,20 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { api } from "@/lib/api-client";
 import { Waves, LogOut, User, Save, ShoppingBag, Users, Settings, Activity, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Swimmer } from "@/types";
-import { ShopAndCloset } from "@/components/athlete/ShopAndCloset";
-import { BuddySystem } from "@/components/athlete/BuddySystem";
-import { InjuryMap } from "@/components/athlete/InjuryMap";
+import dynamic from "next/dynamic";
+import { useLanguage } from "@/lib/i18n";
+
+const ShopAndCloset = dynamic(() => import("@/components/athlete/ShopAndCloset").then(m => ({ default: m.ShopAndCloset })));
+const BuddySystem = dynamic(() => import("@/components/athlete/BuddySystem").then(m => ({ default: m.BuddySystem })));
+const InjuryMap = dynamic(() => import("@/components/athlete/InjuryMap").then(m => ({ default: m.InjuryMap })));
 import { BottomTabBar } from "@/components/athlete/BottomTabBar";
 import { BackgroundPicker } from "@/components/athlete/BackgroundPicker";
+import { BackgroundParticles } from "@/components/athlete/BackgroundParticles";
 import { WaveAnimation } from "@/components/common/WaveAnimation";
 import { useBackgroundTheme } from "@/hooks/useBackgroundTheme";
-import { useLanguage } from "@/lib/i18n";
 
 export default function AthleteProfilePage() {
     const router = useRouter();
@@ -91,6 +94,11 @@ export default function AthleteProfilePage() {
             {/* Background texture overlay */}
             <div className="fixed inset-0 bg-theme-texture pointer-events-none z-0 opacity-30" aria-hidden="true" />
 
+            {/* Theme particles (stars, fire, etc.) */}
+            <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
+              <BackgroundParticles theme={bgTheme} />
+            </div>
+
             {/* Header */}
             <header className="sticky top-0 z-50 bg-background/50 backdrop-blur-md border-b border-white/10">
                 <div className="flex items-center justify-between p-4 max-w-2xl mx-auto">
@@ -116,7 +124,7 @@ export default function AthleteProfilePage() {
                         </button>
                         <button
                             onClick={handleLogout}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 min-h-[44px]"
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-error/10 text-error hover:bg-error/20 min-h-[44px]"
                         >
                             <LogOut className="w-3.5 h-3.5" />
                             <span className="text-sm hidden sm:inline">{t.common.logout}</span>
@@ -130,19 +138,19 @@ export default function AthleteProfilePage() {
                 {currentUser && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div className="bg-card/50 rounded-2xl p-4 text-center border border-border/50">
-                            <p className="text-2xl font-bold text-primary">{currentUser.totalXp || 0}</p>
+                            <p className="text-xl font-bold text-primary">{currentUser.totalXp || 0}</p>
                             <p className="text-xs text-muted-foreground mt-1">{t.archive.totalXp}</p>
                         </div>
                         <div className="bg-card/50 rounded-2xl p-4 text-center border border-border/50">
-                            <p className="text-2xl font-bold text-emerald-400">{currentUser.balance || 0}</p>
+                            <p className="text-base font-semibold text-success">{currentUser.balance || 0}</p>
                             <p className="text-xs text-muted-foreground mt-1">{t.archive.xbBalance}</p>
                         </div>
                         <div className="bg-card/50 rounded-2xl p-4 text-center border border-border/50">
-                            <p className="text-2xl font-bold text-yellow-400">Lv.{currentUser.level || 1}</p>
+                            <p className="text-base font-semibold text-warning">Lv.{currentUser.level || 1}</p>
                             <p className="text-xs text-muted-foreground mt-1">{t.archive.level}</p>
                         </div>
                         <div className="bg-card/50 rounded-2xl p-4 text-center border border-border/50">
-                            <p className="text-2xl font-bold text-orange-400">{currentUser.currentStreak || 0}</p>
+                            <p className="text-base font-semibold text-foreground">{currentUser.currentStreak || 0}</p>
                             <p className="text-xs text-muted-foreground mt-1">{t.archive.streak}</p>
                         </div>
                     </div>
@@ -153,9 +161,9 @@ export default function AthleteProfilePage() {
                     <button
                         onClick={() => setActiveTab('shop')}
                         className={cn(
-                            "py-3 rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1 min-h-[44px]",
+                            "py-3 rounded-lg text-xs font-medium transition-all flex flex-col items-center gap-1 min-h-[44px]",
                             activeTab === 'shop'
-                                ? "bg-primary text-primary-foreground shadow-lg"
+                                ? "bg-primary text-primary-foreground shadow-md"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
@@ -165,9 +173,9 @@ export default function AthleteProfilePage() {
                     <button
                         onClick={() => setActiveTab('buddy')}
                         className={cn(
-                            "py-3 rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1 min-h-[44px]",
+                            "py-3 rounded-lg text-xs font-medium transition-all flex flex-col items-center gap-1 min-h-[44px]",
                             activeTab === 'buddy'
-                                ? "bg-purple-500 text-white shadow-lg"
+                                ? "bg-primary text-primary-foreground shadow-md"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
@@ -177,9 +185,9 @@ export default function AthleteProfilePage() {
                     <button
                         onClick={() => setActiveTab('profile')}
                         className={cn(
-                            "py-3 rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1 min-h-[44px]",
+                            "py-3 rounded-lg text-xs font-medium transition-all flex flex-col items-center gap-1 min-h-[44px]",
                             activeTab === 'profile'
-                                ? "bg-blue-500 text-white shadow-lg"
+                                ? "bg-primary text-primary-foreground shadow-md"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
@@ -189,9 +197,9 @@ export default function AthleteProfilePage() {
                     <button
                         onClick={() => setActiveTab('injury')}
                         className={cn(
-                            "py-3 rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1 min-h-[44px]",
+                            "py-3 rounded-lg text-xs font-medium transition-all flex flex-col items-center gap-1 min-h-[44px]",
                             activeTab === 'injury'
-                                ? "bg-red-500 text-white shadow-lg"
+                                ? "bg-primary text-primary-foreground shadow-md"
                                 : "text-muted-foreground hover:text-white"
                         )}
                     >
@@ -221,12 +229,12 @@ export default function AthleteProfilePage() {
 
                 {currentUser && activeTab === 'profile' && (
                     <div className="bg-card/50 rounded-2xl p-6 space-y-4 border border-border/50 animate-in fade-in duration-300">
-                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                        <h2 className="text-md font-semibold text-white flex items-center gap-2">
                             <User className="w-5 h-5" /> {t.archive.profileSettings}
                         </h2>
 
                         <div>
-                            <label className="text-sm text-muted-foreground mb-1.5 block">姓名</label>
+                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">姓名</label>
                             <input
                                 type="text"
                                 value={name}
@@ -236,7 +244,7 @@ export default function AthleteProfilePage() {
                         </div>
 
                         <div>
-                            <label className="text-sm text-muted-foreground mb-1.5 block">{t.archive.mainStroke}</label>
+                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">{t.archive.mainStroke}</label>
                             <select
                                 value={mainStroke}
                                 onChange={(e) => setMainStroke((e.target.value || undefined) as Swimmer["mainStroke"] | undefined)}
@@ -252,7 +260,7 @@ export default function AthleteProfilePage() {
                         </div>
 
                         <div>
-                            <label className="text-sm text-muted-foreground mb-1.5 block">{t.archive.gender}</label>
+                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">{t.archive.gender}</label>
                             <select
                                 value={gender}
                                 onChange={(e) => setGender(e.target.value as "male" | "female")}
@@ -264,7 +272,7 @@ export default function AthleteProfilePage() {
                         </div>
 
                         <div>
-                            <label className="text-sm text-muted-foreground mb-1.5 block">
+                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">
                                 {t.archive.todayCondition}: {readiness}% — {
                                     readiness <= 20 ? "非常疲劳，建议休息" :
                                     readiness <= 40 ? "疲劳，建议减量" :
@@ -312,7 +320,7 @@ export default function AthleteProfilePage() {
             />
 
             {/* Bottom Tab Bar */}
-            <BottomTabBar />
+            <BottomTabBar activeTab="profile" />
 
             {/* Wave Animation */}
             <WaveAnimation />

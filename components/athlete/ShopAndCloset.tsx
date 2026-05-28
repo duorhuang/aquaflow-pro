@@ -116,8 +116,14 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
 
     const loadShopData = useCallback(async (sid: string) => {
         setLoading(true);
+        setError("");
+        const timeout = setTimeout(() => {
+            setError('加载超时，请检查网络连接');
+            setLoading(false);
+        }, 15000);
         try {
             const data = await api.shop.get(sid);
+            clearTimeout(timeout);
             if (data) {
                 setItems(data.items || []);
                 setBalance(data.balance || 0);
@@ -135,6 +141,7 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
                 }
             }
         } catch (e: unknown) {
+            clearTimeout(timeout);
             const err = e instanceof Error ? e : new Error(String(e));
             setError(err.message || "Failed to load shop data");
         } finally {
@@ -204,7 +211,28 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
     const handleSaveEquipped = async () => {
         setIsSavingEquip(true);
         try {
-            const res = await api.shop.equip(swimmerId, previewEquipped);
+            // Send both imageKey (for DB storage/rendering) and id (for ownership validation)
+            // to avoid the extra ShopItem query on the backend
+            const itemsById = new Map(items.map((item) => [item.imageKey, item]));
+            const resolvedEquipped: Record<string, { imageKey: string; id: string }> = {};
+            for (const [slot, val] of Object.entries(previewEquipped)) {
+                if (!val) continue;
+                if (typeof val === 'string') {
+                    const item = itemsById.get(val);
+                    if (item) {
+                        resolvedEquipped[slot] = { imageKey: item.imageKey, id: item.id };
+                    } else {
+                        // Already a UUID or unknown format, pass through
+                        resolvedEquipped[slot] = val as string;
+                    }
+                } else {
+                    resolvedEquipped[slot] = {
+                        imageKey: (val as any).imageKey || val,
+                        id: (val as any).id || val,
+                    };
+                }
+            }
+            const res = await api.shop.equip(swimmerId, resolvedEquipped);
             await api.swimmers.update(swimmerId, { gender });
 
             if (res?.success) {
@@ -307,9 +335,15 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer }: ShopAndClosetProps
 
     if (error) {
         return (
-            <div className="p-6 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-3xl flex items-center gap-3 max-w-xl mx-auto my-12">
-                <h5 className="font-bold text-white">Connection Failed</h5>
-                <p className="text-xs text-slate-400">{error}</p>
+            <div className="p-6 text-center bg-card/50 border border-red-500/20 rounded-3xl max-w-xl mx-auto my-12">
+                <h5 className="font-bold text-white mb-1">无法加载头像商店</h5>
+                <p className="text-xs text-muted-foreground mb-4">{error}</p>
+                <button
+                    onClick={() => swimmerId && loadShopData(swimmerId)}
+                    className="bg-primary hover:brightness-110 text-black px-6 py-2 rounded-full font-medium text-sm transition-all"
+                >
+                    重试
+                </button>
             </div>
         );
     }

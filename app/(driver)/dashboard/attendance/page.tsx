@@ -17,13 +17,15 @@ import {
     Clock,
 } from "lucide-react";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n";
 
 function Breadcrumb() {
+    const { t } = useLanguage();
     return (
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-white font-medium">出勤管理</span>
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+            <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
+            <ChevronRight className="w-3 h-3" aria-hidden="true" />
+            <span className="text-white font-medium">{t.common.attendance}</span>
         </nav>
     );
 }

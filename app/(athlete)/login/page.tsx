@@ -6,9 +6,11 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { WaveAnimation } from "@/components/common/WaveAnimation";
+import { useLanguage } from "@/lib/i18n";
 
 function LoginContent() {
     const searchParams = useSearchParams();
+    const { t } = useLanguage();
     const [isCoach, setIsCoach] = useState(false);
 
     useEffect(() => {
@@ -37,29 +39,33 @@ function LoginContent() {
                     </div>
                     <h1 className="text-3xl font-bold text-white tracking-tight">AquaFlow Pro</h1>
                     <p className="text-muted-foreground">
-                        {isCoach ? "教练登录" : "队员训练通道"}
+                        {isCoach ? (t.common.coach + "登录") : (t.common.athlete + "训练通道")}
                     </p>
                 </div>
 
                 {/* Role Toggle */}
-                <div className="flex p-1 bg-secondary/30 rounded-xl max-w-[240px] mx-auto">
+                <div className="flex p-1 bg-secondary/30 rounded-xl max-w-[240px] mx-auto" role="radiogroup" aria-label="Select role">
                     <button
                         onClick={() => setIsCoach(false)}
+                        role="radio"
+                        aria-checked={!isCoach}
                         className={cn(
-                            "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-lg transition-all",
+                            "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-lg transition-all min-h-[44px]",
                             !isCoach ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        <User className="w-4 h-4" /> 队员
+                        <User className="w-4 h-4" /> {t.common.athlete}
                     </button>
                     <button
                         onClick={() => setIsCoach(true)}
+                        role="radio"
+                        aria-checked={isCoach}
                         className={cn(
-                            "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-lg transition-all",
+                            "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-lg transition-all min-h-[44px]",
                             isCoach ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-white"
                         )}
                     >
-                        <UserCog className="w-4 h-4" /> 教练
+                        <UserCog className="w-4 h-4" /> {t.common.coach}
                     </button>
                 </div>
 
@@ -69,7 +75,7 @@ function LoginContent() {
                 </div>
 
                 <p className="text-center text-xs text-muted-foreground">
-                    {isCoach ? "Powered by AquaFlow Pro" : "忘记信息？请联系教练"}
+                    {isCoach ? "Powered by AquaFlow Pro" : `${t.common.forgotPassword || "忘记信息？"}${t.common.backToLogin ? "" : ""}联系${t.common.coach}`}
                 </p>
             </div>
 

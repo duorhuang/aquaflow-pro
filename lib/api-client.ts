@@ -3,8 +3,8 @@
 
 const API_BASE = '/api';
 const MAX_RETRIES = 3;
-const BASE_DELAY = 800; // ms
-const REQUEST_TIMEOUT = 45000; // 45s (Neon cold starts from China can take 20-30s+)
+const BASE_DELAY = 500; // ms — faster backoff
+const REQUEST_TIMEOUT = 20000; // 20s — fail fast for interactive UX; cold starts handled by store retry logic
 
 async function fetchAPI<T>(endpoint: string, options?: RequestInit, silent4xx: boolean = true, retries: number = MAX_RETRIES): Promise<T> {
     let lastError: Error | null = null;

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { ChevronLeft, Plus, Trash2, Clock, X, Dumbbell, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { TrainingBlock, TrainingPlan, GroupLevel, PlanItem, Equipment } from "@/types";
 
@@ -23,11 +24,12 @@ const EQUIPMENT = Object.keys(EQUIPMENT_MAP) as Equipment[];
 const TYPES: TrainingBlock["type"][] = ["Warmup", "Pre-Set", "Main Set", "Drill Set", "Cool Down"];
 
 function Breadcrumb() {
+    const { t } = useLanguage();
     return (
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-white font-medium">快速计划</span>
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+            <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
+            <ChevronRight className="w-3 h-3" aria-hidden="true" />
+            <span className="text-white font-medium">{t.common.quickPlan}</span>
         </nav>
     );
 }

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/components/common/Toast";
 import { Save, Plus, Trash2, Image as ImageIcon, CheckCircle, Users, Target, FileText, Blocks, ChevronDown, ChevronRight, Loader2, Folder, FolderOpen, Layers } from "lucide-react";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n";
 import { ImageViewer } from "@/components/common/ImageViewer";
 import { BlockEditor } from "@/components/dashboard/BlockEditor";
 import { RichTextEditor } from "@/components/dashboard/RichTextEditor";
@@ -17,11 +18,12 @@ const GROUP_LEVELS: GroupLevel[] = ["Junior", "Intermediate", "Advanced", "Exter
 const DAY_NAMES = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 
 function Breadcrumb() {
+    const { t } = useLanguage();
     return (
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-white font-medium">周训练计划</span>
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+            <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
+            <ChevronRight className="w-3 h-3" aria-hidden="true" />
+            <span className="text-white font-medium">{t.common.weeklyPlan}</span>
         </nav>
     );
 }
@@ -35,7 +37,7 @@ function getDayOfWeek(dateStr: string): number {
 }
 
 export default function WeeklyPlanPage() {
-    const { swimmers } = useStore();
+    const { swimmers, weeklyPlans, isLoaded: storeLoaded } = useStore();
     const { toast } = useToast();
     const [weekStart, setWeekStart] = useState("");
     const [weekEnd, setWeekEnd] = useState("");
@@ -50,7 +52,7 @@ export default function WeeklyPlanPage() {
     const [targetSwimmerIds, setTargetSwimmerIds] = useState<string[]>([]);
 
     const [saving, setSaving] = useState(false);
-    const [loadedPlans, setLoadedPlans] = useState<any[]>([]);
+    // Use store weeklyPlans instead of independent fetch — no duplicate API call
     const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
     // Caching & loading states for performance optimization
@@ -98,16 +100,6 @@ export default function WeeklyPlanPage() {
         }
     };
 
-    const loadPlans = useCallback(async () => {
-        try {
-            const plans = await api.weeklyPlans.getAll();
-            setLoadedPlans(plans);
-        } catch (e: unknown) {
-            const err = e instanceof Error ? e : new Error(String(e));
-            if (!err.message?.includes('timed out')) console.error(e);
-        }
-    }, []);
-
     useEffect(() => {
         let isMounted = true;
         const timer = setTimeout(() => {
@@ -124,16 +116,13 @@ export default function WeeklyPlanPage() {
             setWeekEnd(sunday.toISOString().split('T')[0]);
 
             setTitle(`${monday.toISOString().split('T')[0]} 周训练`);
-
-            // Auto-expand days that have sessions
-            loadPlans();
         }, 0);
 
         return () => {
             isMounted = false;
             clearTimeout(timer);
         };
-    }, [loadPlans]);
+    }, []);
 
     // Autosave draft to localStorage every 30s
     useEffect(() => {
@@ -479,7 +468,7 @@ export default function WeeklyPlanPage() {
         const cutoffStr = cutoffDate.toISOString().split("T")[0];
 
         // Sort descending by weekStart to ensure newest first (sequential chronological order)
-        const sortedPlans = [...loadedPlans].sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+        const sortedPlans = [...weeklyPlans].sort((a, b) => b.weekStart.localeCompare(a.weekStart));
 
         const recentPlans = sortedPlans.filter((p, index) => {
             // Always display at least 8 plans if they exist

@@ -1,18 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { api } from "@/lib/api-client";
+import { useStore } from "@/lib/store";
 import { InjuryMap } from "@/components/athlete/InjuryMap";
 import { ArrowLeft, Activity, ShieldAlert, Heart, RefreshCw, UserCheck, ChevronRight, Flame, Zap, AlertTriangle } from "lucide-react";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 function Breadcrumb() {
+    const { t } = useLanguage();
     return (
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-white font-medium">伤病图谱</span>
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+            <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
+            <ChevronRight className="w-3 h-3" aria-hidden="true" />
+            <span className="text-white font-medium">{t.common.injuryMonitor}</span>
         </nav>
     );
 }
@@ -29,24 +31,40 @@ interface Swimmer {
 }
 
 export default function CoachInjuryMonitorPage() {
+    const { swimmers: storeSwimmers, isLoaded } = useStore();
     const [swimmers, setSwimmers] = useState<Swimmer[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!isLoaded);
     const [heatMapData, setHeatMapData] = useState<Record<string, number>>({});
     const [injuredSwimmers, setInjuredSwimmers] = useState<Swimmer[]>([]);
 
+    // Use store data directly — no duplicate fetch needed
+    useEffect(() => {
+        if (isLoaded) {
+            setLoading(false);
+            setSwimmers(storeSwimmers);
+            calculateAnalytics(storeSwimmers);
+        }
+    }, [isLoaded, storeSwimmers]);
+
+    // Timeout fallback: if store never loads, show empty state after 15s
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (!isLoaded) {
+                setLoading(false);
+                setSwimmers([]);
+            }
+        }, 15000);
+        return () => clearTimeout(timer);
+    }, []);
+
     const loadData = async () => {
         setLoading(true);
-        try {
-            const allSwimmers = await api.swimmers.getAll();
-            if (allSwimmers) {
-                setSwimmers(allSwimmers);
-                calculateAnalytics(allSwimmers);
-            }
-        } catch (e) {
-            console.error("Failed to load swimmers for injury monitoring", e);
-        } finally {
-            setLoading(false);
+        // Re-calculate from store data on manual refresh
+        if (isLoaded) {
+            setSwimmers(storeSwimmers);
+            calculateAnalytics(storeSwimmers);
         }
+        setLoading(false);
     };
 
     const calculateAnalytics = (list: Swimmer[]) => {
@@ -92,10 +110,6 @@ export default function CoachInjuryMonitorPage() {
         setHeatMapData(averages);
     };
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
     return (
         <div className="min-h-screen bg-background p-4 md:p-8">
             <div className="max-w-5xl mx-auto space-y-6">
@@ -129,7 +143,7 @@ export default function CoachInjuryMonitorPage() {
                 {loading ? (
                     <div className="text-center py-20">
                         <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                        <p className="text-muted-foreground text-xs uppercase tracking-widest font-mono">Analyzing Team Health Maps...</p>
+                        <p className="text-muted-foreground text-sm">正在分析队员健康状况...</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

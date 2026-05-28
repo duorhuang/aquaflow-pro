@@ -1,188 +1,39 @@
 import { NextResponse } from 'next/server';
-import { flattenPayload, V12_FINGERPRINT } from '@/lib/prisma';
-import { withApiHandler } from '@/lib/api-handler';
-import { requireAnyAuth, requireCoach } from '@/lib/auth-api';
-import { getNeon } from '@/lib/db-pool';
-import * as crypto from 'crypto';
+import { flattenPayload, V12_FINGERPRINT } from '@/lib/utils';
+import { handleCoach, handleAnyAuth } from '@/lib/api-handler';
+import { weeklyFeedbackRepo } from '@/lib/repos';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-    return withApiHandler(async () => {
-        const auth = await requireAnyAuth(req);
-        if (auth instanceof NextResponse) return auth;
+  return handleAnyAuth(req, async () => {
+    const { searchParams } = new URL(req.url);
+    const swimmerId = searchParams.get('swimmerId');
+    const weekStart = searchParams.get('weekStart');
+    const submittedOnly = searchParams.get('submitted') === 'true';
 
-        const sql = getNeon();
-        const { searchParams } = new URL(req.url);
-        const swimmerId = searchParams.get('swimmerId');
-        const weekStart = searchParams.get('weekStart');
-        const submittedOnly = searchParams.get('submitted') === 'true';
+    if (swimmerId && weekStart) {
+      const feedback = await weeklyFeedbackRepo.getBySwimmerAndWeek(swimmerId, weekStart);
+      if (!feedback) return NextResponse.json(null, { headers: V12_FINGERPRINT });
+      return NextResponse.json(feedback, { headers: V12_FINGERPRINT });
+    }
 
-        if (swimmerId && weekStart) {
-            const feedback = await sql`
-                SELECT * FROM "WeeklyFeedback"
-                WHERE "swimmerId" = ${swimmerId} AND "weekStart" = ${weekStart}
-            `;
-            if (feedback.length === 0) return NextResponse.json(null, { headers: V12_FINGERPRINT });
-
-            const dailyFeedbacks = await sql`
-                SELECT * FROM "DailyFeedback" WHERE "weeklyFeedbackId" = ${feedback[0].id}
-            `;
-            const swimmer = await sql`
-                SELECT * FROM "Swimmer" WHERE "id" = ${feedback[0].swimmerId}
-            `;
-
-            return NextResponse.json(
-                { ...feedback[0], dailyFeedbacks, swimmer: swimmer[0] || null },
-                { headers: V12_FINGERPRINT }
-            );
-        }
-
-        const feedbacks: any[] = submittedOnly
-            ? await sql`SELECT * FROM "WeeklyFeedback" WHERE "isSubmitted" = true ORDER BY "weekStart" DESC`
-            : await sql`SELECT * FROM "WeeklyFeedback" ORDER BY "weekStart" DESC`;
-
-        // Include dailyFeedbacks and swimmer for each — batched to avoid N+1
-        const feedbackIds = feedbacks.map((f: any) => f.id);
-        const swimmerIds = [...new Set(feedbacks.map((f: any) => f.swimmerId).filter(Boolean))];
-
-        const [dailyRows, swimmerRows] = await Promise.all([
-            feedbackIds.length > 0
-                ? sql`SELECT * FROM "DailyFeedback" WHERE "weeklyFeedbackId" = ANY(${feedbackIds})`
-                : [],
-            swimmerIds.length > 0
-                ? sql`SELECT * FROM "Swimmer" WHERE "id" = ANY(${swimmerIds})`
-                : [],
-        ]);
-
-        // Group daily feedbacks by weeklyFeedbackId
-        const dailyByFeedback: Record<string, any[]> = {};
-        for (const d of dailyRows) {
-            (dailyByFeedback[d.weeklyFeedbackId] ||= []).push(d);
-        }
-
-        // Index swimmers by id
-        const swimmers: Record<string, any> = {};
-        for (const s of swimmerRows) swimmers[s.id] = s;
-
-        const results = feedbacks.map((f: any) => ({
-            ...f,
-            dailyFeedbacks: dailyByFeedback[f.id] || [],
-            swimmer: swimmers[f.swimmerId] || null,
-        }));
-
-        return NextResponse.json(results || [], { headers: V12_FINGERPRINT });
-    });
+    const feedbacks = await weeklyFeedbackRepo.list(submittedOnly);
+    return NextResponse.json(feedbacks, { headers: V12_FINGERPRINT });
+  });
 }
 
 export async function POST(request: Request) {
-    return withApiHandler(async () => {
-        const auth = await requireAnyAuth(request);
-        if (auth instanceof NextResponse) return auth;
-
-        const sql = getNeon();
-        const data = flattenPayload(await request.json());
-
-        const { swimmerId, weekStart, summary, isSubmitted, dailyFeedbacks, coachReply, isReplied } = data;
-
-        // Check if exists
-        const existing = await sql`
-            SELECT * FROM "WeeklyFeedback"
-            WHERE "swimmerId" = ${swimmerId} AND "weekStart" = ${weekStart}
-        `;
-
-        let feedback: any;
-        if (existing.length > 0) {
-            // Update
-            feedback = await sql`
-                UPDATE "WeeklyFeedback" SET
-                    "summary" = ${summary},
-                    "isSubmitted" = ${isSubmitted ?? false},
-                    "submittedAt" = ${isSubmitted ? new Date().toISOString() : null},
-                    "coachReply" = ${coachReply},
-                    "isReplied" = ${isReplied ?? existing[0].isReplied ?? false},
-                    "repliedAt" = ${coachReply ? new Date().toISOString() : null},
-                    "updatedAt" = NOW()
-                WHERE "swimmerId" = ${swimmerId} AND "weekStart" = ${weekStart}
-                RETURNING *
-            `;
-
-            // Upsert daily feedbacks
-            if (dailyFeedbacks && dailyFeedbacks.length > 0) {
-                for (const df of dailyFeedbacks) {
-                    const existingDf = await sql`
-                        SELECT * FROM "DailyFeedback"
-                        WHERE "swimmerId" = ${swimmerId} AND "date" = ${df.date}
-                        AND "weeklyFeedbackId" = ${feedback[0].id}
-                    `;
-                    if (existingDf.length > 0) {
-                        await sql`
-                            UPDATE "DailyFeedback" SET
-                                "rpe" = ${df.rpe},
-                                "soreness" = ${df.soreness},
-                                "reflection" = ${df.reflection}
-                            WHERE "id" = ${existingDf[0].id}
-                        `;
-                    } else {
-                        await sql`
-                            INSERT INTO "DailyFeedback" ("id", "weeklyFeedbackId", "swimmerId", "date", "rpe", "soreness", "reflection", "createdAt")
-                            VALUES (${crypto.randomUUID()}, ${feedback[0].id}, ${swimmerId}, ${df.date}, ${df.rpe}, ${df.soreness}, ${df.reflection}, NOW())
-                        `;
-                    }
-                }
-            }
-        } else {
-            // Create
-            feedback = await sql`
-                INSERT INTO "WeeklyFeedback" ("id", "swimmerId", "weekStart", "summary", "isSubmitted", "submittedAt", "coachReply", "isReplied", "repliedAt", "weeklyPlanId", "createdAt", "updatedAt")
-                VALUES (
-                    ${crypto.randomUUID()},
-                    ${swimmerId},
-                    ${weekStart},
-                    ${summary},
-                    ${isSubmitted ?? false},
-                    ${isSubmitted ? new Date().toISOString() : null},
-                    ${coachReply},
-                    ${isReplied ?? false},
-                    ${coachReply ? new Date().toISOString() : null},
-                    ${data.weeklyPlanId || null},
-                    NOW(),
-                    NOW()
-                )
-                RETURNING *
-            `;
-
-            // Create daily feedbacks
-            if (dailyFeedbacks && dailyFeedbacks.length > 0) {
-                for (const df of dailyFeedbacks) {
-                    await sql`
-                        INSERT INTO "DailyFeedback" ("id", "weeklyFeedbackId", "swimmerId", "date", "rpe", "soreness", "reflection", "createdAt")
-                        VALUES (${crypto.randomUUID()}, ${feedback[0].id}, ${swimmerId}, ${df.date}, ${df.rpe}, ${df.soreness}, ${df.reflection}, NOW())
-                    `;
-                }
-            }
-        }
-
-        return NextResponse.json(feedback[0], { headers: V12_FINGERPRINT });
-    });
+  return handleAnyAuth(request, async () => {
+    const data = flattenPayload(await request.json());
+    const feedback = await weeklyFeedbackRepo.save(data);
+    return NextResponse.json(feedback, { headers: V12_FINGERPRINT });
+  });
 }
 
 export async function PATCH(request: Request) {
-    return withApiHandler(async () => {
-        const auth = await requireCoach(request);
-        if (auth instanceof NextResponse) return auth;
-
-        const sql = getNeon();
-        const data = flattenPayload(await request.json());
-        const { id, coachReply, isReplied } = data;
-
-        const feedback = await sql`
-            UPDATE "WeeklyFeedback" SET
-                "coachReply" = ${coachReply},
-                "isReplied" = ${isReplied ?? true},
-                "repliedAt" = ${new Date().toISOString()}
-            WHERE "id" = ${id}
-            RETURNING *
-        `;
-        return NextResponse.json(feedback[0], { headers: V12_FINGERPRINT });
-    });
+  return handleCoach(request, async () => {
+    const data = flattenPayload(await request.json());
+    const result = await weeklyFeedbackRepo.reply(data.id, data.coachReply);
+    return NextResponse.json(result, { headers: V12_FINGERPRINT });
+  });
 }

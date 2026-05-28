@@ -1,11 +1,13 @@
 "use client";
 
 import { useStore } from "@/lib/store";
+import { useLanguage } from "@/lib/i18n";
 import { Users, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function TodayAttendance() {
     const { swimmers, attendance, plans } = useStore();
+    const { t } = useLanguage();
     const today = new Date().toISOString().split('T')[0];
 
     // Get today's attendance
@@ -29,9 +31,9 @@ export function TodayAttendance() {
     return (
         <div className="bg-card/50 border border-border rounded-2xl p-6 backdrop-blur-md">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <h3 className="text-md font-semibold text-white flex items-center gap-2">
                     <Users className="w-5 h-5 text-primary" />
-                    今日出勤
+                    {t.dashboard.todayAttendance}
                 </h3>
                 <div className="text-2xl font-bold text-primary">
                     {attendedSwimmers.length}/{expectedSwimmers.length}
@@ -41,11 +43,11 @@ export function TodayAttendance() {
             {/* Attendance Rate */}
             <div className="mb-4">
                 <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-muted-foreground">出勤率</span>
+                    <span className="text-sm text-muted-foreground">{t.dashboard.attendanceRate}</span>
                     <span className={cn(
-                        "text-sm font-bold",
-                        attendanceRate >= 80 ? "text-green-400" :
-                            attendanceRate >= 60 ? "text-yellow-400" : "text-red-400"
+                        "text-sm font-semibold",
+                        attendanceRate >= 80 ? "text-success" :
+                            attendanceRate >= 60 ? "text-warning" : "text-error"
                     )}>
                         {attendanceRate}%
                     </span>
@@ -54,8 +56,8 @@ export function TodayAttendance() {
                     <div
                         className={cn(
                             "h-full rounded-full transition-all",
-                            attendanceRate >= 80 ? "bg-green-400" :
-                                attendanceRate >= 60 ? "bg-yellow-400" : "bg-red-400"
+                            attendanceRate >= 80 ? "bg-success" :
+                                attendanceRate >= 60 ? "bg-warning" : "bg-error"
                         )}
                         style={{ width: `${attendanceRate}%` }}
                     />
@@ -74,14 +76,14 @@ export function TodayAttendance() {
                     return (
                         <div
                             key={swimmer.id}
-                            className="flex items-center justify-between p-2 bg-green-500/10 border border-green-500/20 rounded-lg"
+                            className="flex items-center justify-between p-2 bg-success/10 border border-success/20 rounded-lg"
                         >
                             <div className="flex items-center gap-2">
-                                <CheckCircle className="w-4 h-4 text-green-400" />
+                                <CheckCircle className="w-4 h-4 text-success" />
                                 <span className="text-sm font-medium text-white">{swimmer.name}</span>
                                 <span className="text-xs text-muted-foreground">({swimmer.group})</span>
                             </div>
-                            <span className="text-xs text-green-400">{time}</span>
+                            <span className="text-xs text-success">{time}</span>
                         </div>
                     );
                 })}
@@ -97,14 +99,14 @@ export function TodayAttendance() {
                             <span className="text-sm font-medium text-muted-foreground">{swimmer.name}</span>
                             <span className="text-xs text-muted-foreground">({swimmer.group})</span>
                         </div>
-                        <span className="text-xs text-muted-foreground">未打卡</span>
+                        <span className="text-xs text-muted-foreground">{t.dashboard.notCheckedIn}</span>
                     </div>
                 ))}
 
                 {expectedSwimmers.length === 0 && (
                     <div className="text-center py-4 text-muted-foreground">
                         <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">今天没有安排训练</p>
+                        <p className="text-sm">{t.dashboard.noTrainingTodayAttendance}</p>
                     </div>
                 )}
             </div>

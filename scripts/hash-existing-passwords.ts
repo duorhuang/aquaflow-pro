@@ -1,5 +1,5 @@
 import { hashPassword } from '@/lib/auth';
-import { getPrisma } from '@/lib/prisma';
+import { getPrisma } from '@/lib/utils';
 
 /**
  * One-time script to hash existing plaintext passwords in the Swimmer table.

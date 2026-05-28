@@ -13,7 +13,7 @@ import { TeamStatsPanel } from "@/components/dashboard/TeamStatsPanel";
 import { AnnouncementComposer } from "@/components/dashboard/AnnouncementComposer";
 import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
 import { AnnouncementCard } from "@/components/feed/AnnouncementCard";
-import { LogOut, MessageSquare, FolderPlus, ChevronDown, ChevronUp } from "lucide-react";
+import { LogOut, MessageSquare, FolderPlus, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
@@ -23,42 +23,36 @@ import { PanelSkeleton } from "@/components/common/Skeleton";
 
 export default function DashboardPage() {
     const { t } = useLanguage();
-    const { isLoaded, announcements, archivedAnnouncements, deleteAnnouncement, starAnnouncement } = useStore();
+    const { isLoaded, announcements, archivedAnnouncements, deleteAnnouncement, starAnnouncement, weeklyPlans } = useStore();
     const router = useRouter();
     const [showArchive, setShowArchive] = useState(false);
     const [archiveLimit, setArchiveLimit] = useState(5);
     const [showMore, setShowMore] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [showDbBanner, setShowDbBanner] = useState(true);
 
-    const [visiblePlans, setVisiblePlans] = useState<any[]>([]);
-    const [plansLoading, setPlansLoading] = useState(true);
-
+    // Auto-dismiss DB banner after 30s even if isLoaded is still false
     useEffect(() => {
-        const fetchPlans = async () => {
-            try {
-                const plans = await api.weeklyPlans.getAll();
-                const now = new Date();
-                now.setHours(0, 0, 0, 0);
-                const twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
-
-                const filteredPlans = plans.filter(plan => {
-                    const planDate = new Date(plan.weekStart);
-                    planDate.setHours(0, 0, 0, 0);
-                    const diffTime = planDate.getTime() - now.getTime();
-                    return diffTime >= -twoWeeksMs && diffTime <= twoWeeksMs;
-                });
-
-                setVisiblePlans(filteredPlans.sort((a, b) => new Date(b.weekStart).getTime() - new Date(a.weekStart).getTime()));
-            } catch (error: any) {
-                if (error.message?.includes('timed out')) return;
-                console.error("Failed to load weekly plans", error);
-            } finally {
-                setPlansLoading(false);
-            }
-        };
-        fetchPlans();
+        const timer = setTimeout(() => setShowDbBanner(false), 30000);
+        return () => clearTimeout(timer);
     }, []);
 
+    // Use store data instead of duplicate fetch — the store already fetches weeklyPlans on mount
+    const visiblePlans = isLoaded
+        ? weeklyPlans.filter(plan => {
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
+            const planDate = new Date(plan.weekStart);
+            planDate.setHours(0, 0, 0, 0);
+            const diffTime = planDate.getTime() - now.getTime();
+            return diffTime >= -twoWeeksMs && diffTime <= twoWeeksMs;
+        }).sort((a, b) => new Date(b.weekStart).getTime() - new Date(a.weekStart).getTime())
+        : [];
+
     const handleLogout = async () => {
+        if (isLoggingOut) return;
+        setIsLoggingOut(true);
         try { await api.auth.logout(); } catch {}
         router.push('/login?role=coach');
     };
@@ -68,21 +62,26 @@ export default function DashboardPage() {
             {/* Header */}
             <header className="mb-8">
                 {/* Database Cold Start Warning */}
-                {!isLoaded && (
-                    <div className="mb-6 p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/15 flex items-center justify-between">
+                {(!isLoaded && showDbBanner) && (
+                    <div className="mb-6 p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/15 flex items-center justify-between" role="status" aria-live="polite">
                         <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+                            <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />
                             <div>
-                                <p className="text-sm text-indigo-400">正在连接云端数据库...</p>
+                                <p className="text-sm text-indigo-400 font-medium">正在连接云端数据库...</p>
                                 <p className="text-xs text-indigo-300/60">首次启动可能需要 15-20 秒，请稍候。</p>
                             </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+                            <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" style={{ animationDelay: '0.3s' }} />
+                            <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" style={{ animationDelay: '0.6s' }} />
                         </div>
                     </div>
                 )}
 
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-white mb-1">
+                        <h1 className="text-xl font-bold text-white mb-1">
                             AquaFlow Pro
                         </h1>
                         <p className="text-sm text-muted-foreground">{t.common.dashboard}</p>
@@ -92,10 +91,16 @@ export default function DashboardPage() {
                         <LanguageToggle />
                         <button
                             onClick={handleLogout}
-                            className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all"
+                            disabled={isLoggingOut}
+                            className="p-2.5 rounded-full bg-error/10 border border-error/20 text-error hover:bg-error/20 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
+                            title={t.common.logout}
+                            aria-label={t.common.logout}
                         >
-                            <LogOut className="w-4 h-4" />
-                            <span className="text-sm font-medium">{t.common.logout}</span>
+                            {isLoggingOut ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <LogOut className="w-4 h-4" />
+                            )}
                         </button>
                     </div>
                 </div>
@@ -103,14 +108,14 @@ export default function DashboardPage() {
 
             {/* Mobile Quick Action */}
             <div className="md:hidden w-full mb-6">
-                <Link href="/dashboard/weekly-plan" className="block w-full bg-gradient-to-r from-primary to-blue-400 text-black font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-3">
+                <Link href="/dashboard/weekly-plan" className="block w-full bg-primary text-primary-foreground font-semibold py-4 rounded-xl shadow-md flex items-center justify-center gap-3">
                     <FolderPlus className="w-6 h-6" />
                     {t.common.weeklyPlan}
                 </Link>
             </div>
 
             {/* Main Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
                 {/* Left Column: Today's Operations */}
                 <div className="space-y-6">
                     <TodayAttendance />
@@ -183,14 +188,14 @@ export default function DashboardPage() {
                 {/* Middle Column: Training Plans */}
                 <div className="lg:col-span-1 space-y-6">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-semibold text-white">{t.dashboard.recentPlans}</h2>
-                        <Link href="/dashboard/weekly-plan" className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full font-medium hover:brightness-110 transition-all shadow-[0_0_15px_rgba(100,255,218,0.3)]">
-                            <FolderPlus className="w-4 h-4" />
+                        <h2 className="text-md font-semibold text-white">{t.dashboard.recentPlans}</h2>
+                        <Link href="/dashboard/weekly-plan" className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full font-medium hover:brightness-110 transition-all shadow-md min-h-[44px]">
+                            <FolderPlus className="w-4 h-4" aria-hidden="true" />
                             {t.dashboard.createPlan}
                         </Link>
                     </div>
 
-                    {plansLoading ? (
+                    {!isLoaded ? (
                         <div className="space-y-4">
                             <PanelSkeleton />
                             <PanelSkeleton />
@@ -202,9 +207,9 @@ export default function DashboardPage() {
                             ))}
 
                             {visiblePlans.length === 0 && (
-                                <div className="bg-card/30 border border-border rounded-2xl p-8 text-center">
+                                <div className="bg-card/30 border border-border rounded-2xl p-8 text-center" role="status">
                                     <p className="text-muted-foreground mb-4">{t.dashboard.noPlansYet}</p>
-                                    <Link href="/dashboard/weekly-plan" className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded-full font-medium hover:brightness-110 transition-all">
+                                    <Link href="/dashboard/weekly-plan" className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-full font-medium hover:brightness-110 transition-all min-h-[44px]">
                                         {t.dashboard.createFirstPlan}
                                     </Link>
                                 </div>

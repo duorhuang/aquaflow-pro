@@ -9,11 +9,12 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 function Breadcrumb() {
+    const { t } = useLanguage();
     return (
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-white font-medium">反馈收件箱</span>
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+            <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
+            <ChevronRight className="w-3 h-3" aria-hidden="true" />
+            <span className="text-white font-medium">{t.common.feedbackInbox}</span>
         </nav>
     );
 }
@@ -23,6 +24,7 @@ export default function FeedbacksPage() {
     const { t } = useLanguage();
     const [feedbacks, setFeedbacks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
     const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
     const [savingId, setSavingId] = useState<string | null>(null);
@@ -31,11 +33,22 @@ export default function FeedbacksPage() {
 
     const load = useCallback(async () => {
         setLoading(true);
+        setLoadError(null);
+        const timeout = setTimeout(() => {
+            setLoadError('加载超时，请检查网络连接后重试');
+            setLoading(false);
+        }, 15000);
         try {
             const res = await api.weeklyFeedbacks.getAll();
+            clearTimeout(timeout);
             setFeedbacks(res || []);
         } catch (e) {
-            console.error(e);
+            clearTimeout(timeout);
+            const msg = e instanceof Error ? e.message : '加载失败，请稍后重试';
+            setLoadError(msg.includes('quota') || msg.includes('402')
+                ? '云端数据库配额已满，请联系管理员'
+                : `加载失败: ${msg.slice(0, 100)}`);
+            setFeedbacks([]);
         } finally {
             setLoading(false);
         }
@@ -122,7 +135,33 @@ export default function FeedbacksPage() {
             ? repliedFeedbacks
             : draftFeedbacks;
 
-    if (loading && feedbacks.length === 0) return <div className="text-center p-10"><Clock className="w-8 h-8 animate-spin mx-auto text-primary" /></div>;
+    if (loading && feedbacks.length === 0) {
+        return (
+            <div className="text-center p-10">
+                <Clock className="w-8 h-8 animate-spin mx-auto text-primary mb-3" />
+                <p className="text-sm text-muted-foreground">加载反馈中...</p>
+            </div>
+        );
+    }
+
+    if (loadError && feedbacks.length === 0) {
+        return (
+            <div className="space-y-6 max-w-4xl mx-auto">
+                <Breadcrumb />
+                <div className="text-center p-10 bg-card border border-red-500/20 rounded-2xl">
+                    <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
+                    <h3 className="text-lg font-bold text-white mb-2">无法加载反馈</h3>
+                    <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">{loadError}</p>
+                    <button
+                        onClick={load}
+                        className="bg-primary hover:brightness-110 text-black px-6 py-2 rounded-full font-medium text-sm transition-all"
+                    >
+                        重试
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-300">

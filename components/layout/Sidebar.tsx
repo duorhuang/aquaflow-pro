@@ -20,7 +20,7 @@ const SIDEBAR_ITEMS = [
     { label: "meets", href: "/dashboard/meets", icon: Trophy },
     { label: "injuryMonitor", href: "/dashboard/injury-monitor", icon: Activity },
     { label: "feedbackArchive", href: "/dashboard/archive", icon: FolderOpen },
-    { label: "settings", href: "/dashboard/settings", icon: Settings },
+    { label: "settings", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -41,7 +41,7 @@ export function Sidebar() {
             </div>
 
             {/* Nav */}
-            <nav className="flex-1 px-4 space-y-2 mt-4">
+            <nav className="flex-1 px-4 space-y-2 mt-4" aria-label="Main navigation">
                 {SIDEBAR_ITEMS.map((item) => {
                     const isActive = pathname === item.href;
                     const label = t.common[item.label as keyof typeof t.common] ?? item.label;
@@ -51,16 +51,17 @@ export function Sidebar() {
                             key={item.href}
                             href={item.href}
                             className={cn(
-                                "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200 group relative overflow-hidden",
+                                "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200 group relative overflow-hidden min-h-[44px]",
                                 isActive
                                     ? "bg-primary/10 text-primary font-semibold shadow-[0_0_20px_rgba(100,255,218,0.1)]"
                                     : "text-muted-foreground hover:bg-white/5 hover:text-white"
                             )}
+                            aria-current={isActive ? 'page' : undefined}
                         >
                             {isActive && (
-                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full" />
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full" aria-hidden="true" />
                             )}
-                            <item.icon className={cn("w-5 h-5", isActive ? "text-primary" : "opacity-70 group-hover:opacity-100")} />
+                            <item.icon className={cn("w-5 h-5", isActive ? "text-primary" : "opacity-70 group-hover:opacity-100")} aria-hidden="true" />
                             <span>{label}</span>
                         </Link>
                     );
@@ -74,10 +75,12 @@ export function Sidebar() {
                 </div>
                 <button
                     onClick={async () => {
+                        if (!window.confirm('确认要退出登录吗？')) return;
                         try { await api.auth.logout(); } catch {}
                         window.location.href = '/login?role=coach';
                     }}
-                    className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-red-400 hover:bg-red-500/10 transition-colors opacity-70 hover:opacity-100"
+                    className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-red-400 hover:bg-red-500/10 transition-colors opacity-70 hover:opacity-100 min-h-[44px]"
+                    aria-label="Log out"
                 >
                     <LogOut className="w-5 h-5" />
                     <span>{t.common.logout}</span>

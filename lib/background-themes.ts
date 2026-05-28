@@ -1,3 +1,13 @@
+export interface StarParticle {
+  count?: number;
+  moon?: { size?: number; phase?: 'crescent' | 'full' | 'quarter' };
+}
+
+export interface FireParticle {
+  count?: number;
+  colors?: string[];
+}
+
 export interface BackgroundTheme {
   id: string;
   name: string;
@@ -8,6 +18,7 @@ export interface BackgroundTheme {
   timeRange?: [number, number];
   trainingType?: string;
   emotion?: string;
+  particles?: { type: 'stars'; config: StarParticle } | { type: 'fire'; config: FireParticle };
 }
 
 export const backgroundThemes: BackgroundTheme[] = [
@@ -16,7 +27,7 @@ export const backgroundThemes: BackgroundTheme[] = [
     id: 'morning-pool',
     name: '清晨泳池',
     nameEn: 'Morning Pool',
-    gradient: 'from-amber-950/40 via-background to-sky-900/30',
+    gradient: 'from-[#1a1505] via-[#1a2020] to-[#0a1520]',
     texture: `url("data:image/svg+xml,%3Csvg width='60' height='20' viewBox='0 0 60 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q15 5 30 10 Q45 15 60 10' stroke='rgba(251,191,36,0.08)' fill='none'/%3E%3C/svg%3E")`,
     icon: '🌅',
     timeRange: [6, 9],
@@ -25,7 +36,7 @@ export const backgroundThemes: BackgroundTheme[] = [
     id: 'sunlit-deck',
     name: '阳光泳道',
     nameEn: 'Sunlit Deck',
-    gradient: 'from-sky-950/30 via-background to-blue-900/20',
+    gradient: 'from-[#1a2520] via-[#152520] to-[#0a1a25]',
     icon: '☀️',
     timeRange: [9, 14],
   },
@@ -33,7 +44,7 @@ export const backgroundThemes: BackgroundTheme[] = [
     id: 'afternoon-training',
     name: '午后训练',
     nameEn: 'Afternoon Training',
-    gradient: 'from-blue-950/30 via-background to-indigo-900/20',
+    gradient: 'from-[#151525] via-[#1a1525] to-[#0f0a20]',
     icon: '🏊',
     timeRange: [14, 17],
   },
@@ -41,7 +52,7 @@ export const backgroundThemes: BackgroundTheme[] = [
     id: 'golden-sunset',
     name: '黄昏水面',
     nameEn: 'Golden Sunset',
-    gradient: 'from-orange-950/40 via-background to-rose-900/30',
+    gradient: 'from-[#1a0a05] via-[#1a1005] to-[#0a0a15]',
     icon: '🌇',
     timeRange: [17, 20],
   },
@@ -49,7 +60,7 @@ export const backgroundThemes: BackgroundTheme[] = [
     id: 'deep-ocean',
     name: '深蓝海洋',
     nameEn: 'Deep Ocean',
-    gradient: 'from-blue-950/50 via-background to-cyan-900/20',
+    gradient: 'from-[#050a1a] via-[#0a0f20] to-[#050515]',
     icon: '🌊',
     timeRange: [20, 23],
   },
@@ -57,9 +68,13 @@ export const backgroundThemes: BackgroundTheme[] = [
     id: 'night-waters',
     name: '夜空泳池',
     nameEn: 'Night Waters',
-    gradient: 'from-slate-950 via-background to-indigo-950/30',
+    gradient: 'from-[#0a0a1a] via-[#0d0d2b] to-[#050510]',
     icon: '🌙',
     timeRange: [23, 6],
+    particles: {
+      type: 'stars',
+      config: { count: 40, moon: { size: 60, phase: 'crescent' } },
+    },
   },
 
   // Training-type themes
@@ -67,16 +82,20 @@ export const backgroundThemes: BackgroundTheme[] = [
     id: 'sprint-fire',
     name: '冲刺火焰',
     nameEn: 'Sprint Fire',
-    gradient: 'from-red-950/40 via-background to-orange-900/30',
-    icon: '🔥',
+    gradient: 'from-[#1a0505] via-[#2d0a0a] to-[#0f0303]',
+    icon: '',
     trainingType: 'sprint',
     emotion: 'energetic',
+    particles: {
+      type: 'fire',
+      config: { count: 20, colors: ['#ff4500', '#ff6b35', '#ffa500', '#ff8c00', '#ff3300'] },
+    },
   },
   {
     id: 'recovery-calm',
     name: '恢复宁静',
     nameEn: 'Recovery Calm',
-    gradient: 'from-emerald-950/40 via-background to-teal-900/30',
+    gradient: 'from-[#051510] via-[#0a1a15] to-[#05100a]',
     icon: '🍃',
     trainingType: 'recovery',
     emotion: 'relaxed',
@@ -85,7 +104,7 @@ export const backgroundThemes: BackgroundTheme[] = [
     id: 'aerobic-flow',
     name: '有氧水流',
     nameEn: 'Aerobic Flow',
-    gradient: 'from-blue-950/30 via-background to-cyan-900/20',
+    gradient: 'from-[#051a1a] via-[#0a1a1a] to-[#050a15]',
     icon: '💧',
     trainingType: 'aerobic',
     emotion: 'focused',
@@ -94,7 +113,7 @@ export const backgroundThemes: BackgroundTheme[] = [
     id: 'anaerobic-power',
     name: '无氧力量',
     nameEn: 'Anaerobic Power',
-    gradient: 'from-purple-950/40 via-background to-pink-900/30',
+    gradient: 'from-[#1a0520] via-[#150520] to-[#0a0515]',
     icon: '⚡',
     trainingType: 'anaerobic',
     emotion: 'energetic',
@@ -105,7 +124,7 @@ export const backgroundThemes: BackgroundTheme[] = [
     id: 'calm-waves',
     name: '平静海浪',
     nameEn: 'Calm Waves',
-    gradient: 'from-teal-950/30 via-background to-cyan-900/20',
+    gradient: 'from-[#051515] via-[#0a1a1a] to-[#050f0a]',
     icon: '🌿',
     emotion: 'calm',
   },
@@ -113,7 +132,7 @@ export const backgroundThemes: BackgroundTheme[] = [
     id: 'energetic-pool',
     name: '活力泳池',
     nameEn: 'Energetic Pool',
-    gradient: 'from-cyan-950/30 via-background to-blue-900/20',
+    gradient: 'from-[#052020] via-[#0a1a20] to-[#051020]',
     icon: '🏊‍♂️',
     emotion: 'energetic',
   },
@@ -121,7 +140,7 @@ export const backgroundThemes: BackgroundTheme[] = [
     id: 'focused-lane',
     name: '专注泳道',
     nameEn: 'Focused Lane',
-    gradient: 'from-slate-900 via-background to-blue-950/30',
+    gradient: 'from-[#151520] via-[#101018] to-[#0a0a15]',
     icon: '🎯',
     emotion: 'focused',
   },
@@ -129,7 +148,7 @@ export const backgroundThemes: BackgroundTheme[] = [
     id: 'relaxing-water',
     name: '放松水面',
     nameEn: 'Relaxing Water',
-    gradient: 'from-sky-950/20 via-background to-indigo-900/10',
+    gradient: 'from-[#051020] via-[#0a1525] to-[#050a1a]',
     icon: '💙',
     emotion: 'relaxed',
   },

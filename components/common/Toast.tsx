@@ -25,11 +25,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
     const toastFn = useCallback((type: ToastType, message: string, duration = 4000) => {
         const id = Math.random().toString(36).substring(7);
-        setToasts(prev => [...prev, { id, type, message, duration }]);
-        if (duration > 0) {
+        // Loading toasts persist until dismissed; others auto-dismiss
+        const autoDuration = type === 'loading' ? 0 : duration;
+        setToasts(prev => [...prev, { id, type, message, duration: autoDuration }]);
+        if (autoDuration > 0) {
             setTimeout(() => {
                 setToasts(prev => prev.filter(t => t.id !== id));
-            }, duration);
+            }, autoDuration);
         }
     }, []);
 
@@ -62,8 +64,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                     )}>
                         <div className="mt-0.5 shrink-0">{icons[t.type]}</div>
                         <p className="text-sm text-white flex-1">{t.message}</p>
-                        <button onClick={() => dismiss(t.id)} className="p-0.5 text-white/50 hover:text-white shrink-0">
-                            <X className="w-3.5 h-3.5" />
+                        <button
+                            onClick={() => dismiss(t.id)}
+                            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-white/50 hover:text-white shrink-0 rounded-lg hover:bg-white/10 transition-colors"
+                            aria-label="Dismiss notification"
+                        >
+                            <X className="w-4 h-4" />
                         </button>
                     </div>
                 ))}

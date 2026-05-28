@@ -2,18 +2,20 @@
 
 import { useStore } from "@/lib/store";
 import { getLocalDateISOString } from "@/lib/date-utils";
-import { ChevronLeft, ChevronRight, Download, Calendar, Users, CheckCircle2, ChevronRight as ChevronRightIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Calendar, Users, CheckCircle2, ChevronRight as ChevronRightIcon, UserX } from "lucide-react";
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 function Breadcrumb() {
+    const { t } = useLanguage();
     return (
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-            <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
-            <ChevronRightIcon className="w-3 h-3" />
-            <Link href="/dashboard/attendance" className="hover:text-white transition-colors">出勤管理</Link>
-            <ChevronRightIcon className="w-3 h-3" />
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+            <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
+            <ChevronRightIcon className="w-3 h-3" aria-hidden="true" />
+            <Link href="/dashboard/attendance" className="hover:text-white transition-colors">{t.common.attendance}</Link>
+            <ChevronRightIcon className="w-3 h-3" aria-hidden="true" />
             <span className="text-white font-medium">出勤统计</span>
         </nav>
     );
@@ -143,6 +145,22 @@ export default function AttendanceStatsPage() {
             </div>
 
             {/* Attendance Grid */}
+            {swimmers.length === 0 ? (
+                <div className="bg-card/40 border border-border rounded-2xl p-12 text-center">
+                    <UserX className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-30" />
+                    <h3 className="text-lg font-bold text-white mb-2">暂无队员数据</h3>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                        出勤统计需要先添加队员。请先前往「队员管理」添加队员。
+                    </p>
+                    <Link
+                        href="/dashboard/athletes"
+                        className="inline-flex items-center gap-2 mt-4 bg-primary text-primary-foreground px-6 py-2 rounded-full font-medium text-sm hover:brightness-110 transition-all"
+                    >
+                        <Users className="w-4 h-4" />
+                        添加队员
+                    </Link>
+                </div>
+            ) : (
             <div className="bg-card/40 border border-border rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
@@ -192,6 +210,7 @@ export default function AttendanceStatsPage() {
                     </table>
                 </div>
             </div>
+            )}
         </div>
     );
 }

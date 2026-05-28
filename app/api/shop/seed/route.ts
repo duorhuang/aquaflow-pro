@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { V12_FINGERPRINT } from '@/lib/prisma';
+import { V12_FINGERPRINT } from '@/lib/utils';
 import { withApiHandler } from '@/lib/api-handler';
 import { getNeon } from '@/lib/db-pool';
 import * as crypto from 'crypto';

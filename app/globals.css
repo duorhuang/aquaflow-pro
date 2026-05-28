@@ -37,6 +37,16 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  /* Semantic status colors */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -73,6 +83,16 @@
 
   --radius: 0.5rem;
 
+  /* Semantic status colors */
+  --success: hsl(142 71% 45%);
+  --success-foreground: hsl(222 47% 11%);
+  --warning: hsl(38 92% 50%);
+  --warning-foreground: hsl(222 47% 11%);
+  --info: hsl(200 98% 55%);
+  --info-foreground: hsl(222 47% 11%);
+  --error: hsl(0 84% 60%);
+  --error-foreground: hsl(210 40% 98%);
+
   /* Hydro Custom vars for Glassmorphism */
   --glass-bg: rgba(10, 25, 47, 0.7);
   --glass-border: rgba(100, 255, 218, 0.1);
@@ -106,6 +126,16 @@
   --border: hsl(217 32% 17%);
   --input: hsl(217 32% 17%);
   --ring: hsl(168 100% 70%);
+
+  /* Semantic status colors */
+  --success: hsl(142 71% 45%);
+  --success-foreground: hsl(222 47% 11%);
+  --warning: hsl(38 92% 50%);
+  --warning-foreground: hsl(222 47% 11%);
+  --info: hsl(200 98% 55%);
+  --info-foreground: hsl(222 47% 11%);
+  --error: hsl(0 63% 31%);
+  --error-foreground: hsl(210 40% 98%);
 }
 
 @layer base {
@@ -400,4 +430,92 @@
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+/* ==========================================
+   Night Theme: Stars & Moon
+   ========================================== */
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes twinkle-slow {
+  0%, 100% { opacity: 0.1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.9); }
+}
+
+.star-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: white;
+  animation: twinkle var(--twinkle-duration, 3s) ease-in-out infinite;
+  animation-delay: var(--twinkle-delay, 0s);
+}
+
+.star-particle.dim {
+  background: rgba(255, 255, 240, 0.7);
+  animation-name: twinkle-slow;
+}
+
+.star-particle.bright {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
+}
+
+.moon-glow {
+  filter: drop-shadow(0 0 20px rgba(255, 255, 200, 0.4)) drop-shadow(0 0 40px rgba(255, 255, 200, 0.2));
+}
+
+/* ==========================================
+   Fire Theme: Fire Particles
+   ========================================== */
+
+@keyframes fire-rise {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  70% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(var(--fire-rise-distance, -200px)) scale(0.2) rotate(180deg);
+    opacity: 0;
+  }
+}
+
+@keyframes fire-flicker {
+  0%, 100% { transform: translateX(0) scaleY(1); }
+  25% { transform: translateX(-2px) scaleY(1.1); }
+  75% { transform: translateX(2px) scaleY(0.9); }
+}
+
+.fire-particle {
+  position: absolute;
+  border-radius: 50%;
+  animation: fire-rise var(--fire-duration, 4s) ease-out infinite;
+  animation-delay: var(--fire-delay, 0s);
+  filter: blur(1px);
+}
+
+.fire-particle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  animation: fire-flicker 0.3s ease-in-out infinite alternate;
+}
+
+.fire-ember {
+  position: absolute;
+  border-radius: 50%;
+  animation: fire-rise var(--ember-duration, 5s) ease-out infinite;
+  animation-delay: var(--ember-delay, 0s);
+  opacity: 0.6;
+  filter: blur(0.5px);
 }
