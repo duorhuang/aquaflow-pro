@@ -32,7 +32,7 @@ npx tsc --noEmit         # Run TypeScript type check (build ignores TS errors)
 # Tests
 npx vitest               # Run all tests
 npx vitest --watch       # Run tests in watch mode
-npx vitest <filename>    # Run specific test file
+npx vitest tests/<file>  # Run specific test file
 ```
 
 ## Architecture
@@ -61,29 +61,33 @@ npx vitest <filename>    # Run specific test file
    - `getPool()` — Returns a `Pool` instance for dynamic queries (e.g., runtime-determined columns)
    - All API routes use `getNeon()` with raw SQL, NOT Prisma
 
-2. **Prisma ORM** (`lib/prisma.ts`) — Fault-tolerant lazy-initialized singleton
+2. **Repository Pattern** (`lib/repos/`) — Entity-specific repos built on raw Neon SQL
+   - `BaseRepo` (abstract class in `lib/repos/base.ts`) — shared utilities: JSON field parse/stringify, `requireOne()` for existence checks
+   - Each entity has its own repo: `planRepo`, `swimmerRepo`, `feedbackRepo`, `attendanceRepo`, `performanceRepo`, `templateRepo`, `weeklyPlanRepo`, `announcementRepo`, `meetRepo`, `blockFeedbackRepo`, `feedbackReminderRepo`, `weeklyFeedbackRepo`
+   - Custom errors: `NotFoundError`, `ValidationError` (in `lib/repos/errors.ts`)
+
+3. **Prisma ORM** (`lib/prisma.ts`) — Fault-tolerant lazy-initialized singleton
    - `getPrisma()` — Always use this to get the Prisma client; top-level instantiation crashes in Cloudflare Edge
    - Includes build-phase bypass via Proxy for production builds
    - Uses `@prisma/adapter-neon` with `@neondatabase/serverless` WebSocket `Pool`
    - The `prisma` export is a no-op stub (deprecated)
+   - `lib/db.ts` is a deprecated stub Proxy — use `getNeon()` instead
 
 **Additional data utilities:**
 - `lib/api-handler.ts` — `withApiHandler()` wraps route handlers, catches Edge Runtime exceptions, detects Neon quota errors (HTTP 402) and returns 503
 - `lib/api-client.ts` — Frontend HTTP client with 30s timeout, exponential backoff retry (3 attempts), content-type validation, and `silent4xx` mode for polling
-- `lib/store.tsx` — Global state management (React Context + useReducer):
-  - 30s polling sync across all API endpoints
-  - 15s Mutation Guard prevents polling from overwriting optimistic updates
-  - All CRUD operations go through store methods, never direct `fetch()`
-  - localStorage persistence with 7-day TTL for offline resilience
+- `lib/store.tsx` — Global state management (React Context + useReducer), split into three sub-modules:
+  - `lib/store/sync-engine.ts` — 30s polling sync across all API endpoints, 15s Mutation Guard prevents polling from overwriting optimistic updates
+  - `lib/store/entity-crud.ts` — All CRUD operations go through store methods, never direct `fetch()`
+  - `lib/store/persist-layer.ts` — localStorage persistence with 7-day TTL for offline resilience
   - Quota-exceeded detection (`isQuotaError`) sets `dbOffline` flag to stop polling
   - Optimistic updates with automatic rollback on server failure
 - `lib/data.ts` — Mock data (MOCK_PLANS, MOCK_SWIMMERS, DEFAULT_TEMPLATES)
-- `lib/db-pool.ts` - Neon SQL client singleton + Pool for raw queries
 
 ### Authentication
 
-- **PBKDF2-SHA256** password hashing (100,000 iterations) via Web Crypto API
-- **Custom JWT** with HMAC-SHA256 (Web Crypto API), 7-day expiration
+- **PBKDF2-SHA256** password hashing (100,000 iterations) via Web Crypto API (`lib/auth.ts`)
+- **Custom JWT** with HMAC-SHA256 (Web Crypto API), 7-day expiration (`lib/jwt.ts`)
 - Cookie-based sessions (`aquaflow_session`), HttpOnly + SameSite=Strict
 - **Middleware** (`middleware.ts`) — Edge middleware protects routes:
   - `/dashboard/*` — Coach only (redirects to `/login?role=coach`)
@@ -125,6 +129,19 @@ Deployed via `opennextjs-cloudflare build && wrangler deploy --minify` to Cloudf
 - JSON fields (blocks, targetedNotes, etc.) are `JSON.stringify`'d on write, `JSON.parse`'d on read
 - Role guards checked at the top of each handler: `if (auth instanceof NextResponse) return auth`
 
+### API Route Structure
+- `app/api/<entity>/route.ts` — Standard CRUD endpoints (plans, swimmers, feedbacks, attendance, performances, templates, weekly-plans, announcements, meets, block-feedbacks, feedback-reminders, weekly-feedbacks)
+- `app/api/auth/` — Authentication endpoints (login, register-coach, change-password)
+- `app/api/upload` — File upload to R2 bucket
+- `app/api/sync` — Polling sync endpoint
+- `app/api/keep-alive` — Database keep-alive ping
+- `app/api/diagnostic` — Error diagnostic endpoint
+- `app/api/plan-analysis` — Plan OCR analysis
+- `app/api/shop` — Avatar shop CRUD
+- `app/api/buddy` — Buddy system endpoints
+- `app/api/activity-feed` — Activity notification feed
+- `app/api/archive` — Training archive
+
 ### Database
 - API routes use `getNeon()` for raw SQL — tagged template literals with `${param}` for parameterization
 - Table names are double-quoted (e.g., `"TrainingPlan"`, `"Swimmer"`) due to PascalCase naming
@@ -138,6 +155,7 @@ Deployed via `opennextjs-cloudflare build && wrangler deploy --minify` to Cloudf
 - Design system: deep-sea dark theme (`#0a192f` background) with teal accent (`#64ffda`)
 - Card border radius: `rounded-2xl` or `rounded-3xl`; buttons: `rounded-full` or `rounded-xl`
 - Use `cn()` from `lib/utils.ts` for conditional className merging (clsx + tailwind-merge)
+- Background themes available via `lib/background-themes.ts`
 
 ### State Management
 - Global state accessed via `useStore()` — never direct API fetch from components
@@ -151,7 +169,13 @@ Deployed via `opennextjs-cloudflare build && wrangler deploy --minify` to Cloudf
 
 ## Database Schema
 
-Core models: `CoachUser`, `Swimmer`, `TrainingPlan`, `Feedback`, `AttendanceRecord`, `PerformanceRecord`, `BlockTemplate`, `PlanAnalysis`, `WeeklyPlan`, `DailySession`, `WeeklyFeedback`, `DailyFeedback`, `FeedbackReminder`, `TargetedFeedback`, `CoachAnnouncement`, `AnnouncementBlock`. See `prisma/schema.prisma` for full definitions.
+Core models: `CoachUser`, `Swimmer`, `TrainingPlan`, `Feedback`, `AttendanceRecord`, `PerformanceRecord`, `BlockTemplate`, `PlanAnalysis`, `WeeklyPlan`, `DailySession`, `WeeklyFeedback`, `DailyFeedback`, `FeedbackReminder`, `TargetedFeedback`, `CoachAnnouncement`, `AnnouncementBlock`.
+
+Gamification & economy models: `ShopItem`, `XpTransaction`, `BuddyPair`, `ActivityFeedItem`.
+
+Event management: `Meet`.
+
+See `prisma/schema.prisma` for full definitions.
 
 Key composite unique constraints:
 - `WeeklyFeedback(swimmerId, weekStart)` — one weekly summary per swimmer per week
@@ -171,16 +195,30 @@ After modifying the schema, run `npx prisma db push` to sync.
 - `components/DbStatus.tsx` - Database status indicator
 - `components/feed/` - Feed-related components
 - `components/plan/` - Plan-related components
+- `components/athlete/BottomTabBar.tsx` - Mobile bottom navigation for athlete routes
+
+## Testing
+
+- **Framework**: Vitest with jsdom environment
+- **Config**: `vitest.config.ts` — globals enabled, `tests/setup.ts` as setup file
+- **Test files**: `tests/**/*.test.{ts,tsx}` (ECC/ directory excluded)
+- **Test categories**: API client, auth API, API flows, core API, extended API, component rendering, edge runtime mocks, utility functions
 
 ## Key Files Reference
 
 | File | Purpose |
 |------|---------|
 | `lib/db-pool.ts` | Neon SQL client singleton — used by all API routes |
-| `lib/prisma.ts` | Lazy Prisma singleton + `flattenPayload()` + `V12_FINGERPRINT` |
+| `lib/repos/` | Repository pattern — entity-specific CRUD repos on raw Neon SQL |
+| `lib/repos/base.ts` | BaseRepo abstract class with JSON parse/stringify, requireOne |
+| `lib/prisma.ts` | Lazy Prisma singleton (build-safe Proxy) |
 | `lib/api-handler.ts` | API error wrapper with Neon quota detection |
 | `lib/store.tsx` | Global state with 30s polling + mutation guard + localStorage |
-| `lib/auth.ts` | JWT auth utilities (hmacSign, hmacVerify, hashPassword, verifyPassword) |
+| `lib/store/sync-engine.ts` | Polling sync engine with mutation guard |
+| `lib/store/entity-crud.ts` | CRUD operations for state entities |
+| `lib/store/persist-layer.ts` | localStorage persistence layer |
+| `lib/jwt.ts` | JWT utilities (generateJWT, verifyJWT, cookie helpers) |
+| `lib/auth.ts` | Password hashing (PBKDF2) + re-exports from jwt.ts |
 | `lib/auth-api.ts` | API route role guards (requireCoach, requireAthlete) |
 | `lib/api-client.ts` | HTTP client with retry/backoff |
 | `lib/dictionary.ts` | Bilingual dictionary (en/zh) |
@@ -188,7 +226,11 @@ After modifying the schema, run `npx prisma db push` to sync.
 | `lib/date-utils.ts` | Date formatting with timezone safety |
 | `lib/validation.ts` | Form validation helpers |
 | `lib/utils.ts` | `cn()` className utility |
+| `lib/sanitize-html.ts` | HTML sanitization (DOMPurify) |
+| `lib/group-constants.ts` | Group level constants |
+| `lib/background-themes.ts` | Background theme definitions |
 | `middleware.ts` | Edge route protection with JWT verification |
 | `wrangler.toml` | Cloudflare deployment config + R2 bindings |
 | `next.config.ts` | Next.js config with turbopack + build error ignore |
 | `types/index.ts` | All TypeScript type definitions |
+| `vitest.config.ts` | Test configuration |
