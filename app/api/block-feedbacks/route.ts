@@ -23,15 +23,23 @@ export async function GET(req: Request) {
 }
 
 export async function POST(request: Request) {
-  return handleAnyAuth(request, async () => {
+  return handleAnyAuth(request, async (_req, auth) => {
     const data = flattenPayload(await request.json());
+    // SECURITY: Athletes can only submit feedback for themselves
+    if (auth.role === 'athlete' && data.swimmerId && data.swimmerId !== auth.userId) {
+      return NextResponse.json({ error: 'Forbidden: Can only submit your own feedback' }, { status: 403 });
+    }
     const feedback = await blockFeedbackRepo.create(data);
     return NextResponse.json(feedback, { headers: V12_FINGERPRINT });
   });
 }
 
 export async function DELETE(request: Request) {
-  return handleAnyAuth(request, async () => {
+  return handleAnyAuth(request, async (_req, auth) => {
+    // SECURITY: Only coaches can delete block feedback
+    if (auth.role === 'athlete') {
+      return NextResponse.json({ error: 'Forbidden: Coaches only' }, { status: 403 });
+    }
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });

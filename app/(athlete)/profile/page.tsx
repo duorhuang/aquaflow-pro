@@ -86,7 +86,14 @@ export default function AthleteProfilePage() {
     };
 
     if (!isLoaded && !currentUser) {
-        return <div className="min-h-screen bg-background flex items-center justify-center text-white">Loading...</div>;
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm text-muted-foreground animate-pulse">加载中...</p>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -106,19 +113,19 @@ export default function AthleteProfilePage() {
                         <h1 className="text-lg font-bold text-white">{t.common.profile || "Profile"}</h1>
                         <p className="text-xs text-muted-foreground">{currentUser?.name}</p>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1">
                         <button
                             onClick={() => setShowBgPicker(true)}
-                            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-muted-foreground hover:text-white"
+                            className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/10 rounded-xl transition-colors text-muted-foreground hover:text-white"
                             title="更换背景"
-                            aria-label="Change background theme"
+                            aria-label="更换背景主题"
                         >
                             <Palette className="w-4 h-4" />
                         </button>
                         <button
                             onClick={() => router.push("/workout")}
-                            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white"
-                            aria-label="Back to workout"
+                            className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/10 rounded-xl transition-colors text-white"
+                            aria-label="返回训练页"
                         >
                             <Waves className="w-4 h-4" />
                         </button>
@@ -211,7 +218,7 @@ export default function AthleteProfilePage() {
                 {/* Tab Content */}
                 {currentUser && activeTab === 'shop' && (
                     <div className="animate-in fade-in duration-300">
-                        <ShopAndCloset swimmerId={currentUser.id} />
+                        <ShopAndCloset swimmerId={currentUser.id} onClose={() => setActiveTab('profile')} />
                     </div>
                 )}
 
@@ -234,7 +241,7 @@ export default function AthleteProfilePage() {
                         </h2>
 
                         <div>
-                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">姓名</label>
+                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">{t.common.username}</label>
                             <input
                                 type="text"
                                 value={name}
@@ -251,11 +258,11 @@ export default function AthleteProfilePage() {
                                 className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[44px]"
                             >
                                 <option value="">{t.archive.selectStroke}</option>
-                                <option value="Free">自由泳 (Freestyle)</option>
-                                <option value="Back">仰泳 (Backstroke)</option>
-                                <option value="Breast">蛙泳 (Breaststroke)</option>
-                                <option value="Fly">蝶泳 (Butterfly)</option>
-                                <option value="IM">混合泳 (IM)</option>
+                                <option value="Free">{t.editor.strokes.Free}</option>
+                                <option value="Back">{t.editor.strokes.Back}</option>
+                                <option value="Breast">{t.editor.strokes.Breast}</option>
+                                <option value="Fly">{t.editor.strokes.Fly}</option>
+                                <option value="IM">{t.editor.strokes.IM}</option>
                             </select>
                         </div>
 
@@ -266,19 +273,19 @@ export default function AthleteProfilePage() {
                                 onChange={(e) => setGender(e.target.value as "male" | "female")}
                                 className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[44px]"
                             >
-                                <option value="male">男 (Male)</option>
-                                <option value="female">女 (Female)</option>
+                                <option value="male">男</option>
+                                <option value="female">女</option>
                             </select>
                         </div>
 
                         <div>
                             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">
                                 {t.archive.todayCondition}: {readiness}% — {
-                                    readiness <= 20 ? "非常疲劳，建议休息" :
-                                    readiness <= 40 ? "疲劳，建议减量" :
-                                    readiness <= 60 ? "一般状态" :
-                                    readiness <= 80 ? "良好" :
-                                    "状态极佳"
+                                    readiness <= 20 ? t.athlete.veryFatigued :
+                                    readiness <= 40 ? t.athlete.fatigued :
+                                    readiness <= 60 ? t.athlete.fair :
+                                    readiness <= 80 ? t.athlete.good :
+                                    t.athlete.excellent
                                 }
                             </label>
                             <input

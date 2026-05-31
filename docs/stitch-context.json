@@ -1,0 +1,68 @@
+{
+  "systemName": "AquaFlow Pro",
+  "roster": {
+    "coaches": [
+      {
+        "id": "c1",
+        "name": "Head Coach",
+        "username": "coach",
+        "role": "coach"
+      }
+    ],
+    "swimmers": [
+      { "id": "s1", "name": "Doody", "group": "Advanced", "status": "Active", "readiness": 95, "username": "doody", "level": 5, "streak": 14 },
+      { "id": "s2", "name": "James", "group": "Advanced", "status": "Resting", "readiness": 90, "username": "james", "level": 4, "streak": 8 },
+      { "id": "s3", "name": "Cherry", "group": "Advanced", "status": "Active", "readiness": 88, "username": "cherry", "level": 4, "streak": 10 },
+      { "id": "s4", "name": "Amber", "group": "Intermediate", "status": "Resting", "readiness": 60, "username": "amber", "level": 2, "streak": 3 }
+    ]
+  },
+  "trainingPublication": {
+    "weeklyPlan": {
+      "fields": {
+        "title": "String (e.g., '第12周训练')",
+        "coachNotes": "String",
+        "isPublished": "Boolean",
+        "targetGroup": "Array of GroupLevel strings (e.g. ['Advanced', 'Intermediate'])",
+        "targetSwimmerIds": "Array of swimmer IDs for individual targeting",
+        "overviewImageUrl": "String (URL for weekly overview photo)",
+        "overviewContentHtml": "String (HTML for weekly overview rich text notes)"
+      }
+    },
+    "dailySession": {
+      "editorModes": {
+        "plan": "Structured training plan with interactive rounds, focus, segments, distance, and CSS pace",
+        "block": "Flexible media/text structure blocks (contentBlocks JSON array)",
+        "rich": "Rich-text WYSIWYG notes (contentHtml)",
+        "legacy": "Photo upload (imageData Base64) + simple text notes annotation"
+      },
+      "fields": {
+        "label": "String (e.g. '周一上午', '周三')",
+        "date": "String (YYYY-MM-DD)",
+        "editorMode": "String ('plan' | 'block' | 'rich' | 'legacy')",
+        "trainingType": "String ('aerobic' | 'anaerobic' | 'lactate' | 'sprint' | 'recovery' | 'relaxation' | 'strength' | 'endurance' | 'race_prep')",
+        "primaryStroke": "String ('Free' | 'Back' | 'Breast' | 'Fly' | 'IM' | 'Choice')",
+        "totalDistance": "Int",
+        "notes": "String",
+        "contentBlocks": "Json",
+        "trainingBlocks": "Json",
+        "contentHtml": "String",
+        "imageUrl": "String"
+      }
+    }
+  },
+  "designSystem": {
+    "styleGuide": "Apex Velocity Premium Sports Aesthetics",
+    "typography": {
+      "baseFont": "Inter (Google Fonts)",
+      "metricsFont": "JetBrains Mono / Outfit",
+      "capsFont": "Outfit / Inter SemiBold"
+    },
+    "colors": {
+      "background": "#0a0e1a (Tailored Harmonious HSL Dark Navy)",
+      "primaryCyan": "#00f2ff (Vibrant Performance Cyan)",
+      "surfaceCard": "#141b2d (Harmonious Glassmorphism Dark Blue)",
+      "textWhite": "#ffffff",
+      "textMuted": "#64748b"
+    }
+  }
+}

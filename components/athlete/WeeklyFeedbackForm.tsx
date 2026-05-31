@@ -6,8 +6,9 @@ import { api } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
 import {
     ChevronDown, ChevronUp, Activity, TrendingUp,
-    Send, Save, Check, Loader2
+    Send, Save, Check, Loader2, Mic, Flame
 } from "lucide-react";
+import { useToast } from "@/components/common/Toast";
 
 interface WeeklyFeedbackFormProps {
     swimmerId: string;
@@ -17,6 +18,7 @@ interface WeeklyFeedbackFormProps {
 const DAY_LABELS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 
 export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormProps) {
+    const { toast } = useToast();
     const { markAttendance } = useStore();
     const [summary, setSummary] = useState("");
     const [dailyFeedbacks, setDailyFeedbacks] = useState<Array<{
@@ -37,6 +39,71 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
     const [saveStatus, setSaveStatus] = useState<string | null>(null);
     const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
     const isInitialLoad = useRef(true);
+
+    const [listeningDay, setListeningDay] = useState<number | null>(null);
+    const [parsingDay, setParsingDay] = useState<number | null>(null);
+
+    const handleSpeech = (dayIdx: number) => {
+        if (typeof window === "undefined") return;
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            toast("error", "抱歉，您的浏览器不支持语音识别。请使用 Chrome 浏览器。");
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = "zh-CN";
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+            setListeningDay(dayIdx);
+        };
+
+        recognition.onend = () => {
+            setListeningDay(null);
+        };
+
+        recognition.onerror = (e: any) => {
+            console.error("Speech recognition error:", e);
+            setListeningDay(null);
+        };
+
+        recognition.onresult = async (event: any) => {
+            const transcript = event.results[0][0].transcript;
+            
+            const newArr = [...dailyFeedbacks];
+            newArr[dayIdx].reflection = newArr[dayIdx].reflection 
+                ? newArr[dayIdx].reflection + " " + transcript 
+                : transcript;
+            setDailyFeedbacks(newArr);
+            
+            // Post transcript to AI Edge route to parse RPE and Soreness
+            setParsingDay(dayIdx);
+            try {
+                const response = await fetch("/api/ai/feedback-parse", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: transcript }),
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        const parsedArr = [...dailyFeedbacks];
+                        parsedArr[dayIdx].rpe = data.rpe;
+                        parsedArr[dayIdx].soreness = data.soreness;
+                        setDailyFeedbacks(parsedArr);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to parse feedback semantically:", e);
+            } finally {
+                setParsingDay(null);
+            }
+        };
+
+        recognition.start();
+    };
 
     useEffect(() => {
         const initDays = () => {
@@ -162,11 +229,12 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                 isSubmitted: submitContent
             });
             
+
             if (res && res.skipped) {
-                setSaveStatus(res.message);
+                setSaveStatus(res.message || "跳过反馈成功");
                 if (submitContent) setIsSubmitted(prevSubmitted); // Rollback if skipped
             } else if (submitContent) {
-                // If cloudflare succeeded, mark status properly
+                // If Cloudflare succeeded, mark status properly
                 setIsSubmitted(true);
                 setSaveStatus("✨ 提交成功！教练已收到您的本周总结。");
                 markAttendance(swimmerId, undefined, "AthletePresent");
@@ -203,10 +271,36 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
         }
     };
 
+    const getRpeColor = (value: number) => {
+        if (value <= 3) return "text-cyan-400";
+        if (value <= 5) return "text-emerald-400";
+        if (value <= 7) return "text-amber-400";
+        return "text-red-400";
+    };
+
+    const getSorenessColor = (value: number) => {
+        if (value <= 3) return "text-cyan-400";
+        if (value <= 5) return "text-emerald-400";
+        if (value <= 7) return "text-orange-400";
+        return "text-red-400";
+    };
+
+    const getSliderGlow = (val: number) => {
+        if (val <= 3) return "shadow-[0_0_15px_rgba(0,242,255,0.12)] border-cyan-500/10 bg-cyan-950/5";
+        if (val <= 5) return "shadow-[0_0_15px_rgba(16,185,129,0.12)] border-emerald-500/10 bg-emerald-950/5";
+        if (val <= 7) return "shadow-[0_0_15px_rgba(245,159,0,0.12)] border-amber-500/10 bg-amber-950/5";
+        return "shadow-[0_0_20px_rgba(239,68,68,0.25)] border-red-500/20 bg-red-950/10 animate-pulse";
+    };
+
+    const getRpeTrackBg = (val: number) => {
+        const color = val <= 3 ? '#00f2ff' : val <= 5 ? '#10b981' : val <= 7 ? '#f59f00' : '#ef4444';
+        const percent = ((val - 1) / 9) * 100;
+        return `linear-gradient(to right, ${color} 0%, ${color} ${percent}%, rgba(255,255,255,0.1) ${percent}%, rgba(255,255,255,0.1) 100%)`;
+    };
+
     if (isLoading) {
         return <div className="p-12 text-center animate-pulse"><Loader2 className="w-6 h-6 text-primary animate-spin mx-auto" /></div>;
     }
-
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -256,7 +350,7 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                             {/* Accordion Head */}
                             <button
                                 onClick={() => setExpandedDay(isExpanded ? null : idx)}
-                                className="w-full flex items-center justify-between p-4"
+                                className="w-full flex items-center justify-between p-4 cursor-pointer"
                             >
                                 <div className="flex items-center gap-3">
                                     <div className={cn("w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-colors", hasContent ? "bg-green-500 text-black" : "bg-white/10 text-white")}>
@@ -265,7 +359,7 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                                     <div className="text-left">
                                         <div className="text-sm font-bold text-white flex items-center gap-2">
                                             {DAY_LABELS[idx]}
-                                            {(() => { const today = new Date().getDay(); const todayIdx = today === 0 ? 6 : today - 1; return idx === todayIdx; })() && <span className="px-2 py-0.5 bg-primary/20 text-primary rounded-full text-xs">今天</span>}
+                                            {(() => { const today = new Date().getDay(); const todayIdx = today === 0 ? 6 : today - 1; return idx === todayIdx; })() && <span className="px-2 py-0.5 bg-primary/20 text-primary rounded-full text-xs animate-pulse">今天</span>}
                                         </div>
                                         <div className="text-xs text-muted-foreground">{df.date}</div>
                                     </div>
@@ -274,42 +368,87 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                             </button>
                             
                             {/* Accordion Body */}
-                            <div className={cn("transition-all duration-300", isExpanded ? "max-h-[500px] opacity-100 p-4 pt-0" : "max-h-0 opacity-0 overflow-hidden")}>
+                            <div className={cn("transition-all duration-300", isExpanded ? "max-h-[600px] opacity-100 p-4 pt-0" : "max-h-0 opacity-0 overflow-hidden")}>
                                 <div className="space-y-4 pt-4 border-t border-white/5">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className={cn("p-3 border rounded-xl transition-all duration-300 relative overflow-hidden", getSliderGlow(df.rpe || 5))}>
                                             <label className="text-xs font-medium text-muted-foreground mb-2 flex flex-col gap-1">
-                                                <div className="flex justify-between items-center"><span className="flex items-center gap-1"><Activity className="w-3 h-3" /> 疲劳度 (RPE)</span><span>{df.rpe}/10</span></div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="flex items-center gap-1"><Activity className="w-3.5 h-3.5" /> 疲劳度 (RPE)</span>
+                                                    <span className={cn("font-bold flex items-center gap-0.5", getRpeColor(df.rpe || 5))}>
+                                                        {df.rpe || 5}/10
+                                                        {(df.rpe || 5) >= 8 && <Flame className="w-3.5 h-3.5 text-red-500 animate-pulse" />}
+                                                    </span>
+                                                </div>
                                             </label>
                                             <input 
                                                 type="range" min="1" max="10" 
-                                                value={df.rpe}
+                                                value={df.rpe || 5}
                                                 onChange={(e) => {
                                                     const newArr = [...dailyFeedbacks];
                                                     newArr[idx].rpe = parseInt(e.target.value);
                                                     setDailyFeedbacks(newArr);
                                                 }}
-                                                className="w-full accent-primary" 
+                                                style={{ background: getRpeTrackBg(df.rpe || 5) }}
+                                                className="w-full accent-primary h-1.5 rounded-lg appearance-none cursor-pointer hover:scale-[1.01] transition-transform" 
                                             />
                                         </div>
-                                        <div>
+                                        <div className={cn("p-3 border rounded-xl transition-all duration-300 relative overflow-hidden", getSliderGlow(df.soreness || 3))}>
                                             <label className="text-xs font-medium text-muted-foreground mb-2 flex flex-col gap-1">
-                                                <div className="flex justify-between items-center"><span className="flex items-center gap-1"><TrendingUp className="w-3 h-3" /> 酸痛度</span><span>{df.soreness}/10</span></div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="flex items-center gap-1"><TrendingUp className="w-3.5 h-3.5" /> 酸痛度</span>
+                                                    <span className={cn("font-bold flex items-center gap-0.5", getSorenessColor(df.soreness || 3))}>
+                                                        {df.soreness || 3}/10
+                                                        {(df.soreness || 3) >= 8 && <Flame className="w-3.5 h-3.5 text-orange-500 animate-pulse" />}
+                                                    </span>
+                                                </div>
                                             </label>
                                             <input 
                                                 type="range" min="1" max="10" 
-                                                value={df.soreness}
+                                                value={df.soreness || 3}
                                                 onChange={(e) => {
                                                     const newArr = [...dailyFeedbacks];
                                                     newArr[idx].soreness = parseInt(e.target.value);
                                                     setDailyFeedbacks(newArr);
                                                 }}
-                                                className="w-full accent-red-500" 
+                                                style={{ background: getRpeTrackBg(df.soreness || 3) }}
+                                                className="w-full accent-orange-400 h-1.5 rounded-lg appearance-none cursor-pointer hover:scale-[1.01] transition-transform" 
                                             />
                                         </div>
                                     </div>
                                     
-                                    <div>
+                                    <div className="relative mt-2">
+                                        <div className="flex justify-between items-center mb-1.5">
+                                            <span className="text-xs font-medium text-muted-foreground">今日训练感悟</span>
+                                            <button
+                                                onClick={() => handleSpeech(idx)}
+                                                disabled={parsingDay === idx}
+                                                className={cn(
+                                                    "px-2.5 py-1 rounded-lg transition-all duration-300 flex items-center gap-1 border text-[10px] font-bold cursor-pointer shadow-sm",
+                                                    listeningDay === idx
+                                                        ? "bg-red-500/20 border-red-500/40 text-red-400 animate-pulse"
+                                                        : "bg-primary/10 border-primary/20 text-primary hover:bg-primary/20"
+                                                )}
+                                                title="语音输入"
+                                            >
+                                                {listeningDay === idx ? (
+                                                    <>
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping inline-block" />
+                                                        <span>录音中...</span>
+                                                    </>
+                                                ) : parsingDay === idx ? (
+                                                    <>
+                                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                                        <span>分析中...</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Mic className="w-3 h-3" />
+                                                        <span>语音输入</span>
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
                                         <textarea
                                             placeholder={`[提示] 今天的状态如何？\n1. 动作执行情况（划水、换气等）\n2. 哪里感觉不舒服？\n3. 离教练要求的目标差多少？`}
                                             value={df.reflection}
@@ -318,7 +457,7 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                                                 newArr[idx].reflection = e.target.value;
                                                 setDailyFeedbacks(newArr);
                                             }}
-                                            className="w-full h-24 bg-black/40 border border-border rounded-xl p-3 text-sm text-white placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                                            className="w-full h-24 bg-black/40 border border-border rounded-xl p-3 text-sm text-white placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none leading-relaxed"
                                         />
                                     </div>
                                 </div>
@@ -333,7 +472,7 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                                             newArr[idx].reflection = "";
                                             setDailyFeedbacks(newArr);
                                         }}
-                                        className="text-xs text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg transition-colors border border-red-500/20"
+                                        className="text-[11px] text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg transition-colors border border-red-500/20 cursor-pointer"
                                     >
                                         🗑 清除今日记录
                                     </button>
@@ -351,7 +490,7 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                     placeholder="本周总体感觉如何？哪里有进步？下周想改善什么？这段文字教练会重点关注。"
                     value={summary}
                     onChange={(e) => setSummary(e.target.value)}
-                    className="w-full h-24 bg-black/50 border border-border rounded-xl p-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                    className="w-full h-24 bg-black/50 border border-border rounded-xl p-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary resize-none leading-relaxed"
                 />
             </div>
 
@@ -367,14 +506,14 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
                 <button 
                     onClick={() => handleSave(false)}
                     disabled={isSaving}
-                    className="flex-1 bg-card border border-border text-white px-4 py-3 rounded-xl font-bold hover:bg-white/5 transition-all flex items-center justify-center gap-2"
+                    className="flex-1 bg-card border border-border text-white px-4 py-3 rounded-xl font-bold hover:bg-white/5 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                     <Save className="w-4 h-4" /> 保存草稿
                 </button>
                 <button 
                     onClick={() => handleSave(true)}
                     disabled={isSaving}
-                    className="flex-[2] bg-gradient-to-r from-primary to-blue-400 text-black px-4 py-3 rounded-xl font-bold hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                    className="flex-[2] bg-gradient-to-r from-primary to-blue-400 text-black px-4 py-3 rounded-xl font-bold hover:brightness-110 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-primary/15"
                 >
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} 
                     {isSubmitted ? "更新并重新提交" : "提交给教练"}

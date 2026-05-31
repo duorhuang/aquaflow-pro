@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Timer, Calculator } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Calculator } from "lucide-react";
+
 
 // Time Helper
 const parseTime = (str: string): number => {
@@ -25,7 +25,7 @@ const formatTime = (seconds: number): string => {
 export function PaceCalculator() {
     const [baseDistance, setBaseDistance] = useState(100);
     const [baseTimeStr, setBaseTimeStr] = useState("1:30");
-    const [mode, setMode] = useState<"Base" | "CSS">("Base");
+    const [, setMode] = useState<"Base" | "CSS">("Base");
 
     const baseSeconds = useMemo(() => parseTime(baseTimeStr), [baseTimeStr]);
     const pacePer100 = useMemo(() => {

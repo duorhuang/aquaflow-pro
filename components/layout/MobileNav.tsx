@@ -70,7 +70,7 @@ export function MobileNav() {
                     className="fixed inset-0 z-40 bg-background pt-24 px-6 animate-in fade-in slide-in-from-top-4 duration-200 flex flex-col"
                     role="dialog"
                     aria-modal="true"
-                    aria-label="Navigation menu"
+                    aria-label="导航菜单"
                 >
                     <nav className="flex flex-col gap-2">
                         {NAV_ITEMS.map((item) => {
@@ -103,7 +103,7 @@ export function MobileNav() {
                                 window.location.href = '/login?role=coach';
                             }}
                             className="flex items-center gap-4 px-4 py-4 w-full rounded-xl text-red-400 hover:bg-red-500/10 transition-colors min-h-[44px]"
-                            aria-label="Log out"
+                            aria-label="退出登录"
                         >
                             <LogOut className="w-6 h-6" />
                             {t.common.logout}

@@ -11,7 +11,7 @@ import { useLanguage } from "@/lib/i18n";
 function Breadcrumb() {
     const { t } = useLanguage();
     return (
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="面包屑导航">
             <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
             <ChevronRight className="w-3 h-3" aria-hidden="true" />
             <span className="text-white font-medium">{t.common.schedule}</span>
@@ -67,7 +67,7 @@ export default function SchedulePage() {
     };
 
     const getTotalDistance = (trainings: typeof plans) => {
-        return trainings.reduce((sum, t) => sum + t.totalDistance, 0);
+        return trainings.reduce((sum, t) => sum + (t.totalDistance || 0), 0);
     };
 
     // Get last week's plan for same day
@@ -103,15 +103,17 @@ export default function SchedulePage() {
         if (!selectedDate) return;
         const lastWeekPlan = getLastWeekPlan(selectedDate);
         if (lastWeekPlan) {
+        const { id, createdAt, updatedAt, analysis, blocks, status: _oldStatus, ...restOfPlan } = lastWeekPlan as any;
             const newPlan = {
-                ...lastWeekPlan,
+                ...restOfPlan,
                 id: crypto.randomUUID(),
                 date: getLocalDateISOString(selectedDate),
                 status: 'Draft' as const,
+                blocks: [],
             };
             addPlan(newPlan);
             setShowModal(false);
-            router.push(`/dashboard/plan/${newPlan.id}`);
+            router.push(`/dashboard/quick-plan?id=${newPlan.id}`);
         }
     };
 
@@ -215,7 +217,8 @@ export default function SchedulePage() {
             <div className="flex items-center justify-between bg-card/30 border border-border rounded-xl p-4">
                 <button
                     onClick={goToPreviousMonth}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors"
+                    aria-label="上个月"
                 >
                     <ChevronLeft className="w-5 h-5 text-white" />
                 </button>
@@ -224,7 +227,8 @@ export default function SchedulePage() {
                 </h2>
                 <button
                     onClick={goToNextMonth}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors"
+                    aria-label="下个月"
                 >
                     <ChevronRight className="w-5 h-5 text-white" />
                 </button>
@@ -254,14 +258,15 @@ export default function SchedulePage() {
                         const hasTraining = trainings.length > 0;
 
                         return (
-                            <div
+                            <button
                                 key={day}
                                 onClick={() => handleDateClick(day)}
                                 className={cn(
-                                    "aspect-square border border-border rounded-lg p-2 relative group hover:border-primary/50 transition-all cursor-pointer",
+                                    "aspect-square border border-border rounded-lg p-2 relative group hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/50 transition-all text-left",
                                     isToday(day) && "ring-2 ring-primary",
                                     hasTraining && getIntensityBg(totalDistance)
                                 )}
+                                aria-label={`${year}年${month + 1}月${day}日${hasTraining ? `，训练量${totalDistance}米` : '无训练'}`}
                             >
                                 <div className="flex flex-col h-full">
                                     <div className="flex items-center justify-between">
@@ -314,7 +319,7 @@ export default function SchedulePage() {
                                         </div>
                                     </div>
                                 )}
-                            </div>
+                            </button>
                         );
                     })}
                 </div>
@@ -368,7 +373,7 @@ export default function SchedulePage() {
                                     {getTrainingForDate(selectedDate).map(p => (
                                         <Link
                                             key={p.id}
-                                            href={`/dashboard/plan/${p.id}`}
+                                            href={`/dashboard/quick-plan?id=${p.id}`}
                                             className="flex items-center gap-3 p-4 bg-secondary/50 rounded-xl hover:bg-secondary transition-colors"
                                         >
                                             <FileText className="w-5 h-5 text-primary" />

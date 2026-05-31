@@ -19,8 +19,8 @@ export function ConfirmDialog({
     open,
     title,
     description,
-    confirmLabel = "Confirm",
-    cancelLabel = "Cancel",
+    confirmLabel = "确认",
+    cancelLabel = "取消",
     variant = "default",
     onConfirm,
     onCancel,
@@ -55,7 +55,7 @@ export function ConfirmDialog({
                     <button
                         onClick={onCancel}
                         className="p-1 min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-white rounded-lg"
-                        aria-label="Close dialog"
+                        aria-label="关闭对话框"
                     >
                         <X className="w-4 h-4" />
                     </button>

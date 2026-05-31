@@ -2,13 +2,19 @@ import { NextResponse } from 'next/server';
 import { flattenPayload, V12_FINGERPRINT } from '@/lib/utils';
 import { handleCoach, handleAnyAuth } from '@/lib/api-handler';
 import { feedbackReminderRepo } from '@/lib/repos';
+import { getNeon } from '@/lib/db-pool';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-  return handleAnyAuth(req, async () => {
+  return handleAnyAuth(req, async (_req, auth) => {
     const { searchParams } = new URL(req.url);
     const swimmerId = searchParams.get('swimmerId');
     const withResponses = searchParams.get('withResponses') === 'true';
+
+    // SECURITY: Athletes can only view their own reminders
+    if (auth.role === 'athlete' && swimmerId && swimmerId !== auth.userId) {
+      return NextResponse.json({ error: 'Forbidden: Can only view your own reminders' }, { status: 403 });
+    }
 
     try {
       if (swimmerId) {

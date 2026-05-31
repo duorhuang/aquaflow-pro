@@ -14,7 +14,7 @@ const GROUP_LEVELS: GroupLevel[] = ["Junior", "Intermediate", "Advanced", "Exter
 function Breadcrumb() {
     const { t } = useLanguage();
     return (
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="面包屑导航">
             <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
             <ChevronRight className="w-3 h-3" aria-hidden="true" />
             <Link href="/dashboard/feedbacks" className="hover:text-white transition-colors">{t.common.feedbackInbox}</Link>
@@ -97,8 +97,8 @@ export default function TargetedFeedbacksPage() {
         try {
             await api.feedbackReminders.create({
                 message,
-                targetSwimmerIds: targetIds.length > 0 ? targetIds : null,
-                targetGroup: selectedGroups.length > 0 ? selectedGroups.join(', ') : null,
+                targetSwimmerIds: targetIds.length > 0 ? targetIds : undefined,
+                targetGroup: selectedGroups.length > 0 ? selectedGroups.join(', ') : undefined,
                 periodStart,
                 periodEnd
             });
@@ -132,20 +132,24 @@ export default function TargetedFeedbacksPage() {
             </div>
 
             <div className="bg-gradient-to-br from-card/80 to-orange-900/10 border border-orange-500/20 p-6 rounded-2xl">
-                <label className="text-sm font-bold text-white block mb-2">通知内容与问题</label>
-                <textarea
-                    value={message}
-                    onChange={e => setMessage(e.target.value)}
-                    placeholder="例如：今天专项游大家的右臂入水姿势有改变吗？有没有感觉肩部不适？请在这里反馈..."
-                    className="w-full h-24 bg-black/40 border border-border rounded-xl p-4 text-white resize-none mb-4 focus:ring-1 focus:ring-orange-500 outline-none"
-                />
+                <div className="mb-4">
+                    <label htmlFor="targeted-message" className="text-sm font-bold text-white block mb-2">通知内容与问题</label>
+                    <textarea
+                        id="targeted-message"
+                        value={message}
+                        onChange={e => setMessage(e.target.value)}
+                        placeholder="例如：今天专项游大家的右臂入水姿势有改变吗？有没有感觉肩部不适？请在这里反馈..."
+                        className="w-full h-24 bg-black/40 border border-border rounded-xl p-4 text-white resize-none focus:ring-1 focus:ring-orange-500 outline-none"
+                    />
+                </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label className="text-sm font-bold text-white block mb-2 flex items-center gap-2">
+                        <label htmlFor="period-start" className="text-sm font-bold text-white block mb-2 flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-orange-400" /> 开始日期
                         </label>
                         <input
+                            id="period-start"
                             type="date"
                             value={periodStart}
                             onChange={(e) => setPeriodStart(e.target.value)}
@@ -153,10 +157,11 @@ export default function TargetedFeedbacksPage() {
                         />
                     </div>
                     <div>
-                        <label className="text-sm font-bold text-white block mb-2 flex items-center gap-2">
+                        <label htmlFor="period-end" className="text-sm font-bold text-white block mb-2 flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-orange-400" /> 结束日期
                         </label>
                         <input
+                            id="period-end"
                             type="date"
                             value={periodEnd}
                             onChange={(e) => setPeriodEnd(e.target.value)}

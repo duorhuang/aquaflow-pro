@@ -58,5 +58,18 @@ export async function verifyPassword(password: string, stored: string): Promise<
   );
 
   const hashHex = Array.from(new Uint8Array(derivedBits)).map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex === expectedHash;
+  // SECURITY: Use constant-time comparison to prevent timing attacks
+  return constantTimeCompare(hashHex, expectedHash);
+}
+
+/**
+ * Constant-time string comparison to prevent timing attacks.
+ */
+export function constantTimeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
 }

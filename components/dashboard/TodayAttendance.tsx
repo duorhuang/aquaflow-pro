@@ -2,8 +2,9 @@
 
 import { useStore } from "@/lib/store";
 import { useLanguage } from "@/lib/i18n";
-import { Users, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { Users, CheckCircle, Clock, AlertCircle, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export function TodayAttendance() {
     const { swimmers, attendance, plans } = useStore();
@@ -31,10 +32,13 @@ export function TodayAttendance() {
     return (
         <div className="bg-card/50 border border-border rounded-2xl p-6 backdrop-blur-md">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-md font-semibold text-white flex items-center gap-2">
-                    <Users className="w-5 h-5 text-primary" />
-                    {t.dashboard.todayAttendance}
-                </h3>
+                <Link href="/dashboard/attendance" className="group flex items-center gap-2 hover:opacity-85 transition-opacity" aria-label="查看今日考勤详情">
+                    <h3 className="text-md font-semibold text-white flex items-center gap-2">
+                        <Users className="w-5 h-5 text-primary" />
+                        {t.dashboard.todayAttendance}
+                    </h3>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </Link>
                 <div className="text-2xl font-bold text-primary">
                     {attendedSwimmers.length}/{expectedSwimmers.length}
                 </div>

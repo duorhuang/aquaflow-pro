@@ -1,4 +1,36 @@
 
+import {
+    Swimmer,
+    Feedback,
+    AttendanceRecord,
+    PerformanceRecord,
+    BlockTemplate,
+    WeeklyPlan,
+    Announcement,
+    FeedbackReminder,
+    ShopItem,
+    WeeklyFeedbackType,
+    Meet,
+    TargetedFeedbackType,
+    ActivityFeedItem,
+    TrainingPlan,
+    DailySession,
+    MeetCountdownResponse,
+} from "@/types";
+
+export interface SyncResponse {
+    plans: TrainingPlan[];
+    swimmers: Swimmer[];
+    feedbacks: Feedback[];
+    attendance: AttendanceRecord[];
+    performances: PerformanceRecord[];
+    weeklyPlans: WeeklyPlan[];
+    announcements: Announcement[];
+    archivedAnnouncements: Announcement[];
+    weeklyFeedbacks: WeeklyFeedbackType[];
+    templates: BlockTemplate[];
+}
+
 // API Client wrapper for fetch operations
 
 const API_BASE = '/api';
@@ -6,7 +38,7 @@ const MAX_RETRIES = 3;
 const BASE_DELAY = 500; // ms — faster backoff
 const REQUEST_TIMEOUT = 20000; // 20s — fail fast for interactive UX; cold starts handled by store retry logic
 
-async function fetchAPI<T>(endpoint: string, options?: RequestInit, silent4xx: boolean = true, retries: number = MAX_RETRIES): Promise<T> {
+export async function fetchAPI<T>(endpoint: string, options?: RequestInit, silent4xx: boolean = true, retries: number = MAX_RETRIES): Promise<T> {
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt < retries; attempt++) {
@@ -52,8 +84,8 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit, silent4xx: b
             lastError = isAbortError ? new Error(abortMsg) : err;
             const isLastAttempt = attempt === MAX_RETRIES - 1;
             const isNonRetryable = isAbortError ||
-                                   err.message?.includes('API Error: 4') ||
-                                   err.message?.includes('non-JSON response');
+                err.message?.includes('API Error: 4') ||
+                err.message?.includes('non-JSON response');
 
             if (isLastAttempt || isNonRetryable) break;
 
@@ -67,15 +99,15 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit, silent4xx: b
 
 export const api = {
     sync: {
-        getAll: () => fetchAPI<any>('/sync'),
+        getAll: (since?: string) => fetchAPI<SyncResponse>(`/sync${since ? `?since=${since}` : ''}`),
     },
     swimmers: {
-        getAll: () => fetchAPI<any[]>('/swimmers'),
-        create: (data: any) => fetchAPI<any>('/swimmers', {
+        getAll: () => fetchAPI<Swimmer[]>('/swimmers'),
+        create: (data: Partial<Swimmer>) => fetchAPI<Swimmer>('/swimmers', {
             method: 'POST',
             body: JSON.stringify(data),
         }),
-        update: (id: string, data: any) => fetchAPI<any>(`/swimmers?id=${id}`, {
+        update: (id: string, data: Partial<Swimmer>) => fetchAPI<Swimmer>(`/swimmers?id=${id}`, {
             method: 'PUT',
             body: JSON.stringify(data),
         }),
@@ -84,12 +116,12 @@ export const api = {
         }),
     },
     plans: {
-        getAll: () => fetchAPI<any[]>('/plans'),
-        create: (data: any) => fetchAPI<any>('/plans', {
+        getAll: () => fetchAPI<TrainingPlan[]>('/plans'),
+        create: (data: Partial<TrainingPlan>) => fetchAPI<TrainingPlan>('/plans', {
             method: 'POST',
             body: JSON.stringify(data),
         }),
-        update: (id: string, data: any) => fetchAPI<any>(`/plans?id=${id}`, {
+        update: (id: string, data: Partial<TrainingPlan>) => fetchAPI<TrainingPlan>(`/plans?id=${id}`, {
             method: 'PUT',
             body: JSON.stringify(data),
         }),
@@ -98,19 +130,19 @@ export const api = {
         }),
     },
     feedbacks: {
-        getAll: () => fetchAPI<any[]>('/feedbacks'),
-        create: (data: any) => fetchAPI<any>('/feedbacks', {
+        getAll: () => fetchAPI<Feedback[]>('/feedbacks'),
+        create: (data: Partial<Feedback>) => fetchAPI<Feedback>('/feedbacks', {
             method: 'POST',
             body: JSON.stringify(data),
         }),
-        update: (id: string, data: any) => fetchAPI<any>(`/feedbacks?id=${id}`, {
+        update: (id: string, data: Partial<Feedback>) => fetchAPI<Feedback>(`/feedbacks?id=${id}`, {
             method: 'PUT',
             body: JSON.stringify(data),
         }),
     },
     attendance: {
-        getAll: () => fetchAPI<any[]>('/attendance'),
-        create: (data: any) => fetchAPI<any>('/attendance', {
+        getAll: () => fetchAPI<AttendanceRecord[]>('/attendance'),
+        create: (data: Partial<AttendanceRecord>) => fetchAPI<AttendanceRecord>('/attendance', {
             method: 'POST',
             body: JSON.stringify(data),
         }),
@@ -119,12 +151,12 @@ export const api = {
         }),
     },
     performances: {
-        getAll: () => fetchAPI<any[]>('/performances'),
-        create: (data: any) => fetchAPI<any>('/performances', {
+        getAll: () => fetchAPI<PerformanceRecord[]>('/performances'),
+        create: (data: Partial<PerformanceRecord>) => fetchAPI<PerformanceRecord>('/performances', {
             method: 'POST',
             body: JSON.stringify(data),
         }),
-        update: (id: string, data: any) => fetchAPI<any>(`/performances?id=${id}`, {
+        update: (id: string, data: Partial<PerformanceRecord>) => fetchAPI<PerformanceRecord>(`/performances?id=${id}`, {
             method: 'PUT',
             body: JSON.stringify(data),
         }),
@@ -133,44 +165,44 @@ export const api = {
         }),
     },
     templates: {
-        getAll: () => fetchAPI<any[]>('/templates'),
-        create: (data: any) => fetchAPI<any>('/templates', { method: 'POST', body: JSON.stringify(data) }),
-        update: (id: string, data: any) => fetchAPI<any>(`/templates?id=${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        getAll: () => fetchAPI<BlockTemplate[]>('/templates'),
+        create: (data: Partial<BlockTemplate>) => fetchAPI<BlockTemplate>('/templates', { method: 'POST', body: JSON.stringify(data) }),
+        update: (id: string, data: Partial<BlockTemplate>) => fetchAPI<BlockTemplate>(`/templates?id=${id}`, { method: 'PUT', body: JSON.stringify(data) }),
         delete: (id: string) => fetchAPI<void>(`/templates?id=${id}`, { method: 'DELETE' }),
     },
     weeklyPlans: {
-        getAll: (group?: string) => fetchAPI<any[]>(`/weekly-plans${group ? `?group=${group}` : ''}`),
-        getById: (id: string) => fetchAPI<any>(`/weekly-plans?id=${id}`),
-        create: (data: any) => fetchAPI<any>('/weekly-plans', { method: 'POST', body: JSON.stringify(data) }),
-        update: (id: string, data: any) => fetchAPI<any>(`/weekly-plans?id=${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        getAll: (group?: string) => fetchAPI<WeeklyPlan[]>(`/weekly-plans${group ? `?group=${group}` : ''}`),
+        getById: (id: string) => fetchAPI<WeeklyPlan>(`/weekly-plans?id=${id}`),
+        create: (data: Partial<WeeklyPlan>) => fetchAPI<WeeklyPlan>('/weekly-plans', { method: 'POST', body: JSON.stringify(data) }),
+        update: (id: string, data: Partial<WeeklyPlan>) => fetchAPI<WeeklyPlan>(`/weekly-plans?id=${id}`, { method: 'PUT', body: JSON.stringify(data) }),
         delete: (id: string) => fetchAPI<void>(`/weekly-plans?id=${id}`, { method: 'DELETE' }),
-        addSession: (data: any) => fetchAPI<any>('/weekly-plans/sessions', { method: 'POST', body: JSON.stringify(data) }),
-        updateSession: (id: string, data: any) => fetchAPI<any>(`/weekly-plans/sessions?id=${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        addSession: (data: Partial<DailySession>) => fetchAPI<DailySession>('/weekly-plans/sessions', { method: 'POST', body: JSON.stringify(data) }),
+        updateSession: (id: string, data: Partial<DailySession>) => fetchAPI<DailySession>(`/weekly-plans/sessions?id=${id}`, { method: 'PUT', body: JSON.stringify(data) }),
         deleteSession: (id: string) => fetchAPI<void>(`/weekly-plans/sessions?id=${id}`, { method: 'DELETE' }),
     },
     weeklyFeedbacks: {
-        getSubmitted: () => fetchAPI<any[]>('/weekly-feedbacks?submitted=true'),
-        getAll: () => fetchAPI<any[]>('/weekly-feedbacks'),
+        getSubmitted: () => fetchAPI<WeeklyFeedbackType[]>('/weekly-feedbacks?submitted=true'),
+        getAll: () => fetchAPI<WeeklyFeedbackType[]>('/weekly-feedbacks'),
         getBySwimmerAndWeek: (swimmerId: string, weekStart: string) =>
-            fetchAPI<any>(`/weekly-feedbacks?swimmerId=${swimmerId}&weekStart=${weekStart}`),
-        save: (data: any) => fetchAPI<any>('/weekly-feedbacks', { method: 'POST', body: JSON.stringify(data) }),
-        reply: (id: string, coachReply: string) => fetchAPI<any>('/weekly-feedbacks', { method: 'PATCH', body: JSON.stringify({ id, coachReply }) }),
+            fetchAPI<WeeklyFeedbackType>(`/weekly-feedbacks?swimmerId=${swimmerId}&weekStart=${weekStart}`),
+        save: (data: Partial<WeeklyFeedbackType>) => fetchAPI<WeeklyFeedbackType>('/weekly-feedbacks', { method: 'POST', body: JSON.stringify(data) }),
+        reply: (id: string, coachReply: string) => fetchAPI<WeeklyFeedbackType>('/weekly-feedbacks', { method: 'PATCH', body: JSON.stringify({ id, coachReply }) }),
     },
     feedbackReminders: {
         getAll: (withResponses?: boolean) =>
-            fetchAPI<any[]>(`/feedback-reminders${withResponses ? '?withResponses=true' : ''}`),
+            fetchAPI<FeedbackReminder[]>(`/feedback-reminders${withResponses ? '?withResponses=true' : ''}`),
         getForSwimmer: (swimmerId: string) =>
-            fetchAPI<any[]>(`/feedback-reminders?swimmerId=${swimmerId}`),
-        create: (data: any) => fetchAPI<any>('/feedback-reminders', { method: 'POST', body: JSON.stringify(data) }),
+            fetchAPI<FeedbackReminder[]>(`/feedback-reminders?swimmerId=${swimmerId}`),
+        create: (data: Partial<FeedbackReminder>) => fetchAPI<FeedbackReminder>('/feedback-reminders', { method: 'POST', body: JSON.stringify(data) }),
         respond: (data: any) => fetchAPI<any>('/feedback-reminders', { method: 'POST', body: JSON.stringify({ ...data, _action: 'respond' }) }),
         replyToTargeted: (id: string, coachReply: string) => fetchAPI<any>('/feedback-reminders', { method: 'PATCH', body: JSON.stringify({ id, coachReply }) }),
     },
     announcements: {
-        getAll: (group?: string) => fetchAPI<any[]>(`/announcements${group ? `?group=${group}` : ''}`),
-        getArchived: (group?: string) => fetchAPI<any[]>(`/announcements?archived=true${group ? `&group=${group}` : ''}`),
-        create: (data: any) => fetchAPI<any>('/announcements', { method: 'POST', body: JSON.stringify(data) }),
+        getAll: (group?: string) => fetchAPI<Announcement[]>(`/announcements${group ? `?group=${group}` : ''}`),
+        getArchived: (group?: string) => fetchAPI<Announcement[]>(`/announcements?archived=true${group ? `&group=${group}` : ''}`),
+        create: (data: Partial<Announcement>) => fetchAPI<Announcement>('/announcements', { method: 'POST', body: JSON.stringify(data) }),
         delete: (id: string) => fetchAPI<void>(`/announcements?id=${id}`, { method: 'DELETE' }),
-        toggleStar: (id: string, isStarred: boolean) => fetchAPI<any>('/announcements', { method: 'PUT', body: JSON.stringify({ id, isStarred }) }),
+        toggleStar: (id: string, isStarred: boolean) => fetchAPI<Announcement>('/announcements', { method: 'PUT', body: JSON.stringify({ id, isStarred }) }),
     },
     upload: {
         file: async (file: File) => {
@@ -236,32 +268,32 @@ export const api = {
             method: 'POST',
             body: JSON.stringify({ action: 'request', swimmerId, targetSwimmerId }),
         }, false),
-        accept: (swimmerId: string, targetSwimmerId: string) => fetchAPI<any>('/buddy', {
+        accept: (swimmerId: string, pairId: string) => fetchAPI<any>('/buddy', {
             method: 'POST',
-            body: JSON.stringify({ action: 'accept', swimmerId, targetSwimmerId }),
+            body: JSON.stringify({ action: 'accept', swimmerId, pairId }),
         }, false),
-        dissolve: (swimmerId: string, targetSwimmerId: string) => fetchAPI<any>('/buddy', {
+        dissolve: (swimmerId: string, pairId: string) => fetchAPI<any>('/buddy', {
             method: 'POST',
-            body: JSON.stringify({ action: 'dissolve', swimmerId, targetSwimmerId }),
+            body: JSON.stringify({ action: 'dissolve', swimmerId, pairId }),
         }, false),
     },
     meets: {
-        getAll: () => fetchAPI<any>('/meets'),
-        create: (data: any) => fetchAPI<any>('/meets', {
+        getAll: () => fetchAPI<MeetCountdownResponse>('/meets'),
+        create: (data: Partial<Meet>) => fetchAPI<Meet>('/meets', {
             method: 'POST',
             body: JSON.stringify(data),
         }),
-        update: (id: string, data: any) => fetchAPI<any>(`/meets?id=${id}`, {
+        update: (id: string, data: Partial<Meet>) => fetchAPI<Meet>(`/meets?id=${id}`, {
             method: 'PUT',
             body: JSON.stringify(data),
         }),
-        delete: (id: string) => fetchAPI<any>(`/meets?id=${id}`, {
+        delete: (id: string) => fetchAPI<void>(`/meets?id=${id}`, {
             method: 'DELETE',
         }),
-        getCountdown: () => fetchAPI<any>('/meets'),
+        getCountdown: () => fetchAPI<MeetCountdownResponse>('/meets'),
     },
     activityFeed: {
-        get: (swimmerId: string) => fetchAPI<any>(`/activity-feed?swimmerId=${swimmerId}`, undefined, true, 1),
+        get: (swimmerId: string) => fetchAPI<any[]>(`/activity-feed?swimmerId=${swimmerId}`, undefined, true, 1),
         readAll: (swimmerId: string) => fetchAPI<any>('/activity-feed', {
             method: 'POST',
             body: JSON.stringify({ action: 'read_all', swimmerId }),
@@ -278,6 +310,3 @@ export const api = {
         }),
     }
 };
-
-// Re-export for low-retry polling — store uses fetchAPI directly with retries=1
-export { fetchAPI };

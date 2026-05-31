@@ -1,6 +1,6 @@
 "use client";
 
-import { resolveBackgroundTheme, saveThemePreference, getThemePreference, backgroundThemes, type BackgroundTheme } from '@/lib/background-themes';
+import { resolveBackgroundTheme, saveThemePreference, backgroundThemes, type BackgroundTheme } from '@/lib/background-themes';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
 interface UseBackgroundThemeResult {

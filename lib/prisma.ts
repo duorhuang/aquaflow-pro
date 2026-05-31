@@ -8,7 +8,7 @@
 export { flattenPayload, V12_FINGERPRINT } from '@/lib/utils';
 
 import { Pool } from '@neondatabase/serverless';
-import { PrismaNeon } from '@prisma/adapter-neon';
+
 
 const globalForPrisma = globalThis as unknown as { prisma: any };
 type PrismaClient = any;

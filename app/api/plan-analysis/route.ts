@@ -30,6 +30,11 @@ export async function GET(req: Request) {
             return NextResponse.json(analysis.length > 0 ? analysis[0] : null, { headers: V12_FINGERPRINT });
         }
 
+        // SECURITY: Only coaches can list all analyses
+        if (auth.role === 'athlete') {
+            return NextResponse.json({ error: 'Forbidden: Coaches only' }, { status: 403 });
+        }
+
         const analyses = await sql`
             SELECT * FROM "PlanAnalysis"
             ORDER BY "createdAt" DESC

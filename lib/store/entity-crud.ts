@@ -20,9 +20,9 @@ const uid = () => Math.random().toString(36).substr(2, 9);
  * Called inside StoreProvider with state setters, persist helper, and recordMutation.
  */
 export function useEntityCRUD({
-  plans, setPlans, swimmers, setSwimmers, feedbacks, setFeedbacks,
+  setPlans, swimmers, setSwimmers, setFeedbacks,
   attendance, setAttendance, performances, setPerformances, templates, setTemplates,
-  announcements, setAnnouncements, archivedAnnouncements, setArchivedAnnouncements,
+  setAnnouncements, announcements, setArchivedAnnouncements,
   recordMutation,
   persist,
 }: {
@@ -38,23 +38,31 @@ export function useEntityCRUD({
   persist: <T>(key: string, data: T[]) => void;
 }) {
   // --- XP adjustment (best-effort sync) ---
-  const adjustXP = useCallback(async (swimmerId: string, amount: number) => {
+  const adjustXP = useCallback(async (swimmerId: string, amount: number, persistToServer: boolean = false) => {
     recordMutation();
     let updatedSwimmer: Swimmer | undefined;
     setSwimmers(prev => {
       const next = prev.map(s => {
         if (s.id !== swimmerId) return s;
+        const newTotalXp = Math.max(0, (s.totalXp || 0) + amount);
+        const newBalance = Math.max(0, (s.balance || 0) + amount);
         const newXP = Math.max(0, (s.xp || 0) + amount);
-        updatedSwimmer = { ...s, xp: newXP, level: calculateLevel(newXP) };
+        updatedSwimmer = {
+          ...s,
+          xp: newXP,
+          totalXp: newTotalXp,
+          balance: newBalance,
+          level: calculateLevel(newTotalXp)
+        };
         return updatedSwimmer!;
       });
       if (updatedSwimmer) persist('swimmers', next);
       return next;
     });
-    if (updatedSwimmer) {
+    if (persistToServer && updatedSwimmer) {
       try { await api.swimmers.update(swimmerId, updatedSwimmer); } catch { /* best-effort */ }
     }
-  }, [recordMutation]);
+  }, [recordMutation, persist]);
 
   // --- Attendance (defined before submitFeedback since feedback calls it) ---
   const markAttendance = useCallback(async (swimmerId: string, date?: string, status: "Present" | "AthletePresent" = "Present") => {
@@ -78,7 +86,7 @@ export function useEntityCRUD({
     }
 
     recordMutation();
-    adjustXP(swimmerId, 10);
+    adjustXP(swimmerId, 10, false);
 
     try {
       const dbRecord = await api.attendance.create(newRecord);
@@ -87,6 +95,7 @@ export function useEntityCRUD({
       }
     } catch {
       setAttendance(prev => { const next = prev.filter(a => a.id !== newRecord.id); persist('attendance', next); return next; });
+      adjustXP(swimmerId, -10, false);
     }
   }, [attendance, recordMutation, adjustXP]);
 
@@ -109,12 +118,17 @@ export function useEntityCRUD({
 
     setAttendance(prev => { const next = [...prev, ...newRecords]; persist('attendance', next); return next; });
     recordMutation();
-    swimmerIds.forEach(id => adjustXP(id, 10));
+    swimmerIds.forEach(id => adjustXP(id, 10, false));
 
     try {
       const results = await Promise.allSettled(newRecords.map(r => api.attendance.create(r)));
-      const failed = results.filter(r => r.status === 'rejected');
-      if (failed.length > 0) console.error(`${failed.length} attendance records failed to sync`);
+      const failedIds = newRecords
+        .filter((_, i) => results[i].status === 'rejected')
+        .map(r => r.id);
+      if (failedIds.length > 0) {
+        setAttendance(prev => { const next = prev.filter(a => !failedIds.includes(a.id)); persist('attendance', next); return next; });
+        console.error(`${failedIds.length} attendance records failed to sync, removed from local state`);
+      }
     } catch { /* best-effort */ }
   }, [recordMutation, adjustXP]);
 
@@ -137,7 +151,7 @@ export function useEntityCRUD({
       if (idx >= 0) { const updated = [...prev]; updated[idx] = fb; return updated; }
       return [...prev, fb];
     });
-    adjustXP(fb.swimmerId, 20);
+    adjustXP(fb.swimmerId, 20, false);
     try { await api.feedbacks.create(fb); } catch { throw new Error('Failed to submit feedback'); }
     markAttendance(fb.swimmerId);
   }, [recordMutation, adjustXP, markAttendance]);
@@ -165,6 +179,7 @@ export function useEntityCRUD({
   }, [recordMutation]);
 
   const starPlan = useCallback(async (id: string) => {
+    recordMutation();
     setPlans(prev => {
       const plan = prev.find(p => p.id === id);
       if (plan) api.plans.update(id, { isStarred: !plan.isStarred }).catch(() => {});
@@ -282,12 +297,13 @@ export function useEntityCRUD({
   }, [recordMutation]);
 
   const deleteAnnouncement = useCallback(async (id: string) => {
+    const ann = announcements.find(a => a.id === id);
     recordMutation();
     setAnnouncements(prev => { const next = prev.filter(a => a.id !== id); persist('announcements', next); return next; });
     try { await api.announcements.delete(id); } catch {
-      setAnnouncements(prev => { const next = [...prev]; persist('announcements', next); return next; });
+      if (ann) setAnnouncements(prev => { const next = [...prev, ann]; persist('announcements', next); return next; });
     }
-  }, [recordMutation]);
+  }, [announcements, recordMutation]);
 
   const starAnnouncement = useCallback(async (id: string) => {
     let targetState: boolean | undefined;

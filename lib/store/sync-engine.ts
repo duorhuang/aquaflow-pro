@@ -15,9 +15,10 @@ export function isQuotaError(msg: string): boolean {
   return (
     msg?.includes('data transfer quota') ||
     msg?.includes('HTTP status 402') ||
-    msg?.includes('exceeded') ||
     msg?.includes('QUOTA-EXHAUSTED') ||
-    msg?.includes('API Error: 503')
+    msg?.includes('Database Quota Exceeded') ||
+    msg?.includes('exceeded maximum request size') ||
+    msg?.includes('503 Service Unavailable')
   );
 }
 
@@ -102,7 +103,7 @@ export function useSyncEngine({
 
     // --- Polling ---
     const syncInterval = setInterval(async () => {
-      if (offlineRef.current) return;
+      // Skip during mutation guard window
       if (Date.now() - lastMutationAt.current < MUTATION_GUARD_MS) return;
 
       setSyncStatus('syncing');
@@ -117,12 +118,16 @@ export function useSyncEngine({
               offlineRef.current = true;
               setDbOffline(true);
             }
+            setSyncStatus('idle');
+            return;
           }
         }
 
-        if (offlineRef.current) {
-          setSyncStatus('idle');
-          return;
+        // DB back online — recovery path
+        if (syncData && offlineRef.current) {
+          console.log('[DB] DB back online — resuming normal sync');
+          setDbOffline(false);
+          offlineRef.current = false;
         }
 
         if (syncData) onSync(syncData);

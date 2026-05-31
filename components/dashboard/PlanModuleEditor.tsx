@@ -22,6 +22,7 @@ import {
 import { useStore } from "@/lib/store";
 import { useState } from "react";
 import { WorkoutLibrary } from "@/components/dashboard/WorkoutLibrary";
+import { useToast } from "@/components/common/Toast";
 
 // UID Helper (Deterministic-ish for client)
 const uid = () => {
@@ -76,6 +77,7 @@ interface PlanModuleEditorProps {
 }
 
 export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
+  const { toast } = useToast();
   const { addTemplate } = useStore();
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
@@ -121,7 +123,7 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
     );
     if (name) {
       addTemplate(block, name, block.type);
-      alert("已保存到模板库");
+      toast("success", "已保存到模板库");
     }
   };
 

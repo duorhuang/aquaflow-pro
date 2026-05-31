@@ -22,7 +22,7 @@ vi.mock('@/lib/i18n', () => ({
 }));
 
 // ─── Mock store ────────────────────────────────────────────────────
-const mockStore = {
+const mockStore: any = {
     swimmers: [],
     attendance: [],
     plans: [],

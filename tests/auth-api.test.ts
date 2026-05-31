@@ -330,9 +330,9 @@ describe('Auth API', () => {
 
         it('should reject registration when coach already exists', async () => {
             // Override mock to return an existing coach
-            mockNeon.mockImplementationOnce((strings: TemplateStringsArray, ...values: any[]) => {
+            mockNeon.mockImplementationOnce(((strings: TemplateStringsArray, ...values: any[]) => {
                 return Promise.resolve([{ id: 'existing-coach' }]);
-            });
+            }) as any);
 
             const req = createRequest('POST', 'http://localhost/api/auth/register-coach', {
                 username: 'new_coach',

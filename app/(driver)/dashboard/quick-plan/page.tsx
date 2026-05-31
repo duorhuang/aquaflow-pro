@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { ChevronLeft, Plus, Trash2, Clock, X, Dumbbell, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -22,21 +22,46 @@ const EQUIPMENT_MAP: Record<Equipment, string> = {
 };
 const EQUIPMENT = Object.keys(EQUIPMENT_MAP) as Equipment[];
 const TYPES: TrainingBlock["type"][] = ["Warmup", "Pre-Set", "Main Set", "Drill Set", "Cool Down"];
+const BLOCK_TYPES_MAP: Record<string, string> = {
+    "Warmup": "热身",
+    "Pre-Set": "预备组",
+    "Main Set": "主项",
+    "Drill Set": "分解练习",
+    "Cool Down": "放松"
+};
+const STROKES_MAP: Record<string, string> = {
+    "Free": "自由泳",
+    "Back": "仰泳",
+    "Breast": "蛙泳",
+    "Fly": "蝶泳",
+    "IM": "混合泳",
+    "Choice": "自选"
+};
+const GROUPS_MAP: Record<string, string> = {
+    "Advanced": "高级组",
+    "Intermediate": "中级组",
+    "Junior": "初级组",
+    "External": "校外组"
+};
 
 function Breadcrumb() {
     const { t } = useLanguage();
     return (
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="面包屑导航">
             <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
             <ChevronRight className="w-3 h-3" aria-hidden="true" />
-            <span className="text-white font-medium">{t.common.quickPlan}</span>
+            <span className="text-white font-medium">{t.editor.quickPlan}</span>
         </nav>
     );
 }
 
-export default function QuickPlanPage() {
+function QuickPlanContent() {
     const router = useRouter();
-    const { addPlan } = useStore();
+    const searchParams = useSearchParams();
+    const id = searchParams.get('id');
+    const urlDate = searchParams.get('date');
+    const { plans, addPlan, updatePlan } = useStore();
+    const { t } = useLanguage();
 
     // Plan State
     const [group, setGroup] = useState<GroupLevel>("Advanced");
@@ -55,6 +80,27 @@ export default function QuickPlanPage() {
     const [stroke, setStroke] = useState<PlanItem["stroke"]>("Free");
     const [interval, setInterval] = useState("1:30");
     const [selectedEquipment, setSelectedEquipment] = useState<Equipment[]>([]);
+
+    // Load existing plan if ?id=XYZ is present
+    useEffect(() => {
+        if (id) {
+            const plan = plans.find(p => p.id === id);
+            if (plan) {
+                setGroup(plan.group);
+                setDate(plan.date);
+                setBlocks(plan.blocks || []);
+                setTrainingType(plan.trainingType || "");
+                setPrimaryStroke(plan.primaryStroke || "");
+            }
+        }
+    }, [id, plans]);
+
+    // Set date from URL parameter if ?date=YYYY-MM-DD is present
+    useEffect(() => {
+        if (urlDate && !id) {
+            setDate(urlDate);
+        }
+    }, [urlDate, id]);
 
     const handleAddSet = () => {
         const newItem: PlanItem = {
@@ -87,11 +133,10 @@ export default function QuickPlanPage() {
         const totalDist = blocks.reduce((sum, b) =>
             sum + b.items.reduce((s, i) => s + (i.repeats * i.distance), 0), 0);
 
-        const newPlan: TrainingPlan = {
-            id: 'p_' + Date.now(),
+        const planData: Partial<TrainingPlan> = {
             date,
             group,
-            status: "Published",
+            status: "Published" as const,
             focus: "Quick Plan",
             totalDistance: totalDist,
             coachNotes: "Created via Quick Planner",
@@ -101,9 +146,17 @@ export default function QuickPlanPage() {
         };
 
         try {
-            await addPlan(newPlan);
+            if (id) {
+                await updatePlan(id, planData);
+            } else {
+                const newPlan: TrainingPlan = {
+                    id: 'p_' + Date.now(),
+                    ...(planData as any)
+                };
+                await addPlan(newPlan);
+            }
         } catch {
-            // Plan saved locally but API sync failed — still redirect so coach sees it
+            // Optimistic store sync will recover
         }
         router.push("/dashboard");
     };
@@ -116,19 +169,22 @@ export default function QuickPlanPage() {
 
             {/* Header - Fixed Overlap Issues */}
             <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-4 py-3 flex items-center justify-between shadow-sm">
-                <button onClick={() => router.back()} className="p-2 -ml-2 text-muted-foreground hover:text-white transition-colors">
+                <button
+                    onClick={() => router.back()}
+                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2 text-muted-foreground hover:text-white transition-colors rounded-lg"
+                    aria-label="返回"
+                >
                     <ChevronLeft className="w-6 h-6" />
                 </button>
                 <div className="flex flex-col items-center">
-                    <h1 className="font-bold text-lg leading-tight">新建计划</h1>
-                    <span className="text-xs text-muted-foreground">Quick Plan</span>
+                    <h1 className="font-bold text-lg leading-tight">{id ? t.editor.editPlan : t.editor.newPlan}</h1>
                 </div>
                 <button
                     onClick={handlePublish}
                     disabled={blocks.length === 0}
-                    className="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/20 transition-all border border-primary/20"
+                    className="bg-primary/10 text-primary px-3 py-1.5 min-h-[44px] rounded-full text-xs font-bold disabled:opacity-20 disabled:text-muted-foreground disabled:cursor-not-allowed hover:bg-primary/20 transition-all border border-primary/20"
                 >
-                    发布
+                    {t.common.publish}
                 </button>
             </header>
 
@@ -136,7 +192,7 @@ export default function QuickPlanPage() {
                 {/* Meta Config */}
                 <div className="space-y-4 bg-card/40 p-4 rounded-2xl border border-white/5">
                     <div>
-                        <label className="text-xs text-muted-foreground uppercase font-bold mb-2 block">训练组别 (Group)</label>
+                        <label className="text-xs text-muted-foreground uppercase font-bold mb-2 block">训练组别</label>
                         <div className="flex flex-wrap gap-2">
                             {GROUPS.map(g => (
                                 <button
@@ -149,13 +205,13 @@ export default function QuickPlanPage() {
                                             : "bg-black/20 text-muted-foreground border-white/5 hover:bg-white/5"
                                     )}
                                 >
-                                    {g}
+                                    {GROUPS_MAP[g]}
                                 </button>
                             ))}
                         </div>
                     </div>
                     <div>
-                        <label className="text-xs text-muted-foreground uppercase font-bold mb-2 block">日期 (Date)</label>
+                        <label className="text-xs text-muted-foreground uppercase font-bold mb-2 block">日期</label>
                         <input
                             type="date"
                             value={date}
@@ -165,36 +221,36 @@ export default function QuickPlanPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-xs text-muted-foreground uppercase font-bold mb-2 block">训练类型 (Type)</label>
+                            <label className="text-xs text-muted-foreground uppercase font-bold mb-2 block">训练类型</label>
                             <select
                                 value={trainingType}
                                 onChange={(e) => setTrainingType(e.target.value)}
                                 className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 transition-all"
                             >
-                                <option value="">无 (None)</option>
-                                <option value="aerobic">有氧 Aerobic</option>
-                                <option value="anaerobic">无氧 Anaerobic</option>
-                                <option value="lactate">乳酸 Lactate</option>
-                                <option value="sprint">冲刺 Sprint</option>
-                                <option value="recovery">恢复 Recovery</option>
-                                <option value="endurance">耐力 Endurance</option>
-                                <option value="race_prep">赛前 Race Prep</option>
+                                <option value="">无</option>
+                                <option value="aerobic">有氧</option>
+                                <option value="anaerobic">无氧</option>
+                                <option value="lactate">乳酸</option>
+                                <option value="sprint">冲刺</option>
+                                <option value="recovery">恢复</option>
+                                <option value="endurance">耐力</option>
+                                <option value="race_prep">赛前</option>
                             </select>
                         </div>
                         <div>
-                            <label className="text-xs text-muted-foreground uppercase font-bold mb-2 block">主项 (Primary Stroke)</label>
+                            <label className="text-xs text-muted-foreground uppercase font-bold mb-2 block">主项泳姿</label>
                             <select
                                 value={primaryStroke}
                                 onChange={(e) => setPrimaryStroke(e.target.value)}
                                 className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 transition-all"
                             >
-                                <option value="">无 (None)</option>
-                                <option value="Free">自由泳 Free</option>
-                                <option value="Back">仰泳 Back</option>
-                                <option value="Breast">蛙泳 Breast</option>
-                                <option value="Fly">蝶泳 Fly</option>
-                                <option value="IM">混合泳 IM</option>
-                                <option value="Choice">自选 Choice</option>
+                                <option value="">无</option>
+                                <option value="Free">自由泳</option>
+                                <option value="Back">仰泳</option>
+                                <option value="Breast">蛙泳</option>
+                                <option value="Fly">蝶泳</option>
+                                <option value="IM">混合泳</option>
+                                <option value="Choice">自选</option>
                             </select>
                         </div>
                     </div>
@@ -203,8 +259,8 @@ export default function QuickPlanPage() {
                 {/* Plan Content */}
                 <div className="space-y-3">
                     <label className="text-xs text-muted-foreground uppercase font-bold flex items-center justify-between">
-                        <span>训练流程 (Flow)</span>
-                        <span className="text-xs bg-white/10 px-2 py-0.5 rounded text-white">{blocks.length} blocks</span>
+                        <span>训练流程</span>
+                        <span className="text-xs bg-white/10 px-2 py-0.5 rounded text-white">{blocks.length} 个训练块</span>
                     </label>
 
                     {blocks.length === 0 ? (
@@ -221,13 +277,14 @@ export default function QuickPlanPage() {
                                 <div key={block.id} className="bg-card border border-border p-4 rounded-2xl relative group animate-in slide-in-from-bottom-4 duration-300 shadow-sm">
                                     <button
                                         onClick={() => setBlocks(blocks.filter(b => b.id !== block.id))}
-                                        className="absolute right-3 top-3 p-2 text-white/20 hover:text-red-400 hover:bg-white/5 rounded-lg transition-all"
+                                        className="absolute right-3 top-3 p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-white/5 rounded-lg transition-all"
+                                        aria-label={`删除训练块 ${idx + 1}`}
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
                                     <div className="flex items-center gap-2 mb-3">
                                         <span className="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center text-xs font-bold text-muted-foreground">{idx + 1}</span>
-                                        <div className="text-xs text-primary font-bold uppercase tracking-wider">{block.type}</div>
+                                        <div className="text-xs text-primary font-bold">{BLOCK_TYPES_MAP[block.type] || block.type}</div>
                                     </div>
 
                                     {block.items.map(item => (
@@ -236,7 +293,7 @@ export default function QuickPlanPage() {
                                                 <span className="text-2xl font-bold text-white">{item.repeats}</span>
                                                 <span className="text-sm text-muted-foreground">x</span>
                                                 <span className="text-2xl font-bold text-white">{item.distance}m</span>
-                                                <span className="ml-2 text-lg font-medium text-primary">{item.stroke}</span>
+                                                <span className="ml-2 text-lg font-medium text-primary">{STROKES_MAP[item.stroke] || item.stroke}</span>
                                             </div>
                                             {(item.interval || item.equipment.length > 0) && (
                                                 <div className="flex flex-wrap gap-2 mt-1">
@@ -276,9 +333,12 @@ export default function QuickPlanPage() {
                         <div className="flex justify-between items-center pb-4 border-b border-white/5">
                             <div>
                                 <h2 className="text-xl font-bold text-white">添加训练</h2>
-                                <p className="text-xs text-muted-foreground">Add Set</p>
                             </div>
-                            <button onClick={() => setIsDrawerOpen(false)} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white transition-colors">
+                            <button
+                                onClick={() => setIsDrawerOpen(false)}
+                                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-white/5 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"
+                                aria-label="关闭"
+                            >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -296,15 +356,15 @@ export default function QuickPlanPage() {
                                             : "bg-white/5 text-muted-foreground border-transparent hover:bg-white/10"
                                     )}
                                 >
-                                    {t}
+                                    {BLOCK_TYPES_MAP[t]}
                                 </button>
                             ))}
                         </div>
 
-                        {/* Repeats x Distance */}
+                        {/* 组数 x 距离 */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-xs uppercase font-bold text-muted-foreground">组数 (Repeats)</label>
+                                <label className="text-xs font-bold text-muted-foreground">组数</label>
                                 <div className="flex items-center gap-2 bg-black/20 rounded-2xl p-2 border border-white/5">
                                     <button onClick={() => setRepeats(Math.max(1, repeats - 1))} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl text-xl font-bold hover:bg-white/20 text-white">-</button>
                                     <div className="flex-1 text-center text-3xl font-mono font-bold text-white">{repeats}</div>
@@ -312,7 +372,7 @@ export default function QuickPlanPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs uppercase font-bold text-muted-foreground">距离 (Distance)</label>
+                                <label className="text-xs font-bold text-muted-foreground">距离</label>
                                 <div className="relative">
                                     <select
                                         value={distance}
@@ -329,17 +389,17 @@ export default function QuickPlanPage() {
                         {/* Stroke & Interval */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-xs uppercase font-bold text-muted-foreground">泳姿 (Stroke)</label>
+                                <label className="text-xs font-bold text-muted-foreground">泳姿</label>
                                 <select
                                     value={stroke}
                                     onChange={(e) => setStroke(e.target.value as any)}
                                     className="w-full h-12 bg-black/20 rounded-xl px-4 text-white border border-white/5 focus:outline-none font-medium"
                                 >
-                                    {STROKES.map(s => <option key={s} value={s}>{s}</option>)}
+                                    {STROKES.map(s => <option key={s} value={s}>{STROKES_MAP[s]}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs uppercase font-bold text-muted-foreground">包干 (Interval)</label>
+                                <label className="text-xs font-bold text-muted-foreground">包干时间</label>
                                 <div className="relative">
                                     <Clock className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
                                     <input
@@ -355,7 +415,7 @@ export default function QuickPlanPage() {
 
                         {/* Equipment */}
                         <div className="space-y-3">
-                            <label className="text-xs uppercase font-bold text-muted-foreground">器材 (Equipment)</label>
+                            <label className="text-xs font-bold text-muted-foreground">器材</label>
                             <div className="flex flex-wrap gap-2">
                                 {EQUIPMENT.map(eq => {
                                     const isSelected = selectedEquipment.includes(eq);
@@ -385,12 +445,24 @@ export default function QuickPlanPage() {
                             onClick={handleAddSet}
                             className="w-full py-4 bg-gradient-to-r from-primary to-emerald-400 text-black font-bold text-lg rounded-xl shadow-[0_0_20px_rgba(100,255,218,0.3)] active:scale-95 transition-all mt-2"
                         >
-                            确认添加 (Confirm)
+                            确认添加
                         </button>
                         <div className="h-4 md:hidden" />
                     </div>
                 </div>
             )}
         </div>
+    );
+}
+
+export default function QuickPlanPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        }>
+            <QuickPlanContent />
+        </Suspense>
     );
 }

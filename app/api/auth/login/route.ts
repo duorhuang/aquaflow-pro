@@ -5,49 +5,69 @@ import { generateJWT, setSessionCookie, verifyPassword } from '@/lib/auth';
 import { getNeon } from '@/lib/db-pool';
 export const dynamic = 'force-dynamic';
 
+// In-memory rate limiter with automatic cleanup
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 
+// Periodically clean up expired entries to prevent memory leak
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of loginAttempts.entries()) {
+        if (now > entry.resetAt) loginAttempts.delete(key);
+    }
+}, 60000); // Clean every minute
+
 function getRateLimit(key: string): boolean {
-  const now = Date.now();
-  const entry = loginAttempts.get(key);
-  if (!entry) { loginAttempts.set(key, { count: 1, resetAt: now + 300000 }); return true; }
-  if (now > entry.resetAt) { loginAttempts.set(key, { count: 1, resetAt: now + 300000 }); return true; }
-  if (entry.count >= 10) return false;
-  entry.count++;
-  return true;
+    const now = Date.now();
+    const entry = loginAttempts.get(key);
+    if (!entry) { loginAttempts.set(key, { count: 1, resetAt: now + 300000 }); return true; }
+    if (now > entry.resetAt) { loginAttempts.set(key, { count: 1, resetAt: now + 300000 }); return true; }
+    if (entry.count >= 10) return false;
+    entry.count++;
+    return true;
 }
 
 export async function POST(request: Request) {
-  return withApiHandler(async () => {
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
-    if (!getRateLimit(ip)) return NextResponse.json({ error: 'Too many attempts. Try again in 5 minutes.' }, { status: 429, headers: V12_FINGERPRINT });
+    return withApiHandler(async () => {
+        const rawIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown';
+        const ip = rawIp.includes(',') ? rawIp.split(',')[0].trim() : rawIp;
+        if (!getRateLimit(ip)) return NextResponse.json({ error: 'Too many attempts. Try again in 5 minutes.' }, { status: 429, headers: V12_FINGERPRINT });
 
-    const sql = getNeon();
-    const data = flattenPayload(await request.json());
-    if (!data.username || !data.password) return NextResponse.json({ error: 'username and password are required' }, { status: 400 });
+        const sql = getNeon();
+        const data = flattenPayload(await request.json());
+        if (!data.username || !data.password) return NextResponse.json({ error: 'username and password are required' }, { status: 400 });
 
-    const coaches = await sql`SELECT * FROM "CoachUser" WHERE username = ${String(data.username)}`;
-    for (const coach of coaches) {
-      if (await verifyPassword(String(data.password), coach.password)) {
-        const token = await generateJWT({ userId: coach.id, role: 'coach' });
-        return NextResponse.json({
-          success: true,
-          user: { id: coach.id, name: coach.name, role: 'coach' },
-        }, { headers: { ...V12_FINGERPRINT, 'Set-Cookie': setSessionCookie(token) } });
-      }
-    }
+        // SECURITY: Always verify against BOTH coaches and swimmers to prevent
+        // timing attacks that reveal whether a username exists in one table.
+        const coaches = await sql`SELECT * FROM "CoachUser" WHERE username = ${String(data.username)}`;
+        let coachMatch = false;
+        for (const coach of coaches) {
+            if (await verifyPassword(String(data.password), coach.password)) {
+                coachMatch = true;
+                const token = await generateJWT({ userId: coach.id, role: 'coach' });
+                return NextResponse.json({
+                    success: true,
+                    user: { id: coach.id, name: coach.name, role: 'coach' },
+                }, { headers: { ...V12_FINGERPRINT, 'Set-Cookie': setSessionCookie(token) } });
+            }
+        }
 
-    const swimmers = await sql`SELECT * FROM "Swimmer" WHERE username = ${String(data.username)}`;
-    for (const swimmer of swimmers) {
-      if (await verifyPassword(String(data.password), swimmer.password)) {
-        const token = await generateJWT({ userId: swimmer.id, role: 'athlete' });
-        return NextResponse.json({
-          success: true,
-          user: { id: swimmer.id, name: swimmer.name, role: 'athlete' },
-        }, { headers: { ...V12_FINGERPRINT, 'Set-Cookie': setSessionCookie(token) } });
-      }
-    }
+        const swimmers = await sql`SELECT * FROM "Swimmer" WHERE username = ${String(data.username)}`;
+        for (const swimmer of swimmers) {
+            if (await verifyPassword(String(data.password), swimmer.password)) {
+                const token = await generateJWT({ userId: swimmer.id, role: 'athlete' });
+                return NextResponse.json({
+                    success: true,
+                    user: { id: swimmer.id, name: swimmer.name, role: 'athlete' },
+                }, { headers: { ...V12_FINGERPRINT, 'Set-Cookie': setSessionCookie(token) } });
+            }
+        }
 
-    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401, headers: V12_FINGERPRINT });
-  });
+        // SECURITY: Dummy verification to prevent timing-based username enumeration
+        // (takes same time regardless of whether user exists)
+        if (!coachMatch && swimmers.length === 0) {
+            await verifyPassword(String(data.password), 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:100000:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
+        }
+
+        return NextResponse.json({ error: 'Invalid credentials' }, { status: 401, headers: V12_FINGERPRINT });
+    });
 }

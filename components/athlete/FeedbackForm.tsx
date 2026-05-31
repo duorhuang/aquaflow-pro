@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Send, ThumbsUp, Activity, Mail, Sparkles } from "lucide-react";
+import { Send, ThumbsUp, Activity, Mail, Sparkles, Loader2, Mic, Flame } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { Feedback } from "@/types";
+import { useToast } from "@/components/common/Toast";
 
 interface FeedbackFormProps {
     swimmerId: string;
@@ -15,10 +16,68 @@ interface FeedbackFormProps {
 export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
     const { t } = useLanguage();
     const { submitFeedback } = useStore();
+    const { toast } = useToast();
     const [submitted, setSubmitted] = useState(false);
     const [rpe, setRpe] = useState(5);
     const [soreness, setSoreness] = useState(3);
     const [comments, setComments] = useState("");
+    const [isListening, setIsListening] = useState(false);
+    const [parsing, setParsing] = useState(false);
+
+    const handleSpeech = () => {
+        if (typeof window === "undefined") return;
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            toast("error", "抱歉，您的浏览器不支持语音识别。请使用 Chrome 浏览器。");
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = "zh-CN";
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+            setIsListening(true);
+        };
+
+        recognition.onend = () => {
+            setIsListening(false);
+        };
+
+        recognition.onerror = (e: any) => {
+            console.error("Speech recognition error:", e);
+            setIsListening(false);
+        };
+
+        recognition.onresult = async (event: any) => {
+            const transcript = event.results[0][0].transcript;
+            setComments(prev => prev ? prev + " " + transcript : transcript);
+            
+            // Post transcript to AI Edge route to parse RPE and Soreness
+            setParsing(true);
+            try {
+                const response = await fetch("/api/ai/feedback-parse", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: transcript }),
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        setRpe(data.rpe);
+                        setSoreness(data.soreness);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to parse feedback semantically:", e);
+            } finally {
+                setParsing(false);
+            }
+        };
+
+        recognition.start();
+    };
 
     const handleSubmit = async () => {
         const today = new Date();
@@ -56,17 +115,30 @@ export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
     }
 
     const getRpeColor = (value: number) => {
-        if (value <= 3) return "text-green-400";
-        if (value <= 5) return "text-blue-400";
-        if (value <= 7) return "text-yellow-400";
+        if (value <= 3) return "text-cyan-400";
+        if (value <= 5) return "text-emerald-400";
+        if (value <= 7) return "text-amber-400";
         return "text-red-400";
     };
 
     const getSorenessColor = (value: number) => {
-        if (value <= 3) return "text-green-400";
-        if (value <= 5) return "text-blue-400";
+        if (value <= 3) return "text-cyan-400";
+        if (value <= 5) return "text-emerald-400";
         if (value <= 7) return "text-orange-400";
         return "text-red-400";
+    };
+
+    const getSliderGlow = (val: number) => {
+        if (val <= 3) return "shadow-[0_0_15px_rgba(0,242,255,0.15)] border-cyan-500/20 bg-cyan-950/5";
+        if (val <= 5) return "shadow-[0_0_15px_rgba(16,185,129,0.15)] border-emerald-500/20 bg-emerald-950/5";
+        if (val <= 7) return "shadow-[0_0_15px_rgba(245,159,0,0.15)] border-amber-500/20 bg-amber-950/5";
+        return "shadow-[0_0_20px_rgba(239,68,68,0.3)] border-red-500/30 bg-red-950/10 animate-pulse";
+    };
+
+    const getRpeTrackBg = (val: number) => {
+        const color = val <= 3 ? '#00f2ff' : val <= 5 ? '#10b981' : val <= 7 ? '#f59f00' : '#ef4444';
+        const percent = ((val - 1) / 9) * 100;
+        return `linear-gradient(to right, ${color} 0%, ${color} ${percent}%, rgba(255,255,255,0.1) ${percent}%, rgba(255,255,255,0.1) 100%)`;
     };
 
     return (
@@ -103,17 +175,21 @@ export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
                         </h4>
 
                         {/* RPE Slider */}
-                        <div>
+                        <div className={cn("p-4 border rounded-2xl transition-all duration-300 relative overflow-hidden", getSliderGlow(rpe))}>
                             <div className="flex justify-between mb-2">
                                 <label className="text-sm text-muted-foreground">疲劳程度 (RPE)</label>
-                                <span className={cn("text-lg font-bold", getRpeColor(rpe))}>{rpe}/10</span>
+                                <span className={cn("text-lg font-bold flex items-center gap-1", getRpeColor(rpe))}>
+                                    {rpe}/10
+                                    {rpe >= 8 && <Flame className="w-4 h-4 text-red-500 animate-pulse" />}
+                                </span>
                             </div>
                             <input
                                 type="range"
                                 min="1" max="10"
                                 value={rpe}
                                 onChange={(e) => setRpe(parseInt(e.target.value))}
-                                className="w-full accent-primary h-2 bg-secondary rounded-lg appearance-none cursor-pointer"
+                                style={{ background: getRpeTrackBg(rpe) }}
+                                className="w-full accent-primary h-2 bg-secondary rounded-lg appearance-none cursor-pointer hover:scale-[1.01] active:scale-[1.01] transition-transform"
                             />
                             <div className="flex justify-between text-xs text-muted-foreground mt-1">
                                 <span>很轻松</span>
@@ -123,17 +199,21 @@ export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
                         </div>
 
                         {/* Soreness Slider */}
-                        <div>
+                        <div className={cn("p-4 border rounded-2xl transition-all duration-300 relative overflow-hidden", getSliderGlow(soreness))}>
                             <div className="flex justify-between mb-2">
                                 <label className="text-sm text-muted-foreground">肌肉酸痛</label>
-                                <span className={cn("text-lg font-bold", getSorenessColor(soreness))}>{soreness}/10</span>
+                                <span className={cn("text-lg font-bold flex items-center gap-1", getSorenessColor(soreness))}>
+                                    {soreness}/10
+                                    {soreness >= 8 && <Flame className="w-4 h-4 text-orange-500 animate-pulse" />}
+                                </span>
                             </div>
                             <input
                                 type="range"
                                 min="1" max="10"
                                 value={soreness}
                                 onChange={(e) => setSoreness(parseInt(e.target.value))}
-                                className="w-full accent-orange-400 h-2 bg-secondary rounded-lg appearance-none cursor-pointer"
+                                style={{ background: getRpeTrackBg(soreness) }}
+                                className="w-full accent-orange-400 h-2 bg-secondary rounded-lg appearance-none cursor-pointer hover:scale-[1.01] active:scale-[1.01] transition-transform"
                             />
                             <div className="flex justify-between text-xs text-muted-foreground mt-1">
                                 <span>无酸痛</span>
@@ -147,10 +227,40 @@ export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
                     <div className="space-y-4">
                         {/* Good Points */}
                         <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4">
-                            <label className="text-sm font-bold text-primary mb-2 flex items-center gap-2">
-                                <Sparkles className="w-4 h-4" />
-                                训练反思与状态
-                            </label>
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="text-sm font-bold text-primary flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4" />
+                                    训练反思与状态
+                                </label>
+                                <button
+                                    onClick={handleSpeech}
+                                    disabled={parsing}
+                                    className={cn(
+                                        "px-3 py-1.5 rounded-xl transition-all duration-300 flex items-center gap-1.5 border text-xs font-bold shadow-md cursor-pointer",
+                                        isListening
+                                            ? "bg-red-500/20 border-red-500/40 text-red-400 animate-pulse"
+                                            : "bg-primary/10 border-primary/20 text-primary hover:bg-primary/20"
+                                    )}
+                                    title="语音转文字输入"
+                                >
+                                    {isListening ? (
+                                        <>
+                                            <span className="w-2 h-2 rounded-full bg-red-500 animate-ping inline-block" />
+                                            <span>录音中...</span>
+                                        </>
+                                    ) : parsing ? (
+                                        <>
+                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                            <span>AI 分析中...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Mic className="w-3.5 h-3.5" />
+                                            <span>语音输入</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                             <p className="text-xs text-muted-foreground mb-3">
                                 请反思今日训练内容（动作、教练提示）以及你的身体状态（疲劳感、训练投入度等）...
                             </p>
@@ -167,7 +277,7 @@ export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
                     {/* Submit Button */}
                     <button
                         onClick={handleSubmit}
-                        className="w-full py-4 bg-gradient-to-r from-primary to-blue-500 text-white font-bold rounded-2xl hover:brightness-110 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                        className="w-full py-4 bg-gradient-to-r from-primary to-blue-500 text-white font-bold rounded-2xl hover:brightness-110 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 cursor-pointer"
                     >
                         <Send className="w-5 h-5" />
                         提交训练日记

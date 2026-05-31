@@ -20,8 +20,8 @@ export const planRepo = new (class extends BaseRepo {
     const targetedNotesJson = this.toJson(data.targetedNotes || {});
 
     const rows = await this.sql`
-      INSERT INTO "TrainingPlan" ("id", "date", "startTime", "endTime", "group", "blocks", "totalDistance", "focus", "status", "coachNotes", "targetedNotes", "imageUrl", "isStarred", "createdAt", "updatedAt")
-      VALUES (${planId}, ${String(data.date)}, ${data.startTime ?? ''}, ${data.endTime ?? ''}, ${String(data.group)}, ${blocksJson}, ${Number(data.totalDistance) || 0}, ${data.focus ?? ''}, ${data.status ?? 'Draft'}, ${data.coachNotes ?? ''}, ${targetedNotesJson}, ${data.imageUrl ?? null}, ${Boolean(data.isStarred)}, NOW(), NOW())
+      INSERT INTO "TrainingPlan" ("id", "date", "startTime", "endTime", "group", "blocks", "totalDistance", "focus", "status", "coachNotes", "targetedNotes", "imageUrl", "isStarred", "trainingType", "primaryStroke", "createdAt", "updatedAt")
+      VALUES (${planId}, ${String(data.date)}, ${data.startTime ?? ''}, ${data.endTime ?? ''}, ${String(data.group)}, ${blocksJson}, ${Number(data.totalDistance) || 0}, ${data.focus ?? ''}, ${data.status ?? 'Draft'}, ${data.coachNotes ?? ''}, ${targetedNotesJson}, ${data.imageUrl ?? null}, ${Boolean(data.isStarred)}, ${data.trainingType || null}, ${data.primaryStroke || null}, NOW(), NOW())
       RETURNING *
     `;
     return this.parseJsonFields(rows[0], [...JSON_FIELDS]);
@@ -31,8 +31,12 @@ export const planRepo = new (class extends BaseRepo {
     const existing = await this.sql`SELECT * FROM "TrainingPlan" WHERE "id" = ${id}`;
     const current = this.requireOne(existing, 'TrainingPlan', id);
 
-    const blocksJson = data.blocks !== undefined ? this.toJson(data.blocks) : (current as any).blocks;
-    const targetedNotesJson = data.targetedNotes !== undefined ? this.toJson(data.targetedNotes) : (current as any).targetedNotes;
+    const blocksJson = data.blocks !== undefined
+      ? this.toJson(data.blocks)
+      : (typeof (current as any).blocks === 'string' ? (current as any).blocks : this.toJson((current as any).blocks));
+    const targetedNotesJson = data.targetedNotes !== undefined
+      ? this.toJson(data.targetedNotes)
+      : (typeof (current as any).targetedNotes === 'string' ? (current as any).targetedNotes : this.toJson((current as any).targetedNotes));
 
     const rows = await this.sql`
       UPDATE "TrainingPlan" SET
@@ -48,6 +52,8 @@ export const planRepo = new (class extends BaseRepo {
         "targetedNotes" = ${targetedNotesJson},
         "imageUrl" = ${data.imageUrl !== undefined ? (data.imageUrl ?? null) : (current as any).imageUrl},
         "isStarred" = ${data.isStarred !== undefined ? Boolean(data.isStarred) : (current as any).isStarred},
+        "trainingType" = ${data.trainingType !== undefined ? (data.trainingType ?? null) : (current as any).trainingType},
+        "primaryStroke" = ${data.primaryStroke !== undefined ? (data.primaryStroke ?? null) : (current as any).primaryStroke},
         "updatedAt" = NOW()
       WHERE "id" = ${id}
       RETURNING *

@@ -1,21 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "@/lib/api-client";
-import { Calendar, MapPin, Trophy, ShieldAlert, Sparkles } from "lucide-react";
+import { Calendar, MapPin, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
-interface Meet {
-    id: string;
-    name: string;
-    date: string;
-    time?: string | null;
-    location?: string | null;
-    description?: string | null;
-    isActive: boolean;
-}
+import { Meet } from "@/types";
 
 export function MeetCountdown() {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [meet, setMeet] = useState<Meet | null>(null);
     const [isDarkGold, setIsDarkGold] = useState(false);
@@ -48,7 +42,7 @@ export function MeetCountdown() {
                 days: Math.floor(diff / (1000 * 60 * 60 * 24)),
                 hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
                 minutes: Math.floor((diff / (1000 * 60)) % 60),
-                seconds: Math.floor((diff / 100) % 60), // Keep high fidelity or standard seconds
+                seconds: Math.floor((diff / 1000) % 60),
             });
         };
 
@@ -61,7 +55,7 @@ export function MeetCountdown() {
             const data = await api.meets.getCountdown();
             if (data && data.closestMeet) {
                 setMeet(data.closestMeet);
-                setIsDarkGold(data.isDarkGoldActive);
+                setIsDarkGold(data.isDarkGoldActive || false);
                 
                 // Inject dark gold theme class globally to document.documentElement
                 if (data.isDarkGoldActive) {
@@ -124,11 +118,11 @@ export function MeetCountdown() {
                                 : "bg-primary/20 border-primary/30 text-primary"
                         )}
                     >
-                        {isDarkGold ? "🔥 倒计时备战 · 战鼓擂响" : "📅 下一战赛事预告"}
+                        {isDarkGold ? "🔥 倒计时备战" : "📅 下一场赛事"}
                     </span>
                     {isDarkGold && (
                         <span className="text-xs text-amber-500 font-bold flex items-center gap-1 animate-pulse">
-                            <Sparkles className="w-3.5 h-3.5" /> 黄金备战主题已激活
+                            <Sparkles className="w-3.5 h-3.5" /> 黄金备战已激活
                         </span>
                     )}
                 </div>

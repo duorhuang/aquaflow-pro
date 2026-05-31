@@ -226,6 +226,7 @@ export interface DailySession {
     trainingType?: string;
     primaryStroke?: string;
     createdAt?: string;
+    imageUrl?: string;
 }
 
 export interface WeeklyFeedbackType {
@@ -240,11 +241,14 @@ export interface WeeklyFeedbackType {
     swimmer?: { id: string; name: string };
     createdAt?: string;
     updatedAt?: string;
+    coachReply?: string;
+    skipped?: boolean;
+    message?: string;
 }
 
 export interface DailyFeedbackEntry {
-    id: string;
-    weeklyFeedbackId: string;
+    id?: string;
+    weeklyFeedbackId?: string;
     date: string;
     rpe?: number;
     soreness?: number;
@@ -291,3 +295,38 @@ export interface TargetedFeedbackType {
     swimmer?: { id: string; name: string };
     createdAt?: string;
 }
+
+export interface Meet {
+    id: string;
+    name: string;
+    date: string;
+    time?: string | null;
+    location?: string | null;
+    description?: string | null;
+    isActive: boolean;
+    targetGroup?: string[];
+    isDarkGoldActive?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface ActivityFeedItem {
+    id: string;
+    type: "achievement" | "pb" | "attendance" | "purchase" | "level_up";
+    title: string;
+    description: string;
+    date: string;
+    metadata?: any;
+    swimmerId?: string;
+    isRead?: boolean;
+    createdAt?: string;
+    detail?: string;
+    xpAmount?: number;
+}
+
+export interface MeetCountdownResponse {
+    meets: Meet[];
+    closestMeet: Meet | null;
+    isDarkGoldActive: boolean;
+}
+

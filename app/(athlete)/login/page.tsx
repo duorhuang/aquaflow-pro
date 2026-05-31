@@ -44,7 +44,7 @@ function LoginContent() {
                 </div>
 
                 {/* Role Toggle */}
-                <div className="flex p-1 bg-secondary/30 rounded-xl max-w-[240px] mx-auto" role="radiogroup" aria-label="Select role">
+                <div className="flex p-1 bg-secondary/30 rounded-xl max-w-[240px] mx-auto" role="radiogroup" aria-label="选择角色">
                     <button
                         onClick={() => setIsCoach(false)}
                         role="radio"
@@ -87,7 +87,7 @@ function LoginContent() {
 
 export default function LoginPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center text-white">Loading...</div>}>
+        <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center text-white">加载中...</div>}>
             <LoginContent />
         </Suspense>
     );

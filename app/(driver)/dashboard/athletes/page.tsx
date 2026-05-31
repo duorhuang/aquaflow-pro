@@ -86,7 +86,7 @@ export default function AthletesPage() {
     return (
         <div className="space-y-6">
             {/* Breadcrumb */}
-            <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-2" aria-label="Breadcrumb">
+            <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-2" aria-label="面包屑导航">
                 <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
                 <ChevronRight className="w-3 h-3" aria-hidden="true" />
                 <span className="text-white font-medium">{t.common.athletes}</span>
@@ -119,7 +119,7 @@ export default function AthletesPage() {
                                 : "text-muted-foreground hover:text-white hover:bg-white/5"
                         )}
                     >
-                        {activeTab === "All" ? (t.dashboard.allSwimmers || "All") : `${activeTab} ${t.common.group || "Group"}`}
+                        {tab === "All" ? (t.dashboard.allSwimmers || "All") : `${tab} ${t.common.group || "Group"}`}
                     </button>
                 ))}
             </div>

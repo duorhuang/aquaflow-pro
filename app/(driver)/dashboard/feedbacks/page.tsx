@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 function Breadcrumb() {
     const { t } = useLanguage();
     return (
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="面包屑导航">
             <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
             <ChevronRight className="w-3 h-3" aria-hidden="true" />
             <span className="text-white font-medium">{t.common.feedbackInbox}</span>
@@ -257,7 +257,7 @@ export default function FeedbacksPage() {
                         </h3>
                         <p className="text-sm text-muted-foreground max-w-md mx-auto">
                             {activeTab === 'pending'
-                                ? "队员提交周总结后，会在这里显示。批复后会自动移入“已批复”列表中。"
+                                ? "队员提交周总结后，会在这里显示。批复后会自动移入「已批复」列表中。"
                                 : activeTab === 'replied'
                                     ? "批复过的周总结会在这里归档，便于随时查阅。"
                                     : "队员开始填写打卡日记后，即使是草稿状态也会在此实时同步，以防信息丢失。"}
@@ -408,7 +408,7 @@ export default function FeedbacksPage() {
                                         {!f.isSubmitted && (
                                             <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl text-xs flex items-center gap-2 animate-in fade-in duration-300">
                                                 <AlertCircle className="w-4 h-4 shrink-0" />
-                                                <span>该队员本周的打卡记录目前处于“草稿”阶段，您可以预先在此编辑并保存批复评语。</span>
+                                                <span>该队员本周的打卡记录目前处于"草稿"阶段，您可以预先在此编辑并保存批复评语。</span>
                                             </div>
                                         )}
 

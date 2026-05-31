@@ -5,8 +5,9 @@ import { createPortal } from "react-dom";
 import { useStore } from "@/lib/store";
 import { api } from "@/lib/api-client";
 import { Swimmer } from "@/types";
-import { Activity, AlertTriangle, MessageSquare, Award, Sparkles, X, Coins, Trophy } from "lucide-react";
+import { Activity, AlertTriangle, MessageSquare, Award, Sparkles, X, Coins, Trophy, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 const PRESET_MESSAGES = [
     "今天训练非常专注，状态拉满！🌟",
@@ -86,10 +87,13 @@ export function SwimmerStatusPanel() {
     return (
         <div className="bg-card/50 border border-border rounded-2xl p-6 backdrop-blur-md relative">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-md font-semibold text-white flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-primary" />
-                    队员状态监控
-                </h3>
+                <Link href="/dashboard/athletes" className="group flex items-center gap-2 hover:opacity-85 transition-opacity" aria-label="查看队员花名册详情">
+                    <h3 className="text-md font-semibold text-white flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-primary" />
+                        队员状态监控
+                    </h3>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </Link>
             </div>
 
             <div className="space-y-3">
@@ -105,7 +109,7 @@ export function SwimmerStatusPanel() {
                     // Determine status color
                     const statusColor = hasInjury ? "error" :
                         readiness >= 85 ? "success" :
-                            readiness >= 70 ? "warning" : "warning";
+                            readiness >= 70 ? "warning" : "error";
 
                     return (
                         <div
@@ -354,7 +358,7 @@ export function SwimmerStatusPanel() {
 
                             {/* Notice Badge */}
                             <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-3 text-xs text-amber-300/70">
-                                💡 **说明**：打赏的 XP 将以“双轨制”形式同时增加队员的 **总经验值**（提升等级）与 **金币余额**（用于商城消费）。每日手动打赏全队限额为 3 人次，请合理激励！
+                                💡 **说明**：打赏的 XP 将以"双轨制"形式同时增加队员的 **总经验值**（提升等级）与 **金币余额**（用于商城消费）。每日手动打赏全队限额为 3 人次，请合理激励！
                             </div>
 
                             {/* Submit Button */}

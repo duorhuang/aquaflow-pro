@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { ShieldAlert, Info, Check, Save, ImagePlus, Loader2, X } from "lucide-react";
+import { useLanguage } from "@/lib/i18n";
+import { useToast } from "@/components/common/Toast";
 
 interface InjuryMapProps {
     swimmerId?: string;
@@ -11,6 +13,7 @@ interface InjuryMapProps {
     teamHeatMapData?: Record<string, number>; // aggregate soreness, e.g. { shoulderLeft: 3.5 }
     initialBodyMap?: Record<string, number>;
     onSaveSuccess?: () => void;
+    onPartClick?: (partKey: string, partLabel: string) => void; // Interactive callback for Coach heatmaps
 }
 
 const BODY_PARTS: Record<string, { label: string; coords: string; path: string }> = {
@@ -130,7 +133,7 @@ const PAIN_COLORS = [
     "#dc2626"  // 5: Severe / Red
 ];
 
-const PAIN_LABELS = [
+const FALLBACK_PAIN_LABELS = [
     "🟢 完美 (Fine - 0)",
     "🔵 轻微酸痛 (Mild - 1)",
     "🟡 紧绷不适 (Tight - 2)",
@@ -139,7 +142,9 @@ const PAIN_LABELS = [
     "💀 严重伤病 (Severe - 5)"
 ];
 
-export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initialBodyMap, onSaveSuccess }: InjuryMapProps) {
+export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initialBodyMap, onSaveSuccess, onPartClick }: InjuryMapProps) {
+    const { t } = useLanguage();
+    const { toast } = useToast();
     const [bodyMap, setBodyMap] = useState<Record<string, number>>({});
     const [selectedPart, setSelectedPart] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
@@ -182,6 +187,10 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
 
     // Handle map click
     const handlePartClick = (part: string) => {
+        const localizedLabel = (t.injuryMap as any)[part] || BODY_PARTS[part].label;
+        if (onPartClick) {
+            onPartClick(part, localizedLabel);
+        }
         if (readOnly) return;
         setSelectedPart(part);
     };
@@ -228,7 +237,7 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
             }
         } catch (error) {
             console.error("Upload failed", error);
-            alert("图片上传失败，请重试");
+            toast("error", "图片上传失败，请重试");
         } finally {
             setUploading(false);
         }
@@ -245,20 +254,28 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
         return PAIN_COLORS[level];
     };
 
+    const getLocalizedPartLabel = (key: string) => {
+        return (t.injuryMap as any)[key] || BODY_PARTS[key].label;
+    };
+
+    const getLocalizedPainLabel = (idx: number) => {
+        return (t.injuryMap as any)[`pain${idx}`] || FALLBACK_PAIN_LABELS[idx];
+    };
+
     return (
         <div className="bg-card/40 border border-border rounded-3xl p-6 relative overflow-hidden flex flex-col md:flex-row gap-6">
             
             {/* Left: Interative SVG Body Canvas */}
             <div className="flex-1 flex flex-col items-center">
-                <h4 className="text-sm font-bold text-white mb-4 uppercase tracking-wider text-center">
-                    {readOnly ? "📊 团队伤病热力图谱" : "👤 2D 互动伤病图谱"}
+                <h4 className="text-sm font-bold text-white mb-4 uppercase tracking-wider text-center flex items-center gap-2">
+                    {readOnly ? `📊 ${t.injuryMap.monitoring}` : `👤 ${t.injuryMap.clickRegion}`}
                 </h4>
                 
                 <div className="relative w-64 aspect-[1/2] bg-slate-950/60 rounded-3xl border border-white/5 p-4 flex items-center justify-center">
                     {/* Glowing grid wires */}
                     <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#3b82f6_1px,transparent_1px),linear-gradient(to_bottom,#3b82f6_1px,transparent_1px)] bg-[size:16px_16px] rounded-3xl pointer-events-none" />
                     
-                    <svg viewBox="0 0 200 400" className="relative z-10 w-full h-full select-none pointer-events-auto">
+                    <svg viewBox="0 0 200 400" className={cn("relative z-10 w-full h-full select-none", onPartClick || !readOnly ? "pointer-events-auto" : "pointer-events-none")}>
                         <defs>
                             <filter id="neonPulse" x="-30%" y="-30%" width="160%" height="160%">
                                 <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
@@ -282,7 +299,7 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                             return (
                                 <g 
                                     key={key} 
-                                    className={cn("cursor-pointer transition-all", readOnly ? "pointer-events-none" : "hover:opacity-90")}
+                                    className={cn("cursor-pointer transition-all hover:opacity-90")}
                                     onClick={() => handlePartClick(key)}
                                 >
                                     {/* Glowing back outline path for severity */}
@@ -321,8 +338,8 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                 </div>
                 
                 {!readOnly && (
-                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
-                        <Info className="w-3.5 h-3.5 text-primary" /> 点击身体各个关节/肌肉区域来上报酸痛度
+                    <p className="text-[11px] text-muted-foreground mt-3 flex items-center gap-1.5 justify-center">
+                        <Info className="w-3.5 h-3.5 text-primary" /> {t.injuryMap.clickRegion}
                     </p>
                 )}
             </div>
@@ -333,21 +350,25 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                     // COACH HEATMAP INSIGHT
                     <div className="space-y-4">
                         <h5 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-1.5">
-                            <ShieldAlert className="w-4 h-4 text-primary" /> 热力负荷监测
+                            <ShieldAlert className="w-4 h-4 text-primary" /> {t.injuryMap.monitoring}
                         </h5>
                         <p className="text-xs text-muted-foreground">
-                            热力图表结合队员上传的伤病报告，红色区域表示高负荷痛感积累区（如肩膀、膝盖），建议调整今日训练强度或进行防拉伤指导。
+                            {t.injuryMap.monitoringDesc}
                         </p>
 
                         <div className="space-y-2 pt-2">
-                            {Object.entries(BODY_PARTS).map(([key, part]) => {
+                            {Object.entries(BODY_PARTS).map(([key]) => {
                                 const score = teamHeatMapData?.[key] || 0;
                                 const index = Math.min(5, Math.round(score));
                                 if (score === 0) return null;
 
                                 return (
-                                    <div key={key} className="flex justify-between items-center text-xs p-2.5 bg-white/5 rounded-xl border border-white/5">
-                                        <span className="font-medium text-white">{part.label}</span>
+                                    <button 
+                                        key={key} 
+                                        onClick={() => handlePartClick(key)}
+                                        className="w-full text-left flex justify-between items-center text-xs p-2.5 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors"
+                                    >
+                                        <span className="font-medium text-white">{getLocalizedPartLabel(key)}</span>
                                         <div className="flex items-center gap-2">
                                             <div className="w-20 h-1.5 bg-white/10 rounded-full overflow-hidden">
                                                 <div 
@@ -359,12 +380,12 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                                                 {score.toFixed(1)} / 5.0
                                             </span>
                                         </div>
-                                    </div>
+                                    </button>
                                 );
                             })}
                             {Object.values(teamHeatMapData || {}).every(s => s === 0) && (
                                 <div className="text-center py-6 text-xs text-muted-foreground italic">
-                                    🎉 全队身体状态极佳，无异常伤病积累
+                                    {t.injuryMap.noData}
                                 </div>
                             )}
                         </div>
@@ -375,27 +396,27 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                         {selectedPart ? (
                             <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-5 space-y-4 animate-in fade-in duration-300">
                                 <div>
-                                    <span className="text-xs text-muted-foreground uppercase tracking-wider">当前选择区域</span>
-                                    <h5 className="text-base font-bold text-white">{BODY_PARTS[selectedPart]?.label}</h5>
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wider">{t.injuryMap.selectedRegion}</span>
+                                    <h5 className="text-base font-bold text-white">{getLocalizedPartLabel(selectedPart)}</h5>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-xs text-muted-foreground block">选择您的酸痛/疼痛指数:</label>
+                                    <label className="text-xs text-muted-foreground block">{t.injuryMap.painScale}</label>
                                     <div className="space-y-1.5">
-                                        {PAIN_LABELS.map((label, idx) => {
+                                        {FALLBACK_PAIN_LABELS.map((_, idx) => {
                                             const isSelected = (bodyMap[selectedPart] || 0) === idx;
                                             return (
                                                 <button
                                                     key={idx}
                                                     onClick={() => handlePainChange(idx)}
                                                     className={cn(
-                                                        "w-full text-left p-2.5 rounded-xl text-xs font-medium transition-all flex justify-between items-center border",
+                                                        "w-full text-left p-2.5 rounded-xl text-xs font-medium transition-all flex justify-between items-center border cursor-pointer",
                                                         isSelected 
                                                             ? "bg-white/10 border-white/20 text-white shadow-md" 
                                                             : "bg-white/5 border-transparent text-muted-foreground hover:bg-white/10 hover:text-white"
                                                     )}
                                                 >
-                                                    <span>{label}</span>
+                                                    <span>{getLocalizedPainLabel(idx)}</span>
                                                     {isSelected && <Check className="w-3.5 h-3.5 text-primary" />}
                                                 </button>
                                             );
@@ -406,18 +427,18 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                         ) : (
                             <div className="flex flex-col items-center justify-center p-6 border border-dashed border-white/10 rounded-2xl h-48 text-center text-muted-foreground">
                                 <span className="text-3xl mb-2">🤖</span>
-                                <p className="text-xs">请在左侧人体图上点击任一肌肉或关节部位，对其当前的酸痛痛感进行打分。</p>
+                                <p className="text-xs">{t.injuryMap.clickRegion}</p>
                             </div>
                         )}
 
                         {/* Injury Documentation Section */}
                         <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-5 space-y-4">
-                            <h5 className="text-sm font-bold text-white mb-2">详细病情与照片记录</h5>
+                            <h5 className="text-sm font-bold text-white mb-2">{t.injuryMap.descLabel}</h5>
                             <textarea
                                 value={injuryNote}
                                 onChange={(e) => setInjuryNote(e.target.value)}
-                                placeholder="请描述一下疼痛的具体感觉、发生时间或任何其他相关信息..."
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none h-20"
+                                placeholder={t.injuryMap.descPlaceholder}
+                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none h-20 leading-relaxed"
                             />
                             
                             {/* Image Upload Area */}
@@ -439,7 +460,7 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                                         ) : (
                                             <div className="flex items-center gap-2">
                                                 <ImagePlus className="w-4 h-4" />
-                                                <span className="text-xs">上传受伤部位照片</span>
+                                                <span className="text-xs">{t.injuryMap.uploadBtn}</span>
                                             </div>
                                         )}
                                         <input
@@ -459,20 +480,20 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                             onClick={handleSave}
                             disabled={saving}
                             className={cn(
-                                "w-full py-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2",
+                                "w-full py-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer",
                                 saved 
                                     ? "bg-green-500 text-white" 
                                     : "bg-primary text-primary-foreground hover:scale-[1.02] shadow-[0_0_15px_rgba(100,255,218,0.2)]"
                             )}
                         >
                             {saving ? (
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <Loader2 className="w-4 h-4 animate-spin text-white" />
                             ) : saved ? (
                                 <Check className="w-4 h-4" />
                             ) : (
                                 <Save className="w-4 h-4" />
                             )}
-                            {saving ? "正在更新云端档案..." : saved ? "状态图谱已成功保存" : "同步提交至教练监测端"}
+                            {saving ? t.injuryMap.submitting : saved ? t.injuryMap.saved : t.injuryMap.submitBtn}
                         </button>
                     </div>
                 )}

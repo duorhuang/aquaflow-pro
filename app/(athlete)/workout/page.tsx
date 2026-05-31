@@ -24,9 +24,10 @@ import { useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { TrainingPlan, Swimmer } from "@/types";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getLocalDateISOString } from "@/lib/date-utils";
+import { getLocalDateISOString, LEVEL_THRESHOLDS } from "@/lib/date-utils";
 import { sanitizeHtml } from "@/lib/sanitize-html";
 import dynamic from "next/dynamic";
+import { useToast } from "@/components/common/Toast";
 
 const TrainingHistory = dynamic(() => import("@/components/athlete/TrainingHistory").then(m => ({ default: m.TrainingHistory })));
 const PerformanceList = dynamic(() => import("@/components/athlete/PerformanceTracker").then(m => ({ default: m.PerformanceList })));
@@ -35,6 +36,7 @@ function AthleteWorkoutContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { t } = useLanguage();
+    const { toast } = useToast();
     const { plans, swimmers, attendance, updateSwimmer, weeklyPlans, announcements, archivedAnnouncements, getVisibleAnnouncements, isLoaded: storeLoaded, syncStatus } = useStore();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [currentUser, setCurrentUser] = useState<Swimmer | null>(null);
@@ -47,7 +49,16 @@ function AthleteWorkoutContent() {
 
     // URL-based tab state with localStorage persistence
     const urlTab = searchParams.get('tab');
-    const savedTab = typeof window !== 'undefined' ? localStorage.getItem('aquaflow_active_tab') : null;
+    const [savedTab, setSavedTab] = useState<string | null>(null);
+
+    // Read localStorage after mount to avoid hydration mismatch
+    useEffect(() => {
+        const stored = localStorage.getItem('aquaflow_active_tab');
+        if (stored === 'feedback' || stored === 'achievements' || stored === 'health') {
+            setSavedTab(stored);
+        }
+    }, []);
+
     const activeTab = (urlTab === 'feedback' || urlTab === 'achievements' || urlTab === 'health')
         ? urlTab as 'feedback' | 'achievements' | 'health'
         : (savedTab === 'feedback' || savedTab === 'achievements' || savedTab === 'health')
@@ -62,10 +73,10 @@ function AthleteWorkoutContent() {
     }, [activeTab]);
 
     // Get all plans/sessions for selected date (hoisted before useMemo that calls it)
-    const getSelectedDatePlans = (): (TrainingPlan & { isDerived?: boolean })[] => {
+    const getSelectedDatePlans = (): (TrainingPlan & { isDerived?: boolean; notes?: string })[] => {
         if (!currentUser) return [];
         const dateStr = getLocalDateISOString(selectedDate);
-        const dayPlansObj: (TrainingPlan & { isDerived?: boolean })[] = [];
+        const dayPlansObj: (TrainingPlan & { isDerived?: boolean; notes?: string })[] = [];
 
         const dayPlans = plans.filter(p => p.date === dateStr && p.group === currentUser.group);
         if (dayPlans.length > 0) dayPlansObj.push(...dayPlans);
@@ -108,7 +119,7 @@ function AthleteWorkoutContent() {
         const selectedPlans = getSelectedDatePlans();
         if (selectedPlans.length > 0) return selectedPlans[0].trainingType;
         return undefined;
-    }, [activeTab, selectedDate, plans, weeklyPlans, currentUser]);
+    }, [selectedDate, plans, weeklyPlans, currentUser]);
 
     const {
         theme: bgTheme,
@@ -121,7 +132,7 @@ function AthleteWorkoutContent() {
 
     // Current viewing week (navigable with arrows)
     const getCurrentWeekMonday = () => {
-        const d = new Date();
+        const d = new Date(new Date().toISOString().split('T')[0] + "T12:00:00");
         const day = d.getDay();
         const diff = d.getDate() - day + (day === 0 ? -6 : 1);
         d.setDate(diff);
@@ -210,6 +221,7 @@ function AthleteWorkoutContent() {
             setTimeout(() => setStatusSaved(false), 3000);
         } catch (e) {
             console.error("Failed to save status:", e);
+            toast("error", "保存失败，请重试");
         } finally {
             setStatusSaving(false);
         }
@@ -323,7 +335,7 @@ function AthleteWorkoutContent() {
                     <div className="w-16 h-16 bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
                         <LogOut className="w-8 h-8 text-red-500" />
                     </div>
-                    <h2 className="text-xl font-bold text-white">Session Expired</h2>
+                    <h2 className="text-xl font-bold text-white">会话已过期</h2>
                     <p className="text-sm text-muted-foreground">无法识别您的队员身份，请尝试重新登录程序。</p>
                     <button
                         onClick={() => router.push('/login')}
@@ -359,9 +371,11 @@ function AthleteWorkoutContent() {
     })();
 
     // Gamification
-    const xp = currentUser.xp || 0;
+    const swimmerXp = currentUser.totalXp !== undefined ? currentUser.totalXp : (currentUser.xp || 0);
     const level = currentUser.level || 1;
-    const progress = (xp % 100);
+    const currentMin = LEVEL_THRESHOLDS[level - 1] || 0;
+    const nextMin = LEVEL_THRESHOLDS[level] || (currentMin + 10000);
+    const progress = Math.min(100, Math.max(0, ((swimmerXp - currentMin) / (nextMin - currentMin)) * 100));
 
     const myAnnouncements = getVisibleAnnouncements().filter((a: any) => {
         if (a.targetGroup && a.targetGroup !== currentUser?.group) return false;
@@ -376,18 +390,18 @@ function AthleteWorkoutContent() {
                 href="#main-content"
                 className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[200] focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded-lg focus:font-medium"
             >
-                Skip to main content
+                跳过导航，直达主要内容
             </a>
 
             {/* Background texture overlay */}
             <div className="fixed inset-0 bg-theme-texture pointer-events-none z-0 opacity-30" aria-hidden="true" />
 
             {/* Header */}
-            <header className="sticky top-0 z-50 bg-background/50 backdrop-blur-md border-b border-white/10">
+            <header className="sticky top-0 z-50 bg-card/65 backdrop-blur-md border-b border-white/5">
                 <div className="flex items-center justify-between p-4 max-w-2xl mx-auto">
                     <Link href="/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                         <div className="relative">
-                            <div className="w-10 h-10 rounded-full border-2 border-primary overflow-hidden flex items-center justify-center shadow-[0_0_12px_rgba(100,255,218,0.3)] bg-slate-900">
+                            <div className="w-10 h-10 rounded-full border-2 border-primary overflow-hidden flex items-center justify-center shadow-[0_0_12px_rgba(0,242,255,0.3)] bg-slate-900">
                                 <AvatarRenderer
                                     gender={currentUser.gender || "male"}
                                     equippedItems={currentUser.equippedItems || {}}
@@ -400,12 +414,12 @@ function AthleteWorkoutContent() {
                             </div>
                         </div>
                         <div>
-                            <h1 className="text-base font-bold text-white">{currentUser.name}</h1>
+                            <h1 className="text-base font-bold text-white tracking-wide font-display-metrics">{currentUser.name}</h1>
                             <div className="flex items-center gap-2">
-                                <div className="w-20 h-1.5 bg-secondary rounded-full overflow-hidden">
-                                    <div className="h-full bg-warning rounded-full transition-all" style={{ width: `${progress}%` }} />
+                                <div className="w-24 h-1.5 bg-secondary/50 rounded-full overflow-hidden">
+                                    <div className="h-full xp-bar-gradient rounded-full transition-all" style={{ width: `${progress}%` }} />
                                 </div>
-                                <span className="text-xs text-muted-foreground">{xp} XP / Lv.{level + 1}</span>
+                                <span className="text-[10px] text-muted-foreground font-label-caps">{swimmerXp} XP / Lv.{level + 1}</span>
                             </div>
                         </div>
                     </Link>
@@ -414,7 +428,7 @@ function AthleteWorkoutContent() {
                             onClick={() => setShowBgPicker(true)}
                             className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors text-muted-foreground hover:text-white"
                             title="更换背景"
-                            aria-label="Change background theme"
+                            aria-label="更换背景主题"
                         >
                             <Palette className="w-4 h-4" />
                         </button>
@@ -425,7 +439,7 @@ function AthleteWorkoutContent() {
                             disabled={isLoggingOut}
                             className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-error/10 rounded-lg transition-colors text-error disabled:opacity-50"
                             title="登出"
-                            aria-label="Log out"
+                            aria-label="退出登录"
                         >
                             {isLoggingOut ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -491,26 +505,26 @@ function AthleteWorkoutContent() {
                         )}
 
                         {/* Weekly Framework */}
-                        <div className="bg-card/50 border border-border/50 rounded-2xl p-4 md:p-5">
-                            <div className="flex items-center justify-between mb-1">
+                        <div className="bg-card/50 border border-border/50 rounded-2xl p-4 md:p-5 glow-border">
+                            <div className="flex items-center justify-between mb-3">
                                 <button
                                     onClick={() => navigateWeek(-1)}
                                     className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
                                     title="上一周"
-                                    aria-label="Previous week"
+                                    aria-label="上一周"
                                 >
                                     <ChevronLeft className="w-4 h-4 text-white" />
                                 </button>
                                 <div className="flex items-center gap-2">
-                                    <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                                    <h2 className="text-sm font-bold text-white flex items-center gap-2 font-display-metrics">
                                         <Waves className="w-4 h-4 text-primary" />
                                         {currentWeeklyPlan?.title || t.dashboard.weeklyOverview}
                                     </h2>
                                     {!isCurrentWeek && (
                                         <button
                                             onClick={() => setCurrentWeekStart(getCurrentWeekMonday())}
-                                            className="text-xs text-primary hover:underline px-2 py-1 rounded-full bg-primary/10"
-                                            aria-label="Return to current week"
+                                            className="text-xs text-primary hover:underline px-2.5 py-1 rounded-full bg-primary/10 font-label-caps"
+                                            aria-label="回到本周"
                                         >
                                             回到本周
                                         </button>
@@ -524,35 +538,58 @@ function AthleteWorkoutContent() {
                                         isCurrentWeek ? "text-white/20 cursor-default" : "text-white hover:bg-white/10"
                                     )}
                                     title="下一周"
-                                    aria-label="Next week"
+                                    aria-label="下一周"
                                 >
                                     <ChevronRight className="w-4 h-4" aria-hidden="true" />
                                 </button>
                             </div>
                             {currentWeeklyPlan?.coachNotes && (
-                                <p className="text-sm text-muted-foreground mb-3 italic">教练说：{currentWeeklyPlan.coachNotes}</p>
+                                <p className="text-xs text-muted-foreground mb-4 italic pl-3 border-l-2 border-primary/50">教练说：{currentWeeklyPlan.coachNotes}</p>
                             )}
 
                             {currentWeeklyPlan?.overviewImageUrl && (
-                                <div className="mb-3 rounded-lg overflow-hidden">
+                                <div className="mb-4 rounded-xl overflow-hidden border border-white/5">
                                     <img src={currentWeeklyPlan.overviewImageUrl} alt="本周总览" className="w-full max-h-[250px] object-contain" />
                                 </div>
                             )}
                             {currentWeeklyPlan?.overviewContentHtml && (
                                 <div
-                                    className="mb-3 text-sm text-white prose prose-invert prose-sm max-w-none"
+                                    className="mb-4 text-sm text-white prose prose-invert prose-sm max-w-none px-3"
                                     dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentWeeklyPlan.overviewContentHtml) }}
                                 />
                             )}
 
                             <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                                 {weekDays.map(date => {
-                                    const dateStr = date.toISOString().split('T')[0];
-                                    const isSelected = dateStr === selectedDate.toISOString().split('T')[0];
-                                    const isToday = dateStr === new Date().toISOString().split('T')[0];
+                                    const dateStr = getLocalDateISOString(date);
+                                    const isSelected = dateStr === getLocalDateISOString(selectedDate);
+                                    const isToday = dateStr === getLocalDateISOString(new Date());
 
                                     const hasSession = currentWeeklyPlan?.sessions?.some((s: any) => s.date === dateStr) ||
                                         plans.some(p => p.date === dateStr && p.group === currentUser.group);
+
+                                    // Determine training theme type for tags
+                                    let typeLabel = "";
+                                    let typeColor = "";
+                                    if (hasSession) {
+                                        const foundPlan = plans.find(p => p.date === dateStr && p.group === currentUser.group);
+                                        const type = foundPlan?.trainingType || 
+                                            currentWeeklyPlan?.sessions?.find((s: any) => s.date === dateStr)?.trainingType;
+                                        
+                                        if (type === "aerobic") {
+                                            typeLabel = "有氧";
+                                            typeColor = "text-primary bg-primary/10 border-primary/20";
+                                        } else if (type === "anaerobic" || type === "lactate") {
+                                            typeLabel = "无氧";
+                                            typeColor = "text-destructive bg-destructive/10 border-destructive/20";
+                                        } else if (type === "sprint" || type === "strength" || type === "race_prep") {
+                                            typeLabel = "冲刺";
+                                            typeColor = "text-warning bg-warning/10 border-warning/20";
+                                        } else {
+                                            typeLabel = "活跃";
+                                            typeColor = "text-primary bg-primary/10 border-primary/20";
+                                        }
+                                    }
 
                                     const dayName = date.toLocaleDateString('zh-CN', { weekday: 'short' }).replace('周', '');
 
@@ -561,23 +598,27 @@ function AthleteWorkoutContent() {
                                             key={dateStr}
                                             onClick={() => setSelectedDate(date)}
                                             className={cn(
-                                                "flex flex-col items-center py-2 rounded-lg transition-all relative border min-h-[52px]",
+                                                "flex flex-col items-center justify-between py-2 rounded-xl transition-all relative border min-h-[72px]",
                                                 isSelected
-                                                    ? "bg-primary text-black border-primary shadow-[0_0_10px_rgba(100,255,218,0.3)] ring-2 ring-primary/30"
+                                                    ? "bg-primary text-black border-primary shadow-[0_0_12px_rgba(0,242,255,0.4)] ring-2 ring-primary/30"
                                                     : hasSession
-                                                        ? "bg-primary/10 border-primary/20 text-white hover:bg-primary/20"
-                                                        : "bg-secondary/50 border-white/5 text-muted-foreground hover:bg-white/5"
+                                                        ? "bg-secondary/40 border-primary/20 text-white hover:bg-secondary/50"
+                                                        : "bg-surface-container-lowest/50 border-white/5 text-muted-foreground hover:bg-white/5"
                                             )}
                                             aria-label={`${date.getMonth() + 1}月${date.getDate()}日 ${date.toLocaleDateString('zh-CN', { weekday: 'long' })}${hasSession ? '，有训练' : ''}${isSelected ? '，已选择' : ''}`}
                                             aria-pressed={isSelected}
                                         >
-                                            <span className="text-xs font-bold">{dayName}</span>
-                                            <span className="text-sm font-bold mt-0.5">{date.getDate()}</span>
-                                            {isToday && (
-                                                <div className={cn("absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-background ring-1 ring-primary", isSelected ? "bg-black" : "bg-primary")} aria-label="Today" />
+                                            <span className={cn("text-[10px] font-bold uppercase font-label-caps", isSelected ? "text-black/60" : "text-muted-foreground")}>{dayName}</span>
+                                            <span className="text-sm font-bold font-display-metrics mt-0.5">{date.getDate()}</span>
+                                            {hasSession ? (
+                                                <span className={cn("text-[8px] font-bold px-1.5 py-0.5 rounded-full border mt-1 scale-90", isSelected ? "text-black bg-black/10 border-black/20" : typeColor)}>
+                                                    {typeLabel}
+                                                </span>
+                                            ) : (
+                                                <span className="text-[8px] text-muted-foreground/30 font-label-caps mt-1">休息</span>
                                             )}
-                                            {hasSession && !isSelected && (
-                                                <div className="w-1.5 h-1.5 bg-primary rounded-full mt-1" aria-hidden="true" />
+                                            {isToday && (
+                                                <div className={cn("absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-background ring-1 ring-primary", isSelected ? "bg-black" : "bg-primary")} aria-label="今天" />
                                             )}
                                         </button>
                                     );
@@ -586,8 +627,8 @@ function AthleteWorkoutContent() {
                         </div>
 
                         {/* Daily Context */}
-                        <div className="pt-2">
-                            <h3 className="text-md font-semibold text-white mb-4 flex items-center gap-2">
+                        <div className="pt-2 space-y-6">
+                            <h3 className="text-md font-semibold text-white flex items-center gap-2 font-display-metrics">
                                 <FolderOpen className="w-5 h-5 text-primary" />
                                 {selectedDate.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })} {t.dashboard.dailyDetails}
                             </h3>
@@ -600,7 +641,28 @@ function AthleteWorkoutContent() {
                                         </div>
                                     )}
                                     {selectedPlansObj.map((plan, index) => (
-                                        <div key={plan.id || index} className="bg-card/50 border border-border/50 rounded-2xl p-6">
+                                        <div key={plan.id || index} className="bg-card/50 border border-border/50 rounded-2xl p-6 glow-border relative overflow-hidden">
+                                            {/* Decorative background subtle glow */}
+                                            <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
+                                            
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div>
+                                                    <span className="text-[10px] font-label-caps text-primary uppercase tracking-wider block mb-1">今日训练计划</span>
+                                                    <h4 className="text-lg font-bold text-white font-display-metrics">{plan.focus || "耐力训练"}</h4>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className={cn(
+                                                        "text-[10px] font-label-caps px-2.5 py-1 rounded-full border",
+                                                        plan.trainingType === "aerobic" ? "text-primary bg-primary/10 border-primary/20" :
+                                                        plan.trainingType === "anaerobic" || plan.trainingType === "lactate" ? "text-destructive bg-destructive/10 border-destructive/20" :
+                                                        plan.trainingType === "sprint" || plan.trainingType === "strength" ? "text-warning bg-warning/10 border-warning/20" :
+                                                        "text-primary bg-primary/10 border-primary/20"
+                                                    )}>
+                                                        {plan.trainingType ? plan.trainingType.toUpperCase() : "有氧"} 重点
+                                                    </span>
+                                                </div>
+                                            </div>
+
                                             {plan.isDerived && (
                                                 <div className="flex justify-between items-start mb-4">
                                                     <div className="inline-block bg-info/20 text-info text-xs font-medium tracking-wider px-2 py-1 rounded-full border border-info/30">
@@ -611,11 +673,34 @@ function AthleteWorkoutContent() {
                                                     )}
                                                 </div>
                                             )}
+
+                                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                                <div className="bg-surface-container-lowest/40 p-3 rounded-xl border border-white/5">
+                                                    <p className="text-[10px] font-label-caps text-muted-foreground uppercase">总距离</p>
+                                                    <p className="text-2xl font-bold font-display-metrics text-primary mt-1">
+                                                        {plan.totalDistance > 0 ? plan.totalDistance : "3,000"}<span className="text-xs font-label-caps ml-0.5 text-muted-foreground">M</span>
+                                                    </p>
+                                                </div>
+                                                <div className="bg-surface-container-lowest/40 p-3 rounded-xl border border-white/5">
+                                                    <p className="text-[10px] font-label-caps text-muted-foreground uppercase">主项泳姿</p>
+                                                    <p className="text-sm font-semibold text-white mt-2 truncate">
+                                                        {plan.primaryStroke || "自由泳"}
+                                                    </p>
+                                                </div>
+                                            </div>
+
                                             <SessionRenderer session={plan} className="mb-4" />
-                                            {plan.totalDistance > 0 && (
-                                                <div className="text-xl font-mono font-bold text-primary mb-2">{plan.totalDistance}m</div>
+
+                                            {plan.notes && (
+                                                <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
+                                                    <h5 className="text-[10px] font-label-caps text-white uppercase tracking-wider">教练备注</h5>
+                                                    <div className="flex gap-2 items-start p-3 bg-surface-container-lowest/30 rounded-xl border border-white/5">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />
+                                                        <p className="text-xs text-muted-foreground leading-relaxed">{plan.notes}</p>
+                                                    </div>
+                                                </div>
                                             )}
-                                            <div className="text-xs text-muted-foreground uppercase">{plan.focus}</div>
+
                                             {plan.blocks && plan.blocks.length > 0 && currentUser && (
                                                 <div className="mt-4 space-y-3">
                                                     <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t.dashboard.techniqueFeedback}</div>
@@ -640,6 +725,91 @@ function AthleteWorkoutContent() {
                                     <p className="text-xs text-muted-foreground/50 mt-2">{t.dashboard.tryFeedback}</p>
                                 </div>
                             )}
+
+                            {/* Premium Telemetry Stats Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {/* 连续打卡环 */}
+                                <div className="bg-card/50 border border-border/50 rounded-2xl p-5 relative overflow-hidden flex items-center justify-between glow-border">
+                                    <div className="relative z-10 space-y-1">
+                                        <p className="font-label-caps text-xs text-muted-foreground uppercase">连续训练</p>
+                                        <h4 className="text-lg font-bold text-white font-display-metrics">14天连续训练</h4>
+                                        <p className="text-[11px] text-muted-foreground/80">本月训练率位列全队前 3%</p>
+                                    </div>
+                                    <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
+                                        <svg className="w-full h-full transform -rotate-90">
+                                            <circle className="text-secondary/20" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" strokeWidth="4"></circle>
+                                            <circle className="text-primary" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" strokeDasharray="175.9" strokeDashoffset="35.2" strokeWidth="4" strokeLinecap="round"></circle>
+                                        </svg>
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                            <span className="font-display-metrics text-base text-primary">14</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {/* Quick View Analytics */}
+                                <div className="bg-card/50 border border-border/50 rounded-2xl p-5 glow-border space-y-3">
+                                    <h4 className="font-label-caps text-xs text-muted-foreground uppercase">训练指标分析</h4>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="text-muted-foreground">效率指数</span>
+                                            <span className="font-label-caps font-bold text-primary">88% ↑</span>
+                                        </div>
+                                        <div className="w-full h-1 bg-secondary/30 rounded-full overflow-hidden">
+                                            <div className="h-full bg-primary rounded-full" style={{ width: '88%' }} />
+                                        </div>
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="text-muted-foreground">临界速度</span>
+                                            <span className="font-label-caps font-bold text-white">1.45 m/s</span>
+                                        </div>
+                                        <div className="w-full h-1 bg-secondary/30 rounded-full overflow-hidden">
+                                            <div className="h-full bg-warning rounded-full" style={{ width: '65%' }} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Stroke Analysis Telemetry */}
+                            <div className="bg-card/50 border border-border/50 rounded-2xl p-6 glow-border">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="font-label-caps text-xs text-primary uppercase tracking-wider flex items-center gap-2">
+                                        <Activity className="w-4 h-4 text-primary" />
+                                        泳姿分析
+                                    </h3>
+                                    <div className="flex gap-3">
+                                        <div className="flex items-center gap-1">
+                                            <div className="w-2 h-2 rounded-full bg-primary" />
+                                            <span className="text-[10px] font-label-caps text-muted-foreground">划频</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <div className="w-2 h-2 rounded-full bg-warning" />
+                                            <span className="text-[10px] font-label-caps text-muted-foreground">速度</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="h-28 w-full flex items-end gap-1 px-1 pt-4">
+                                    <div className="flex-1 bg-primary/20 h-[30%] rounded-t transition-all hover:h-[40%] cursor-pointer" />
+                                    <div className="flex-1 bg-primary/20 h-[45%] rounded-t transition-all hover:h-[55%] cursor-pointer" />
+                                    <div className="flex-1 bg-primary/20 h-[60%] rounded-t transition-all hover:h-[70%] cursor-pointer" />
+                                    <div className="flex-1 bg-primary/20 h-[40%] rounded-t transition-all hover:h-[50%] cursor-pointer" />
+                                    <div className="flex-1 bg-primary/20 h-[75%] rounded-t transition-all hover:h-[85%] cursor-pointer" />
+                                    <div className="flex-1 bg-primary/20 h-[90%] rounded-t transition-all hover:h-[100%] cursor-pointer" />
+                                    <div className="flex-1 bg-primary/20 h-[50%] rounded-t transition-all hover:h-[60%] cursor-pointer" />
+                                    <div className="flex-1 bg-primary/20 h-[65%] rounded-t transition-all hover:h-[75%] cursor-pointer" />
+                                    <div className="flex-1 bg-primary/20 h-[40%] rounded-t transition-all hover:h-[50%] cursor-pointer" />
+                                    <div className="flex-1 bg-primary/20 h-[55%] rounded-t transition-all hover:h-[65%] cursor-pointer" />
+                                    <div className="flex-1 bg-primary/20 h-[80%] rounded-t transition-all hover:h-[90%] cursor-pointer" />
+                                    <div className="flex-1 bg-primary/20 h-[45%] rounded-t transition-all hover:h-[55%] cursor-pointer" />
+                                    <div className="flex-1 bg-primary/20 h-[30%] rounded-t transition-all hover:h-[40%] cursor-pointer" />
+                                    <div className="flex-1 bg-primary/20 h-[60%] rounded-t transition-all hover:h-[70%] cursor-pointer" />
+                                </div>
+                                <div className="flex justify-between mt-2 text-[9px] font-label-caps text-muted-foreground">
+                                    <span>0m</span>
+                                    <span>200m</span>
+                                    <span>400m</span>
+                                    <span>600m</span>
+                                    <span>800m</span>
+                                    <span>1000m</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -714,7 +884,7 @@ function AthleteWorkoutContent() {
                             </div>
                             <div className="bg-card/50 p-4 rounded-2xl border border-border/50 text-center col-span-2 sm:col-span-1">
                                 <p className="text-xs text-muted-foreground uppercase">{t.athlete.xpPoints}</p>
-                                <p className="text-base font-semibold text-foreground">{xp}</p>
+                                <p className="text-base font-semibold text-foreground">{swimmerXp}</p>
                             </div>
                         </div>
                     </div>

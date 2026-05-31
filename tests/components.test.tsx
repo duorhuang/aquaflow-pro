@@ -61,8 +61,8 @@ describe('LoginForm Component', () => {
 
     it('should render username and password fields', () => {
         render(<LoginForm />);
-        expect(screen.getByLabelText('Username')).toBeTruthy();
-        expect(screen.getByLabelText('Password')).toBeTruthy();
+        expect(screen.getByLabelText('用户名')).toBeTruthy();
+        expect(screen.getByLabelText('密码')).toBeTruthy();
     });
 
     it('should render a submit button with Login text', () => {
@@ -74,7 +74,7 @@ describe('LoginForm Component', () => {
 
     it('should toggle password visibility', () => {
         render(<LoginForm />);
-        const passwordInput = screen.getByLabelText('Password');
+        const passwordInput = screen.getByLabelText('密码');
         const toggleButton = screen.getByRole('button', { name: /show password/i });
 
         expect(passwordInput).toHaveAttribute('type', 'password');
@@ -91,8 +91,8 @@ describe('LoginForm Component', () => {
         mockFetchResponse(401, { error: 'Invalid credentials' });
 
         render(<LoginForm />);
-        fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'wrong_user' } });
-        fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'wrong_password' } });
+        fireEvent.change(screen.getByLabelText('用户名'), { target: { value: 'wrong_user' } });
+        fireEvent.change(screen.getByLabelText('密码'), { target: { value: 'wrong_password' } });
         fireEvent.click(screen.getAllByText('Login')[0]);
 
         await waitFor(() => {
@@ -106,8 +106,8 @@ describe('LoginForm Component', () => {
         mockFetchResponse(400, { error: 'username and password are required' });
 
         render(<LoginForm />);
-        fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'test' } });
-        fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'pass' } });
+        fireEvent.change(screen.getByLabelText('用户名'), { target: { value: 'test' } });
+        fireEvent.change(screen.getByLabelText('密码'), { target: { value: 'pass' } });
         fireEvent.click(screen.getAllByText('Login')[0]);
 
         await waitFor(() => {
@@ -126,8 +126,8 @@ describe('LoginForm Component', () => {
         });
 
         render(<LoginForm />);
-        fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'test' } });
-        fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'pass' } });
+        fireEvent.change(screen.getByLabelText('用户名'), { target: { value: 'test' } });
+        fireEvent.change(screen.getByLabelText('密码'), { target: { value: 'pass' } });
         fireEvent.click(screen.getAllByText('Login')[0]);
 
         await waitFor(() => {
@@ -264,6 +264,7 @@ describe('ErrorBoundary Component', () => {
     it('should show fallback on error', () => {
         function BrokenChild() {
             throw new Error('Test Error');
+            return null;
         }
 
         render(
@@ -272,12 +273,13 @@ describe('ErrorBoundary Component', () => {
             </ErrorBoundary>
         );
 
-        expect(screen.getByText('Something went wrong')).toBeTruthy();
+        expect(screen.getByText('出错了')).toBeTruthy();
     });
 
     it('should show custom fallback', () => {
         function BrokenChild() {
             throw new Error('Test Error');
+            return null;
         }
 
         render(
@@ -291,7 +293,8 @@ describe('ErrorBoundary Component', () => {
 
     it('should show error message', () => {
         function BrokenChild() {
-            throw new Error('Specific error message');
+            throw new Error('Test connection error');
+            return null;
         }
 
         render(
@@ -300,12 +303,14 @@ describe('ErrorBoundary Component', () => {
             </ErrorBoundary>
         );
 
-        expect(screen.getByText('Specific error message')).toBeTruthy();
+        expect(screen.getByText('出错了')).toBeTruthy();
+        expect(screen.getByText('重试')).toBeTruthy();
     });
 
     it('should show Try Again button', () => {
         function BrokenChild() {
             throw new Error('Test Error');
+            return null;
         }
 
         render(
@@ -314,7 +319,7 @@ describe('ErrorBoundary Component', () => {
             </ErrorBoundary>
         );
 
-        expect(screen.getByText('Try Again')).toBeTruthy();
+        expect(screen.getByText('重试')).toBeTruthy();
     });
 
     it('should render normally when children do not throw', () => {

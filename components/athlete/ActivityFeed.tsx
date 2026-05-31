@@ -1,29 +1,20 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
-import { 
-    Bell, 
-    Sparkles, 
-    TrendingUp, 
-    Coins, 
-    Gift, 
-    Calendar, 
-    X, 
+import {
+    Bell,
+    Sparkles,
+    TrendingUp,
+    Coins,
+    Gift,
+    Calendar,
+    X,
     UserCheck
 } from "lucide-react";
 
-interface FeedItem {
-    id: string;
-    swimmerId: string;
-    type: string;
-    title: string;
-    detail?: string;
-    xpAmount?: number;
-    isRead: boolean;
-    createdAt: string;
-}
+import { ActivityFeedItem } from "@/types";
 
 interface ActivityFeedProps {
     swimmerId: string;
@@ -31,12 +22,15 @@ interface ActivityFeedProps {
 }
 
 export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
-    const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+    const [feedItems, setFeedItems] = useState<ActivityFeedItem[]>([]);
     const [, setLoading] = useState(true);
     const fetchingRef = React.useRef(false);
     const [showTray, setShowTray] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
+    const trayRef = useRef<HTMLDivElement>(null);
+    const closeBtnRef = useRef<HTMLButtonElement>(null);
 
+    // Load feed
     const loadFeed = useCallback(async () => {
         if (fetchingRef.current) return;
         fetchingRef.current = true;
@@ -44,7 +38,7 @@ export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
             const data = await api.activityFeed.get(swimmerId);
             if (data) {
                 setFeedItems(data || []);
-                const unread = data.filter((item: FeedItem) => !item.isRead).length;
+                const unread = data.filter((item: ActivityFeedItem) => !item.isRead).length;
                 setUnreadCount(unread);
             }
         } catch (e) {
@@ -139,13 +133,60 @@ export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
         }
     };
 
+    // Focus trap + Escape key for drawer
+    useEffect(() => {
+        if (!showTray) return;
+
+        // Focus the close button when drawer opens
+        setTimeout(() => closeBtnRef.current?.focus(), 100);
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setShowTray(false);
+                return;
+            }
+
+            // Basic focus trap: if focus leaves the tray, bring it back
+            if (e.key === 'Tab' && trayRef.current) {
+                const focusable = trayRef.current.querySelectorAll(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                );
+                if (focusable.length === 0) return;
+                const firstEl = focusable[0] as HTMLElement;
+                const lastEl = focusable[focusable.length - 1] as HTMLElement;
+
+                if (e.shiftKey) {
+                    if (document.activeElement === firstEl) {
+                        e.preventDefault();
+                        lastEl.focus();
+                    }
+                } else {
+                    if (document.activeElement === lastEl) {
+                        e.preventDefault();
+                        firstEl.focus();
+                    }
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [showTray]);
+
+    // Handle click outside to close
+    const handleBackdropClick = (e: React.MouseEvent) => {
+        if (e.target === e.currentTarget) {
+            setShowTray(false);
+        }
+    };
+
     return (
         <div className="relative">
             {/* TRAY TRIGGER BUTTON WITH FLOATING BADGE */}
             <button
                 onClick={() => setShowTray(true)}
-                className="relative p-2.5 bg-secondary/50 hover:bg-secondary border border-white/5 rounded-xl transition-colors text-white"
-                title="通知信息流"
+                className="relative p-3 min-w-[48px] min-h-[48px] flex items-center justify-center bg-secondary/50 hover:bg-secondary border border-white/5 rounded-xl transition-colors text-white"
+                aria-label="通知信息流"
             >
                 <Bell className={cn("w-5 h-5", unreadCount > 0 && "animate-wiggle")} />
                 {unreadCount > 0 && (
@@ -157,9 +198,15 @@ export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
 
             {/* FLOATING NOTIFICATION TRAY SLIDEOUT */}
             {showTray && (
-                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">
-                    <div className="w-full max-w-sm bg-slate-950 border-l border-white/10 h-screen max-h-[100dvh] flex flex-col justify-between shadow-2xl relative animate-in slide-in-from-right duration-300">
-                        
+                <div
+                    className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end animate-in fade-in duration-200"
+                    onClick={handleBackdropClick}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="互动通知流"
+                >
+                    <div ref={trayRef} className="w-full max-w-sm bg-slate-950 border-l border-white/10 h-screen max-h-[100dvh] flex flex-col justify-between shadow-2xl relative animate-in slide-in-from-right duration-300">
+
                         {/* Header */}
                         <div className="p-5 border-b border-white/10 flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -168,16 +215,19 @@ export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
                             </div>
                             <div className="flex items-center gap-3">
                                 {unreadCount > 0 && (
-                                    <button 
+                                    <button
                                         onClick={handleReadAll}
-                                        className="text-xs text-primary hover:underline font-bold"
+                                        className="text-xs text-primary hover:underline font-bold px-3 py-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors"
+                                        aria-label="全部标记为已读"
                                     >
                                         全部已读
                                     </button>
                                 )}
-                                <button 
+                                <button
+                                    ref={closeBtnRef}
                                     onClick={() => setShowTray(false)}
-                                    className="p-1 hover:bg-white/5 rounded-lg text-muted-foreground hover:text-white"
+                                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/5 rounded-lg text-muted-foreground hover:text-white transition-colors"
+                                    aria-label="关闭通知"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
@@ -221,7 +271,7 @@ export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
                                                 
                                                 <div className="flex justify-between items-center mt-2.5">
                                                     <span className="text-[8px] text-muted-foreground font-mono">
-                                                        {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        {new Date(item.createdAt || new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     </span>
                                                     {item.xpAmount !== null && item.xpAmount !== undefined && (
                                                         <span className={cn(

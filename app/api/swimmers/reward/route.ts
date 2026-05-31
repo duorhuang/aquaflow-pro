@@ -105,7 +105,7 @@ export async function POST(request: Request) {
                 ${swimmerId},
                 'coach_reward',
                 ${`教练为你打赏了 ${xpAmount} XP！`},
-                ${`“${message}”`},
+                ${`"${message}"`},
                 ${xpAmount},
                 false,
                 NOW()

@@ -6,11 +6,12 @@ import { Calendar, MapPin, Trophy, Plus, Trash2, Edit2, ArrowLeft, Check, X, Che
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/common/Toast";
 
 function Breadcrumb() {
     const { t } = useLanguage();
     return (
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="面包屑导航">
             <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
             <ChevronRight className="w-3 h-3" aria-hidden="true" />
             <span className="text-white font-medium">{t.common.meets}</span>
@@ -18,19 +19,10 @@ function Breadcrumb() {
     );
 }
 
-interface Meet {
-    id: string;
-    name: string;
-    date: string;
-    time?: string;
-    location?: string;
-    description?: string;
-    isActive: boolean;
-    createdAt?: string;
-    updatedAt?: string;
-}
+import { Meet } from "@/types";
 
 export default function CoachMeetsPage() {
+    const { toast } = useToast();
     const [meets, setMeets] = useState<Meet[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -60,8 +52,10 @@ export default function CoachMeetsPage() {
         setLoading(true);
         try {
             const data = await api.meets.getAll();
-            if (data && data.meets) {
-                setMeets(data.meets);
+            if (data && Array.isArray(data)) {
+                setMeets(data);
+            } else if (data && (data as any).meets) {
+                setMeets((data as any).meets);
             }
         } catch (e) {
             console.error("Failed to fetch meets", e);
@@ -140,7 +134,7 @@ export default function CoachMeetsPage() {
             showNotification("赛事删除成功！");
             loadMeets();
         } catch (e) {
-            alert((e as Error).message || "删除赛事失败");
+            toast("error", (e as Error).message || "删除赛事失败");
         } finally {
             setDeletingMeet(null);
         }
@@ -153,7 +147,7 @@ export default function CoachMeetsPage() {
             showNotification(meet.isActive ? "赛事倒计时已暂停" : "赛事倒计时已激活！");
             loadMeets();
         } catch (e) {
-            alert((e as Error).message || "切换状态失败");
+            toast("error", (e as Error).message || "切换状态失败");
         } finally {
             setTogglingMeet(null);
         }
@@ -172,7 +166,11 @@ export default function CoachMeetsPage() {
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <Link href="/dashboard" className="p-2.5 rounded-xl bg-secondary/50 hover:bg-secondary/80 border border-white/5 transition-colors">
+                        <Link
+                            href="/dashboard"
+                            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-secondary/50 hover:bg-secondary/80 border border-white/5 transition-colors"
+                            aria-label="返回仪表盘"
+                        >
                             <ArrowLeft className="w-5 h-5 text-white" />
                         </Link>
                         <div>
@@ -205,14 +203,14 @@ export default function CoachMeetsPage() {
                 {loading ? (
                     <div className="text-center py-20">
                         <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                        <p className="text-muted-foreground text-xs uppercase tracking-widest font-mono">Synchronizing Meets...</p>
+                        <p className="text-muted-foreground text-xs uppercase tracking-widest font-mono">加载赛事数据...</p>
                     </div>
                 ) : meets.length === 0 ? (
                     <div className="text-center py-24 bg-card/30 border border-border border-dashed rounded-3xl">
                         <Trophy className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
                         <h3 className="text-lg font-bold text-white">暂无赛事发布</h3>
-                        <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-                            教练点击右上角“发布新赛事”，让队员们充满紧迫感与仪式感地投入到日常训练中！
+                        <p className="text-xs text-muted-foreground mt-1">
+                            点击右上角 + 号发布新赛事
                         </p>
                     </div>
                 ) : (

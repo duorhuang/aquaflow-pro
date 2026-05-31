@@ -31,10 +31,12 @@ export async function withApiHandler(handler: () => Promise<NextResponse>) {
         }
 
         // Return a stable 500 error instead of letting the Worker crash
+        // SECURITY: Never expose error.message to clients — it can leak stack traces, SQL, or internal paths
+        const isProduction = process.env.NODE_ENV === 'production';
         return NextResponse.json(
             {
                 error: "Internal Server Error",
-                detail: error.message,
+                detail: isProduction ? "An unexpected error occurred" : error.message,
                 v12: "STRATOSPHERE-RECOVERY-ACTIVE"
             },
             {
@@ -49,19 +51,8 @@ export async function withApiHandler(handler: () => Promise<NextResponse>) {
 
 type AuthHandlerFn = (req: Request, auth: JWTPayload) => Promise<NextResponse>;
 
-function wrapAuth(handler: AuthHandlerFn, authFn: (req: Request) => Promise<JWTPayload | NextResponse>): () => Promise<NextResponse> {
-  return async () => {
-    // Extract the request from the closure scope
-    const req = (handler as any).__req__;
-    const result = await authFn(req);
-    if (result instanceof NextResponse) return result;
-    return handler(req, result);
-  };
-}
-
 export function handleCoach(req: Request, handler: AuthHandlerFn): Promise<NextResponse> {
   return withApiHandler(async () => {
-    (handler as any).__req__ = req;
     const result = await requireCoach(req);
     if (result instanceof NextResponse) return result;
     return handler(req, result);
@@ -70,7 +61,6 @@ export function handleCoach(req: Request, handler: AuthHandlerFn): Promise<NextR
 
 export function handleAnyAuth(req: Request, handler: AuthHandlerFn): Promise<NextResponse> {
   return withApiHandler(async () => {
-    (handler as any).__req__ = req;
     const result = await requireAnyAuth(req);
     if (result instanceof NextResponse) return result;
     return handler(req, result);
@@ -79,7 +69,6 @@ export function handleAnyAuth(req: Request, handler: AuthHandlerFn): Promise<Nex
 
 export function handleAthlete(req: Request, handler: AuthHandlerFn): Promise<NextResponse> {
   return withApiHandler(async () => {
-    (handler as any).__req__ = req;
     const result = await requireAthlete(req);
     if (result instanceof NextResponse) return result;
     return handler(req, result);

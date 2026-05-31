@@ -37,11 +37,11 @@ export function BottomTabBar({ activeTab = 'training' }: BottomTabBarProps) {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-xl border-t border-white/10"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f131f]/75 backdrop-blur-xl border-t border-white/5 shadow-2xl"
       role="navigation"
-      aria-label="Main navigation"
+      aria-label="主导航"
     >
-      <div className="flex items-stretch justify-around pb-[env(safe-area-inset-bottom)]">
+      <div className="flex items-stretch justify-around pb-[env(safe-area-inset-bottom)] max-w-2xl mx-auto">
         {tabs.map(tab => {
           const Icon = tab.icon;
           const isActive = tab.match === resolvedTab || (tab.match === 'training' && !resolvedTab);
@@ -51,17 +51,17 @@ export function BottomTabBar({ activeTab = 'training' }: BottomTabBarProps) {
               key={tab.id}
               onClick={() => handleTabClick(tab.href)}
               className={cn(
-                "flex flex-col items-center justify-center min-h-[44px] px-3 py-2 flex-1 transition-all relative",
+                "flex flex-col items-center justify-center min-h-[48px] px-3 py-2 flex-1 transition-all relative font-label-caps",
                 isActive ? "text-primary" : "text-muted-foreground hover:text-white/80"
               )}
               aria-label={tab.label}
               aria-current={isActive ? 'page' : undefined}
             >
               {isActive && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full shadow-[0_0_8px_rgba(100,255,218,0.5)]" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-0.5 bg-primary rounded-full shadow-[0_0_12px_rgba(0,242,255,0.8)]" />
               )}
-              <Icon className={cn("w-5 h-5 mb-1", isActive && "drop-shadow-[0_0_6px_rgba(100,255,218,0.4)]")} />
-              <span className={cn("text-xs leading-none", isActive ? "font-semibold" : "")}>
+              <Icon className={cn("w-5 h-5 mb-1 transition-all", isActive && "drop-shadow-[0_0_8px_rgba(0,242,255,0.6)]")} />
+              <span className={cn("text-[10px] leading-none uppercase tracking-wider scale-90", isActive ? "font-bold" : "")}>
                 {tab.label}
               </span>
             </button>

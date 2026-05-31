@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { InjuryMap } from "@/components/athlete/InjuryMap";
-import { ArrowLeft, Activity, ShieldAlert, Heart, RefreshCw, UserCheck, ChevronRight, Flame, Zap, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Activity, ShieldAlert, Heart, RefreshCw, UserCheck, ChevronRight, Flame, Zap, AlertTriangle, X } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 function Breadcrumb() {
     const { t } = useLanguage();
     return (
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="面包屑导航">
             <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
             <ChevronRight className="w-3 h-3" aria-hidden="true" />
             <span className="text-white font-medium">{t.common.injuryMonitor}</span>
@@ -36,6 +36,9 @@ export default function CoachInjuryMonitorPage() {
     const [loading, setLoading] = useState(!isLoaded);
     const [heatMapData, setHeatMapData] = useState<Record<string, number>>({});
     const [injuredSwimmers, setInjuredSwimmers] = useState<Swimmer[]>([]);
+
+    const [selectedHeatmapPart, setSelectedHeatmapPart] = useState<string | null>(null);
+    const [selectedHeatmapLabel, setSelectedHeatmapLabel] = useState<string | null>(null);
 
     // Use store data directly — no duplicate fetch needed
     useEffect(() => {
@@ -100,18 +103,44 @@ export default function CoachInjuryMonitorPage() {
             }
         });
 
-        // Compute averages: sum / count, or average relative to the whole team / injured team
+        // Compute averages: sum / count
         const averages: Record<string, number> = {};
         Object.keys(sums).forEach((part) => {
-            // Average soreness on affected swimmers
             averages[part] = sums[part] / counts[part];
         });
 
         setHeatMapData(averages);
     };
 
+    const handleRegionClick = (partKey: string, partLabel: string) => {
+        setSelectedHeatmapPart(partKey);
+        setSelectedHeatmapLabel(partLabel);
+    };
+
+    const getSwimmersForRegion = (partKey: string) => {
+        return swimmers.filter(s => {
+            if (!s.injuryBodyMap) return false;
+            try {
+                const parsed = typeof s.injuryBodyMap === "string" 
+                    ? JSON.parse(s.injuryBodyMap) 
+                    : s.injuryBodyMap;
+                return parsed && Number(parsed[partKey]) > 0;
+            } catch {
+                return false;
+            }
+        }).map(s => {
+            const parsed = typeof s.injuryBodyMap === "string" 
+                ? JSON.parse(s.injuryBodyMap) 
+                : s.injuryBodyMap;
+            return {
+                ...s,
+                partPain: Number(parsed[partKey])
+            };
+        }).sort((a, b) => b.partPain - a.partPain); // highest pain level first
+    };
+
     return (
-        <div className="min-h-screen bg-background p-4 md:p-8">
+        <div className="min-h-screen bg-background p-4 md:p-8 relative">
             <div className="max-w-5xl mx-auto space-y-6">
                 <Breadcrumb />
 
@@ -133,8 +162,8 @@ export default function CoachInjuryMonitorPage() {
                     <button
                         onClick={loadData}
                         disabled={loading}
-                        className="p-3 bg-secondary/40 border border-white/5 rounded-xl hover:bg-secondary/80 text-muted-foreground hover:text-white transition-all disabled:opacity-50"
-                        title="刷新数据"
+                        className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center bg-secondary/40 border border-white/5 rounded-xl hover:bg-secondary/80 text-muted-foreground hover:text-white transition-all disabled:opacity-50 cursor-pointer"
+                        aria-label="刷新数据"
                     >
                         <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
                     </button>
@@ -150,7 +179,11 @@ export default function CoachInjuryMonitorPage() {
                         
                         {/* Heat Map Column */}
                         <div className="lg:col-span-7">
-                            <InjuryMap readOnly={true} teamHeatMapData={heatMapData} />
+                            <InjuryMap 
+                                readOnly={true} 
+                                teamHeatMapData={heatMapData} 
+                                onPartClick={handleRegionClick}
+                            />
                         </div>
 
                         {/* List Column */}
@@ -223,7 +256,7 @@ export default function CoachInjuryMonitorPage() {
 
                                             {swimmer.injuryNote && (
                                                 <p className="text-xs text-muted-foreground bg-red-500/5 p-2.5 rounded-xl border border-red-500/10 italic leading-relaxed">
-                                                    “ {swimmer.injuryNote} ”
+                                                    " {swimmer.injuryNote} "
                                                 </p>
                                             )}
 
@@ -248,8 +281,74 @@ export default function CoachInjuryMonitorPage() {
 
                     </div>
                 )}
-
             </div>
+
+            {/* Clickable Injury Detail Drawer Overlay */}
+            {selectedHeatmapPart && (
+                <div
+                    className="fixed inset-y-0 right-0 w-full sm:w-[450px] bg-slate-950/95 border-l border-white/10 backdrop-blur-md shadow-2xl p-6 z-50 overflow-y-auto animate-in slide-in-from-right duration-300"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="伤病详情"
+                >
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <span className="text-[10px] font-mono text-primary uppercase tracking-widest">区域病灶细分 (Zone telemetry)</span>
+                            <h3 className="text-xl font-bold text-white flex items-center gap-2 mt-1">
+                                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping inline-block" />
+                                {selectedHeatmapLabel}
+                            </h3>
+                        </div>
+                        <button
+                            onClick={() => setSelectedHeatmapPart(null)}
+                            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-muted-foreground hover:text-white transition-colors cursor-pointer"
+                            aria-label="关闭详情"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    <div className="space-y-4">
+                        {getSwimmersForRegion(selectedHeatmapPart).map(swimmer => (
+                            <div key={swimmer.id} className="p-4 bg-white/5 border border-white/5 rounded-2xl space-y-3">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h4 className="text-sm font-bold text-white">{swimmer.name}</h4>
+                                        <span className="text-[10px] text-muted-foreground bg-white/5 px-2 py-0.5 rounded-full">{swimmer.group}</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-xs font-mono font-bold text-red-400">
+                                            痛感: {swimmer.partPain} / 5
+                                        </span>
+                                        <p className="text-[9px] text-muted-foreground mt-0.5">
+                                            Readiness: {swimmer.readiness}%
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {swimmer.injuryNote && (
+                                    <p className="text-xs text-muted-foreground bg-black/40 p-2.5 rounded-xl border border-white/5 italic leading-relaxed">
+                                        " {swimmer.injuryNote} "
+                                    </p>
+                                )}
+
+                                {swimmer.injuryImageUrl && (
+                                    <div className="rounded-xl overflow-hidden border border-white/5 cursor-pointer hover:border-white/20 transition-colors bg-black/40"
+                                         onClick={() => window.open(swimmer.injuryImageUrl, '_blank')}>
+                                        <img src={swimmer.injuryImageUrl} alt="Injury" className="w-full h-32 object-cover opacity-85 hover:opacity-100 transition-opacity" />
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+
+                        {getSwimmersForRegion(selectedHeatmapPart).length === 0 && (
+                            <div className="text-center py-12 text-muted-foreground italic text-xs">
+                                完美！该区域目前没有队员报告不适 🏊
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

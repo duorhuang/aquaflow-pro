@@ -77,7 +77,7 @@ export default function SettingsPage() {
     };
 
     const handleResetDemo = () => {
-        if (confirm('Reset to demo data? Current data will be lost.')) {
+        if (confirm('确定要重置为演示数据吗？当前数据将会丢失。')) {
             hydrateMockData();
             window.location.reload();
         }

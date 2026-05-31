@@ -71,26 +71,20 @@ export const swimmerRepo = new (class extends BaseRepo {
       }
     };
 
+    // SECURITY: Only merge profile-safe fields. Never allow client to set xp, level,
+    // balance, totalXp, inventory, equippedItems, wishlist, status, or password
+    // through the general update path — those require dedicated endpoints.
     merge('name', 'name', String);
     merge('group', 'group', String);
     merge('username', 'username', String);
-    merge('status', 'status', String);
     merge('readiness', 'readiness', Number);
-    merge('xp', 'xp', Number);
-    merge('level', 'level', Number);
     merge('gender', 'gender', String);
-    merge('totalXp', 'totalXp', Number);
-    merge('balance', 'balance', Number);
-    merge('currentStreak', 'currentStreak', Number);
 
-    if (data.inventory !== undefined) addField('inventory', typeof data.inventory === 'string' ? data.inventory : JSON.stringify(data.inventory));
-    else addField('inventory', (current as any).inventory || '[]');
-
-    if (data.equippedItems !== undefined) addField('equippedItems', typeof data.equippedItems === 'string' ? data.equippedItems : JSON.stringify(data.equippedItems));
-    else addField('equippedItems', (current as any).equippedItems || '{}');
-
-    if (data.wishlist !== undefined) addField('wishlist', typeof data.wishlist === 'string' ? data.wishlist : JSON.stringify(data.wishlist));
-    else addField('wishlist', (current as any).wishlist || '[]');
+    // SECURITY: inventory/equippedItems/wishlist are managed exclusively by the shop endpoint
+    // to enforce balance checks and ownership validation. Preserve current values here.
+    addField('inventory', (current as any).inventory || '[]');
+    addField('equippedItems', (current as any).equippedItems || '{}');
+    addField('wishlist', (current as any).wishlist || '[]');
 
     if (data.injuryNote === null || data.injuryNote === '') addField('injuryNote', null);
     else if (data.injuryNote !== undefined) addField('injuryNote', String(data.injuryNote));

@@ -19,6 +19,11 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Swimmer ID required' }, { status: 400 });
         }
 
+        // SECURITY: Athletes can only view their own buddy data
+        if (auth.role === 'athlete' && swimmerId !== auth.userId) {
+            return NextResponse.json({ error: 'Forbidden: Can only view your own buddy data' }, { status: 403 });
+        }
+
         const sql = getNeon();
 
         // Fetch all buddy pairs where this swimmer is involved
@@ -132,7 +137,7 @@ export async function POST(request: Request) {
                         ${targetSwimmerId},
                         'buddy_sync',
                         ${`收到死党结对申请`},
-                        ${`「${swimmerName}」邀请你成为死党！点击“社交 - 死党”查看并同意。`},
+                        ${`「${swimmerName}」邀请你成为死党！点击"社交 - 死党"查看并同意。`},
                         false,
                         NOW()
                     )
@@ -152,6 +157,11 @@ export async function POST(request: Request) {
 
             if (pair.status !== 'pending') {
                 return NextResponse.json({ error: 'Pairing is not in pending status' }, { status: 400 });
+            }
+
+            // SECURITY: Verify the requesting swimmer is a member of this pair
+            if (pair.swimmer1Id !== swimmerId && pair.swimmer2Id !== swimmerId) {
+                return NextResponse.json({ error: '无权操作此死党申请' }, { status: 403 });
             }
 
             const updated = await sql`
@@ -202,6 +212,12 @@ export async function POST(request: Request) {
 
         } else if (action === 'dissolve') {
             if (!pairId) return NextResponse.json({ error: 'Pair ID required' }, { status: 400 });
+
+            // SECURITY: Verify the requesting swimmer is a member of this pair
+            const pairCheck = await sql`SELECT * FROM "BuddyPair" WHERE id = ${pairId} AND ("swimmer1Id" = ${swimmerId} OR "swimmer2Id" = ${swimmerId})`;
+            if (pairCheck.length === 0) {
+                return NextResponse.json({ error: '无权操作此死党关系' }, { status: 403 });
+            }
 
             await sql`DELETE FROM "BuddyPair" WHERE id = ${pairId}`;
             return NextResponse.json({ success: true }, { headers: V12_FINGERPRINT });

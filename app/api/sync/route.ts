@@ -21,7 +21,8 @@ export async function GET(request: Request) {
       weeklyPlansRaw,
       activeAnnouncementsRaw,
       archivedAnnouncementsRaw,
-      weeklyFeedbacks
+      weeklyFeedbacks,
+      templatesRaw
     ] = await Promise.all([
       sql`SELECT * FROM "TrainingPlan" ORDER BY "date" DESC`,
       sql`SELECT * FROM "Swimmer" ORDER BY "name" ASC`,
@@ -31,8 +32,16 @@ export async function GET(request: Request) {
       sql`SELECT * FROM "WeeklyPlan" WHERE "isPublished" = true`,
       sql`SELECT * FROM "CoachAnnouncement" WHERE "createdAt" >= ${cutoffStr} OR "isStarred" = true ORDER BY "createdAt" DESC`,
       sql`SELECT * FROM "CoachAnnouncement" WHERE "createdAt" < ${cutoffStr} AND "isStarred" = false ORDER BY "createdAt" DESC`,
-      sql`SELECT * FROM "WeeklyFeedback" WHERE "isSubmitted" = true`
+      sql`SELECT * FROM "WeeklyFeedback" WHERE "isSubmitted" = true`,
+      sql`SELECT * FROM "BlockTemplate" ORDER BY "category" ASC`
     ]);
+
+    const templates = (templatesRaw || []).map((t: any) => {
+      if (t.items && typeof t.items === 'string') {
+        try { t.items = JSON.parse(t.items); } catch { t.items = []; }
+      }
+      return t;
+    });
 
     const swimmers = swimmersRaw.map((s: any) => {
       if (isCoach) return s;
@@ -93,6 +102,28 @@ export async function GET(request: Request) {
 
     const resolvedWeeklyFeedbacks = await resolveDaily(weeklyFeedbacks);
 
+    // SECURITY: Scope sensitive data to the athlete's own records
+    if (!isCoach) {
+      const athleteId = auth.userId;
+      const athleteFeedbacks = (feedbacks || []).filter((f: any) => f.swimmerId === athleteId);
+      const athleteAttendance = (attendance || []).filter((a: any) => a.swimmerId === athleteId);
+      const athletePerformances = (performances || []).filter((p: any) => p.swimmerId === athleteId);
+      const athleteWeeklyFeedbacks = (resolvedWeeklyFeedbacks || []).filter((w: any) => w.swimmerId === athleteId);
+
+      return NextResponse.json({
+        plans: plans || [],
+        swimmers: swimmers || [],
+        feedbacks: athleteFeedbacks,
+        attendance: athleteAttendance,
+        performances: athletePerformances,
+        weeklyPlans: weeklyPlans || [],
+        announcements: announcements || [],
+        archivedAnnouncements: archivedAnnouncements || [],
+        weeklyFeedbacks: athleteWeeklyFeedbacks,
+        templates: templates || []
+      }, { headers: V12_FINGERPRINT });
+    }
+
     return NextResponse.json({
       plans: plans || [],
       swimmers: swimmers || [],
@@ -102,7 +133,8 @@ export async function GET(request: Request) {
       weeklyPlans: weeklyPlans || [],
       announcements: announcements || [],
       archivedAnnouncements: archivedAnnouncements || [],
-      weeklyFeedbacks: resolvedWeeklyFeedbacks || []
+      weeklyFeedbacks: resolvedWeeklyFeedbacks || [],
+      templates: templates || []
     }, { headers: V12_FINGERPRINT });
   });
 }

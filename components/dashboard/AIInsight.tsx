@@ -1,7 +1,7 @@
 "use client";
 
 import { Swimmer, TrainingPlan } from "@/types";
-import { AlertTriangle, CheckCircle2, TrendingUp, Activity } from "lucide-react";
+import { AlertTriangle, TrendingUp, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AIInsightProps {
@@ -15,8 +15,7 @@ export function AIInsight({ plan, swimmers }: AIInsightProps) {
 
     // 2. Calculate Plan Stats
     const totalDist = plan.totalDistance;
-    const hasEquipment = plan.blocks.some(b => b.items?.some(i => i.equipment?.length > 0));
-    const hasPaddles = plan.blocks.some(b => b.items?.some(i => i.equipment?.includes("Paddles")));
+        const hasPaddles = plan.blocks.some(b => b.items?.some(i => i.equipment?.includes("Paddles")));
     const hasFly = plan.blocks.some(b => b.items?.some(i => i.stroke === "Fly" && i.distance >= 50 && i.intensity === "High"));
 
     // 3. Analyze Risks

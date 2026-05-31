@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api-client";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/components/common/Toast";
@@ -20,7 +21,7 @@ const DAY_NAMES = ["周一", "周二", "周三", "周四", "周五", "周六", "
 function Breadcrumb() {
     const { t } = useLanguage();
     return (
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="面包屑导航">
             <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
             <ChevronRight className="w-3 h-3" aria-hidden="true" />
             <span className="text-white font-medium">{t.common.weeklyPlan}</span>
@@ -36,9 +37,11 @@ function getDayOfWeek(dateStr: string): number {
     return (d.getDay() + 6) % 7;
 }
 
-export default function WeeklyPlanPage() {
+function WeeklyPlanContent() {
     const { swimmers, weeklyPlans, isLoaded: storeLoaded } = useStore();
     const { toast } = useToast();
+    const searchParams = useSearchParams();
+    const planId = searchParams.get("id");
     const [weekStart, setWeekStart] = useState("");
     const [weekEnd, setWeekEnd] = useState("");
     const [group, setGroup] = useState("Advanced");
@@ -54,6 +57,13 @@ export default function WeeklyPlanPage() {
     const [saving, setSaving] = useState(false);
     // Use store weeklyPlans instead of independent fetch — no duplicate API call
     const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+
+    // Auto-load plan from URL query parameter
+    useEffect(() => {
+        if (storeLoaded && planId && planId !== selectedPlanId) {
+            selectPlan(planId);
+        }
+    }, [planId, storeLoaded, selectedPlanId]);
 
     // Caching & loading states for performance optimization
     const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
@@ -267,19 +277,19 @@ export default function WeeklyPlanPage() {
                     title,
                     coachNotes,
                     isPublished: true,
-                    targetGroup: targetGroups.length > 0 ? targetGroups : null,
-                    targetSwimmerIds: targetSwimmerIds.length > 0 ? targetSwimmerIds : null,
-                    overviewImageUrl: overviewImageUrl || null,
-                    overviewContentHtml: overviewContentHtml || null,
+                    targetGroup: targetGroups.length > 0 ? targetGroups : undefined,
+                    targetSwimmerIds: targetSwimmerIds.length > 0 ? targetSwimmerIds : undefined,
+                    overviewImageUrl: overviewImageUrl || undefined,
+                    overviewContentHtml: overviewContentHtml || undefined,
                 });
                 planId = newPlan.id;
             } else {
                 await api.weeklyPlans.update(planId, {
                     weekStart, weekEnd, group, title, coachNotes, isPublished: true,
-                    targetGroup: targetGroups.length > 0 ? targetGroups : null,
-                    targetSwimmerIds: targetSwimmerIds.length > 0 ? targetSwimmerIds : null,
-                    overviewImageUrl: overviewImageUrl || null,
-                    overviewContentHtml: overviewContentHtml || null,
+                    targetGroup: targetGroups.length > 0 ? targetGroups : undefined,
+                    targetSwimmerIds: targetSwimmerIds.length > 0 ? targetSwimmerIds : undefined,
+                    overviewImageUrl: overviewImageUrl || undefined,
+                    overviewContentHtml: overviewContentHtml || undefined,
                 });
             }
 
@@ -338,7 +348,6 @@ export default function WeeklyPlanPage() {
                     return next;
                 });
             }
-            loadPlans();
             if (!selectedPlanId) setSelectedPlanId(planId);
         } catch (e: any) {
             console.error("Publish Error:", e);
@@ -522,7 +531,12 @@ export default function WeeklyPlanPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2 space-y-6 relative">
                     {loadingPlanId && (
-                        <div className="absolute inset-0 bg-black/40 rounded-2xl flex flex-col items-center justify-center space-y-4 transition-all duration-300 z-10">
+                        <div
+                            className="absolute inset-0 bg-black/40 rounded-2xl flex flex-col items-center justify-center space-y-4 transition-all duration-300 z-10"
+                            role="status"
+                            aria-live="polite"
+                            aria-label="正在加载周计划"
+                        >
                             <div className="relative">
                                 <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur opacity-70 animate-pulse"></div>
                                 <Loader2 className="w-12 h-12 text-purple-400 animate-spin relative" />
@@ -537,12 +551,12 @@ export default function WeeklyPlanPage() {
                     <div className="bg-card/40 border border-border rounded-xl p-6">
                         <div className="grid grid-cols-2 gap-4 mb-4">
                             <div>
-                                <label className="text-xs text-muted-foreground block mb-1">开始日期 (周一)</label>
-                                <input type="date" value={weekStart} onChange={e => { setWeekStart(e.target.value); }} className="w-full bg-black/40 border border-border rounded-lg px-3 py-2 text-white" />
+                                <label htmlFor="week-start" className="text-xs text-muted-foreground block mb-1">开始日期 (周一)</label>
+                                <input id="week-start" type="date" value={weekStart} onChange={e => { setWeekStart(e.target.value); }} className="w-full bg-black/40 border border-border rounded-lg px-3 py-2 text-white" />
                             </div>
                             <div>
-                                <label className="text-xs text-muted-foreground block mb-1">标题</label>
-                                <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-black/40 border border-border rounded-lg px-3 py-2 text-white" />
+                                <label htmlFor="plan-title" className="text-xs text-muted-foreground block mb-1">标题</label>
+                                <input id="plan-title" type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-black/40 border border-border rounded-lg px-3 py-2 text-white" />
                             </div>
                         </div>
                         <div>
@@ -1077,5 +1091,20 @@ export default function WeeklyPlanPage() {
                 }}
             />
         </div>
+    );
+}
+
+export default function WeeklyPlanPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground text-xs uppercase tracking-widest">正在加载计划系统...</p>
+                </div>
+            </div>
+        }>
+            <WeeklyPlanContent />
+        </Suspense>
     );
 }

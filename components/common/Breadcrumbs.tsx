@@ -59,7 +59,7 @@ export function Breadcrumbs() {
     if (items.length <= 1) return null;
 
     return (
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-xs text-muted-foreground mb-4">
+        <nav aria-label="面包屑导航" className="flex items-center gap-1 text-xs text-muted-foreground mb-4">
             <Link href="/dashboard" className="hover:text-white transition-colors">
                 {t.common.dashboard}
             </Link>

@@ -1,10 +1,11 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { MessageSquare, TrendingUp, AlertTriangle, CheckCircle, Users, ChevronDown, ChevronUp, Activity } from "lucide-react";
+import { MessageSquare, TrendingUp, AlertTriangle, CheckCircle, Users, ChevronDown, ChevronUp, Activity, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { getLocalDateISOString } from "@/lib/date-utils";
+import Link from "next/link";
 
 export function AthletesFeedbackPanel() {
     const { swimmers, feedbacks } = useStore();
@@ -66,9 +67,14 @@ export function AthletesFeedbackPanel() {
     return (
         <div className="bg-card/30 border border-border rounded-2xl p-6 space-y-4">
             {/* Header */}
-            <div className="flex items-center gap-3">
-                <MessageSquare className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-semibold text-white">队员状态总览</h2>
+            <div className="flex items-center justify-between mb-2">
+                <Link href="/dashboard/feedbacks" className="group flex items-center gap-2 hover:opacity-85 transition-opacity" aria-label="查看队员反馈详情">
+                    <div className="flex items-center gap-3">
+                        <MessageSquare className="w-5 h-5 text-primary" />
+                        <h2 className="text-lg font-semibold text-white">队员状态总览</h2>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </Link>
             </div>
 
             {/* Stats Cards */}

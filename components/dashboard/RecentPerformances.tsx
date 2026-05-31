@@ -7,7 +7,7 @@ import { useLanguage } from "@/lib/i18n";
 
 export function RecentPerformances() {
     const { performances, swimmers } = useStore();
-    const { t } = useLanguage();
+    
 
     // Get latest 5 performances across all VALID swimmers
     const recentPerfs = [...performances]

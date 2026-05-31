@@ -27,11 +27,15 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
         onChange([...blocks, { type, content: "" }]);
     };
 
-    const handleFileUpload = async (file: File, blockIndex: number, type: "image" | "video") => {
+    const handleFileUpload = async (file: File, blockIndex: number, _type: "image" | "video") => {
         setUploadingIndex(blockIndex);
         try {
             const result = await api.upload.file(file);
-            updateBlock(blockIndex, { content: result.url });
+            if (result?.url) {
+                updateBlock(blockIndex, { content: result.url });
+            } else {
+                throw new Error("Upload response missing URL");
+            }
         } catch (e) {
             console.error("Upload failed:", e);
             setUploadError("上传失败，请重试");
@@ -65,20 +69,25 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                     {blocks.length > 1 && (
                         <button
                             onClick={() => removeBlock(i)}
-                            className="absolute top-2 right-2 p-1 bg-red-500/80 rounded text-white opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                            className="absolute top-2 right-2 p-2 min-w-[32px] min-h-[32px] flex items-center justify-center bg-red-500/80 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                            aria-label="删除此块"
                         >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-4 h-4" />
                         </button>
                     )}
 
                     {block.type === "text" && (
-                        <textarea
-                            value={block.content}
-                            onChange={e => updateBlock(i, { content: e.target.value })}
-                            placeholder="训练说明..."
-                            rows={3}
-                            className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-white resize-none outline-none focus:border-primary/50 placeholder:text-muted-foreground/50"
-                        />
+                        <div>
+                            <label htmlFor={`text-block-${i}`} className="sr-only">训练说明</label>
+                            <textarea
+                                id={`text-block-${i}`}
+                                value={block.content}
+                                onChange={e => updateBlock(i, { content: e.target.value })}
+                                placeholder="训练说明..."
+                                rows={3}
+                                className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-white resize-none outline-none focus:border-primary/50 placeholder:text-muted-foreground/50"
+                            />
+                        </div>
                     )}
 
                     {block.type === "image" && (

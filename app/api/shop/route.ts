@@ -4,6 +4,7 @@ import { withApiHandler } from '@/lib/api-handler';
 import { requireAnyAuth } from '@/lib/auth-api';
 import { getNeon } from '@/lib/db-pool';
 import * as crypto from 'crypto';
+import { calculateLevel } from '@/lib/date-utils';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
@@ -36,6 +37,11 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Swimmer not found' }, { status: 404 });
         }
         const swimmer = swimmers[0];
+
+        // SECURITY: Athletes can only view their own shop data
+        if (auth.role === 'athlete' && swimmerId !== auth.userId) {
+            return NextResponse.json({ error: 'Forbidden: Can only view your own shop data' }, { status: 403 });
+        }
 
         // 3. Return all items for frontend dynamic filtering & previewing
         const filteredItems = allItems;
@@ -92,6 +98,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Swimmer ID required' }, { status: 400 });
         }
 
+        // SECURITY: Athletes can only operate on their own account
+        if (auth.role === 'athlete' && swimmerId !== auth.userId) {
+            return NextResponse.json({ error: 'Forbidden: Can only operate on your own account' }, { status: 403 });
+        }
+
         // 1. Fetch Swimmer
         const swimmers = await sql`SELECT * FROM "Swimmer" WHERE "id" = ${swimmerId}`;
         if (swimmers.length === 0) {
@@ -141,6 +152,20 @@ export async function POST(request: Request) {
 
             if (balance < item.price) {
                 return NextResponse.json({ error: 'Insufficient XP balance' }, { status: 400 });
+            }
+
+            const tierRequiredLevel: Record<string, number> = {
+                basic: 1,
+                common: 1,
+                rare: 2,
+                advanced: 3,
+                legendary: 4,
+                ultimate: 5
+            };
+            const requiredLevel = tierRequiredLevel[item.tier] || 1;
+            const swimmerLevel = calculateLevel(totalXp);
+            if (swimmerLevel < requiredLevel) {
+                return NextResponse.json({ error: `Insufficient level. Required: Level ${requiredLevel}` }, { status: 400 });
             }
 
             const newBalance = balance - item.price;

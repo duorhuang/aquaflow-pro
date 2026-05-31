@@ -134,6 +134,7 @@ export default function PoolsidePage() {
                 <div className="flex items-center gap-8">
                     <button
                         onClick={() => setIsPlaying(!isPlaying)}
+                        aria-label={isPlaying ? "Pause" : "Play"}
                         className={cn(
                             "p-6 rounded-full transition-all",
                             isPlaying ? "bg-red-500/20 text-red-500 hover:bg-red-500/30" : "bg-green-500/20 text-green-500 hover:bg-green-500/30"
@@ -143,6 +144,7 @@ export default function PoolsidePage() {
                     </button>
                     <button
                         onClick={() => setCurrentSetIndex((prev) => (prev + 1) % items.length)}
+                        aria-label="下一组训练"
                         className="p-6 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
                     >
                         <SkipForward className="w-12 h-12" />

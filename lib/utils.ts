@@ -22,5 +22,10 @@ export function flattenPayload(body: any): any {
  */
 export const V12_FINGERPRINT = {
   'X-Build': 'V12-STRATOSPHERE-RECOVERY',
-  'Cache-Control': 'no-store'
+  'Cache-Control': 'no-store',
+  // Security headers applied to every API response
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self'; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
 };

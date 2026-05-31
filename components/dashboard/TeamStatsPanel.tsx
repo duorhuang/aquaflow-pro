@@ -1,7 +1,7 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { BarChart3, TrendingUp, Users, Trophy, CalendarDays } from "lucide-react";
+import { BarChart3, TrendingUp, Users, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getLocalDateISOString } from "@/lib/date-utils";
 
@@ -18,9 +18,12 @@ export function TeamStatsPanel() {
     const advancedMonthPlans = monthPlans.filter(p => p.group === "Advanced");
     const totalDistance = advancedMonthPlans.reduce((sum, p) => sum + p.totalDistance, 0);
 
-    // Average attendance rate
+    // Average attendance rate — count expected attendances per swimmer group
     const monthAttendance = attendance.filter(a => a.date.startsWith(thisMonth));
-    const expectedAttendances = monthPlans.length * swimmers.length;
+    const expectedAttendances = swimmers.reduce((total, swimmer) => {
+        const swimmerPlans = monthPlans.filter(p => p.group === swimmer.group);
+        return total + swimmerPlans.length;
+    }, 0);
     const attendanceRate = expectedAttendances > 0
         ? Math.round((monthAttendance.length / expectedAttendances) * 100)
         : 0;

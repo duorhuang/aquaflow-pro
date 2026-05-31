@@ -1,19 +1,14 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { useLanguage } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
 import { CalendarCheck, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export function AttendanceStats() {
-    const { t } = useLanguage();
     const { attendance, swimmers } = useStore();
     const today = new Date();
     const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
+    
     // Group attendance by date
     const attendanceByDate: Record<string, number> = {};
     attendance.forEach(record => {
@@ -77,7 +72,7 @@ export function AttendanceStats() {
                 </div>
                 <div className="text-center flex-1">
                     <div className="text-2xl font-bold text-white">
-                        {attendance.filter(a => new Date(a.date).getMonth() === currentMonth).length}
+                        {attendance.filter(a => { const m = parseInt(a.date.split('-')[1]) - 1; return m === currentMonth; }).length}
                     </div>
                     <div className="text-xs text-muted-foreground uppercase">Total Check-ins</div>
                 </div>

@@ -24,6 +24,16 @@ export function BackgroundPicker({
 }: BackgroundPickerProps) {
   const [tab, setTab] = useState<'auto' | 'manual'>(() => getThemePreference() === 'auto' ? 'auto' : 'manual');
 
+  // Escape key handler
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   const timeThemes = backgroundThemes.filter(t => t.timeRange);
@@ -33,7 +43,12 @@ export function BackgroundPicker({
   const isSelected = (t: BackgroundTheme) => t.id === currentThemeId;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
+    <div
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-label="背景主题选择"
+    >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
@@ -47,8 +62,8 @@ export function BackgroundPicker({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-            aria-label="Close"
+            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
+            aria-label="关闭背景选择"
           >
             <X className="w-5 h-5 text-white" />
           </button>

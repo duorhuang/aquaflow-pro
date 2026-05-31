@@ -164,7 +164,7 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                         onChange={(e) => setUsername(e.target.value)}
                         className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                         required
-                        aria-label="Username"
+                        aria-label="用户名"
                         autoComplete="username"
                     />
                 </div>
@@ -177,7 +177,7 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                         onChange={(e) => setPassword(e.target.value)}
                         className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-12 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                         required
-                        aria-label="Password"
+                        aria-label="密码"
                         autoComplete="current-password"
                     />
                     <button

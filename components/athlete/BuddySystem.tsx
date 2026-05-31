@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api-client";
 import { AvatarRenderer } from "./AvatarRenderer";
 import { Swimmer } from "@/types";
@@ -36,9 +36,11 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
     const [buddyPair, setBuddyPair] = useState<BuddyPair | null>(null); // active/pending pair
     const [buddySwimmer, setBuddySwimmer] = useState<Swimmer | null>(null); // buddy Swimmer object
     const [swimmers, setSwimmers] = useState<Swimmer[]>([]); // all team members
+    const [meSwimmer, setMeSwimmer] = useState<Swimmer | null>(null); // own Swimmer object
     const [searchQuery, setSearchQuery] = useState("");
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+
 
     // Load buddy status and roster
     const loadBuddyData = useCallback(async () => {
@@ -58,10 +60,14 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
             // 2. Fetch all team members for search
             const allSwimmers = await api.swimmers.getAll();
             if (allSwimmers) {
+                const me = allSwimmers.find((s: Swimmer) => s.id === swimmerId);
+                if (me) setMeSwimmer(me);
+
                 // Filter out self
                 const others = allSwimmers.filter((s: Swimmer) => s.id !== swimmerId);
                 setSwimmers(others);
             }
+
         } catch (e: unknown) {
             const errMsg = e instanceof Error ? e.message : "加载死党数据失败";
             setError(errMsg);
@@ -105,11 +111,11 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
     };
 
     // Accept request
-    const handleAcceptRequest = async (targetSwimmerId: string) => {
+    const handleAcceptRequest = async (pairId: string) => {
         setError("");
         setSuccess("");
         try {
-            const res = await api.buddy.accept(swimmerId, targetSwimmerId);
+            const res = await api.buddy.accept(swimmerId, pairId);
             if (res && res.success) {
                 setSuccess("你们正式成为死党！每天同步打卡可获得 +20 XP！");
                 setTimeout(() => setSuccess(""), 4000);
@@ -127,12 +133,12 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
     };
 
     // Dissolve buddy connection
-    const handleDissolve = async (targetSwimmerId: string) => {
+    const handleDissolve = async (pairId: string) => {
         if (!window.confirm("确定要解除死党结对关系吗？解除后今天将无法享受打卡加成。")) return;
         setError("");
         setSuccess("");
         try {
-            const res = await api.buddy.dissolve(swimmerId, targetSwimmerId);
+            const res = await api.buddy.dissolve(swimmerId, pairId);
             if (res && res.success) {
                 setSuccess("结对关系已解除");
                 setTimeout(() => setSuccess(""), 3000);
@@ -210,8 +216,20 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
 
                                 <div className="bg-slate-950 p-2.5 rounded-3xl border border-white/5 relative">
                                     <div className="text-xs text-muted-foreground uppercase text-center font-bold">ME</div>
-                                    <div className="w-[100px] h-[100px] rounded-2xl bg-slate-900 flex items-center justify-center text-2xl font-bold text-muted-foreground border border-dashed border-white/10">
-                                        👋😃
+                                    <div className="w-[100px] h-[100px] rounded-2xl bg-slate-900 border border-white/5 overflow-hidden flex items-center justify-center relative">
+                                        {meSwimmer ? (
+                                            <AvatarRenderer 
+                                                gender={meSwimmer.gender || "male"} 
+                                                equippedItems={meSwimmer.equippedItems || {}} 
+                                                size={100} 
+                                            />
+                                        ) : (
+                                            <AvatarRenderer 
+                                                gender="male" 
+                                                equippedItems={{}} 
+                                                size={100} 
+                                            />
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -324,13 +342,16 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
 
                         {/* Search Input */}
                         <div className="relative">
-                            <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-3.5" />
-                            <input 
+                            <label htmlFor="buddy-search" className="sr-only">搜索队友</label>
+                            <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-3.5 pointer-events-none" aria-hidden="true" />
+                            <input
+                                id="buddy-search"
                                 type="text"
                                 placeholder="输入队友名字搜索..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full bg-secondary/30 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-xs text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                aria-label="搜索队友"
                             />
                         </div>
                     </div>
@@ -341,14 +362,19 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
                             <p className="text-xs text-muted-foreground uppercase tracking-widest">
                                 🔍 搜索到 {filteredSwimmers.length} 名队员
                             </p>
-                            
+
                             <div className="space-y-2">
                                 {filteredSwimmers.map(member => (
                                     <div key={member.id} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-sm font-bold">
-                                                👤
+                                            <div className="w-10 h-10 rounded-xl border border-white/5 overflow-hidden flex items-center justify-center bg-slate-900 relative">
+                                                <AvatarRenderer 
+                                                    gender={member.gender || "male"} 
+                                                    equippedItems={member.equippedItems || {}} 
+                                                    size={40} 
+                                                />
                                             </div>
+
                                             <div>
                                                 <h5 className="text-xs font-bold text-white">{member.name}</h5>
                                                 <span className="text-[9px] text-muted-foreground px-1.5 py-0.5 bg-white/5 rounded">
@@ -359,7 +385,8 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
 
                                         <button
                                             onClick={() => handleSendRequest(member.id)}
-                                            className="px-3 py-1.5 bg-primary text-primary-foreground hover:brightness-110 rounded-xl text-xs font-bold flex items-center gap-1 transition-all"
+                                            className="px-4 py-2.5 min-h-[44px] bg-primary text-primary-foreground hover:brightness-110 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+                                            aria-label={`申请与${member.name}结成死党`}
                                         >
                                             <UserPlus className="w-3.5 h-3.5" /> 申请死党
                                         </button>
@@ -367,9 +394,11 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
                                 ))}
 
                                 {filteredSwimmers.length === 0 && (
-                                    <p className="text-xs text-muted-foreground italic text-center py-4">
-                                        未找到匹配该名字的队员 🏖
-                                    </p>
+                                    <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                                        <Users className="w-8 h-8 opacity-25 mb-2" />
+                                        <p className="text-xs italic">未找到匹配该名字的队员</p>
+                                        <p className="text-[10px] mt-1 text-muted-foreground/50">试试输入完整姓名</p>
+                                    </div>
                                 )}
                             </div>
                         </div>

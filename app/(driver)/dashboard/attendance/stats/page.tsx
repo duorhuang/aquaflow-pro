@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 function Breadcrumb() {
     const { t } = useLanguage();
     return (
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="面包屑导航">
             <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
             <ChevronRightIcon className="w-3 h-3" aria-hidden="true" />
             <Link href="/dashboard/attendance" className="hover:text-white transition-colors">{t.common.attendance}</Link>
@@ -35,8 +35,10 @@ export default function AttendanceStatsPage() {
     // Filter attendance for the current month
     const monthlyAttendance = useMemo(() => {
         return (attendance || []).filter(record => {
-            const date = new Date(record.date);
-            return date.getFullYear() === year && date.getMonth() === month;
+            const dateParts = record.date.split('-');
+            const recordYear = parseInt(dateParts[0]);
+            const recordMonth = parseInt(dateParts[1]) - 1; // 0-indexed
+            return recordYear === year && recordMonth === month;
         });
     }, [attendance, year, month]);
 

@@ -5,9 +5,12 @@ import { performanceRepo } from '@/lib/repos';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-  return handleAnyAuth(req, async () => {
+  return handleAnyAuth(req, async (_req, auth) => {
+    // SECURITY: Athletes can only view their own performance records
+    const isCoach = auth.role === 'coach';
     const performances = await performanceRepo.list();
-    return NextResponse.json(performances, { headers: V12_FINGERPRINT });
+    const safe = isCoach ? performances : (performances || []).filter((p: any) => p.swimmerId === auth.userId);
+    return NextResponse.json(safe, { headers: V12_FINGERPRINT });
   });
 }
 
