@@ -16,6 +16,15 @@ export function getNeon(): NeonQueryFunction<false, false> {
         throw new Error('DATABASE_URL is not configured');
     }
 
-    _sql = neon(connectionString);
+    // Add pg_bouncer mode + keepalive for connection stability
+    let url = connectionString;
+    if (!url.includes('pgbouncer')) {
+        url = url.replace('/neondb?', '/neondb?pgbouncer=true&');
+    }
+    if (!url.includes('connection_limit')) {
+        url = url.includes('?') ? `${url}&connection_limit=50` : `${url}?connection_limit=50`;
+    }
+
+    _sql = neon(url);
     return _sql;
 }

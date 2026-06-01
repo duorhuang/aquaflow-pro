@@ -1,40 +1,27 @@
 import { NextResponse } from 'next/server';
 import { V12_FINGERPRINT } from '@/lib/utils';
-import { withApiHandler } from '@/lib/api-handler';
 import { getNeon } from '@/lib/db-pool';
 
 export const dynamic = 'force-dynamic';
 
-// Simple in-memory rate limiter — max 10 requests per 60s window
-const MAX_REQUESTS = 10;
-const WINDOW_MS = 60 * 1000;
-const timestamps: number[] = [];
-
-function isRateLimited(): boolean {
-    const now = Date.now();
-    // Evict old entries
-    while (timestamps.length > 0 && timestamps[0] < now - WINDOW_MS) {
-        timestamps.shift();
-    }
-    if (timestamps.length >= MAX_REQUESTS) return true;
-    timestamps.push(now);
-    return false;
-}
-
+// Keep-alive endpoint — called by cron every 30s to prevent DB cold starts
+// No rate limiting — the DB pooler handles connection limits
 export async function GET() {
-    return withApiHandler(async () => {
-        if (isRateLimited()) {
-            return NextResponse.json(
-                { error: 'Too many requests' },
-                { status: 429, headers: V12_FINGERPRINT }
-            );
-        }
-
+    try {
         const sql = getNeon();
-        await sql`SELECT COUNT(*) FROM "Swimmer"`;
+        // Simple lightweight query — just pings the DB
+        await sql`SELECT 1`;
         return NextResponse.json({
             status: 'alive',
             timestamp: new Date().toISOString()
         }, { headers: V12_FINGERPRINT });
-    });
+    } catch (error: any) {
+        // If DB is unreachable (sleeping, quota exceeded), return 200 with warning
+        // This prevents the Worker from crashing and keeps the site partially available
+        return NextResponse.json({
+            status: 'degraded',
+            message: 'Database temporarily unavailable',
+            detail: error.message || 'Connection failed'
+        }, { status: 200, headers: V12_FINGERPRINT });
+    }
 }

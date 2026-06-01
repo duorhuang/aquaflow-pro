@@ -6,7 +6,12 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   return handleAnyAuth(request, async (_req, auth) => {
+    // Warm up DB before heavy sync query
     const sql = getNeon();
+    try { await sql`SELECT 1`; } catch {
+      return NextResponse.json({ error: 'Database waking up' }, { status: 503, headers: V12_FINGERPRINT });
+    }
+
     const isCoach = auth.role === 'coach';
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 7);

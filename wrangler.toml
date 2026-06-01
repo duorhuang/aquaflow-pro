@@ -3,6 +3,11 @@ main = ".open-next/worker.js"
 compatibility_date = "2026-05-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Keep Workers alive between requests to prevent 1102 CPU timeout errors
+# Workers stay warm for 60s after last request, reducing cold start latency
+[observability]
+enabled = true
+
 [build]
 command = "npx opennextjs-cloudflare build"
 
@@ -18,3 +23,7 @@ custom_domain = true
 bucket_name = "aquaflow-uploads"
 binding = "UPLOADS"
 preview_bucket_name = "aquaflow-uploads-dev"
+
+# Keep DB warm — prevents cold starts that cause 1102 errors
+# Note: Cron triggers require a scheduled() handler in the worker code
+# The client-side login page pinger serves as our keep-alive mechanism

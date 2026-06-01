@@ -49,9 +49,16 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
         setError("");
         setIsLoading(true);
 
-        // Retry login up to 3 times with exponential backoff for cold DB starts
-        const MAX_RETRIES = 3;
+        // Retry login up to 5 times with exponential backoff for cold DB starts / Worker limits
+        const MAX_RETRIES = 5;
         let lastError: string = "Network error";
+
+        // Pre-flight warmup: ping keep-alive to wake the DB/Worker before login
+        try {
+            await fetch('/api/keep-alive', { cache: 'no-store' });
+        } catch {
+            // Silent — warmup is best-effort
+        }
 
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
             setRetryAttempt(attempt + 1);
@@ -80,7 +87,7 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                         return;
                     }
                     const text = await res.text();
-                    lastError = 'Server error. Please try again in a moment.';
+                    lastError = `Server error (${res.status}). Please try again in a moment.`;
                     console.error('Login API returned non-JSON response:', text.substring(0, 200));
                     if (attempt < MAX_RETRIES - 1) {
                         await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
@@ -105,6 +112,14 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                         setIsLoading(false);
                         return;
                     }
+                    // 503 = server overloaded (DB cold start or Worker CPU limit) — retry with longer backoff
+                    if (res.status === 503) {
+                        lastError = data.error || "服务器繁忙，正在重试...";
+                        if (attempt < MAX_RETRIES - 1) {
+                            await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
+                            continue;
+                        }
+                    }
                     lastError = data.error || "Server error, retrying...";
                     if (attempt < MAX_RETRIES - 1) {
                         await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
@@ -119,11 +134,14 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                 redirectAfterLogin(mode, data);
                 return;
             } catch (err: any) {
+                // 503 or network error — retry with longer backoff
+                const is503 = err.message?.includes('503');
+                const delay = is503 ? 3000 * (attempt + 1) : 1500 * (attempt + 1);
                 lastError = err.name === 'AbortError'
-                    ? `Request timed out${attempt < MAX_RETRIES - 1 ? ', retrying...' : ', please try again later'}`
-                    : err.message || "Network error";
+                    ? `请求超时${attempt < MAX_RETRIES - 1 ? '，正在重试...' : '，请稍后再试'}`
+                    : is503 ? '服务器繁忙，正在重试...' : (err.message || "Network error");
                 if (attempt < MAX_RETRIES - 1) {
-                    await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+                    await new Promise(r => setTimeout(r, delay));
                     continue;
                 }
                 setError(lastError);

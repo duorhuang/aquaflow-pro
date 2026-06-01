@@ -26,11 +26,34 @@ function getRateLimit(key: string): boolean {
     return true;
 }
 
+/**
+ * Warm up the Neon DB connection. Returns true if DB is responsive.
+ * Called before any DB query to handle cold starts gracefully.
+ */
+async function warmDb(): Promise<boolean> {
+    try {
+        const sql = getNeon();
+        await sql`SELECT 1`;
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 export async function POST(request: Request) {
     return withApiHandler(async () => {
         const rawIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown';
         const ip = rawIp.includes(',') ? rawIp.split(',')[0].trim() : rawIp;
         if (!getRateLimit(ip)) return NextResponse.json({ error: 'Too many attempts. Try again in 5 minutes.' }, { status: 429, headers: V12_FINGERPRINT });
+
+        // Warm up DB before processing — handles Neon cold starts
+        const dbReady = await warmDb();
+        if (!dbReady) {
+            return NextResponse.json(
+                { error: 'Database is waking up. Please try again in a moment.' },
+                { status: 503, headers: { ...V12_FINGERPRINT, 'Retry-After': '5' } }
+            );
+        }
 
         const sql = getNeon();
         const data = flattenPayload(await request.json());
