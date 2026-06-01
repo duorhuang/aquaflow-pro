@@ -103,6 +103,38 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
     0
   );
 
+  // Auto-save: save draft every 30 seconds when plan has content
+  const [lastAutoSave, setLastAutoSave] = useState<number>(0);
+  useEffect(() => {
+    if (blocks.length === 0 || isPublishing) return;
+    const timer = window.setInterval(async () => {
+      const now = Date.now();
+      if (now - lastAutoSave < 30000) return;
+      setLastAutoSave(now);
+      const planData: Partial<TrainingPlan> = {
+        date, group, status: "Draft" as const, focus, totalDistance,
+        coachNotes, blocks, targetedNotes, trainingType, primaryStroke,
+      };
+      try {
+        if (initialPlan?.id) {
+          await updatePlan(initialPlan.id, planData);
+        }
+      } catch { /* optimistic store handles sync */ }
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [blocks, date, group, focus, coachNotes, targetedNotes, trainingType, primaryStroke, isPublishing, lastAutoSave, initialPlan?.id, updatePlan]);
+
+  // Beforeunload warning when plan has unsaved changes
+  useEffect(() => {
+    const hasChanges = blocks.length > 0 || focus || coachNotes;
+    if (!hasChanges) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [blocks, focus, coachNotes]);
   const handleAddSet = () => {
     const newItem: PlanItem = {
       id: uid(),
