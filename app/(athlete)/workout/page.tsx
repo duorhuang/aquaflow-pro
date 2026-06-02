@@ -170,32 +170,45 @@ function AthleteWorkoutContent() {
     useEffect(() => {
         let isMounted = true;
 
-        const storedId = localStorage.getItem("aquaflow_athlete_id");
-        if (!storedId) {
-            router.push("/login");
-            return;
-        }
-
-        const timer = setTimeout(() => {
-            if (!isMounted) return;
-            const user = swimmers.find(s => s.id === storedId);
-            if (user) {
-                setCurrentUser(user);
-                setReadiness(user.readiness || 95);
-                if (user.status === "Active" || user.status === "Resting" || user.status === "Injured") {
-                    setStatus(user.status);
+        // First try to get the user from the server session (most reliable)
+        api.auth.me()
+            .then((user: any) => {
+                if (!isMounted || user?.role !== 'athlete') return;
+                const userId = user.id;
+                // Ensure localStorage is in sync for cross-component compatibility
+                localStorage.setItem("aquaflow_athlete_id", userId);
+                // Find the matching swimmer from the store once data is loaded
+                const syncAndFind = () => {
+                    const found = swimmers.find(s => s.id === userId);
+                    if (found && isMounted) {
+                        setCurrentUser(found);
+                        setReadiness(found.readiness || 95);
+                        if (found.status === "Active" || found.status === "Resting" || found.status === "Injured") {
+                            setStatus(found.status);
+                        }
+                        setAuthResolved(true);
+                        loadPendingReminders(userId);
+                    }
+                };
+                if (storeLoaded) {
+                    syncAndFind();
+                } else {
+                    // Wait for store to load
+                    const checkStore = setInterval(() => {
+                        if (!isMounted) { clearInterval(checkStore); return; }
+                        if (storeLoaded) {
+                            clearInterval(checkStore);
+                            syncAndFind();
+                        }
+                    }, 200);
                 }
-            }
-            if (storeLoaded) {
-                setAuthResolved(true);
-            }
-
-            loadPendingReminders(storedId);
-        }, 0);
+            })
+            .catch(() => {
+                if (isMounted) router.push("/login");
+            });
 
         return () => {
             isMounted = false;
-            clearTimeout(timer);
         };
     }, [swimmers, storeLoaded, router, loadPendingReminders]);
 

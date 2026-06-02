@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { flattenPayload, V12_FINGERPRINT } from '@/lib/utils';
 import { withApiHandler } from '@/lib/api-handler';
-import { generateJWT, setSessionCookie, verifyPassword } from '@/lib/auth';
+import { generateJWT, verifyPassword } from '@/lib/auth';
 import { getNeon } from '@/lib/db-pool';
 export const dynamic = 'force-dynamic';
 
@@ -67,10 +67,20 @@ export async function POST(request: Request) {
             if (await verifyPassword(String(data.password), coach.password)) {
                 coachMatch = true;
                 const token = await generateJWT({ userId: coach.id, role: 'coach' });
-                return NextResponse.json({
+                const response = NextResponse.json({
                     success: true,
                     user: { id: coach.id, name: coach.name, role: 'coach' },
-                }, { headers: { ...V12_FINGERPRINT, 'Set-Cookie': setSessionCookie(token) } });
+                }, { headers: V12_FINGERPRINT });
+                const isProd = process.env.NODE_ENV === 'production';
+                response.cookies.set('aquaflow_session', token, {
+                    httpOnly: true,
+                    sameSite: 'strict',
+                    path: '/',
+                    maxAge: 7 * 24 * 60 * 60,
+                    secure: isProd,
+                    ...(isProd ? { domain: '.sportsflow.best' } : {}),
+                });
+                return response;
             }
         }
 
@@ -78,10 +88,20 @@ export async function POST(request: Request) {
         for (const swimmer of swimmers) {
             if (await verifyPassword(String(data.password), swimmer.password)) {
                 const token = await generateJWT({ userId: swimmer.id, role: 'athlete' });
-                return NextResponse.json({
+                const response = NextResponse.json({
                     success: true,
                     user: { id: swimmer.id, name: swimmer.name, role: 'athlete' },
-                }, { headers: { ...V12_FINGERPRINT, 'Set-Cookie': setSessionCookie(token) } });
+                }, { headers: V12_FINGERPRINT });
+                const isProd = process.env.NODE_ENV === 'production';
+                response.cookies.set('aquaflow_session', token, {
+                    httpOnly: true,
+                    sameSite: 'strict',
+                    path: '/',
+                    maxAge: 7 * 24 * 60 * 60,
+                    secure: isProd,
+                    ...(isProd ? { domain: '.sportsflow.best' } : {}),
+                });
+                return response;
             }
         }
 

@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { flattenPayload, V12_FINGERPRINT } from '@/lib/utils';
 import { withApiHandler } from '@/lib/api-handler';
-import { hashPassword, generateJWT, setSessionCookie } from '@/lib/auth';
+import { hashPassword, generateJWT } from '@/lib/auth';
 import { getNeon } from '@/lib/db-pool';
-import * as crypto from 'crypto';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
@@ -22,9 +21,16 @@ export async function POST(request: Request) {
     const coach = rows[0];
     const token = await generateJWT({ userId: coach.id, role: 'coach' });
     const body = { success: true, coach: { id: coach.id, username: coach.username, name: coach.name, role: 'coach' } };
-
-    return NextResponse.json(body, {
-      headers: { ...V12_FINGERPRINT, 'Set-Cookie': setSessionCookie(token) },
+    const response = NextResponse.json(body, { headers: V12_FINGERPRINT });
+    const isProd = process.env.NODE_ENV === 'production';
+    response.cookies.set('aquaflow_session', token, {
+      httpOnly: true,
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60,
+      secure: isProd,
+      ...(isProd ? { domain: '.sportsflow.best' } : {}),
     });
+    return response;
   });
 }

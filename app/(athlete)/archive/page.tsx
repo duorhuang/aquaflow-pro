@@ -74,20 +74,38 @@ export default function TrainingArchivePage() {
     useEffect(() => {
         let isMounted = true;
         const storedId = localStorage.getItem("aquaflow_athlete_id");
-        if (!storedId) {
-            router.push("/login");
-            return;
-        }
-        const timer = setTimeout(() => {
-            if (!isMounted) return;
-            const user = swimmers.find(s => s.id === storedId);
-            if (user) setCurrentUser(user);
-            if (storeLoaded) setAuthResolved(true);
-        }, 0);
+
+        // Primary: verify session with server
+        api.auth.me()
+            .then((user: any) => {
+                if (!isMounted || user?.role !== 'athlete') return;
+                const userId = user.id;
+                if (!storedId) localStorage.setItem("aquaflow_athlete_id", userId);
+                const syncAndFind = () => {
+                    const found = swimmers.find(s => s.id === userId);
+                    if (found && isMounted) {
+                        setCurrentUser(found);
+                        setAuthResolved(true);
+                    }
+                };
+                if (storeLoaded) {
+                    syncAndFind();
+                } else {
+                    const checkStore = setInterval(() => {
+                        if (!isMounted) { clearInterval(checkStore); return; }
+                        if (storeLoaded) {
+                            clearInterval(checkStore);
+                            syncAndFind();
+                        }
+                    }, 200);
+                }
+            })
+            .catch(() => {
+                if (isMounted) router.push("/login");
+            });
 
         return () => {
             isMounted = false;
-            clearTimeout(timer);
         };
     }, [swimmers, storeLoaded, router]);
 

@@ -116,8 +116,6 @@ describe('LoginForm Component', () => {
     });
 
     it('should show rate limit error on 429', async () => {
-        // Provide two mocks: first for the warm-up useEffect fetch, second for the login
-        mockFetchResponse(200, {});
         (global.fetch as any).mockResolvedValueOnce({
             ok: false,
             status: 429,

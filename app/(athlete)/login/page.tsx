@@ -2,7 +2,7 @@
 
 import { LoginForm } from "@/components/athlete/LoginForm";
 import { Waves, UserCog, User } from "lucide-react";
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { WaveAnimation } from "@/components/common/WaveAnimation";
@@ -11,20 +11,7 @@ import { useLanguage } from "@/lib/i18n";
 function LoginContent() {
     const searchParams = useSearchParams();
     const { t } = useLanguage();
-    const [isCoach, setIsCoach] = useState(false);
-
-    useEffect(() => {
-        let isMounted = true;
-        const timer = setTimeout(() => {
-            if (isMounted && searchParams.get("role") === "coach") {
-                setIsCoach(true);
-            }
-        }, 0);
-        return () => {
-            isMounted = false;
-            clearTimeout(timer);
-        };
-    }, [searchParams]);
+    const [isCoach, setIsCoach] = useState(() => searchParams.get("role") === "coach");
 
     return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">

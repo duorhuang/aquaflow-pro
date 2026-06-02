@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, User, Loader2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,29 +20,7 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
     const [retryAttempt, setRetryAttempt] = useState(0);
     const [showPassword, setShowPassword] = useState(false);
     const abortRef = useRef<AbortController | null>(null);
-
-    // Warm up DB on mount to avoid cold-start latency on first login
-    useEffect(() => {
-        let isMounted = true;
-        const wakeDb = async () => {
-            try {
-                await fetch('/api/auth/me', { cache: 'no-store' });
-            } catch {
-                // Silent — DB warming is best-effort
-            }
-        };
-        wakeDb();
-
-        // Keep DB warm with periodic ping while on login page
-        const interval = setInterval(() => {
-            if (isMounted) wakeDb();
-        }, 45000); // every 45s (Neon idle timeout is ~5min)
-
-        return () => {
-            isMounted = false;
-            clearInterval(interval);
-        };
-    }, []);
+    const MAX_RETRIES = 5;
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,15 +28,7 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
         setIsLoading(true);
 
         // Retry login up to 5 times with exponential backoff for cold DB starts / Worker limits
-        const MAX_RETRIES = 5;
         let lastError: string = "Network error";
-
-        // Pre-flight warmup: ping keep-alive to wake the DB/Worker before login
-        try {
-            await fetch('/api/keep-alive', { cache: 'no-store' });
-        } catch {
-            // Silent — warmup is best-effort
-        }
 
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
             setRetryAttempt(attempt + 1);
@@ -153,13 +123,8 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
     };
 
     const redirectAfterLogin = async (role: string, data?: any) => {
-        // Wait for cookie to commit, polling document.cookie every 100ms
-        // Max 2s total wait — if cookie still missing after that, proceed anyway
-        const deadline = Date.now() + 2000;
-        while (Date.now() < deadline) {
-            if (document.cookie.includes('aquaflow_session')) break;
-            await new Promise(r => setTimeout(r, 100));
-        }
+        // Cookie is HttpOnly so document.cookie can't see it — redirect immediately.
+        // The browser has already received the Set-Cookie header from the response.
         if (role === "coach") {
             router.push("/dashboard");
         } else {
@@ -233,7 +198,7 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                     {isLoading ? (
                         <>
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            {retryAttempt > 0 ? `Connecting... attempt ${retryAttempt}/3` : t.common.loggingIn || "Connecting to server..."}
+                            {retryAttempt > 0 ? `Connecting... attempt ${retryAttempt}/${MAX_RETRIES}` : t.common.loggingIn || "Connecting to server..."}
                         </>
                     ) : t.common.login}
                 </button>

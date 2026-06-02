@@ -53,7 +53,7 @@ export default function Home() {
 
           {/* Athlete Login - Style of Nature (Emerald/Teal Glass theme) */}
           <Link
-            href="/workout"
+            href="/login?role=athlete"
             className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500/20 via-teal-500/10 to-cyan-500/20 text-emerald-400 px-8 py-4 rounded-2xl font-bold text-lg hover:scale-[1.04] active:scale-[0.98] hover:bg-emerald-500/35 hover:text-emerald-300 transition-all border border-emerald-500/30 hover:border-emerald-400/60 shadow-[0_0_25px_rgba(16,185,129,0.12)] hover:shadow-[0_0_35px_rgba(16,185,129,0.25)]"
           >
             <User className="w-5.5 h-5.5" />

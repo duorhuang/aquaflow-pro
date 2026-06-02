@@ -17,6 +17,10 @@ export async function GET(request: Request) {
     cutoff.setDate(cutoff.getDate() - 7);
     const cutoffStr = cutoff.toISOString();
 
+    // For athletes: only load their specific data to reduce payload size for 70+ swimmers
+    const athleteId = !isCoach ? auth.userId : null;
+
+    // Build queries based on role to minimize data transfer
     const [
       plans,
       swimmersRaw,
@@ -30,14 +34,25 @@ export async function GET(request: Request) {
       templatesRaw
     ] = await Promise.all([
       sql`SELECT * FROM "TrainingPlan" ORDER BY "date" DESC`,
-      sql`SELECT * FROM "Swimmer" ORDER BY "name" ASC`,
-      sql`SELECT * FROM "Feedback" ORDER BY "date" DESC`,
-      sql`SELECT * FROM "AttendanceRecord"`,
-      sql`SELECT * FROM "PerformanceRecord"`,
+      // For athletes, only load swimmer list (needed for buddy system) - no passwords
+      isCoach
+        ? sql`SELECT * FROM "Swimmer" ORDER BY "name" ASC`
+        : sql`SELECT id, name, username, "group", gender, "mainStroke", readiness, status, level, "totalXp", balance, "currentStreak", "equippedItems", "lastProfileUpdate" FROM "Swimmer" ORDER BY "name" ASC`,
+      isCoach
+        ? sql`SELECT * FROM "Feedback" ORDER BY "date" DESC`
+        : sql`SELECT * FROM "Feedback" WHERE "swimmerId" = ${athleteId} ORDER BY "date" DESC`,
+      isCoach
+        ? sql`SELECT * FROM "AttendanceRecord"`
+        : sql`SELECT * FROM "AttendanceRecord" WHERE "swimmerId" = ${athleteId}`,
+      isCoach
+        ? sql`SELECT * FROM "PerformanceRecord"`
+        : sql`SELECT * FROM "PerformanceRecord" WHERE "swimmerId" = ${athleteId}`,
       sql`SELECT * FROM "WeeklyPlan" WHERE "isPublished" = true`,
       sql`SELECT * FROM "CoachAnnouncement" WHERE "createdAt" >= ${cutoffStr} OR "isStarred" = true ORDER BY "createdAt" DESC`,
       sql`SELECT * FROM "CoachAnnouncement" WHERE "createdAt" < ${cutoffStr} AND "isStarred" = false ORDER BY "createdAt" DESC`,
-      sql`SELECT * FROM "WeeklyFeedback" WHERE "isSubmitted" = true`,
+      isCoach
+        ? sql`SELECT * FROM "WeeklyFeedback" WHERE "isSubmitted" = true`
+        : sql`SELECT * FROM "WeeklyFeedback" WHERE "isSubmitted" = true AND "swimmerId" = ${athleteId}`,
       sql`SELECT * FROM "BlockTemplate" ORDER BY "category" ASC`
     ]);
 
@@ -46,12 +61,6 @@ export async function GET(request: Request) {
         try { t.items = JSON.parse(t.items); } catch { t.items = []; }
       }
       return t;
-    });
-
-    const swimmers = swimmersRaw.map((s: any) => {
-      if (isCoach) return s;
-      const { password, ...rest } = s;
-      return rest;
     });
 
     const weeklyPlanIds = weeklyPlansRaw.map((wp: any) => wp.id);
@@ -107,31 +116,10 @@ export async function GET(request: Request) {
 
     const resolvedWeeklyFeedbacks = await resolveDaily(weeklyFeedbacks);
 
-    // SECURITY: Scope sensitive data to the athlete's own records
-    if (!isCoach) {
-      const athleteId = auth.userId;
-      const athleteFeedbacks = (feedbacks || []).filter((f: any) => f.swimmerId === athleteId);
-      const athleteAttendance = (attendance || []).filter((a: any) => a.swimmerId === athleteId);
-      const athletePerformances = (performances || []).filter((p: any) => p.swimmerId === athleteId);
-      const athleteWeeklyFeedbacks = (resolvedWeeklyFeedbacks || []).filter((w: any) => w.swimmerId === athleteId);
-
-      return NextResponse.json({
-        plans: plans || [],
-        swimmers: swimmers || [],
-        feedbacks: athleteFeedbacks,
-        attendance: athleteAttendance,
-        performances: athletePerformances,
-        weeklyPlans: weeklyPlans || [],
-        announcements: announcements || [],
-        archivedAnnouncements: archivedAnnouncements || [],
-        weeklyFeedbacks: athleteWeeklyFeedbacks,
-        templates: templates || []
-      }, { headers: V12_FINGERPRINT });
-    }
-
+    // For coaches, return all data; for athletes, data is already scoped by queries above
     return NextResponse.json({
       plans: plans || [],
-      swimmers: swimmers || [],
+      swimmers: swimmersRaw || [],
       feedbacks: feedbacks || [],
       attendance: attendance || [],
       performances: performances || [],
