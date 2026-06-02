@@ -3,7 +3,6 @@ import { flattenPayload, V12_FINGERPRINT } from '@/lib/utils';
 import { withApiHandler } from '@/lib/api-handler';
 import { requireAnyAuth } from '@/lib/auth-api';
 import { getNeon } from '@/lib/db-pool';
-import * as crypto from 'crypto';
 
 
 export const dynamic = 'force-dynamic';
@@ -120,7 +119,7 @@ export async function POST(request: Request) {
                 return NextResponse.json({ error: '死党结对申请已存在，或者对方已经是你的死党啦！' }, { status: 400 });
             }
 
-            const id = crypto.randomUUID();
+            const id = globalThis.crypto.randomUUID();
             const pair = await sql`
                 INSERT INTO "BuddyPair" ("id", "swimmer1Id", "swimmer2Id", "status", "createdAt", "updatedAt")
                 VALUES (${id}, ${s1}, ${s2}, 'pending', NOW(), NOW())
@@ -129,7 +128,7 @@ export async function POST(request: Request) {
 
             // Create notification for target Swimmer
             try {
-                const feedId = crypto.randomUUID();
+                const feedId = globalThis.crypto.randomUUID();
                 await sql`
                     INSERT INTO "ActivityFeedItem" ("id", "swimmerId", "type", "title", "detail", "isRead", "createdAt")
                     VALUES (
@@ -177,7 +176,7 @@ export async function POST(request: Request) {
 
             // Send notification and award a synchronization start bonus (20 XP) for both!
             try {
-                const feedId1 = crypto.randomUUID();
+                const feedId1 = globalThis.crypto.randomUUID();
                 await sql`
                     INSERT INTO "ActivityFeedItem" ("id", "swimmerId", "type", "title", "detail", "isRead", "createdAt")
                     VALUES (
@@ -191,7 +190,7 @@ export async function POST(request: Request) {
                     )
                 `;
 
-                const feedId2 = crypto.randomUUID();
+                const feedId2 = globalThis.crypto.randomUUID();
                 await sql`
                     INSERT INTO "ActivityFeedItem" ("id", "swimmerId", "type", "title", "detail", "isRead", "createdAt")
                     VALUES (

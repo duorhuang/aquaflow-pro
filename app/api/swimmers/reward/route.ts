@@ -3,7 +3,6 @@ import { flattenPayload, V12_FINGERPRINT } from '@/lib/utils';
 import { withApiHandler } from '@/lib/api-handler';
 import { requireCoach } from '@/lib/auth-api';
 import { getNeon } from '@/lib/db-pool';
-import * as crypto from 'crypto';
 import { calculateLevel } from '@/lib/date-utils';
 export const dynamic = 'force-dynamic';
 
@@ -81,7 +80,7 @@ export async function POST(request: Request) {
         `;
 
         // 5. Create Transaction Entry
-        const txId = crypto.randomUUID();
+        const txId = globalThis.crypto.randomUUID();
         await sql`
             INSERT INTO "XpTransaction" ("id", "swimmerId", "amount", "source", "description", "balanceAfter", "totalXpAfter", "createdAt")
             VALUES (
@@ -97,7 +96,7 @@ export async function POST(request: Request) {
         `;
 
         // 6. Create Activity Feed Item
-        const feedId = crypto.randomUUID();
+        const feedId = globalThis.crypto.randomUUID();
         await sql`
             INSERT INTO "ActivityFeedItem" ("id", "swimmerId", "type", "title", "detail", "xpAmount", "isRead", "createdAt")
             VALUES (
@@ -114,7 +113,7 @@ export async function POST(request: Request) {
 
         // 7. If level increased, create level up Activity Feed Item
         if (levelChanged) {
-            const levelFeedId = crypto.randomUUID();
+            const levelFeedId = globalThis.crypto.randomUUID();
             await sql`
                 INSERT INTO "ActivityFeedItem" ("id", "swimmerId", "type", "title", "detail", "isRead", "createdAt")
                 VALUES (

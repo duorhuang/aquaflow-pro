@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     const hashed = await hashPassword(String(data.password));
-    const rows = await sql`INSERT INTO "CoachUser" ("id", "username", "passwordHash", "name", "createdAt") VALUES (${crypto.randomUUID()}, ${String(data.username)}, ${hashed}, ${String(data.name)}, NOW()) RETURNING *`;
+    const rows = await sql`INSERT INTO "CoachUser" ("id", "username", "passwordHash", "name", "createdAt") VALUES (${globalThis.crypto.randomUUID()}, ${String(data.username)}, ${hashed}, ${String(data.name)}, NOW()) RETURNING *`;
     const coach = rows[0];
     const token = await generateJWT({ userId: coach.id, role: 'coach' });
     const body = { success: true, coach: { id: coach.id, username: coach.username, name: coach.name, role: 'coach' } };

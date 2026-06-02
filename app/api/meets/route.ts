@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { flattenPayload, V12_FINGERPRINT } from '@/lib/utils';
 import { handleCoach, handleAnyAuth } from '@/lib/api-handler';
 import { meetRepo } from '@/lib/repos';
-import * as crypto from 'crypto';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
@@ -23,7 +22,7 @@ export async function POST(request: Request) {
       const sql = getNeon();
       const swimmers = await sql`SELECT id FROM "Swimmer"`;
       for (const s of swimmers) {
-        await sql`INSERT INTO "ActivityFeedItem" ("id", "swimmerId", "type", "title", "detail", "isRead", "createdAt") VALUES (${crypto.randomUUID()}, ${s.id}, 'meet_announced', ${`New meet: ${data.name}`}, ${data.description || ''}, false, NOW())`;
+        await sql`INSERT INTO "ActivityFeedItem" ("id", "swimmerId", "type", "title", "detail", "isRead", "createdAt") VALUES (${globalThis.crypto.randomUUID()}, ${s.id}, 'meet_announced', ${`New meet: ${data.name}`}, ${data.description || ''}, false, NOW())`;
       }
     } catch (e) { console.error("Meet notification failed:", e); }
     return NextResponse.json(meet, { headers: V12_FINGERPRINT });

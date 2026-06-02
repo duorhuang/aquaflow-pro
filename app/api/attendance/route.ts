@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { flattenPayload, V12_FINGERPRINT } from '@/lib/utils';
 import { handleAnyAuth } from '@/lib/api-handler';
 import { attendanceRepo } from '@/lib/repos';
-import * as crypto from 'crypto';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
