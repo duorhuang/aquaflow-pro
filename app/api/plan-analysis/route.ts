@@ -3,7 +3,6 @@ import { flattenPayload, V12_FINGERPRINT } from '@/lib/utils';
 import { withApiHandler } from '@/lib/api-handler';
 import { requireAnyAuth, requireCoach } from '@/lib/auth-api';
 import { getNeon } from '@/lib/db-pool';
-import * as crypto from 'crypto';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
@@ -88,7 +87,7 @@ export async function POST(request: Request) {
             analysis = await sql`
                 INSERT INTO "PlanAnalysis" ("id", "planId", "imageUrl", "rawText", "structuredData", "coachInsights", "aiSuggestions", "createdAt", "updatedAt")
                 VALUES (
-                    ${crypto.randomUUID()},
+                    ${globalThis.crypto.randomUUID()},
                     ${String(data.planId)},
                     ${String(data.imageUrl)},
                     ${data.rawText || null},

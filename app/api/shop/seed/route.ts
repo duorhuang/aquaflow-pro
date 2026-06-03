@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { V12_FINGERPRINT } from '@/lib/utils';
 import { withApiHandler } from '@/lib/api-handler';
 import { getNeon } from '@/lib/db-pool';
-import * as crypto from 'crypto';
 export const dynamic = 'force-dynamic';
 
 export async function POST() {
@@ -686,7 +685,7 @@ export async function POST() {
         await Promise.all(items.map(item =>
             sql`
                 INSERT INTO "ShopItem" ("id", "name", "category", "tier", "price", "imageKey", "slotType", "gender", "previewColor")
-                VALUES (${crypto.randomUUID()}, ${item.name}, ${item.category}, ${item.tier}, ${item.price}, ${item.imageKey}, ${item.slotType}, ${item.gender}, ${item.previewColor})
+                VALUES (${globalThis.crypto.randomUUID()}, ${item.name}, ${item.category}, ${item.tier}, ${item.price}, ${item.imageKey}, ${item.slotType}, ${item.gender}, ${item.previewColor})
             `
         ));
 

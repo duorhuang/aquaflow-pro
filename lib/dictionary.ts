@@ -318,7 +318,7 @@ export const DICTIONARY = {
             unreadableIdentity: "无法识别您的身份，请重新登录。",
             backToLogin: "返回登录",
             forgotPassword: "忘记密码？",
-            resetPassword: "请到",
+            resetPassword: "初始化页面",
             search: "搜索",
             feedbacks: "训练反馈",
             language: "语言",
