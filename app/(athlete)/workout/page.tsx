@@ -237,9 +237,10 @@ function AthleteWorkoutContent() {
                     if (!isMounted) return;
                     if (!storeLoadedRef.current && !authResolved) {
                         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-                        setAuthResolved(true);
+                        // Don't set authResolved here — let it stay false so the loading UI shows
+                        // The page will keep trying until the DB wakes up
                     }
-                }, 15000);
+                }, 30000); // Increased to 30s to give DB more time
             }
         };
 
@@ -250,21 +251,37 @@ function AthleteWorkoutContent() {
 
                 if (!user || user?.role !== 'athlete') {
                     if (user === null) {
-                        // Cold DB — retry once after 3s (only if store already loaded)
-                        retryTimer = setTimeout(async () => {
-                            if (!isMounted || !storeLoadedRef.current) return;
+                        // Cold DB — keep retrying until it wakes up
+                        let attempt = 0;
+                        const maxAttempts = 20;
+                        const pollDB = async () => {
+                            if (!isMounted || attempt >= maxAttempts) {
+                                // Still cold after many attempts — show error UI
+                                if (isMounted) setAuthResolved(true);
+                                return;
+                            }
+                            attempt++;
                             try {
                                 const retryUser = await api.auth.me();
                                 if (!isMounted) return;
                                 if (retryUser && retryUser.role === 'athlete') {
                                     resolveAuth(retryUser);
+                                } else if (retryUser === null) {
+                                    // Still cold — retry with exponential backoff
+                                    const delay = Math.min(3000 * attempt, 30000);
+                                    retryTimer = setTimeout(pollDB, delay);
                                 } else {
-                                    setAuthResolved(true);
+                                    // Wrong role — redirect
+                                    localStorage.removeItem("aquaflow_athlete_id");
+                                    router.push("/login");
                                 }
                             } catch {
-                                if (isMounted) setAuthResolved(true);
+                                // Network error — retry
+                                const delay = Math.min(3000 * attempt, 30000);
+                                retryTimer = setTimeout(pollDB, delay);
                             }
-                        }, 3000);
+                        };
+                        retryTimer = setTimeout(pollDB, 3000);
                     } else {
                         localStorage.removeItem("aquaflow_athlete_id");
                         router.push("/login");
