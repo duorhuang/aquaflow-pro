@@ -18,7 +18,7 @@ import { api } from "@/lib/api-client";
 import { AlertTriangle, LogOut, Waves, MessageSquare, TrendingUp, Activity, FolderOpen, ArrowRight, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Palette, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense, useRef } from "react";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
 import { useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
@@ -169,59 +169,27 @@ function AthleteWorkoutContent() {
         }
     }, []);
 
+    // Refs to track values without causing effect re-runs (prevents infinite loop)
+    const syncStatusRef = useRef(syncStatus);
+    useEffect(() => { syncStatusRef.current = syncStatus; }, [syncStatus]);
+    const swimmersRef = useRef(swimmers);
+    useEffect(() => { swimmersRef.current = swimmers; }, [swimmers]);
+    const storeLoadedRef = useRef(storeLoaded);
+    useEffect(() => { storeLoadedRef.current = storeLoaded; }, [storeLoaded]);
+
+    // Auth check — runs ONCE on mount, never re-triggers on dependency changes
     useEffect(() => {
         let isMounted = true;
-        let storePollTimeout: ReturnType<typeof setTimeout> | null = null;
+        let pollTimer: ReturnType<typeof setInterval> | null = null;
+        let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
-        // First try to get the user from the server session (most reliable)
-        api.auth.me()
-            .then((user: any) => {
-                if (!isMounted) return;
-
-                // 503 from cold DB wake — don't redirect; retry once after delay
-                if (user === null) {
-                    // api-client returns null for 503 (non-retryable after attempts exhausted)
-                    // Session is likely valid but DB is cold — retry once
-                    setTimeout(() => {
-                        if (!isMounted) return;
-                        api.auth.me().then((retryUser: any) => {
-                            if (!isMounted) return;
-                            if (!retryUser || retryUser?.role !== 'athlete') {
-                                localStorage.removeItem("aquaflow_athlete_id");
-                                router.push("/login");
-                                return;
-                            }
-                            resolveAuth(retryUser);
-                        }).catch(() => {
-                            if (isMounted) {
-                                // Still failing — show error state instead of redirecting
-                                setAuthResolved(true);
-                            }
-                        });
-                    }, 3000);
-                    return;
-                }
-
-                if (user?.role !== 'athlete') {
-                    localStorage.removeItem("aquaflow_athlete_id");
-                    router.push("/login");
-                    return;
-                }
-
-                resolveAuth(user);
-            })
-            .catch(() => {
-                if (isMounted) router.push("/login");
-            });
-
-        // Shared auth resolution logic — find swimmer in store or fail gracefully
         const resolveAuth = (user: any) => {
             const userId = user.id;
             localStorage.setItem("aquaflow_athlete_id", userId);
 
             const tryFind = () => {
-                if (!isMounted) return;
-                const found = swimmers.find(s => s.id === userId);
+                if (!isMounted) return false;
+                const found = swimmersRef.current.find(s => s.id === userId);
                 if (found) {
                     setCurrentUser(found);
                     setReadiness(found.readiness || 95);
@@ -230,31 +198,32 @@ function AthleteWorkoutContent() {
                     }
                     setAuthResolved(true);
                     loadPendingReminders(userId);
+                    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
                     return true;
                 }
                 return false;
             };
 
-            if (storeLoaded) {
+            const currentSyncStatus = syncStatusRef.current;
+            const currentStoreLoaded = storeLoadedRef.current;
+
+            if (currentStoreLoaded) {
                 if (!tryFind()) {
-                    // Auth valid but store has no matching swimmer — could be DB issue or deleted user
-                    if (syncStatus === 'error') {
-                        // Sync failed (likely cold DB) — show error UI, don't redirect
+                    if (currentSyncStatus === 'error') {
                         setAuthResolved(true);
                     } else {
-                        // Store loaded fine but swimmer missing — session stale
                         localStorage.removeItem("aquaflow_athlete_id");
                         router.push("/login");
                     }
                 }
             } else {
-                // Wait for store to load with a 15-second timeout
-                const checkStore = setInterval(() => {
-                    if (!isMounted) { clearInterval(checkStore); return; }
-                    if (storeLoaded) {
-                        clearInterval(checkStore);
+                pollTimer = setInterval(() => {
+                    if (!isMounted) return;
+                    if (storeLoadedRef.current) {
+                        clearInterval(pollTimer!);
+                        pollTimer = null;
                         if (!tryFind()) {
-                            if (syncStatus === 'error') {
+                            if (syncStatusRef.current === 'error') {
                                 setAuthResolved(true);
                             } else {
                                 localStorage.removeItem("aquaflow_athlete_id");
@@ -264,23 +233,61 @@ function AthleteWorkoutContent() {
                     }
                 }, 200);
 
-                // Safety timeout: if store hasn't loaded in 15s, resolve anyway
-                // (auth is valid, just show the page without swimmer-specific data)
-                storePollTimeout = setTimeout(() => {
+                retryTimer = setTimeout(() => {
                     if (!isMounted) return;
-                    if (!storeLoaded) {
-                        clearInterval(checkStore);
+                    if (!storeLoadedRef.current && !authResolved) {
+                        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
                         setAuthResolved(true);
                     }
                 }, 15000);
             }
         };
 
+        const runAuth = async () => {
+            try {
+                const user = await api.auth.me();
+                if (!isMounted) return;
+
+                if (!user || user?.role !== 'athlete') {
+                    if (user === null) {
+                        // Cold DB — retry once after 3s (only if store already loaded)
+                        retryTimer = setTimeout(async () => {
+                            if (!isMounted || !storeLoadedRef.current) return;
+                            try {
+                                const retryUser = await api.auth.me();
+                                if (!isMounted) return;
+                                if (retryUser && retryUser.role === 'athlete') {
+                                    resolveAuth(retryUser);
+                                } else {
+                                    setAuthResolved(true);
+                                }
+                            } catch {
+                                if (isMounted) setAuthResolved(true);
+                            }
+                        }, 3000);
+                    } else {
+                        localStorage.removeItem("aquaflow_athlete_id");
+                        router.push("/login");
+                    }
+                    return;
+                }
+                resolveAuth(user);
+            } catch {
+                if (isMounted) {
+                    localStorage.removeItem("aquaflow_athlete_id");
+                    router.push("/login");
+                }
+            }
+        };
+
+        runAuth();
+
         return () => {
             isMounted = false;
-            if (storePollTimeout) clearTimeout(storePollTimeout);
+            if (pollTimer) clearInterval(pollTimer);
+            if (retryTimer) clearTimeout(retryTimer);
         };
-    }, [swimmers, storeLoaded, router, loadPendingReminders, syncStatus]);
+    }, [router, loadPendingReminders]);
 
     const handleLogout = async () => {
         if (isLoggingOut) return;
