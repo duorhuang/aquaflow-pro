@@ -6,9 +6,15 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   return handleAnyAuth(request, async (_req, auth) => {
-    // Warm up DB before heavy sync query
+    // Warm up DB before heavy sync query — handles Neon cold starts with timeout
     const sql = getNeon();
-    try { await sql`SELECT 1`; } catch {
+    try {
+      const warm = sql`SELECT 1`;
+      await Promise.race([
+        warm,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('DB warmup timeout')), 8000)),
+      ]);
+    } catch {
       return NextResponse.json({ error: 'Database waking up' }, { status: 503, headers: V12_FINGERPRINT });
     }
 

@@ -18,7 +18,9 @@ export function isQuotaError(msg: string): boolean {
     msg?.includes('QUOTA-EXHAUSTED') ||
     msg?.includes('Database Quota Exceeded') ||
     msg?.includes('exceeded maximum request size') ||
-    msg?.includes('503 Service Unavailable')
+    msg?.includes('503 Service Unavailable') ||
+    msg?.includes('Database waking up') ||
+    msg?.includes('DB warmup timeout')
   );
 }
 

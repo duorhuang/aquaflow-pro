@@ -13,7 +13,17 @@ export async function GET(request: Request) {
     const payload = await verifyJWT(token);
     if (!payload) return NextResponse.json({ error: 'Invalid session' }, { status: 401, headers: V12_FINGERPRINT });
 
+    // Warm up DB before query — handles Neon cold starts with timeout
     const sql = getNeon();
+    try {
+      await Promise.race([
+        sql`SELECT 1`,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('DB warmup timeout')), 8000)),
+      ]);
+    } catch {
+      return NextResponse.json({ error: 'Database waking up' }, { status: 503, headers: V12_FINGERPRINT });
+    }
+
     if (payload.role === 'coach') {
       const rows = await sql`SELECT id, name, username, "createdAt" FROM "CoachUser" WHERE id = ${payload.userId} LIMIT 1`;
       const coach = rows[0];
