@@ -31,12 +31,18 @@ function StarsAndMoon({
   const moonSize = moon.size ?? 50;
 
   const stars = Array.from({ length: count }, (_, i) => {
-    const size = Math.random() * 3 + 1;
-    const top = Math.random() * 60;
-    const left = Math.random() * 100;
-    const duration = Math.random() * 4 + 2;
-    const delay = Math.random() * 5;
-    const brightness = Math.random();
+    let seed = i * 7.5;
+    const nextRandom = () => {
+      const x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    };
+
+    const size = nextRandom() * 3 + 1;
+    const top = nextRandom() * 60;
+    const left = nextRandom() * 100;
+    const duration = nextRandom() * 4 + 2;
+    const delay = nextRandom() * 5;
+    const brightness = nextRandom();
     const variant = brightness > 0.7 ? "bright" : brightness < 0.3 ? "dim" : "";
 
     return (
@@ -102,13 +108,19 @@ function FireParticles({ config }: { config: { count?: number; colors?: string[]
   const colors = config.colors ?? ["#ff4500", "#ff6b35", "#ffa500", "#ff8c00", "#ff3300"];
 
   const particles = Array.from({ length: count }, (_, i) => {
-    const size = Math.random() * 20 + 8;
-    const left = Math.random() * 100;
-    const bottom = Math.random() * 10;
-    const duration = Math.random() * 3 + 2;
-    const delay = Math.random() * 5;
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    const riseDistance = Math.random() * 200 + 100;
+    let seed = i * 12.3;
+    const nextRandom = () => {
+      const x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    };
+
+    const size = nextRandom() * 20 + 8;
+    const left = nextRandom() * 100;
+    const bottom = nextRandom() * 10;
+    const duration = nextRandom() * 3 + 2;
+    const delay = nextRandom() * 5;
+    const color = colors[Math.floor(nextRandom() * colors.length)];
+    const riseDistance = nextRandom() * 200 + 100;
 
     return (
       <div
@@ -130,11 +142,17 @@ function FireParticles({ config }: { config: { count?: number; colors?: string[]
 
   // Smaller embers floating higher
   const embers = Array.from({ length: Math.ceil(count / 2) }, (_, i) => {
-    const size = Math.random() * 6 + 2;
-    const left = Math.random() * 100;
-    const duration = Math.random() * 4 + 3;
-    const delay = Math.random() * 6;
-    const color = colors[Math.floor(Math.random() * colors.length)];
+    let seed = i * 19.7 + 500;
+    const nextRandom = () => {
+      const x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    };
+
+    const size = nextRandom() * 6 + 2;
+    const left = nextRandom() * 100;
+    const duration = nextRandom() * 4 + 3;
+    const delay = nextRandom() * 6;
+    const color = colors[Math.floor(nextRandom() * colors.length)];
 
     return (
       <div

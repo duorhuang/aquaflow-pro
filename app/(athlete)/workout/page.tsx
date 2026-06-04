@@ -55,7 +55,9 @@ function AthleteWorkoutContent() {
     useEffect(() => {
         const stored = localStorage.getItem('aquaflow_active_tab');
         if (stored === 'feedback' || stored === 'achievements' || stored === 'health') {
-            setSavedTab(stored);
+            setTimeout(() => {
+                setSavedTab(stored);
+            }, 0);
         }
     }, []);
 

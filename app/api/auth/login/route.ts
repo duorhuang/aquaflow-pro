@@ -63,9 +63,14 @@ export async function POST(request: Request) {
         // timing attacks that reveal whether a username exists in one table.
         const coaches = await sql`SELECT * FROM "CoachUser" WHERE username = ${String(data.username)}`;
         let coachMatch = false;
+        let coachRoleMismatch = false;
         for (const coach of coaches) {
             if (await verifyPassword(String(data.password), coach.password)) {
                 coachMatch = true;
+                if (data.role && data.role !== 'coach') {
+                    coachRoleMismatch = true;
+                    break;
+                }
                 const token = await generateJWT({ userId: coach.id, role: 'coach' });
                 const response = NextResponse.json({
                     success: true,
@@ -85,8 +90,15 @@ export async function POST(request: Request) {
         }
 
         const swimmers = await sql`SELECT * FROM "Swimmer" WHERE username = ${String(data.username)}`;
+        let swimmerMatch = false;
+        let swimmerRoleMismatch = false;
         for (const swimmer of swimmers) {
             if (await verifyPassword(String(data.password), swimmer.password)) {
+                swimmerMatch = true;
+                if (data.role && data.role !== 'athlete') {
+                    swimmerRoleMismatch = true;
+                    break;
+                }
                 const token = await generateJWT({ userId: swimmer.id, role: 'athlete' });
                 const response = NextResponse.json({
                     success: true,
@@ -105,9 +117,16 @@ export async function POST(request: Request) {
             }
         }
 
+        if (coachRoleMismatch) {
+            return NextResponse.json({ error: '该账号是教练账号，请切换至教练端登录' }, { status: 403, headers: V12_FINGERPRINT });
+        }
+        if (swimmerRoleMismatch) {
+            return NextResponse.json({ error: '该账号是队员账号，请切换至队员端登录' }, { status: 403, headers: V12_FINGERPRINT });
+        }
+
         // SECURITY: Dummy verification to prevent timing-based username enumeration
         // (takes same time regardless of whether user exists)
-        if (!coachMatch && swimmers.length === 0) {
+        if (!coachMatch && !swimmerMatch) {
             await verifyPassword(String(data.password), 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:100000:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
         }
 

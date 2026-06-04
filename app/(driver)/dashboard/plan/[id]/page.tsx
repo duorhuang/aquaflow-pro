@@ -9,15 +9,10 @@ import { use } from "react";
 export default function EditPlanPage({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = use(params);
     const { plans, isLoaded } = useStore();
-    const [plan, setPlan] = useState<TrainingPlan | null>(null);
 
-    useEffect(() => {
-        if (!isLoaded) return;
-        const foundPlan = plans.find(p => p.id === resolvedParams.id);
-        setPlan(foundPlan || null);
-    }, [plans, resolvedParams.id, isLoaded]);
+    const plan = isLoaded ? (plans.find(p => p.id === resolvedParams.id) || null) : null;
 
-    if (!isLoaded || (plans.length > 0 && !plan)) {
+    if (!isLoaded || (plans.length > 0 && isLoaded && !plan)) {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
                 <div className="text-muted-foreground">加载中...</div>

@@ -366,7 +366,7 @@ function WeeklyPlanContent() {
         }
     };
 
-    const selectPlan = async (id: string) => {
+    async function selectPlan(id: string) {
         // If already cached, load instantly!
         if (planDetailsCache[id]) {
             const plan = planDetailsCache[id];
@@ -406,7 +406,7 @@ function WeeklyPlanContent() {
         } finally {
             setLoadingPlanId(null);
         }
-    };
+    }
 
     const createNew = () => {
         setSelectedPlanId(null);

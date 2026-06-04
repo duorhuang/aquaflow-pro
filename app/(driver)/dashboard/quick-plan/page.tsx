@@ -86,11 +86,13 @@ function QuickPlanContent() {
         if (id) {
             const plan = plans.find(p => p.id === id);
             if (plan) {
-                setGroup(plan.group);
-                setDate(plan.date);
-                setBlocks(plan.blocks || []);
-                setTrainingType(plan.trainingType || "");
-                setPrimaryStroke(plan.primaryStroke || "");
+                setTimeout(() => {
+                    setGroup(plan.group);
+                    setDate(plan.date);
+                    setBlocks(plan.blocks || []);
+                    setTrainingType(plan.trainingType || "");
+                    setPrimaryStroke(plan.primaryStroke || "");
+                }, 0);
             }
         }
     }, [id, plans]);
@@ -98,7 +100,9 @@ function QuickPlanContent() {
     // Set date from URL parameter if ?date=YYYY-MM-DD is present
     useEffect(() => {
         if (urlDate && !id) {
-            setDate(urlDate);
+            setTimeout(() => {
+                setDate(urlDate);
+            }, 0);
         }
     }, [urlDate, id]);
 

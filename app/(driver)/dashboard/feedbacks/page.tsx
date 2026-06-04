@@ -408,7 +408,7 @@ export default function FeedbacksPage() {
                                         {!f.isSubmitted && (
                                             <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl text-xs flex items-center gap-2 animate-in fade-in duration-300">
                                                 <AlertCircle className="w-4 h-4 shrink-0" />
-                                                <span>该队员本周的打卡记录目前处于"草稿"阶段，您可以预先在此编辑并保存批复评语。</span>
+                                                <span>该队员本周的打卡记录目前处于&ldquo;草稿&rdquo;阶段，您可以预先在此编辑并保存批复评语。</span>
                                             </div>
                                         )}
 

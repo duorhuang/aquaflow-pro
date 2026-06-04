@@ -120,8 +120,12 @@ function createRequest(method: string, url: string, body?: any, headers?: Record
 
 // ─── Tests ─────────────────────────────────────────────────────────
 describe('Auth API', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
+        const auth = await import('@/lib/auth');
+        vi.mocked(auth.verifyPassword).mockImplementation(async (password: string, stored: string) => {
+            return password === 'testpass123' && stored === 'salt:100000:hash';
+        });
     });
 
     afterEach(() => {
@@ -229,7 +233,7 @@ describe('Auth API', () => {
                 const req = createRequest('POST', 'http://localhost/api/auth/login', {
                     username: `fail_${i}`,
                     password: 'wrong',
-                });
+                }, { 'cf-connecting-ip': '1.2.3.4' });
                 await loginHandler(req);
             }
 
@@ -237,10 +241,36 @@ describe('Auth API', () => {
             const req = createRequest('POST', 'http://localhost/api/auth/login', {
                 username: 'coach_admin',
                 password: 'testpass123',
-            });
+            }, { 'cf-connecting-ip': '1.2.3.4' });
             const res = await loginHandler(req);
 
             expect(res.status).toBe(429);
+        });
+
+        it('should reject coach login if requested as athlete role', async () => {
+            const req = createRequest('POST', 'http://localhost/api/auth/login', {
+                username: 'coach_admin',
+                password: 'testpass123',
+                role: 'athlete',
+            }, { 'cf-connecting-ip': '1.2.3.5' });
+            const res = await loginHandler(req);
+            const json = await res.json();
+
+            expect(res.status).toBe(403);
+            expect(json.error).toContain('教练账号');
+        });
+
+        it('should reject athlete login if requested as coach role', async () => {
+            const req = createRequest('POST', 'http://localhost/api/auth/login', {
+                username: 'swimmer_test',
+                password: 'testpass123',
+                role: 'coach',
+            }, { 'cf-connecting-ip': '1.2.3.6' });
+            const res = await loginHandler(req);
+            const json = await res.json();
+
+            expect(res.status).toBe(403);
+            expect(json.error).toContain('队员账号');
         });
     });
 

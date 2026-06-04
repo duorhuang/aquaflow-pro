@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/components/common/Toast";
 
 const WARNING_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours before expiry
@@ -12,7 +12,7 @@ const CHECK_INTERVAL = 60 * 60 * 1000; // Check every hour
  */
 export function useSessionExpiryWarning() {
     const { toast } = useToast();
-    const [hasWarned, setHasWarned] = useState(false);
+    const hasWarnedRef = useRef(false);
 
     const checkSession = useCallback(() => {
         try {
@@ -38,15 +38,15 @@ export function useSessionExpiryWarning() {
                 return;
             }
 
-            if (timeRemaining <= WARNING_THRESHOLD && !hasWarned) {
+            if (timeRemaining <= WARNING_THRESHOLD && !hasWarnedRef.current) {
                 const hoursLeft = Math.round(timeRemaining / (60 * 60 * 1000));
                 toast('info', `Your session expires in ~${hoursLeft}h. Save your work and re-login soon.`, 10000);
-                setHasWarned(true);
+                hasWarnedRef.current = true;
             }
         } catch {
             // Ignore parse errors
         }
-    }, [toast, hasWarned]);
+    }, [toast]);
 
     useEffect(() => {
         checkSession();

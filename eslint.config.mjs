@@ -27,6 +27,7 @@ const eslintConfig = defineConfig([
     "*.txt",
     "*.log",
     "*.sh",
+    "*.js",
   ]),
   {
     rules: {

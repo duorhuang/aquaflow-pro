@@ -40,36 +40,6 @@ export default function CoachInjuryMonitorPage() {
     const [selectedHeatmapPart, setSelectedHeatmapPart] = useState<string | null>(null);
     const [selectedHeatmapLabel, setSelectedHeatmapLabel] = useState<string | null>(null);
 
-    // Use store data directly — no duplicate fetch needed
-    useEffect(() => {
-        if (isLoaded) {
-            setLoading(false);
-            setSwimmers(storeSwimmers);
-            calculateAnalytics(storeSwimmers);
-        }
-    }, [isLoaded, storeSwimmers]);
-
-    // Timeout fallback: if store never loads, show empty state after 15s
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            if (!isLoaded) {
-                setLoading(false);
-                setSwimmers([]);
-            }
-        }, 15000);
-        return () => clearTimeout(timer);
-    }, []);
-
-    const loadData = async () => {
-        setLoading(true);
-        // Re-calculate from store data on manual refresh
-        if (isLoaded) {
-            setSwimmers(storeSwimmers);
-            calculateAnalytics(storeSwimmers);
-        }
-        setLoading(false);
-    };
-
     const calculateAnalytics = (list: Swimmer[]) => {
         // 1. Filter injured/sore swimmers
         const injured = list.filter(
@@ -110,6 +80,38 @@ export default function CoachInjuryMonitorPage() {
         });
 
         setHeatMapData(averages);
+    };
+
+    // Use store data directly — no duplicate fetch needed
+    useEffect(() => {
+        if (isLoaded) {
+            setTimeout(() => {
+                setLoading(false);
+                setSwimmers(storeSwimmers);
+                calculateAnalytics(storeSwimmers);
+            }, 0);
+        }
+    }, [isLoaded, storeSwimmers]);
+
+    // Timeout fallback: if store never loads, show empty state after 15s
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (!isLoaded) {
+                setLoading(false);
+                setSwimmers([]);
+            }
+        }, 15000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    const loadData = async () => {
+        setLoading(true);
+        // Re-calculate from store data on manual refresh
+        if (isLoaded) {
+            setSwimmers(storeSwimmers);
+            calculateAnalytics(storeSwimmers);
+        }
+        setLoading(false);
     };
 
     const handleRegionClick = (partKey: string, partLabel: string) => {
@@ -256,7 +258,7 @@ export default function CoachInjuryMonitorPage() {
 
                                             {swimmer.injuryNote && (
                                                 <p className="text-xs text-muted-foreground bg-red-500/5 p-2.5 rounded-xl border border-red-500/10 italic leading-relaxed">
-                                                    " {swimmer.injuryNote} "
+                                                    &ldquo; {swimmer.injuryNote} &rdquo;
                                                 </p>
                                             )}
 
@@ -328,7 +330,7 @@ export default function CoachInjuryMonitorPage() {
 
                                 {swimmer.injuryNote && (
                                     <p className="text-xs text-muted-foreground bg-black/40 p-2.5 rounded-xl border border-white/5 italic leading-relaxed">
-                                        " {swimmer.injuryNote} "
+                                        &ldquo; {swimmer.injuryNote} &rdquo;
                                     </p>
                                 )}
 

@@ -58,12 +58,12 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer, onClose }: { swimmer
         fetchShop();
     }, [swimmerId]);
 
-    // Update default subTab when mainTab changes
-    useEffect(() => {
-        if (mainTab === "个人装扮") setSubTab("衣服");
-        else if (mainTab === "同桌空间") setSubTab("摆件");
-        else if (mainTab === "校牌") setSubTab("边框");
-    }, [mainTab]);
+    const handleMainTabChange = (tab: "个人装扮" | "同桌空间" | "校牌" | "道具卡") => {
+        setMainTab(tab);
+        if (tab === "个人装扮") setSubTab("衣服");
+        else if (tab === "同桌空间") setSubTab("摆件");
+        else if (tab === "校牌") setSubTab("边框");
+    };
 
     const handlePurchase = async (item: ShopItem) => {
         const requiredLevel = TIER_REQUIRED_LEVEL[item.tier] || 1;
@@ -215,7 +215,7 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer, onClose }: { swimmer
                     {["个人装扮", "同桌空间", "校牌", "道具卡"].map(tab => (
                         <button
                             key={tab}
-                            onClick={() => setMainTab(tab as any)}
+                            onClick={() => handleMainTabChange(tab as any)}
                             className={`flex-1 py-2 text-xs font-bold transition-colors relative ${mainTab === tab ? 'bg-[#d8effa] text-[#333]' : 'text-[#666] hover:bg-gray-50'}`}
                         >
                             {tab}

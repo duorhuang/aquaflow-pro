@@ -27,9 +27,14 @@ export default function PoolsidePage() {
         return () => clearInterval(timer);
     }, []);
 
+    const handleGroupChange = (g: string) => {
+        setSelectedGroup(g);
+        setError(null);
+        setLoading(true);
+    };
+
     useEffect(() => {
         let isMounted = true;
-        setError(null);
 
         fetchAPI<any[]>(`/plans?group=${selectedGroup}`)
             .then((plans: any[]) => {
@@ -71,7 +76,7 @@ export default function PoolsidePage() {
                     {GROUPS.map(g => (
                         <button
                             key={g}
-                            onClick={() => setSelectedGroup(g)}
+                            onClick={() => handleGroupChange(g)}
                             className={cn(
                                 "px-4 py-2 rounded-lg text-sm font-bold transition-all",
                                 selectedGroup === g

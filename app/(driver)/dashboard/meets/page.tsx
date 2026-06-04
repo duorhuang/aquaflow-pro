@@ -49,7 +49,6 @@ export default function CoachMeetsPage() {
 
     // Load meets
     const loadMeets = async () => {
-        setLoading(true);
         try {
             const data = await api.meets.getAll();
             if (data && Array.isArray(data)) {
@@ -65,7 +64,10 @@ export default function CoachMeetsPage() {
     };
 
     useEffect(() => {
-        loadMeets();
+        const timer = setTimeout(() => {
+            loadMeets();
+        }, 0);
+        return () => clearTimeout(timer);
     }, []);
 
     const openCreateModal = () => {

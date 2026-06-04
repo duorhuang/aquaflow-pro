@@ -358,7 +358,7 @@ export function SwimmerStatusPanel() {
 
                             {/* Notice Badge */}
                             <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-3 text-xs text-amber-300/70">
-                                💡 **说明**：打赏的 XP 将以"双轨制"形式同时增加队员的 **总经验值**（提升等级）与 **金币余额**（用于商城消费）。每日手动打赏全队限额为 3 人次，请合理激励！
+                                💡 **说明**：打赏的 XP 将以{"双轨制"}形式同时增加队员的 **总经验值**（提升等级）与 **金币余额**（用于商城消费）。每日手动打赏全队限额为 3 人次，请合理激励！
                             </div>
 
                             {/* Submit Button */}
