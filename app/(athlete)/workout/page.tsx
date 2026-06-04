@@ -9,13 +9,13 @@ import { AnnouncementCard } from "@/components/feed/AnnouncementCard";
 import { InjuryMap } from "@/components/athlete/InjuryMap";
 import { ActivityFeed } from "@/components/athlete/ActivityFeed";
 import { MeetCountdown } from "@/components/athlete/MeetCountdown";
-import { AvatarRenderer } from "@/components/athlete/AvatarRenderer";
+// import { AvatarRenderer } from "@/components/athlete/AvatarRenderer"; // TEMP: Disabled - causes Chrome crash
 import { BottomTabBar } from "@/components/athlete/BottomTabBar";
 import { BackgroundPicker } from "@/components/athlete/BackgroundPicker";
 import { WaveAnimation } from "@/components/common/WaveAnimation";
 import { useBackgroundTheme } from "@/hooks/useBackgroundTheme";
 import { api } from "@/lib/api-client";
-import { AlertTriangle, LogOut, Waves, MessageSquare, TrendingUp, Activity, FolderOpen, ArrowRight, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Palette, Loader2 } from "lucide-react";
+import { AlertTriangle, LogOut, Waves, MessageSquare, TrendingUp, Activity, FolderOpen, ArrowRight, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Palette, Loader2, UserCircle2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useCallback, useMemo, Suspense, useRef } from "react";
@@ -509,12 +509,14 @@ function AthleteWorkoutContent() {
                     <Link href="/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                         <div className="relative">
                             <div className="w-10 h-10 rounded-full border-2 border-primary overflow-hidden flex items-center justify-center shadow-[0_0_12px_rgba(0,242,255,0.3)] bg-slate-900">
-                                <AvatarRenderer
+                                {/* AvatarRenderer temporarily replaced with simple icon to fix Chrome crash */}
+                                <UserCircle2 className="w-8 h-8 text-primary" />
+                                {/* <AvatarRenderer
                                     gender={currentUser.gender || "male"}
                                     equippedItems={currentUser.equippedItems || {}}
                                     size={40}
                                     animated={false}
-                                />
+                                /> */}
                             </div>
                             <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-warning flex items-center justify-center text-xs font-bold text-black border border-black">
                                 {level}
