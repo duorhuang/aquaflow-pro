@@ -63,6 +63,26 @@ export async function GET(request: Request) {
       return t;
     });
 
+    const parsedPlans = (plans || []).map((p: any) => {
+      if (p.blocks && typeof p.blocks === 'string') {
+        try { p.blocks = JSON.parse(p.blocks); } catch { p.blocks = []; }
+      }
+      if (p.targetedNotes && typeof p.targetedNotes === 'string') {
+        try { p.targetedNotes = JSON.parse(p.targetedNotes); } catch { p.targetedNotes = null; }
+      }
+      return p;
+    });
+
+    const parsedSwimmers = (swimmersRaw || []).map((s: any) => {
+      if (s.equippedItems && typeof s.equippedItems === 'string') {
+        try { s.equippedItems = JSON.parse(s.equippedItems); } catch { s.equippedItems = {}; }
+      }
+      if (s.inventory && typeof s.inventory === 'string') {
+        try { s.inventory = JSON.parse(s.inventory); } catch { s.inventory = []; }
+      }
+      return s;
+    });
+
     const weeklyPlanIds = weeklyPlansRaw.map((wp: any) => wp.id);
     const sessionsByWeeklyPlanId: Record<string, any[]> = {};
     if (weeklyPlanIds.length > 0) {
@@ -118,8 +138,8 @@ export async function GET(request: Request) {
 
     // For coaches, return all data; for athletes, data is already scoped by queries above
     return NextResponse.json({
-      plans: plans || [],
-      swimmers: swimmersRaw || [],
+      plans: parsedPlans,
+      swimmers: parsedSwimmers,
       feedbacks: feedbacks || [],
       attendance: attendance || [],
       performances: performances || [],
