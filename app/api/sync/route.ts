@@ -6,16 +6,27 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   return handleAnyAuth(request, async (_req, auth) => {
-    // Warm up DB before heavy sync query — handles Neon cold starts with timeout
+    // Warm up DB before heavy sync query — handles Neon cold starts with retry loop.
+    // Neon cold starts can take 10-30s. 3 retries × 10s + 2 × 3s delays = 36s total.
+    // Fits within the 45s client timeout, leaving ~9s for the actual query.
     const sql = getNeon();
-    try {
-      const warm = sql`SELECT 1`;
-      await Promise.race([
-        warm,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('DB warmup timeout')), 8000)),
-      ]);
-    } catch {
-      return NextResponse.json({ error: 'Database waking up' }, { status: 503, headers: V12_FINGERPRINT });
+    const MAX_WARMUP_RETRIES = 3;
+    const WARMUP_TIMEOUT = 10000; // 10s per attempt
+    const WARMUP_DELAY = 3000; // 3s between attempts
+    for (let attempt = 0; attempt < MAX_WARMUP_RETRIES; attempt++) {
+      try {
+        const warm = sql`SELECT 1`;
+        await Promise.race([
+          warm,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('DB warmup timeout')), WARMUP_TIMEOUT)),
+        ]);
+        break; // DB is awake
+      } catch {
+        if (attempt === MAX_WARMUP_RETRIES - 1) {
+          return NextResponse.json({ error: 'Database still waking up' }, { status: 503, headers: V12_FINGERPRINT });
+        }
+        await new Promise(r => setTimeout(r, WARMUP_DELAY));
+      }
     }
 
     const isCoach = auth.role === 'coach';

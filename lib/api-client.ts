@@ -36,15 +36,20 @@ export interface SyncResponse {
 const API_BASE = '/api';
 const MAX_RETRIES = 3;
 const BASE_DELAY = 500; // ms — faster backoff
-const REQUEST_TIMEOUT = 20000; // 20s — fail fast for interactive UX; cold starts handled by store retry logic
+const REQUEST_TIMEOUT = 20000; // 20s — fail fast for interactive UX
+const SYNC_TIMEOUT = 45000; // 45s — sync endpoint does DB warmup (Neon cold start can take 30s+)
 
 export async function fetchAPI<T>(endpoint: string, options?: RequestInit, silent4xx: boolean = true, retries: number = MAX_RETRIES): Promise<T> {
     let lastError: Error | null = null;
+    const isSyncCall = endpoint === '/sync';
+    // Sync endpoint does its own DB warmup retries — use longer timeout, don't client-retry on 503
+    const timeoutMs = isSyncCall ? SYNC_TIMEOUT : REQUEST_TIMEOUT;
+    const effectiveRetries = isSyncCall ? 1 : retries; // Sync endpoint retries internally
 
-    for (let attempt = 0; attempt < retries; attempt++) {
+    for (let attempt = 0; attempt < effectiveRetries; attempt++) {
         try {
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+            const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
             const response = await fetch(`${API_BASE}${endpoint}`, {
                 ...options,
@@ -82,7 +87,7 @@ export async function fetchAPI<T>(endpoint: string, options?: RequestInit, silen
             const isAbortError = err.name === 'AbortError';
             const abortMsg = isAbortError ? `Request timed out for ${endpoint}` : err.message;
             lastError = isAbortError ? new Error(abortMsg) : err;
-            const isLastAttempt = attempt === MAX_RETRIES - 1;
+            const isLastAttempt = attempt === effectiveRetries - 1;
             const isNonRetryable = isAbortError ||
                 err.message?.includes('API Error: 4') ||
                 err.message?.includes('non-JSON response');
