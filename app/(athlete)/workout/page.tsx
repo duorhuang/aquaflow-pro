@@ -74,8 +74,31 @@ function AthleteWorkoutContent() {
         }
     }, [activeTab]);
 
-    // Get all plans/sessions for selected date (hoisted before useMemo that calls it)
-    const getSelectedDatePlans = (): (TrainingPlan & { isDerived?: boolean; notes?: string })[] => {
+    // Check if a weekly plan is visible to this swimmer
+    // NOTE: Must be declared BEFORE any code that references it,
+    // including the useMemo below that calls getSelectedDatePlans.
+    function isWeeklyPlanVisible(wp: any): boolean {
+        if (!currentUser) return false;
+        const targetGroup: string[] = Array.isArray(wp.targetGroup)
+            ? wp.targetGroup
+            : typeof wp.targetGroup === 'string' ? (() => { try { return JSON.parse(wp.targetGroup || '[]'); } catch { return []; } })() : [];
+        const targetSwimmerIds: string[] = Array.isArray(wp.targetSwimmerIds)
+            ? wp.targetSwimmerIds
+            : typeof wp.targetSwimmerIds === 'string' ? (() => { try { return JSON.parse(wp.targetSwimmerIds || '[]'); } catch { return []; } })() : [];
+
+        const hasGroupTarget = targetGroup.length > 0;
+        const hasIndividualTarget = targetSwimmerIds.length > 0;
+
+        if (!hasGroupTarget && !hasIndividualTarget) return true;
+        if (hasGroupTarget && targetGroup.includes(currentUser.group)) return true;
+        if (hasIndividualTarget && targetSwimmerIds.includes(currentUser.id)) return true;
+
+        return false;
+    }
+
+    // Get all plans/sessions for selected date
+    // NOTE: Declared as function (hoisted) BEFORE the useMemo below.
+    function getSelectedDatePlans(): (TrainingPlan & { isDerived?: boolean; notes?: string })[] {
         if (!currentUser) return [];
         const dateStr = getLocalDateISOString(selectedDate);
         const dayPlansObj: (TrainingPlan & { isDerived?: boolean; notes?: string })[] = [];
@@ -114,7 +137,43 @@ function AthleteWorkoutContent() {
         }
 
         return dayPlansObj;
-    };
+    }
+
+    // Calculate monthly stats
+    // NOTE: Declared as function (hoisted) BEFORE where it's called in JSX.
+    function getMonthlyStats() {
+        try {
+            if (!currentUser) return { totalDistance: 0, trainingDays: 0, completionRate: 0 };
+
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const monthPlans = (plans || []).filter(p => {
+                const planDate = new Date(p.date);
+                return planDate >= firstDay &&
+                    planDate <= now &&
+                    p.group === currentUser.group;
+            });
+
+            const totalDistance = monthPlans.reduce((sum, p) => sum + (p.totalDistance || 0), 0);
+            const trainingDays = monthPlans.length;
+
+            const monthAttendance = (attendance || []).filter(a => {
+                const attDate = new Date(a.date);
+                return attDate >= firstDay &&
+                    attDate <= now &&
+                    a.swimmerId === currentUser.id;
+            });
+
+            const completionRate = trainingDays > 0
+                ? Math.round((monthAttendance.length / trainingDays) * 100)
+                : 0;
+
+            return { totalDistance, trainingDays, completionRate };
+        } catch (e) {
+            console.error("Stats calculation error", e);
+            return { totalDistance: 0, trainingDays: 0, completionRate: 0 };
+        }
+    }
 
     // Background theme
     const currentTrainingType = useMemo(() => {
@@ -331,61 +390,6 @@ function AthleteWorkoutContent() {
             toast("error", "保存失败，请重试");
         } finally {
             setStatusSaving(false);
-        }
-    };
-
-    // Check if a weekly plan is visible to this swimmer
-    const isWeeklyPlanVisible = (wp: any): boolean => {
-        if (!currentUser) return false;
-        const targetGroup: string[] = Array.isArray(wp.targetGroup)
-            ? wp.targetGroup
-            : typeof wp.targetGroup === 'string' ? (() => { try { return JSON.parse(wp.targetGroup || '[]'); } catch { return []; } })() : [];
-        const targetSwimmerIds: string[] = Array.isArray(wp.targetSwimmerIds)
-            ? wp.targetSwimmerIds
-            : typeof wp.targetSwimmerIds === 'string' ? (() => { try { return JSON.parse(wp.targetSwimmerIds || '[]'); } catch { return []; } })() : [];
-
-        const hasGroupTarget = targetGroup.length > 0;
-        const hasIndividualTarget = targetSwimmerIds.length > 0;
-
-        if (!hasGroupTarget && !hasIndividualTarget) return true;
-        if (hasGroupTarget && targetGroup.includes(currentUser.group)) return true;
-        if (hasIndividualTarget && targetSwimmerIds.includes(currentUser.id)) return true;
-
-        return false;
-    };
-
-    // Calculate monthly stats
-    const getMonthlyStats = () => {
-        try {
-            if (!currentUser) return { totalDistance: 0, trainingDays: 0, completionRate: 0 };
-
-            const now = new Date();
-            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-            const monthPlans = (plans || []).filter(p => {
-                const planDate = new Date(p.date);
-                return planDate >= firstDay &&
-                    planDate <= now &&
-                    p.group === currentUser.group;
-            });
-
-            const totalDistance = monthPlans.reduce((sum, p) => sum + (p.totalDistance || 0), 0);
-            const trainingDays = monthPlans.length;
-
-            const monthAttendance = (attendance || []).filter(a => {
-                const attDate = new Date(a.date);
-                return attDate >= firstDay &&
-                    attDate <= now &&
-                    a.swimmerId === currentUser.id;
-            });
-
-            const completionRate = trainingDays > 0
-                ? Math.round((monthAttendance.length / trainingDays) * 100)
-                : 0;
-
-            return { totalDistance, trainingDays, completionRate };
-        } catch (e) {
-            console.error("Stats calculation error", e);
-            return { totalDistance: 0, trainingDays: 0, completionRate: 0 };
         }
     };
 
@@ -682,9 +686,9 @@ function AthleteWorkoutContent() {
                                     let typeColor = "";
                                     if (hasSession) {
                                         const foundPlan = plans.find(p => p.date === dateStr && p.group === currentUser.group);
-                                        const type = foundPlan?.trainingType || 
+                                        const type = foundPlan?.trainingType ||
                                             currentWeeklyPlan?.sessions?.find((s: any) => s.date === dateStr)?.trainingType;
-                                        
+
                                         if (type === "aerobic") {
                                             typeLabel = "有氧";
                                             typeColor = "text-primary bg-primary/10 border-primary/20";
@@ -753,7 +757,7 @@ function AthleteWorkoutContent() {
                                         <div key={plan.id || index} className="bg-card/50 border border-border/50 rounded-2xl p-6 glow-border relative overflow-hidden">
                                             {/* Decorative background subtle glow */}
                                             <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
-                                            
+
                                             <div className="flex justify-between items-start mb-4">
                                                 <div>
                                                     <span className="text-[10px] font-label-caps text-primary uppercase tracking-wider block mb-1">今日训练计划</span>
@@ -1053,4 +1057,3 @@ export default function AthleteWorkoutPage() {
         </Suspense>
     );
 }
-
