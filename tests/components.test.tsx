@@ -30,6 +30,12 @@ vi.mock('@/lib/i18n', () => ({
     }),
 }));
 
+// ─── Mock store (resetAuth is called after login, no-op in tests) ─
+const mockResetAuth = vi.fn();
+vi.mock('@/lib/store', () => ({
+    useStore: () => ({ resetAuth: mockResetAuth }),
+}));
+
 // ─── Now import components ────────────────────────────────────────
 import { LoginForm } from '@/components/athlete/LoginForm';
 import { ToastProvider, useToast } from '@/components/common/Toast';
@@ -50,6 +56,7 @@ function mockFetchResponse(status: number, body: any, contentType = 'application
 describe('LoginForm Component', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockResetAuth.mockClear();
         global.fetch = vi.fn();
         // Reset cookie
         Object.defineProperty(document, 'cookie', {

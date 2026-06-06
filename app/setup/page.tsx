@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Waves, Lock, User, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useStore } from "@/lib/store";
 
 export default function SetupPage() {
   const router = useRouter();
+  const { resetAuth } = useStore();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -40,6 +42,8 @@ export default function SetupPage() {
         setLoading(false);
         return;
       }
+      // Clear unauthenticated flag so sync engine resumes polling with new session
+      resetAuth();
       router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "Network error");

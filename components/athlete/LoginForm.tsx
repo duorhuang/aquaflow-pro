@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Lock, User, Loader2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+import { useStore } from "@/lib/store";
 
 interface LoginFormProps {
     mode?: "athlete" | "coach";
@@ -13,6 +14,7 @@ interface LoginFormProps {
 export function LoginForm({ mode = "athlete" }: LoginFormProps) {
     const router = useRouter();
     const { t } = useLanguage();
+    const { resetAuth } = useStore();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -125,6 +127,8 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
     const redirectAfterLogin = async (role: string, data?: any) => {
         // Cookie is HttpOnly so document.cookie can't see it — redirect immediately.
         // The browser has already received the Set-Cookie header from the response.
+        // Clear the unauthenticated flag so the sync engine resumes polling.
+        resetAuth();
         if (role === "coach") {
             router.push("/dashboard");
         } else {

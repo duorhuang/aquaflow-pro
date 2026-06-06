@@ -11,6 +11,11 @@ const POLL_INTERVAL_MS = 60000;
 const WAKE_TIMEOUT_MS = 2000;
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
+/** Check if an error message indicates the user is unauthenticated (401) or forbidden (403). */
+function isAuthError(msg: string): boolean {
+  return msg?.includes('Unauthorized') || msg?.includes('Forbidden') || msg?.includes('API Error: 401') || msg?.includes('API Error: 403');
+}
+
 export function isQuotaError(msg: string): boolean {
   return (
     msg?.includes('data transfer quota') ||
@@ -51,12 +56,47 @@ export function useSyncEngine({
   const [isLoaded, setIsLoaded] = useState(false);
   const offlineRef = useRef(false);
   const hasLocalDataRef = useRef(false);
+  /** Tracks whether the last sync attempt returned 401. When true, polling is paused until recovery. */
+  const unauthenticatedRef = useRef(false);
 
   const recordMutation = useCallback(() => {
     if (!offlineRef.current) {
       console.log('🔒 Mutation Guard: Locking sync for 15s to prioritize local state.');
     }
     lastMutationAt.current = Date.now();
+  }, []);
+
+  /** Reset unauthenticated flag — call this after a successful login to resume polling. */
+  const resetAuth = useCallback(() => {
+    unauthenticatedRef.current = false;
+  }, []);
+
+  /** Single fetch wrapper: tries /api/sync, sets auth/quota/offline flags, returns data or null. */
+  const trySync = useCallback(async (): Promise<any> => {
+    try {
+      // Don't use silent4xx — we need 401 to throw so the catch block can set unauthenticatedRef
+      const data = await fetchAPI('/sync', undefined, false, 1);
+      // Success — clear unauthenticated flag if it was set
+      if (unauthenticatedRef.current) {
+        unauthenticatedRef.current = false;
+      }
+      return data;
+    } catch (e: any) {
+      if (isAuthError(e.message)) {
+        unauthenticatedRef.current = true;
+        return null; // Expected on public pages — don't log
+      }
+      if (isQuotaError(e.message)) {
+        if (!offlineRef.current) {
+          console.warn('[DB] Quota exceeded — falling back to local data');
+          offlineRef.current = true;
+          setDbOffline(true);
+        }
+        return null;
+      }
+      // Unexpected error — rethrow so callers can handle it
+      throw e;
+    }
   }, []);
 
   // --- Initial load ---
@@ -68,18 +108,7 @@ export function useSyncEngine({
       hasLocalDataRef.current = hasFreshStorage();
 
       try {
-        let syncData: any = null;
-        try {
-          syncData = await fetchAPI('/sync');
-        } catch (e: any) {
-          if (isQuotaError(e.message)) {
-            if (!offlineRef.current) {
-              console.warn('[DB] Quota exceeded — falling back to local data');
-              offlineRef.current = true;
-              setDbOffline(true);
-            }
-          }
-        }
+        const syncData = await trySync();
 
         if (syncData) {
           await onLoad(syncData);
@@ -89,11 +118,14 @@ export function useSyncEngine({
             setDbOffline(false);
             offlineRef.current = false;
           }
-        } else if (!hasLocalDataRef.current) {
+        } else if (!hasLocalDataRef.current && !unauthenticatedRef.current) {
           setSyncStatus('error');
         }
       } catch (error) {
-        console.error('Critical failure during loadData:', error);
+        console.error('[Sync] Critical failure during loadData:', error);
+        if (!unauthenticatedRef.current) {
+          setSyncStatus('error');
+        }
       } finally {
         clearTimeout(wakeTimeout);
         setDbWaking(false);
@@ -107,22 +139,17 @@ export function useSyncEngine({
     const syncInterval = setInterval(async () => {
       // Skip during mutation guard window
       if (Date.now() - lastMutationAt.current < MUTATION_GUARD_MS) return;
+      // Skip polling when unauthenticated — no session cookie, so /api/sync returns 401 every time
+      if (unauthenticatedRef.current) return;
 
       setSyncStatus('syncing');
       try {
-        let syncData: any = null;
-        try {
-          syncData = await fetchAPI('/sync', undefined, true, 1);
-        } catch (e: any) {
-          if (isQuotaError(e.message)) {
-            if (!offlineRef.current) {
-              console.warn('[DB] Quota exceeded — falling back to local data');
-              offlineRef.current = true;
-              setDbOffline(true);
-            }
-            setSyncStatus('idle');
-            return;
-          }
+        const syncData = await trySync();
+
+        if (unauthenticatedRef.current) {
+          // 401 during polling — stop, set idle (not error, this is expected when session expires)
+          setSyncStatus('idle');
+          return;
         }
 
         // DB back online — recovery path
@@ -135,7 +162,9 @@ export function useSyncEngine({
         if (syncData) onSync(syncData);
         setSyncStatus('idle');
       } catch {
-        setSyncStatus('error');
+        if (!unauthenticatedRef.current) {
+          setSyncStatus('error');
+        }
       }
     }, POLL_INTERVAL_MS);
 
@@ -144,7 +173,7 @@ export function useSyncEngine({
       clearTimeout(wakeTimeout);
       clearInterval(syncInterval);
     };
-  }, [onLoad, onSync]);
+  }, [onLoad, onSync, trySync]);
 
   return {
     isLoaded,
@@ -154,5 +183,6 @@ export function useSyncEngine({
     offlineRef,
     hasLocalDataRef,
     recordMutation,
+    resetAuth,
   };
 }

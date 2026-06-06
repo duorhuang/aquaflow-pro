@@ -51,6 +51,7 @@ interface StoreContextType {
     totalXP: number;
     clearData: () => void;
     syncStatus: 'idle' | 'syncing' | 'error';
+    resetAuth: () => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -218,6 +219,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             getVisibleAnnouncements: () => visibleAnnouncements,
             totalXP, clearData: crud.clearData,
             syncStatus: sync.syncStatus,
+            resetAuth: sync.resetAuth,
         }}>
             {children}
         </StoreContext.Provider>
