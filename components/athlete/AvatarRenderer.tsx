@@ -8230,7 +8230,7 @@ function renderWallHanging(item: string) {
                     <circle cx="0" cy="55" r="37" fill="none" stroke="#e0e0e0" strokeWidth="2" />
                     {/* Spokes */}
                     {[0, 30, 60, 90, 120, 150].map((deg, idx) => (
-                        <line key={idx} x1="0" y1="55" x2="0" y2="55" stroke="#ccc" strokeWidth="1.2" transform={"rotate(" + deg + " 0 55) translate(0, -35) L 0 35"} />
+                        <line key={idx} x1="0" y1="55" x2="0" y2="35" stroke="#ccc" strokeWidth="1.2" transform={"rotate(" + deg + " 0 55)"} />
                     ))}
                     <circle cx="0" cy="55" r="8" fill="#757575" />
                     {/* Small colorful stickers (Graffiti decoration) */}
