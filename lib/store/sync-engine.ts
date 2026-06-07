@@ -24,6 +24,7 @@ export function isQuotaError(msg: string): boolean {
     msg?.includes('Database Quota Exceeded') ||
     msg?.includes('exceeded maximum request size') ||
     msg?.includes('503 Service Unavailable') ||
+    msg?.includes('API Error: 503') ||
     msg?.includes('Database waking up') ||
     msg?.includes('DB warmup timeout')
   );
@@ -141,6 +142,25 @@ export function useSyncEngine({
       if (Date.now() - lastMutationAt.current < MUTATION_GUARD_MS) return;
       // Skip polling when unauthenticated — no session cookie, so /api/sync returns 401 every time
       if (unauthenticatedRef.current) return;
+      // Skip polling when DB is offline (quota exceeded, DB waking, etc.) — retry after delay
+      if (offlineRef.current) {
+        // Schedule a single recovery retry after 30s
+        setTimeout(async () => {
+          if (!offlineRef.current) return; // Already recovered
+          console.log('[DB] Attempting DB recovery check...');
+          try {
+            const data = await trySync();
+            if (data && offlineRef.current) {
+              console.log('[DB] DB back online — resuming normal sync');
+              setDbOffline(false);
+              offlineRef.current = false;
+            }
+          } catch {
+            // Still down — keep offline flag, try again on next interval
+          }
+        }, 30000);
+        return;
+      }
 
       setSyncStatus('syncing');
       try {
