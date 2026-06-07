@@ -47,32 +47,11 @@ function AthleteWorkoutContent() {
     const [showBgPicker, setShowBgPicker] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-    // URL-based tab state with localStorage persistence
+    // URL-based tab state (source of truth: query param ?tab=)
     const urlTab = searchParams.get('tab');
-    const [savedTab, setSavedTab] = useState<string | null>(null);
-
-    // Read localStorage after mount to avoid hydration mismatch
-    useEffect(() => {
-        const stored = localStorage.getItem('aquaflow_active_tab');
-        if (stored === 'feedback' || stored === 'achievements' || stored === 'health') {
-            setTimeout(() => {
-                setSavedTab(stored);
-            }, 0);
-        }
-    }, []);
-
     const activeTab = (urlTab === 'feedback' || urlTab === 'achievements' || urlTab === 'health')
         ? urlTab as 'feedback' | 'achievements' | 'health'
-        : (savedTab === 'feedback' || savedTab === 'achievements' || savedTab === 'health')
-            ? savedTab as 'feedback' | 'achievements' | 'health'
-            : 'training' as const;
-
-    // Persist activeTab for round-trip navigation (e.g. from /profile)
-    useEffect(() => {
-        if (activeTab !== 'training') {
-            localStorage.setItem('aquaflow_active_tab', activeTab);
-        }
-    }, [activeTab]);
+        : 'training' as const;
 
     // Check if a weekly plan is visible to this swimmer
     // NOTE: Must be declared BEFORE any code that references it,
