@@ -277,20 +277,23 @@ describe('Auth API', () => {
     // ─── Logout Route ──────────────────────────────────────────────
     describe('POST /api/auth/logout', () => {
         it('should return success on logout', async () => {
-            const res = await logoutHandler();
+            const req = createRequest('POST', 'http://localhost/api/auth/logout');
+            const res = await logoutHandler(req);
             const json = await res.json();
 
             expect(json.success).toBe(true);
         });
 
         it('should set clear session cookie header', async () => {
-            const res = await logoutHandler();
+            const req = createRequest('POST', 'http://localhost/api/auth/logout');
+            const res = await logoutHandler(req);
 
             expect(res.headers.get('Set-Cookie')).toContain('aquaflow_session=');
         });
 
         it('should include V12 fingerprint headers', async () => {
-            const res = await logoutHandler();
+            const req = createRequest('POST', 'http://localhost/api/auth/logout');
+            const res = await logoutHandler(req);
 
             expect(res.headers.get('X-Build')).toBe('V12-STRATOSPHERE-RECOVERY');
         });

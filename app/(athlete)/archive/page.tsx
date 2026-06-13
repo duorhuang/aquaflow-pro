@@ -3,7 +3,7 @@
 import { useStore } from "@/lib/store";
 import { api } from "@/lib/api-client";
 import { SessionRenderer } from "@/components/dashboard/SessionRenderer";
-import { ChevronLeft, ChevronRight, FolderOpen, MessageSquare, ThumbsUp, ThumbsDown, MessageCircle, Target, Calendar, Waves, ChevronRight as ChevronRightIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, FolderOpen, MessageSquare, ThumbsUp, ThumbsDown, MessageCircle, Target, Calendar, Waves, ChevronRight as ChevronRightIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -53,6 +53,64 @@ export default function TrainingArchivePage() {
     const [viewMonth, setViewMonth] = useState(new Date());
     const [selectedEntry, setSelectedEntry] = useState<TrainingDayEntry | null>(null);
     const [activeTab, setActiveTab] = useState<'training' | 'feedback'>('training');
+
+    const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
+    const [fullSessionsCache, setFullSessionsCache] = useState<Record<string, any[]>>({});
+
+    const isSessionDetailed = (session: any) => {
+        if (!session) return true;
+        if (session.editorMode === 'legacy') return true;
+        if (session.editorMode === 'block' && session.contentBlocks && session.contentBlocks.length > 0) return true;
+        if (session.editorMode === 'rich' && session.contentHtml) return true;
+        if (session.editorMode === 'plan' && session.trainingBlocks && session.trainingBlocks.length > 0) return true;
+        return false;
+    };
+
+    const handleSelectEntry = async (entry: TrainingDayEntry) => {
+        const isSelected = selectedEntry?.date === entry.date && selectedEntry?.plan.id === entry.plan.id;
+        if (isSelected) {
+            setSelectedEntry(null);
+            return;
+        }
+
+        setSelectedEntry(entry);
+
+        if (entry.type === 'weekly' && entry.plan.weeklyPlanId) {
+            const session = entry.plan;
+            const planId = session.weeklyPlanId;
+            if (!isSessionDetailed(session) && !fullSessionsCache[planId]) {
+                setLoadingPlanId(planId);
+                try {
+                    const fullPlan = await api.weeklyPlans.getById(planId);
+                    if (fullPlan && fullPlan.sessions) {
+                        setFullSessionsCache(prev => ({
+                            ...prev,
+                            [planId]: fullPlan.sessions
+                        }));
+                        const detailedSession = fullPlan.sessions.find((s: any) => s.id === session.id);
+                        if (detailedSession) {
+                            setSelectedEntry({
+                                ...entry,
+                                plan: detailedSession
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch full weekly plan details:", err);
+                } finally {
+                    setLoadingPlanId(null);
+                }
+            } else if (fullSessionsCache[planId]) {
+                const detailedSession = fullSessionsCache[planId].find((s: any) => s.id === session.id);
+                if (detailedSession) {
+                    setSelectedEntry({
+                        ...entry,
+                        plan: detailedSession
+                    });
+                }
+            }
+        }
+    };
 
     // Feedback history state
     const [feedbackData, setFeedbackData] = useState<{ blockFeedbacks: any[]; weeklyFeedbacks: any[]; targetedFeedbacks: any[] } | null>(null);
@@ -319,42 +377,53 @@ export default function TrainingArchivePage() {
                         {monthEntries.length > 0 ? (
                             <div className="space-y-3">
                                 {monthEntries.map((entry, idx) => {
-                                    const d = new Date(entry.date + "T12:00:00");
-                                    const isSelected = selectedEntry === entry;
-                                    return (
-                                        <div key={`${entry.date}-${idx}`} className="bg-card/50 border border-border/50 rounded-2xl overflow-hidden">
-                                            <div
-                                                onClick={() => setSelectedEntry(isSelected ? null : entry)}
-                                                className="p-4 cursor-pointer hover:bg-white/5 transition-colors flex items-center justify-between"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className={cn(
-                                                        "w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs",
-                                                        entry.attended ? "bg-success text-success-foreground" : "bg-white/10 text-white"
-                                                    )}>
-                                                        {d.getDate()}
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-semibold text-white">
-                                                            {d.toLocaleDateString('zh-CN', { weekday: 'short' })} {t.archive.training}
-                                                        </p>
-                                                        {entry.type === 'weekly' && entry.weeklyPlanTitle && (
-                                                            <p className="text-xs text-info">{t.archive.weeklyPlan}: {entry.weeklyPlanTitle}</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    {entry.plan.focus && <span className="text-xs text-muted-foreground">{entry.plan.focus}</span>}
-                                                    {isSelected ? <ChevronRight className="w-4 h-4 text-primary rotate-90" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-                                                </div>
-                                            </div>
-                                            {isSelected && (
-                                                <div className="p-4 border-t border-border bg-black/20">
-                                                    <SessionRenderer session={entry.plan} />
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
+                                     const d = new Date(entry.date + "T12:00:00");
+                                     const isSelected = selectedEntry?.date === entry.date && selectedEntry?.plan.id === entry.plan.id;
+                                     const displayPlan = (entry.type === 'weekly' && entry.plan.weeklyPlanId && fullSessionsCache[entry.plan.weeklyPlanId])
+                                         ? (fullSessionsCache[entry.plan.weeklyPlanId].find((s: any) => s.id === entry.plan.id) || entry.plan)
+                                         : (isSelected ? selectedEntry.plan : entry.plan);
+
+                                     return (
+                                         <div key={`${entry.date}-${idx}`} className="bg-card/50 border border-border/50 rounded-2xl overflow-hidden">
+                                             <div
+                                                 onClick={() => handleSelectEntry(entry)}
+                                                 className="p-4 cursor-pointer hover:bg-white/5 transition-colors flex items-center justify-between"
+                                             >
+                                                 <div className="flex items-center gap-3">
+                                                     <div className={cn(
+                                                         "w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs",
+                                                         entry.attended ? "bg-success text-success-foreground" : "bg-white/10 text-white"
+                                                     )}>
+                                                         {d.getDate()}
+                                                     </div>
+                                                     <div>
+                                                         <p className="text-sm font-semibold text-white">
+                                                             {d.toLocaleDateString('zh-CN', { weekday: 'short' })} {t.archive.training}
+                                                         </p>
+                                                         {entry.type === 'weekly' && entry.weeklyPlanTitle && (
+                                                             <p className="text-xs text-info">{t.archive.weeklyPlan}: {entry.weeklyPlanTitle}</p>
+                                                         )}
+                                                     </div>
+                                                 </div>
+                                                 <div className="flex items-center gap-2">
+                                                     {displayPlan.focus && <span className="text-xs text-muted-foreground">{displayPlan.focus}</span>}
+                                                     {isSelected ? <ChevronRight className="w-4 h-4 text-primary rotate-90" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                                                 </div>
+                                             </div>
+                                             {isSelected && (
+                                                 <div className="p-4 border-t border-border bg-black/20">
+                                                     {loadingPlanId === entry.plan.weeklyPlanId ? (
+                                                         <div className="flex items-center justify-center py-6 gap-2">
+                                                             <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                                                             <span className="text-xs text-muted-foreground">正在加载训练详情...</span>
+                                                         </div>
+                                                     ) : (
+                                                         <SessionRenderer session={displayPlan} />
+                                                     )}
+                                                 </div>
+                                             )}
+                                         </div>
+                                     );
                                 })}
                             </div>
                         ) : (

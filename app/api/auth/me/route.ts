@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     }
 
     if (payload.role === 'athlete') {
-      const rows = await sql`SELECT id, name, username, "group", status, xp, level, "currentStreak", "bestTimes", "injuries", "readiness", "injuryNote", "injuryBodyMap", "injuryImageUrl", "lastProfileUpdate", "mainStroke" FROM "Swimmer" WHERE id = ${payload.userId} LIMIT 1`;
+      const rows = await sql`SELECT id, name, username, "group", status, xp, "totalXp", balance, level, gender, "equippedItems", "currentStreak", "bestTimes", "injuries", "readiness", "injuryNote", "injuryBodyMap", "injuryImageUrl", "lastProfileUpdate", "mainStroke" FROM "Swimmer" WHERE id = ${payload.userId} LIMIT 1`;
       const swimmer = rows[0];
       if (!swimmer) return NextResponse.json({ error: 'User not found' }, { status: 401, headers: V12_FINGERPRINT });
       if (swimmer.bestTimes && typeof swimmer.bestTimes === 'string') {
@@ -40,6 +40,12 @@ export async function GET(request: Request) {
       }
       if (swimmer.injuries && typeof swimmer.injuries === 'string') {
         try { swimmer.injuries = JSON.parse(swimmer.injuries); } catch {}
+      }
+      if (swimmer.equippedItems && typeof swimmer.equippedItems === 'string') {
+        try { swimmer.equippedItems = JSON.parse(swimmer.equippedItems); } catch {}
+      }
+      if (swimmer.injuryBodyMap && typeof swimmer.injuryBodyMap === 'string') {
+        try { swimmer.injuryBodyMap = JSON.parse(swimmer.injuryBodyMap); } catch {}
       }
       return NextResponse.json({ ...swimmer, role: 'athlete' }, { headers: V12_FINGERPRINT });
     }

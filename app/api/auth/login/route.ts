@@ -42,6 +42,7 @@ async function warmDb(): Promise<boolean> {
 
 export async function POST(request: Request) {
     return withApiHandler(async () => {
+        const host = request.headers.get('host') || '';
         const rawIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown';
         const ip = rawIp.includes(',') ? rawIp.split(',')[0].trim() : rawIp;
         if (!getRateLimit(ip)) return NextResponse.json({ error: 'Too many attempts. Try again in 5 minutes.' }, { status: 429, headers: V12_FINGERPRINT });
@@ -83,7 +84,7 @@ export async function POST(request: Request) {
                     path: '/',
                     maxAge: 7 * 24 * 60 * 60,
                     secure: isProd,
-                    ...(isProd ? { domain: '.sportsflow.best' } : {}),
+                    domain: isProd && host.includes('sportsflow.best') ? '.sportsflow.best' : undefined,
                 });
                 return response;
             }
@@ -111,7 +112,7 @@ export async function POST(request: Request) {
                     path: '/',
                     maxAge: 7 * 24 * 60 * 60,
                     secure: isProd,
-                    ...(isProd ? { domain: '.sportsflow.best' } : {}),
+                    domain: isProd && host.includes('sportsflow.best') ? '.sportsflow.best' : undefined,
                 });
                 return response;
             }

@@ -83,16 +83,26 @@ export function getCookieFromRequest(request: Request, name: string): string | u
   return cookies[name];
 }
 
-export function setSessionCookie(token: string, maxAge = 7 * 24 * 60 * 60): string {
+export function setSessionCookie(token: string, maxAge = 7 * 24 * 60 * 60, host?: string): string {
   const isProd = process.env.NODE_ENV === 'production';
   const parts = [`aquaflow_session=${token}`, 'Path=/', 'HttpOnly', 'SameSite=Strict', `Max-Age=${maxAge}`];
-  if (isProd) parts.push('Domain=.sportsflow.best', 'Secure');
+  if (isProd) {
+    if (host && host.includes('sportsflow.best')) {
+      parts.push('Domain=.sportsflow.best');
+    }
+    parts.push('Secure');
+  }
   return parts.join('; ');
 }
 
-export function clearSessionCookie(): string {
+export function clearSessionCookie(host?: string): string {
   const isProd = process.env.NODE_ENV === 'production';
   const parts = ['aquaflow_session=', 'Path=/', 'HttpOnly', 'SameSite=Strict', 'Max-Age=0', 'Expires=Thu, 01 Jan 1970 00:00:00 GMT'];
-  if (isProd) parts.push('Domain=.sportsflow.best', 'Secure');
+  if (isProd) {
+    if (host && host.includes('sportsflow.best')) {
+      parts.push('Domain=.sportsflow.best');
+    }
+    parts.push('Secure');
+  }
   return parts.join('; ');
 }

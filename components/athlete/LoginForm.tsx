@@ -6,6 +6,7 @@ import { Lock, User, Loader2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface LoginFormProps {
     mode?: "athlete" | "coach";
@@ -78,13 +79,11 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                         setIsLoading(false);
                         return;
                     }
-                    // Don't retry on rate limiting — show the error immediately
                     if (res.status === 429) {
                         setError(data.error || t.common.tooManyAttempts || "Too many attempts, please wait a moment.");
                         setIsLoading(false);
                         return;
                     }
-                    // 503 = server overloaded (DB cold start or Worker CPU limit) — retry with longer backoff
                     if (res.status === 503) {
                         lastError = data.error || "服务器繁忙，正在重试...";
                         if (attempt < MAX_RETRIES - 1) {
@@ -102,11 +101,9 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                     return;
                 }
 
-                // Wait briefly for cookie to commit before redirect (prevents race condition)
                 redirectAfterLogin(mode, data);
                 return;
             } catch (err: any) {
-                // 503 or network error — retry with longer backoff
                 const is503 = err.message?.includes('503');
                 const delay = is503 ? 3000 * (attempt + 1) : 1500 * (attempt + 1);
                 lastError = err.name === 'AbortError'
@@ -125,9 +122,6 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
     };
 
     const redirectAfterLogin = async (role: string, data?: any) => {
-        // Cookie is HttpOnly so document.cookie can't see it — redirect immediately.
-        // The browser has already received the Set-Cookie header from the response.
-        // Clear the unauthenticated flag so the sync engine resumes polling.
         resetAuth();
         if (role === "coach") {
             router.push("/dashboard");
@@ -140,29 +134,35 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
     };
 
     return (
-        <form onSubmit={handleLogin} className="space-y-4 w-full">
-            <div className="space-y-2">
-                <div className="relative">
-                    <User className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+        <form onSubmit={handleLogin} className="space-y-5 w-full">
+            <div className="space-y-4">
+                <motion.div 
+                    className="relative group"
+                    whileTap={{ scale: 0.995 }}
+                >
+                    <User className="absolute left-4 top-3.5 w-5 h-5 text-emerald-500/50 group-focus-within:text-emerald-400 transition-colors" />
                     <input
                         type="text"
                         placeholder={t.common.username || "Username"}
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        className="w-full bg-black/20 border border-white/5 rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/50 focus:bg-black/40 transition-all shadow-inner"
                         required
                         aria-label="用户名"
                         autoComplete="username"
                     />
-                </div>
-                <div className="relative">
-                    <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+                </motion.div>
+                <motion.div 
+                    className="relative group"
+                    whileTap={{ scale: 0.995 }}
+                >
+                    <Lock className="absolute left-4 top-3.5 w-5 h-5 text-emerald-500/50 group-focus-within:text-emerald-400 transition-colors" />
                     <input
                         type={showPassword ? "text" : "password"}
                         placeholder={t.common.password || "Password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-12 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        className="w-full bg-black/20 border border-white/5 rounded-2xl py-3.5 pl-12 pr-12 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/50 focus:bg-black/40 transition-all shadow-inner"
                         required
                         aria-label="密码"
                         autoComplete="current-password"
@@ -170,55 +170,82 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                     <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-3 p-0.5 text-muted-foreground hover:text-white transition-colors"
+                        className="absolute right-4 top-3.5 p-0.5 text-muted-foreground hover:text-emerald-400 transition-colors"
                         aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
-                </div>
+                </motion.div>
             </div>
 
-            {error && (
-                <p className="text-red-400 text-xs text-center">{error}</p>
-            )}
+            <AnimatePresence>
+                {error && (
+                    <motion.p 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="text-red-400 text-sm text-center font-medium bg-red-500/10 py-2 rounded-lg border border-red-500/20"
+                    >
+                        {error}
+                    </motion.p>
+                )}
+            </AnimatePresence>
 
             {mode === "coach" && (
                 <p className="text-center text-xs text-muted-foreground">
-                    {t.common.forgotPassword || "忘记密码？"}请到 <a href="/setup" className="text-primary hover:underline">{t.common.resetPassword || "初始化页面"}</a> 重置。
+                    {t.common.forgotPassword || "忘记密码？"}请到 <a href="/setup" className="text-emerald-400 hover:underline">{t.common.resetPassword || "初始化页面"}</a> 重置。
                 </p>
             )}
 
-            <div className="space-y-2">
-                <button
+            <div className="space-y-3 pt-2">
+                <motion.button
                     type="submit"
                     disabled={isLoading}
+                    whileHover={{ scale: isLoading ? 1 : 1.02 }}
+                    whileTap={{ scale: isLoading ? 1 : 0.98 }}
                     className={cn(
-                        "w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 min-h-[44px]",
+                        "w-full py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 text-lg shadow-lg relative overflow-hidden",
                         isLoading
-                            ? "bg-secondary text-muted-foreground cursor-wait"
-                            : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-[1.02]"
+                            ? "bg-emerald-500/50 text-white/80 cursor-wait"
+                            : "bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]"
                     )}
                 >
+                    {isLoading && (
+                        <motion.div 
+                            className="absolute left-0 top-0 bottom-0 bg-white/20"
+                            initial={{ width: "0%" }}
+                            animate={{ width: "100%" }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        />
+                    )}
                     {isLoading ? (
                         <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            {retryAttempt > 0 ? `Connecting... attempt ${retryAttempt}/${MAX_RETRIES}` : t.common.loggingIn || "Connecting to server..."}
+                            <Loader2 className="w-5 h-5 animate-spin relative z-10" />
+                            <span className="relative z-10 text-sm">
+                                {retryAttempt > 0 ? `Connecting... attempt ${retryAttempt}/${MAX_RETRIES}` : t.common.loggingIn || "Connecting to server..."}
+                            </span>
                         </>
                     ) : t.common.login}
-                </button>
-                {isLoading && (
-                    <button
-                        type="button"
-                        onClick={() => {
-                            abortRef.current?.abort();
-                            setIsLoading(false);
-                            setRetryAttempt(0);
-                        }}
-                        className="w-full py-2 rounded-xl text-sm text-muted-foreground hover:text-white transition-colors min-h-[44px]"
-                    >
-                        {t.common.back || "取消"}
-                    </button>
-                )}
+                </motion.button>
+
+                <AnimatePresence>
+                    {isLoading && (
+                        <motion.button
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            type="button"
+                            onClick={() => {
+                                abortRef.current?.abort();
+                                setIsLoading(false);
+                                setRetryAttempt(0);
+                            }}
+                            className="w-full py-3 rounded-2xl text-sm font-medium text-muted-foreground hover:text-white hover:bg-white/5 transition-colors"
+                        >
+                            {t.common.back || "取消连接"}
+                        </motion.button>
+                    )}
+                </AnimatePresence>
             </div>
         </form>
     );

@@ -26,6 +26,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
     const [group, setGroup] = useState<GroupLevel>("Junior");
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [status, setStatus] = useState<"Active" | "Injured" | "Resting">("Active");
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -40,6 +41,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                 setName(swimmerToEdit.name);
                 setGroup(swimmerToEdit.group);
                 setUsername(swimmerToEdit.username || "");
+                setStatus(swimmerToEdit.status || "Active");
                 // Do NOT pre-fill with the stored hash — leave blank so coach must
                 // intentionally type a new password to change it.
                 setPassword("");
@@ -49,6 +51,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                 setName("");
                 setGroup("Junior");
                 setUsername(randomUser);
+                setStatus("Active");
                 setPassword("123456");
             }
             setIsSubmitting(false);
@@ -70,7 +73,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
         try {
             if (swimmerToEdit) {
                 // Update — only include password if the coach typed a new one
-                const updatePayload: any = { name, group, username };
+                const updatePayload: any = { name, group, username, status };
                 if (password.trim()) {
                     updatePayload.password = password.trim();
                 }
@@ -83,7 +86,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                     group,
                     username,
                     password,
-                    status: "Active",
+                    status,
                     readiness: 100,
                     xp: 0,
                     level: 1,
@@ -165,6 +168,27 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                                         }`}
                                 >
                                     {GROUP_LABELS[lvl]}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Status Selection */}
+                    <div>
+                        <label className="text-xs uppercase font-bold text-muted-foreground mb-1 block">训练状态</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {(["Active", "Injured", "Resting"] as const).map((stat) => (
+                                <button
+                                    key={stat}
+                                    type="button"
+                                    onClick={() => setStatus(stat)}
+                                    disabled={isSubmitting}
+                                    className={`py-2 rounded-lg text-xs font-bold border transition-all disabled:opacity-50 ${status === stat
+                                        ? "bg-primary text-primary-foreground border-primary"
+                                        : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50"
+                                        }`}
+                                >
+                                    {stat === "Active" ? "活跃" : stat === "Injured" ? "受伤" : "休整"}
                                 </button>
                             ))}
                         </div>

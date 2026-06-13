@@ -58,8 +58,8 @@ export const weeklyPlanRepo = new (class extends BaseRepo {
   async create(data: any) {
     const planId = data.id || crypto.randomUUID();
     const rows = await this.sql`
-      INSERT INTO "WeeklyPlan" ("id", "group", "weekStart", "weekEnd", "title", "coachNotes", "description", "targetGroup", "targetSwimmerIds", "isPublished", "overviewImageUrl", "overviewContentHtml", "createdAt", "updatedAt")
-      VALUES (${planId}, ${String(data.group || '')}, ${String(data.weekStart || '')}, ${String(data.weekEnd || '')}, ${data.title || ''}, ${data.coachNotes || ''}, ${data.description || ''}, ${this.toJson(data.targetGroup || [])}, ${this.toJson(data.targetSwimmerIds || [])}, ${Boolean(data.isPublished)}, ${data.overviewImageUrl || null}, ${data.overviewContentHtml || null}, NOW(), NOW())
+      INSERT INTO "WeeklyPlan" ("id", "group", "weekStart", "weekEnd", "title", "coachNotes", "targetGroup", "targetSwimmerIds", "isPublished", "overviewImageUrl", "overviewContentHtml", "createdAt", "updatedAt")
+      VALUES (${planId}, ${String(data.group || '')}, ${String(data.weekStart || '')}, ${String(data.weekEnd || '')}, ${data.title || ''}, ${data.coachNotes || ''}, ${this.toJson(data.targetGroup || [])}, ${this.toJson(data.targetSwimmerIds || [])}, ${Boolean(data.isPublished)}, ${data.overviewImageUrl || null}, ${data.overviewContentHtml || null}, NOW(), NOW())
       RETURNING *
     `;
     return parsePlanJson(rows[0]);
@@ -76,7 +76,6 @@ export const weeklyPlanRepo = new (class extends BaseRepo {
         "weekEnd" = ${data.weekEnd ?? (current as any).weekEnd},
         "title" = ${data.title ?? (current as any).title},
         "coachNotes" = ${data.coachNotes ?? (current as any).coachNotes},
-        "description" = ${data.description ?? (current as any).description},
         "targetGroup" = ${data.targetGroup !== undefined ? this.toJson(data.targetGroup) : this.toJson((current as any).targetGroup || [])},
         "targetSwimmerIds" = ${data.targetSwimmerIds !== undefined ? this.toJson(data.targetSwimmerIds) : this.toJson((current as any).targetSwimmerIds || [])},
         "isPublished" = ${data.isPublished !== undefined ? Boolean(data.isPublished) : (current as any).isPublished},
@@ -95,8 +94,8 @@ export const weeklyPlanRepo = new (class extends BaseRepo {
 
   async addSession(data: any) {
     const rows = await this.sql`
-      INSERT INTO "DailySession" ("id", "weeklyPlanId", "label", "date", "title", "imageData", "imageType", "contentBlocks", "trainingBlocks", "contentHtml", "notes", "sortOrder", "imageUrl", "editorMode", "trainingType", "primaryStroke", "createdAt", "updatedAt")
-      VALUES (${data.id || crypto.randomUUID()}, ${String(data.weeklyPlanId)}, ${data.label || ''}, ${String(data.date)}, ${data.title}, ${data.imageData || ''}, ${data.imageType || ''}, ${this.toJson(data.contentBlocks || [])}, ${this.toJson(data.trainingBlocks || [])}, ${data.contentHtml || ''}, ${data.notes || ''}, ${Number(data.sortOrder) || 0}, ${data.imageUrl || null}, ${data.editorMode || 'legacy'}, ${data.trainingType || null}, ${data.primaryStroke || null}, NOW(), NOW())
+      INSERT INTO "DailySession" ("id", "weeklyPlanId", "label", "date", "imageData", "imageType", "contentBlocks", "trainingBlocks", "contentHtml", "notes", "sortOrder", "editorMode", "trainingType", "primaryStroke", "totalDistance", "createdAt")
+      VALUES (${data.id || crypto.randomUUID()}, ${String(data.weeklyPlanId)}, ${data.label || ''}, ${String(data.date)}, ${data.imageData || ''}, ${data.imageType || ''}, ${this.toJson(data.contentBlocks || [])}, ${this.toJson(data.trainingBlocks || [])}, ${data.contentHtml || ''}, ${data.notes || ''}, ${Number(data.sortOrder) || 0}, ${data.editorMode || 'legacy'}, ${data.trainingType || null}, ${data.primaryStroke || null}, ${data.totalDistance !== undefined && data.totalDistance !== null ? Number(data.totalDistance) : null}, NOW())
       RETURNING *
     `;
     return parseSessionJson(rows[0]);
@@ -112,17 +111,15 @@ export const weeklyPlanRepo = new (class extends BaseRepo {
         "label" = ${data.label ?? (current as any).label},
         "imageData" = ${data.imageData !== undefined ? (data.imageData ?? '') : (current as any).imageData},
         "imageType" = ${data.imageType !== undefined ? (data.imageType ?? '') : (current as any).imageType},
-        "title" = ${data.title ?? (current as any).title},
         "contentBlocks" = ${data.contentBlocks !== undefined ? this.toJson(data.contentBlocks) : (current as any).contentBlocks},
         "trainingBlocks" = ${data.trainingBlocks !== undefined ? this.toJson(data.trainingBlocks) : (current as any).trainingBlocks},
         "contentHtml" = ${data.contentHtml !== undefined ? String(data.contentHtml) : (current as any).contentHtml},
         "notes" = ${data.notes !== undefined ? String(data.notes) : (current as any).notes},
         "sortOrder" = ${data.sortOrder !== undefined ? Number(data.sortOrder) : (current as any).sortOrder},
-        "imageUrl" = ${data.imageUrl !== undefined ? (data.imageUrl ?? null) : (current as any).imageUrl},
         "editorMode" = ${data.editorMode !== undefined ? String(data.editorMode) : ((current as any).editorMode ?? 'legacy')},
         "trainingType" = ${data.trainingType !== undefined ? (data.trainingType ?? null) : (current as any).trainingType},
         "primaryStroke" = ${data.primaryStroke !== undefined ? (data.primaryStroke ?? null) : (current as any).primaryStroke},
-        "updatedAt" = NOW()
+        "totalDistance" = ${data.totalDistance !== undefined ? (data.totalDistance !== null ? Number(data.totalDistance) : null) : (current as any).totalDistance}
       WHERE "id" = ${id}
       RETURNING *
     `;

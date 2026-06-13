@@ -20,6 +20,7 @@ npm run lint             # Run ESLint
 # Cloudflare deployment
 npm run preview          # Build & run locally with Wrangler
 npm run deploy           # Build & deploy to Cloudflare Pages
+npm run cf-typegen       # Generate Cloudflare worker types
 
 # Database
 npx prisma generate      # Generate Prisma client (runs on postinstall)
@@ -30,10 +31,15 @@ npx prisma db push       # Push schema changes to DB
 npx tsc --noEmit         # Run TypeScript type check (build ignores TS errors)
 
 # Tests
-npx vitest               # Run all tests
+npx vitest               # Run all Vitest unit/component tests
 npx vitest --watch       # Run tests in watch mode
 npx vitest tests/<file>  # Run specific test file
+
+# E2E Tests (Playwright)
+npx playwright test      # Run E2E tests (targets live production URL)
 ```
+
+**Production note:** Live at `https://sw.sportsflow.best` (Cloudflare Pages). Backup URL: `https://aquaflow-pro.pages.dev`. Database is Neon Serverless Postgres — first request after idle may see 10-15s wake delay. The store's `dbOffline` flag and API handler's quota detection handle this gracefully.
 
 ## Architecture
 
@@ -132,6 +138,7 @@ Deployed via `opennextjs-cloudflare build && wrangler deploy --minify` to Cloudf
 ### API Route Structure
 - `app/api/<entity>/route.ts` — Standard CRUD endpoints (plans, swimmers, feedbacks, attendance, performances, templates, weekly-plans, announcements, meets, block-feedbacks, feedback-reminders, weekly-feedbacks)
 - `app/api/auth/` — Authentication endpoints (login, register-coach, change-password)
+- `app/api/ai/feedback-parse/` — AI-powered feedback parsing
 - `app/api/upload` — File upload to R2 bucket
 - `app/api/sync` — Polling sync endpoint
 - `app/api/keep-alive` — Database keep-alive ping
@@ -197,12 +204,25 @@ After modifying the schema, run `npx prisma db push` to sync.
 - `components/plan/` - Plan-related components
 - `components/athlete/BottomTabBar.tsx` - Mobile bottom navigation for athlete routes
 
+## Custom Hooks
+
+- `hooks/useBackgroundTheme.ts` - Dynamic background theme switching
+- `hooks/useSessionExpiry.ts` - Session expiration warnings
+- `hooks/useUnsavedChanges.ts` - Unsaved changes detection (before navigation)
+- `hooks/useWaterRipple.ts` - Water ripple animation effect
+
 ## Testing
 
+### Unit & Component Tests (Vitest)
 - **Framework**: Vitest with jsdom environment
 - **Config**: `vitest.config.ts` — globals enabled, `tests/setup.ts` as setup file
-- **Test files**: `tests/**/*.test.{ts,tsx}` (ECC/ directory excluded)
+- **Test files**: `tests/**/*.test.{ts,tsx}`
 - **Test categories**: API client, auth API, API flows, core API, extended API, component rendering, edge runtime mocks, utility functions
+
+### E2E Tests (Playwright)
+- **Config**: `e2e/live.spec.ts` — targets production URL (`https://sw.sportsflow.best`)
+- **Pattern**: 5-iteration loop per test scenario (login, swimmer features)
+- **Run**: `npx playwright test` (requires live server or network access)
 
 ## Key Files Reference
 
@@ -211,6 +231,7 @@ After modifying the schema, run `npx prisma db push` to sync.
 | `lib/db-pool.ts` | Neon SQL client singleton — used by all API routes |
 | `lib/repos/` | Repository pattern — entity-specific CRUD repos on raw Neon SQL |
 | `lib/repos/base.ts` | BaseRepo abstract class with JSON parse/stringify, requireOne |
+| `lib/repos/index.ts` | Repo registry — centralized export of all repo instances |
 | `lib/prisma.ts` | Lazy Prisma singleton (build-safe Proxy) |
 | `lib/api-handler.ts` | API error wrapper with Neon quota detection |
 | `lib/store.tsx` | Global state with 30s polling + mutation guard + localStorage |
@@ -234,3 +255,4 @@ After modifying the schema, run `npx prisma db push` to sync.
 | `next.config.ts` | Next.js config with turbopack + build error ignore |
 | `types/index.ts` | All TypeScript type definitions |
 | `vitest.config.ts` | Test configuration |
+| `hooks/` | Custom React hooks (theme, session expiry, unsaved changes, water ripple) |

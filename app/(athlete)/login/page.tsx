@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { WaveAnimation } from "@/components/common/WaveAnimation";
 import { useLanguage } from "@/lib/i18n";
+import { motion, AnimatePresence } from "framer-motion";
 
 function LoginContent() {
     const searchParams = useSearchParams();
@@ -14,67 +15,107 @@ function LoginContent() {
     const [isCoach, setIsCoach] = useState(() => searchParams.get("role") === "coach");
 
     return (
-        <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">
-            {/* Background texture */}
-            <div className="fixed inset-0 bg-theme-texture pointer-events-none z-0 opacity-20" aria-hidden="true" />
+        <div className="min-h-screen bg-[#020b14] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+            {/* Premium Background Gradients & Effects */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#021526] via-[#052220] to-[#01090d] z-0" />
+            <div className="absolute top-0 right-0 w-[50vw] h-[50vw] rounded-full bg-cyan-500/5 blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-[50vw] h-[50vw] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none" />
+            <div className="fixed inset-0 bg-theme-texture pointer-events-none z-0 opacity-10" aria-hidden="true" />
 
-            <div className="w-full max-w-md space-y-8 relative z-10">
+            <motion.div 
+                className="w-full max-w-md space-y-8 relative z-10"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            >
                 {/* Logo */}
-                <div className="text-center space-y-3">
-                    <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-2 shadow-[0_0_30px_rgba(100,255,218,0.15)]">
-                        <Waves className="w-10 h-10 text-primary" />
-                    </div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">AquaFlow Pro</h1>
-                    <p className="text-muted-foreground">
-                        {isCoach ? (t.common.coach + "登录") : (t.common.athlete + "训练通道")}
+                <div className="text-center space-y-4">
+                    <motion.div 
+                        className="w-24 h-24 bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 rounded-[2rem] flex items-center justify-center mx-auto mb-2 shadow-[0_0_40px_rgba(52,211,153,0.15)] border border-emerald-500/20 backdrop-blur-xl"
+                        whileHover={{ scale: 1.05, rotate: 5 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                    >
+                        <Waves className="w-12 h-12 text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.8)]" />
+                    </motion.div>
+                    <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-cyan-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent drop-shadow-sm">
+                        AquaFlow Pro
+                    </h1>
+                    <p className="text-muted-foreground/80 font-medium">
+                        {isCoach ? (t.common.coach + "管理后台") : (t.common.athlete + "训练通道")}
                     </p>
                 </div>
 
                 {/* Role Toggle */}
-                <div className="flex p-1 bg-secondary/30 rounded-xl max-w-[240px] mx-auto" role="radiogroup" aria-label="选择角色">
+                <div className="flex p-1.5 bg-white/5 rounded-2xl max-w-[260px] mx-auto border border-white/10 backdrop-blur-md relative" role="radiogroup" aria-label="选择角色">
+                    {/* Sliding Background for Active Tab */}
+                    <motion.div
+                        className="absolute inset-y-1.5 w-[calc(50%-0.375rem)] bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl shadow-lg"
+                        initial={false}
+                        animate={{ x: isCoach ? "100%" : "0%" }}
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    />
+                    
                     <button
                         onClick={() => setIsCoach(false)}
                         role="radio"
                         aria-checked={!isCoach}
                         className={cn(
-                            "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-lg transition-all min-h-[44px]",
-                            !isCoach ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-white"
+                            "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl transition-colors min-h-[48px] relative z-10",
+                            !isCoach ? "text-white" : "text-muted-foreground/70 hover:text-white"
                         )}
                     >
-                        <User className="w-4 h-4" /> {t.common.athlete}
+                        <User className="w-4.5 h-4.5" /> {t.common.athlete}
                     </button>
                     <button
                         onClick={() => setIsCoach(true)}
                         role="radio"
                         aria-checked={isCoach}
                         className={cn(
-                            "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-lg transition-all min-h-[44px]",
-                            isCoach ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-white"
+                            "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl transition-colors min-h-[48px] relative z-10",
+                            isCoach ? "text-white" : "text-muted-foreground/70 hover:text-white"
                         )}
                     >
-                        <UserCog className="w-4 h-4" /> {t.common.coach}
+                        <UserCog className="w-4.5 h-4.5" /> {t.common.coach}
                     </button>
                 </div>
 
-                {/* Login Form */}
-                <div className="bg-card/50 p-6 rounded-3xl border border-border/50 backdrop-blur-sm">
-                    <LoginForm mode={isCoach ? "coach" : "athlete"} />
-                </div>
+                {/* Login Form Container */}
+                <AnimatePresence mode="wait">
+                    <motion.div 
+                        key={isCoach ? "coach" : "athlete"}
+                        initial={{ opacity: 0, x: isCoach ? 20 : -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: isCoach ? -20 : 20 }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-xl shadow-2xl relative overflow-hidden"
+                    >
+                        {/* Subtle inner glow */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+                        <LoginForm mode={isCoach ? "coach" : "athlete"} />
+                    </motion.div>
+                </AnimatePresence>
 
-                <p className="text-center text-xs text-muted-foreground">
-                    {isCoach ? "Powered by AquaFlow Pro" : `${t.common.forgotPassword || "忘记信息？"}${t.common.backToLogin ? "" : ""}联系${t.common.coach}`}
+                <p className="text-center text-sm text-muted-foreground/50 mt-8">
+                    {isCoach ? "Powered by AquaFlow Pro Engine" : `${t.common.forgotPassword || "忘记密码？"}请联系${t.common.coach}`}
                 </p>
-            </div>
+            </motion.div>
 
             {/* Wave Animation */}
-            <WaveAnimation />
+            <div className="opacity-60">
+                <WaveAnimation />
+            </div>
         </div>
     );
 }
 
 export default function LoginPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center text-white">加载中...</div>}>
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#020b14] flex flex-col items-center justify-center space-y-6">
+                <div className="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-400 rounded-full animate-spin" />
+                <p className="text-emerald-400/80 font-mono tracking-widest text-sm animate-pulse">INITIALIZING...</p>
+            </div>
+        }>
             <LoginContent />
         </Suspense>
     );

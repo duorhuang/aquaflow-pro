@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   return withApiHandler(async () => {
+    const host = request.headers.get('host') || '';
     const sql = getNeon();
     const existing = await sql`SELECT id FROM "CoachUser" LIMIT 1`;
     if (existing.length > 0) return NextResponse.json({ error: 'A coach already exists. Use login.' }, { status: 409 });
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
       path: '/',
       maxAge: 7 * 24 * 60 * 60,
       secure: isProd,
-      ...(isProd ? { domain: '.sportsflow.best' } : {}),
+      domain: isProd && host.includes('sportsflow.best') ? '.sportsflow.best' : undefined,
     });
     return response;
   });

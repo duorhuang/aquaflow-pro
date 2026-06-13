@@ -84,6 +84,34 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
         }
     };
 
+    const handlePaste = async (e: React.ClipboardEvent<HTMLDivElement>) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf("image") !== -1) {
+                const file = items[i].getAsFile();
+                if (file) {
+                    e.preventDefault();
+                    setUploading(true);
+                    try {
+                        const result = await api.upload.file(file);
+                        if (result?.url) {
+                            exec("insertImage", result.url);
+                        } else {
+                            toast("error", "图片上传失败：未返回链接");
+                        }
+                    } catch (err) {
+                        console.error("Paste upload failed:", err);
+                        toast("error", "粘贴图片上传失败");
+                    } finally {
+                        setUploading(false);
+                    }
+                }
+            }
+        }
+    };
+
     const insertLink = () => {
         const url = prompt("输入链接地址:");
         if (url) exec("createLink", url);
@@ -130,6 +158,7 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
                     suppressContentEditableWarning
                     onInput={handleInput}
                     onKeyDown={handleKeyDown}
+                    onPaste={handlePaste}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
                     className={cn(

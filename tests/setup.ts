@@ -14,7 +14,11 @@ const localStorageMock = (() => {
     clear: () => { store = {}; },
   };
 })();
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+} else {
+  (global as any).localStorage = localStorageMock;
+}
 
 // Mock alert
 global.alert = vi.fn();

@@ -117,6 +117,7 @@ export const swimmerRepo = new (class extends BaseRepo {
     merge('username', 'username', String);
     merge('readiness', 'readiness', Number);
     merge('gender', 'gender', String);
+    merge('status', 'status', String);
 
     // SECURITY: inventory/equippedItems/wishlist are managed exclusively by the shop endpoint
     // to enforce balance checks and ownership validation. Preserve current values if column exists.

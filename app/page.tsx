@@ -4,69 +4,97 @@ import Link from "next/link";
 import { ArrowRight, UserCog, User, Waves, Sparkles } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 import { WaveAnimation } from "@/components/common/WaveAnimation";
+import { motion } from "framer-motion";
 
 export default function Home() {
   const { t } = useLanguage();
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { 
+        staggerChildren: 0.2,
+        delayChildren: 0.1 
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-tr from-[#021516] via-[#052220] to-[#01090d] text-white relative overflow-hidden">
-      {/* Decorative Natural Floating Bubbles */}
-      <div className="absolute top-1/4 left-1/10 w-24 h-24 rounded-full bg-cyan-500/5 blur-xl animate-float" style={{ animationDelay: "0s" }} />
-      <div className="absolute top-1/3 right-1/8 w-32 h-32 rounded-full bg-emerald-500/5 blur-2xl animate-float" style={{ animationDelay: "1.5s" }} />
-      <div className="absolute bottom-1/3 left-1/5 w-16 h-16 rounded-full bg-teal-500/5 blur-lg animate-float" style={{ animationDelay: "0.8s" }} />
-      <div className="absolute top-10 right-1/4 w-20 h-20 rounded-full bg-yellow-500/5 blur-xl animate-float" style={{ animationDelay: "2.2s" }} />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#020b14] text-white relative overflow-hidden">
+      {/* Premium Background Gradients */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#021526] via-[#052220] to-[#01090d] z-0" />
+      
+      {/* Ambient Glows */}
+      <div className="absolute top-1/4 left-1/4 w-[40vw] h-[40vw] rounded-full bg-cyan-500/5 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-[40vw] h-[40vw] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none" />
 
       {/* Main Content Card */}
-      <div className="text-center space-y-8 animate-in fade-in zoom-in duration-1000 relative z-10 max-w-2xl px-6">
+      <motion.div 
+        className="text-center space-y-10 relative z-10 max-w-3xl px-6 w-full"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {/* Brand Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-mono tracking-widest text-emerald-400 uppercase shadow-md animate-pulse">
-          <Sparkles className="w-3.5 h-3.5" /> Next-Gen Swim Platform
-        </div>
+        <motion.div variants={itemVariants} className="flex justify-center">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-mono tracking-widest text-emerald-400 uppercase shadow-lg backdrop-blur-md">
+            <Sparkles className="w-3.5 h-3.5" /> 
+            <span>Next-Gen Swim Platform</span>
+          </div>
+        </motion.div>
 
         {/* Title */}
-        <div className="space-y-4">
-          <h1 className="text-6xl md:text-7xl font-bold tracking-tighter flex items-center justify-center gap-2">
-            <span>AquaFlow</span>
-            <span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(0,242,255,0.4)]">
+        <motion.div variants={itemVariants} className="space-y-6">
+          <h1 className="text-6xl md:text-8xl font-bold tracking-tighter flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 drop-shadow-xl">
+            <span className="text-white">AquaFlow</span>
+            <span className="bg-gradient-to-r from-cyan-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(52,211,153,0.3)]">
               PRO
             </span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-lg mx-auto font-sans">
-            游泳队训练管理系统
-            <span className="block text-xs mt-2 text-muted-foreground/60 uppercase tracking-widest font-mono">
+          <p className="text-lg md:text-xl text-muted-foreground/90 leading-relaxed max-w-xl mx-auto font-sans font-light">
+            游泳队专业训练管理系统
+            <span className="block text-xs mt-3 text-emerald-400/70 uppercase tracking-[0.2em] font-mono font-medium">
               科学赋能 · 游戏化竞技 · 状态追踪
             </span>
           </p>
-        </div>
+        </motion.div>
 
         {/* Action buttons row */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
+        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-5 justify-center items-center pt-6">
           {/* Coach Login - Life of Enthusiasm (Amber/Orange theme) */}
-          <Link
-            href="/login?role=coach"
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 text-slate-950 px-8 py-4 rounded-2xl font-bold text-lg hover:scale-[1.04] active:scale-[0.98] transition-all shadow-[0_0_30px_rgba(245,159,0,0.25)] hover:shadow-[0_0_40px_rgba(245,159,0,0.45)] border border-amber-400/50"
-          >
-            <UserCog className="w-5.5 h-5.5" />
-            <span>{t.common.coach}{t.common.login}</span>
-            <ArrowRight className="w-5 h-5 ml-1" />
+          <Link href="/login?role=coach" className="w-full sm:w-auto block group">
+            <div className="relative flex items-center justify-center gap-3 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform group-hover:-translate-y-1 group-active:translate-y-0 shadow-[0_10px_30px_-10px_rgba(245,159,0,0.5)] group-hover:shadow-[0_15px_40px_-10px_rgba(245,159,0,0.7)] border border-amber-400/50">
+              <UserCog className="w-5.5 h-5.5" />
+              <span>{t.common.coach}{t.common.login}</span>
+              <ArrowRight className="w-5 h-5 ml-1 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+            </div>
           </Link>
 
           {/* Athlete Login - Style of Nature (Emerald/Teal Glass theme) */}
-          <Link
-            href="/login?role=athlete"
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500/20 via-teal-500/10 to-cyan-500/20 text-emerald-400 px-8 py-4 rounded-2xl font-bold text-lg hover:scale-[1.04] active:scale-[0.98] hover:bg-emerald-500/35 hover:text-emerald-300 transition-all border border-emerald-500/30 hover:border-emerald-400/60 shadow-[0_0_25px_rgba(16,185,129,0.12)] hover:shadow-[0_0_35px_rgba(16,185,129,0.25)]"
-          >
-            <User className="w-5.5 h-5.5" />
-            <span>{t.common.athlete}{t.common.login}</span>
+          <Link href="/login?role=athlete" className="w-full sm:w-auto block group">
+            <div className="relative flex items-center justify-center gap-3 bg-white/5 backdrop-blur-xl text-emerald-400 px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform group-hover:-translate-y-1 group-active:translate-y-0 border border-emerald-500/20 group-hover:border-emerald-400/50 shadow-[0_10px_30px_-10px_rgba(16,185,129,0.1)] group-hover:shadow-[0_15px_40px_-10px_rgba(16,185,129,0.25)] hover:bg-white/10">
+              <User className="w-5.5 h-5.5" />
+              <span>{t.common.athlete}{t.common.login}</span>
+            </div>
           </Link>
-        </div>
+        </motion.div>
 
         {/* Small nature detail badge */}
-        <div className="pt-8 flex items-center justify-center gap-2 text-xs text-muted-foreground/60 font-mono">
-          <Waves className="w-4 h-4 text-emerald-500/60 animate-pulse" />
+        <motion.div variants={itemVariants} className="pt-12 flex items-center justify-center gap-2 text-xs text-muted-foreground/50 font-mono">
+          <Waves className="w-4 h-4 text-cyan-500/60" />
           <span>Flow with Nature, Strive with Passion</span>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Decorative Wave at bottom */}
       <WaveAnimation />

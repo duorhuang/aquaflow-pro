@@ -103,6 +103,10 @@ export async function GET(request: Request) {
     const weeklyPlanIds = weeklyPlansRaw.map((wp: any) => wp.id);
     const sessionsByWeeklyPlanId: Record<string, any[]> = {};
     if (weeklyPlanIds.length > 0) {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+
       const sessions = await sql`SELECT * FROM "DailySession" WHERE "weeklyPlanId" = ANY(${weeklyPlanIds}) ORDER BY "sortOrder" ASC`;
       for (const s of sessions) {
         if (s.contentBlocks && typeof s.contentBlocks === 'string') {
@@ -111,6 +115,17 @@ export async function GET(request: Request) {
         if (s.trainingBlocks && typeof s.trainingBlocks === 'string') {
           try { s.trainingBlocks = JSON.parse(s.trainingBlocks); } catch {}
         }
+
+        // Dynamically strip heavy content blocks for athletes' historical plans
+        if (!isCoach) {
+          const parentPlan = weeklyPlansRaw.find((wp: any) => wp.id === s.weeklyPlanId);
+          if (parentPlan && parentPlan.weekStart < thirtyDaysAgoStr) {
+            s.contentBlocks = null;
+            s.contentHtml = null;
+            s.trainingBlocks = null;
+          }
+        }
+
         (sessionsByWeeklyPlanId[s.weeklyPlanId] ||= []).push(s);
       }
     }

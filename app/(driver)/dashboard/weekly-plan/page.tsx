@@ -318,6 +318,9 @@ function WeeklyPlanContent() {
                         sessionData.contentBlocks = s.contentBlocks || [];
                     } else if (s.editorMode === "rich") {
                         sessionData.contentHtml = s.contentHtml || "";
+                    } else if (s.editorMode === "plan") {
+                        sessionData.trainingBlocks = s.trainingBlocks || [];
+                        sessionData.totalDistance = s.totalDistance || 0;
                     } else {
                         // Legacy mode
                         sessionData.imageData = s.imageData;

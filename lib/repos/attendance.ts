@@ -35,7 +35,19 @@ export const attendanceRepo = new (class extends BaseRepo {
     const swimmer = swimmers[0];
 
     const existing = await this.sql`SELECT * FROM "AttendanceRecord" WHERE "swimmerId" = ${swimmerId} AND "date" = ${checkInDate}`;
-    if (existing.length > 0) return { error: 'Already checked in for today', status: 400 };
+    if (existing.length > 0) {
+      const rec = existing[0];
+      if (rec.status !== status) {
+        const updated = await this.sql`
+          UPDATE "AttendanceRecord"
+          SET "status" = ${status}, "timestamp" = ${data.timestamp || new Date().toISOString()}
+          WHERE "id" = ${rec.id}
+          RETURNING *
+        `;
+        return updated[0];
+      }
+      return rec;
+    }
 
     const plans = await this.sql`SELECT * FROM "TrainingPlan" WHERE "group" = ${swimmer.group} AND "date" = ${checkInDate}`;
     const isTrainingDay = plans.length > 0;

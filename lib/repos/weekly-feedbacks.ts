@@ -41,16 +41,46 @@ export const weeklyFeedbackRepo = new (class extends BaseRepo {
 
   async save(data: any) {
     const id = data.id || crypto.randomUUID();
-    const rows = await this.sql`
-      INSERT INTO "WeeklyFeedback" ("id", "swimmerId", "weekStart", "weekEnd", "reflection", "goals", "isSubmitted", "createdAt", "updatedAt")
-      VALUES (${id}, ${String(data.swimmerId)}, ${String(data.weekStart)}, ${String(data.weekEnd)}, ${data.reflection || ''}, ${data.goals || ''}, ${Boolean(data.isSubmitted)}, NOW(), NOW())
+    const submittedAt = data.isSubmitted ? new Date().toISOString() : null;
+    
+    const weeklyFeedbackRows = await this.sql`
+      INSERT INTO "WeeklyFeedback" ("id", "swimmerId", "weekStart", "summary", "isSubmitted", "submittedAt", "createdAt", "updatedAt")
+      VALUES (${id}, ${String(data.swimmerId)}, ${String(data.weekStart)}, ${data.summary || null}, ${Boolean(data.isSubmitted)}, ${submittedAt}, NOW(), NOW())
+      ON CONFLICT ("swimmerId", "weekStart") DO UPDATE SET
+        "summary" = EXCLUDED."summary",
+        "isSubmitted" = EXCLUDED."isSubmitted",
+        "submittedAt" = COALESCE(EXCLUDED."submittedAt", "WeeklyFeedback"."submittedAt"),
+        "updatedAt" = NOW()
       RETURNING *
     `;
-    return rows[0];
+    const weeklyFeedback = weeklyFeedbackRows[0];
+
+    if (data.dailyFeedbacks && Array.isArray(data.dailyFeedbacks)) {
+      for (const df of data.dailyFeedbacks) {
+        const dfId = df.id || crypto.randomUUID();
+        await this.sql`
+          INSERT INTO "DailyFeedback" ("id", "weeklyFeedbackId", "swimmerId", "date", "rpe", "soreness", "reflection", "createdAt")
+          VALUES (${dfId}, ${weeklyFeedback.id}, ${weeklyFeedback.swimmerId}, ${String(df.date)}, ${df.rpe !== undefined ? Number(df.rpe) : null}, ${df.soreness !== undefined ? Number(df.soreness) : null}, ${df.reflection || null}, NOW())
+          ON CONFLICT ("swimmerId", "date") DO UPDATE SET
+            "weeklyFeedbackId" = EXCLUDED."weeklyFeedbackId",
+            "rpe" = EXCLUDED."rpe",
+            "soreness" = EXCLUDED."soreness",
+            "reflection" = EXCLUDED."reflection"
+        `;
+      }
+    }
+
+    return this.getBySwimmerAndWeek(weeklyFeedback.swimmerId, weeklyFeedback.weekStart);
   }
 
   async reply(id: string, coachReply: string) {
-    const rows = await this.sql`UPDATE "WeeklyFeedback" SET "coachReply" = ${coachReply} WHERE "id" = ${id} RETURNING *`;
+    const repliedAt = new Date().toISOString();
+    const rows = await this.sql`
+      UPDATE "WeeklyFeedback"
+      SET "coachReply" = ${coachReply}, "isReplied" = true, "repliedAt" = ${repliedAt}, "updatedAt" = NOW()
+      WHERE "id" = ${id}
+      RETURNING *
+    `;
     return rows[0];
   }
 })();
