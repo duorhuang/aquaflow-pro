@@ -190,6 +190,56 @@ describe('Auth API', () => {
             });
         });
 
+        it('should auto-rehash legacy coach password hash on successful login', async () => {
+            const auth = await import('@/lib/auth');
+            vi.mocked(auth.hashPassword).mockResolvedValueOnce('salt:10000:new_hash');
+
+            const req = createRequest('POST', 'http://localhost/api/auth/login', {
+                username: 'coach_admin',
+                password: 'testpass123',
+            });
+            const res = await loginHandler(req);
+            const json = await res.json();
+
+            expect(res.status).toBe(200);
+            expect(json.success).toBe(true);
+
+            // Verify that UPDATE query was called on CoachUser table
+            const updateCall = mockNeon.mock.calls.find(call => {
+                const strings = call[0] as TemplateStringsArray;
+                const query = strings.join('');
+                return query.includes('UPDATE "CoachUser" SET "password"');
+            });
+            expect(updateCall).toBeDefined();
+            // Verify new hash and coach id were passed to the query
+            expect(updateCall!.slice(1)).toEqual(['salt:10000:new_hash', 'coach-1']);
+        });
+
+        it('should auto-rehash legacy swimmer password hash on successful login', async () => {
+            const auth = await import('@/lib/auth');
+            vi.mocked(auth.hashPassword).mockResolvedValueOnce('salt:10000:new_hash');
+
+            const req = createRequest('POST', 'http://localhost/api/auth/login', {
+                username: 'swimmer_test',
+                password: 'testpass123',
+            });
+            const res = await loginHandler(req);
+            const json = await res.json();
+
+            expect(res.status).toBe(200);
+            expect(json.success).toBe(true);
+
+            // Verify that UPDATE query was called on Swimmer table
+            const updateCall = mockNeon.mock.calls.find(call => {
+                const strings = call[0] as TemplateStringsArray;
+                const query = strings.join('');
+                return query.includes('UPDATE "Swimmer" SET "password"');
+            });
+            expect(updateCall).toBeDefined();
+            // Verify new hash and swimmer id were passed to the query
+            expect(updateCall!.slice(1)).toEqual(['salt:10000:new_hash', 'swimmer-1']);
+        });
+
         it('should reject invalid credentials', async () => {
             const req = createRequest('POST', 'http://localhost/api/auth/login', {
                 username: 'nonexistent_user',

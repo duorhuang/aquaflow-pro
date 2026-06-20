@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { flattenPayload, V12_FINGERPRINT } from '@/lib/utils';
 import { withApiHandler } from '@/lib/api-handler';
-import { generateJWT, verifyPassword } from '@/lib/auth';
+import { generateJWT, verifyPassword, hashPassword } from '@/lib/auth';
 import { getNeon } from '@/lib/db-pool';
 export const dynamic = 'force-dynamic';
 
@@ -72,6 +72,16 @@ export async function POST(request: Request) {
                     coachRoleMismatch = true;
                     break;
                 }
+                // Auto-rehash if password was hashed with fewer than 100,000 iterations
+                const [, iterationsStr] = coach.password.split(':');
+                if (parseInt(iterationsStr, 10) < 100000) {
+                    try {
+                        const newHash = await hashPassword(String(data.password));
+                        await sql`UPDATE "CoachUser" SET "password" = ${newHash} WHERE "id" = ${coach.id}`;
+                    } catch (err) {
+                        console.error('Failed to auto-rehash coach password:', err);
+                    }
+                }
                 const token = await generateJWT({ userId: coach.id, role: 'coach' });
                 const response = NextResponse.json({
                     success: true,
@@ -99,6 +109,16 @@ export async function POST(request: Request) {
                 if (data.role && data.role !== 'athlete') {
                     swimmerRoleMismatch = true;
                     break;
+                }
+                // Auto-rehash if password was hashed with fewer than 100,000 iterations
+                const [, iterationsStr] = swimmer.password.split(':');
+                if (parseInt(iterationsStr, 10) < 100000) {
+                    try {
+                        const newHash = await hashPassword(String(data.password));
+                        await sql`UPDATE "Swimmer" SET "password" = ${newHash} WHERE "id" = ${swimmer.id}`;
+                    } catch (err) {
+                        console.error('Failed to auto-rehash swimmer password:', err);
+                    }
                 }
                 const token = await generateJWT({ userId: swimmer.id, role: 'athlete' });
                 const response = NextResponse.json({
