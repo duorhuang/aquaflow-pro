@@ -344,6 +344,9 @@ export default function TrainingArchivePage() {
                             <div className="bg-card/50 p-4 rounded-2xl border border-border/50 text-center">
                                 <p className="text-xs text-muted-foreground uppercase">{t.archive.attended}</p>
                                 <p className="text-base font-semibold text-success">{attendedDays}</p>
+                                {attendedDays === 0 && totalTrainingDays > 0 && (
+                                    <p className="text-[10px] text-muted-foreground/50 mt-1">教练标记后显示</p>
+                                )}
                             </div>
                             <div className="bg-card/50 p-4 rounded-2xl border border-border/50 text-center col-span-2 sm:col-span-1">
                                 <p className="text-xs text-muted-foreground uppercase">{t.archive.weeklyPlans}</p>

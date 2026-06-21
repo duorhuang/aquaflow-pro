@@ -235,18 +235,18 @@ export default function SchedulePage() {
             </div>
 
             {/* Calendar Grid */}
-            <div className="bg-card/30 border border-border rounded-xl p-6">
+            <div className="bg-card/30 border border-border rounded-xl p-4 sm:p-6">
                 {/* Day Headers */}
-                <div className="grid grid-cols-7 gap-2 mb-4">
+                <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-3 sm:mb-4">
                     {['周日', '周一', '周二', '周三', '周四', '周五', '周六'].map(day => (
-                        <div key={day} className="text-center text-xs font-bold text-muted-foreground py-2">
+                        <div key={day} className="text-center text-[10px] sm:text-xs font-bold text-muted-foreground py-2">
                             {day}
                         </div>
                     ))}
                 </div>
 
                 {/* Calendar Days */}
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-7 gap-1 sm:gap-2">
                     {calendarDays.map((day, index) => {
                         if (day === null) {
                             return <div key={`empty-${index}`} className="aspect-square" />;
@@ -262,7 +262,7 @@ export default function SchedulePage() {
                                 key={day}
                                 onClick={() => handleDateClick(day)}
                                 className={cn(
-                                    "aspect-square border border-border rounded-lg p-2 relative group hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/50 transition-all text-left",
+                                    "aspect-square border border-border rounded-lg p-1 sm:p-2 relative group hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/50 transition-all text-left",
                                     isToday(day) && "ring-2 ring-primary",
                                     hasTraining && getIntensityBg(totalDistance)
                                 )}
@@ -271,26 +271,26 @@ export default function SchedulePage() {
                                 <div className="flex flex-col h-full">
                                     <div className="flex items-center justify-between">
                                         <span className={cn(
-                                            "text-sm font-medium",
+                                            "text-[10px] sm:text-sm font-medium",
                                             isToday(day) ? "text-primary font-bold" : "text-white"
                                         )}>
                                             {day}
                                         </span>
                                         {!hasTraining && (
-                                            <Plus className="w-3 h-3 text-white/0 group-hover:text-white/50 transition-colors" />
+                                            <Plus className="w-2 h-2 sm:w-3 sm:h-3 text-white/0 group-hover:text-white/50 transition-colors" />
                                         )}
                                     </div>
 
                                     {hasTraining && (
-                                        <div className="flex-1 flex flex-col justify-end gap-1 mt-1">
-                                            <div className="text-xs font-mono font-bold text-white/80">
+                                        <div className="flex-1 flex flex-col justify-end gap-0.5 sm:gap-1 mt-0.5 sm:mt-1">
+                                            <div className="text-[9px] sm:text-xs font-mono font-bold text-white/80">
                                                 {totalDistance}m
                                             </div>
                                             {trainings.map((training, idx) => (
                                                 <div
                                                     key={idx}
                                                     className={cn(
-                                                        "h-1.5 rounded-full",
+                                                        "h-1 sm:h-1.5 rounded-full",
                                                         getIntensityColor(training.totalDistance)
                                                     )}
                                                     title={`${training.group}: ${training.totalDistance}m`}

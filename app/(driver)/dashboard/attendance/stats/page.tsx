@@ -194,9 +194,9 @@ export default function AttendanceStatsPage() {
                                             <td key={day} className="p-1 border-l border-border/10">
                                                 <div className={cn(
                                                     "w-6 h-6 mx-auto rounded flex items-center justify-center transition-all",
-                                                    present 
-                                                        ? "bg-emerald-500/20 text-emerald-400" 
-                                                        : "bg-black/20 text-transparent"
+                                                    present
+                                                        ? "bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 shadow-sm"
+                                                        : "bg-white/5 text-white/10"
                                                 )}>
                                                     <CheckCircle2 className="w-3 h-3" />
                                                 </div>

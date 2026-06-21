@@ -374,12 +374,40 @@ function AthleteWorkoutContent() {
 
     if (!authResolved || !storeLoaded) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="text-center group">
-                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-muted-foreground animate-pulse font-mono text-xs uppercase tracking-widest">
-                        正在加载训练内容...
-                    </p>
+            <div className="min-h-screen bg-background">
+                {/* Skeleton Header */}
+                <div className="h-16 bg-card/30 border-b border-white/5 flex items-center px-4 gap-3">
+                    <div className="w-10 h-10 rounded-full bg-white/5 animate-pulse" />
+                    <div className="flex-1">
+                        <div className="h-3 w-20 bg-white/5 rounded animate-pulse mb-1" />
+                        <div className="h-2 w-14 bg-white/5 rounded animate-pulse" />
+                    </div>
+                </div>
+                {/* Skeleton Weekly Calendar */}
+                <div className="p-4 space-y-4 max-w-2xl mx-auto">
+                    <div className="h-16 bg-card/30 rounded-2xl border border-white/5 animate-pulse flex items-center justify-center gap-2">
+                        {Array.from({ length: 7 }).map((_, i) => (
+                            <div key={i} className="w-10 h-12 bg-white/5 rounded-xl" />
+                        ))}
+                    </div>
+                    {/* Skeleton Training Card */}
+                    <div className="h-32 bg-card/30 rounded-2xl border border-white/5 animate-pulse" />
+                    {/* Skeleton Stats */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="h-20 bg-card/30 rounded-2xl border border-white/5 animate-pulse" />
+                        <div className="h-20 bg-card/30 rounded-2xl border border-white/5 animate-pulse" />
+                    </div>
+                    {/* Skeleton Chart */}
+                    <div className="h-32 bg-card/30 rounded-2xl border border-white/5 animate-pulse" />
+                </div>
+                {/* Bottom Tab Bar Skeleton */}
+                <div className="fixed bottom-0 left-0 right-0 h-16 bg-[#0f131f]/75 border-t border-white/5 flex items-center justify-around">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="flex flex-col items-center gap-1">
+                            <div className="w-5 h-5 bg-white/5 rounded animate-pulse" />
+                            <div className="w-6 h-2 bg-white/5 rounded animate-pulse" />
+                        </div>
+                    ))}
                 </div>
             </div>
         );

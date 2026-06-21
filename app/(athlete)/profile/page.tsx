@@ -217,7 +217,7 @@ export default function AthleteProfilePage() {
 
                 {/* Tab Content */}
                 {currentUser && activeTab === 'shop' && (
-                    <div className="animate-in fade-in duration-300">
+                    <div className="animate-in fade-in duration-300 rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
                         <ShopAndCloset swimmerId={currentUser.id} onClose={() => setActiveTab('profile')} />
                     </div>
                 )}
