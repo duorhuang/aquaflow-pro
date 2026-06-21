@@ -4,9 +4,10 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  turbopack: {
-    root: __dirname,
-  },
+  // Disable turbopack for Cloudflare deploy compatibility
+  // turbopack: {
+  //   root: __dirname,
+  // },
   serverExternalPackages: ["@prisma/client", ".prisma/client"],
   async redirects() {
     return [
