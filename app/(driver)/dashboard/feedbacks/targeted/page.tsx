@@ -37,13 +37,29 @@ export default function TargetedFeedbacksPage() {
     const [replyErrors, setReplyErrors] = useState<Record<string, string>>({});
     const [savingReplyId, setSavingReplyId] = useState<string | null>(null);
     const [replySaved, setReplySaved] = useState<Record<string, boolean>>({});
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     const load = useCallback(async () => {
+        setLoading(true);
+        setLoadError(null);
+        const timeout = setTimeout(() => {
+            setLoadError('加载超时，请检查网络连接后重试');
+            setLoading(false);
+        }, 20000);
         try {
             const res = await api.feedbackReminders.getAll(true);
+            clearTimeout(timeout);
             setReminders(res);
         } catch (e) {
-            console.error(e);
+            clearTimeout(timeout);
+            const msg = e instanceof Error ? e.message : '加载失败，请稍后重试';
+            setLoadError(msg.includes('quota') || msg.includes('402')
+                ? '云端数据库配额已满，请联系管理员'
+                : `加载失败: ${msg.slice(0, 100)}`);
+            setReminders([]);
+        } finally {
+            setLoading(false);
         }
     }, []);
 
@@ -121,6 +137,30 @@ export default function TargetedFeedbacksPage() {
         <div className="space-y-8 max-w-4xl mx-auto">
             <Breadcrumb />
 
+            {/* Loading state */}
+            {loading && (
+                <div className="text-center py-20">
+                    <div className="w-12 h-12 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-sm text-muted-foreground">加载专项反馈数据...</p>
+                </div>
+            )}
+
+            {/* Error state */}
+            {loadError && !loading && (
+                <div className="text-center p-10 bg-card border border-red-500/20 rounded-2xl">
+                    <p className="text-sm text-red-400 mb-4">{loadError}</p>
+                    <button
+                        onClick={load}
+                        className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-xl font-medium text-sm transition-all"
+                    >
+                        重试
+                    </button>
+                </div>
+            )}
+
+            {/* Main content (hidden while loading or error) */}
+            {!loading && !loadError && (
+            <>
             <div className="flex items-center gap-3">
                 <div className="p-3 bg-orange-500/20 rounded-xl">
                     <Target className="w-6 h-6 text-orange-500" />
@@ -314,6 +354,8 @@ export default function TargetedFeedbacksPage() {
                     </div>
                 ))}
             </div>
+            </>
+            )}
         </div>
     );
 }

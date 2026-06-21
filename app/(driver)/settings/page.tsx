@@ -7,7 +7,7 @@ import { useLanguage } from "@/lib/i18n";
 
 export default function SettingsPage() {
     const { hydrateMockData, clearData } = useStore();
-    const { language, toggleLanguage } = useLanguage();
+    const { language, toggleLanguage, t } = useLanguage();
     const [showGuide, setShowGuide] = useState(false);
     const [importError, setImportError] = useState<string | null>(null);
 
@@ -20,6 +20,7 @@ export default function SettingsPage() {
             weeklyPlans: localStorage.getItem('aquaflow_local_weeklyPlans'),
             performances: localStorage.getItem('aquaflow_local_performances'),
             announcements: localStorage.getItem('aquaflow_local_announcements'),
+            archivedAnnouncements: localStorage.getItem('aquaflow_local_archivedAnnouncements'),
             templates: localStorage.getItem('aquaflow_local_templates'),
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -43,7 +44,7 @@ export default function SettingsPage() {
             reader.onload = (event) => {
                 try {
                     const data = JSON.parse(event.target?.result as string);
-                    const expectedKeys = ['plans','swimmers','attendance','feedbacks','weeklyPlans','performances','announcements','templates'];
+                    const expectedKeys = ['plans','swimmers','attendance','feedbacks','weeklyPlans','performances','announcements','archivedAnnouncements','templates'];
                     const hasAnyExpectedKey = expectedKeys.some(k => k in data && data[k] !== undefined);
                     if (!hasAnyExpectedKey) {
                         setImportError("备份文件格式不正确，未找到有效数据");
@@ -57,6 +58,7 @@ export default function SettingsPage() {
                     if (data.weeklyPlans) localStorage.setItem('aquaflow_local_weeklyPlans', data.weeklyPlans);
                     if (data.performances) localStorage.setItem('aquaflow_local_performances', data.performances);
                     if (data.announcements) localStorage.setItem('aquaflow_local_announcements', data.announcements);
+                    if (data.archivedAnnouncements) localStorage.setItem('aquaflow_local_archivedAnnouncements', data.archivedAnnouncements);
                     if (data.templates) localStorage.setItem('aquaflow_local_templates', data.templates);
                     setImportError(null);
                     window.location.reload();
@@ -85,7 +87,7 @@ export default function SettingsPage() {
 
     return (
         <div className="space-y-6 max-w-4xl">
-            <h1 className="text-3xl font-bold text-white">Settings</h1>
+            <h1 className="text-3xl font-bold text-white">{t.common.settings || "设置"}</h1>
 
             {/* Data Management */}
             <div className="bg-card/30 border border-border rounded-xl p-6">
@@ -138,8 +140,8 @@ export default function SettingsPage() {
                     >
                         <Trash2 className="w-5 h-5 text-red-400" />
                         <div className="text-left">
-                            <div className="font-medium text-red-400">清除试用数据</div>
-                            <div className="text-xs text-red-400/70">永久删除所有记录</div>
+                            <div className="font-medium text-red-400">清除所有缓存数据</div>
+                            <div className="text-xs text-red-400/70">⚠️ 永久删除所有记录，不可恢复</div>
                         </div>
                     </button>
                 </div>

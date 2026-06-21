@@ -134,7 +134,15 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
     };
 
     return (
-        <form onSubmit={handleLogin} className="space-y-5 w-full">
+        <form onSubmit={handleLogin} className="space-y-5 w-full relative">
+            {/* Full-form loading overlay during retries (DB cold start) */}
+            {isLoading && retryAttempt > 0 && (
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center z-50 gap-3">
+                    <Loader2 className="w-10 h-10 animate-spin text-emerald-400" />
+                    <p className="text-sm text-white font-medium">正在连接服务器</p>
+                    <p className="text-xs text-white/60">尝试 {retryAttempt}/{MAX_RETRIES}...</p>
+                </div>
+            )}
             <div className="space-y-4">
                 <motion.div 
                     className="relative group"
