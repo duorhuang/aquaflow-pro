@@ -15,7 +15,8 @@ import { BackgroundPicker } from "@/components/athlete/BackgroundPicker";
 import { WaveAnimation } from "@/components/common/WaveAnimation";
 import { useBackgroundTheme } from "@/hooks/useBackgroundTheme";
 import { api } from "@/lib/api-client";
-import { AlertTriangle, LogOut, Waves, MessageSquare, TrendingUp, Activity, FolderOpen, ArrowRight, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Palette, Loader2, UserCircle2 } from "lucide-react";
+import { AthleteTelemetry } from "@/components/athlete/AthleteTelemetry";
+import { AlertTriangle, LogOut, Waves, MessageSquare, TrendingUp, FolderOpen, ArrowRight, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Palette, Loader2, UserCircle2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useCallback, useMemo, Suspense, useRef } from "react";
@@ -37,7 +38,7 @@ function AthleteWorkoutContent() {
     const searchParams = useSearchParams();
     const { t } = useLanguage();
     const { toast } = useToast();
-    const { plans, swimmers, attendance, updateSwimmer, weeklyPlans, announcements, archivedAnnouncements, getVisibleAnnouncements, isLoaded: storeLoaded, syncStatus } = useStore();
+    const { plans, swimmers, attendance, feedbacks, performances, updateSwimmer, weeklyPlans, announcements, archivedAnnouncements, getVisibleAnnouncements, isLoaded: storeLoaded, syncStatus } = useStore();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [currentUser, setCurrentUser] = useState<Swimmer | null>(null);
     const [authResolved, setAuthResolved] = useState(false);
@@ -846,90 +847,16 @@ function AthleteWorkoutContent() {
                                 </div>
                             )}
 
-                            {/* Premium Telemetry Stats Grid */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {/* 连续打卡环 */}
-                                <div className="bg-card/50 border border-border/50 rounded-2xl p-5 relative overflow-hidden flex items-center justify-between glow-border">
-                                    <div className="relative z-10 space-y-1">
-                                        <p className="font-label-caps text-xs text-muted-foreground uppercase">连续训练</p>
-                                        <h4 className="text-lg font-bold text-white font-display-metrics">14天连续训练</h4>
-                                        <p className="text-[11px] text-muted-foreground/80">本月训练率位列全队前 3%</p>
-                                    </div>
-                                    <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
-                                        <svg className="w-full h-full transform -rotate-90">
-                                            <circle className="text-secondary/20" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" strokeWidth="4"></circle>
-                                            <circle className="text-primary" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" strokeDasharray="175.9" strokeDashoffset="35.2" strokeWidth="4" strokeLinecap="round"></circle>
-                                        </svg>
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                            <span className="font-display-metrics text-base text-primary">14</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                {/* Quick View Analytics */}
-                                <div className="bg-card/50 border border-border/50 rounded-2xl p-5 glow-border space-y-3">
-                                    <h4 className="font-label-caps text-xs text-muted-foreground uppercase">训练指标分析</h4>
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="text-muted-foreground">效率指数</span>
-                                            <span className="font-label-caps font-bold text-primary">88% ↑</span>
-                                        </div>
-                                        <div className="w-full h-1 bg-secondary/30 rounded-full overflow-hidden">
-                                            <div className="h-full bg-primary rounded-full" style={{ width: '88%' }} />
-                                        </div>
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="text-muted-foreground">临界速度</span>
-                                            <span className="font-label-caps font-bold text-white">1.45 m/s</span>
-                                        </div>
-                                        <div className="w-full h-1 bg-secondary/30 rounded-full overflow-hidden">
-                                            <div className="h-full bg-warning rounded-full" style={{ width: '65%' }} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Stroke Analysis Telemetry */}
-                            <div className="bg-card/50 border border-border/50 rounded-2xl p-6 glow-border">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="font-label-caps text-xs text-primary uppercase tracking-wider flex items-center gap-2">
-                                        <Activity className="w-4 h-4 text-primary" />
-                                        泳姿分析
-                                    </h3>
-                                    <div className="flex gap-3">
-                                        <div className="flex items-center gap-1">
-                                            <div className="w-2 h-2 rounded-full bg-primary" />
-                                            <span className="text-[10px] font-label-caps text-muted-foreground">划频</span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <div className="w-2 h-2 rounded-full bg-warning" />
-                                            <span className="text-[10px] font-label-caps text-muted-foreground">速度</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="h-28 w-full flex items-end gap-1 px-1 pt-4">
-                                    <div className="flex-1 bg-primary/20 h-[30%] rounded-t transition-all hover:h-[40%] cursor-pointer" />
-                                    <div className="flex-1 bg-primary/20 h-[45%] rounded-t transition-all hover:h-[55%] cursor-pointer" />
-                                    <div className="flex-1 bg-primary/20 h-[60%] rounded-t transition-all hover:h-[70%] cursor-pointer" />
-                                    <div className="flex-1 bg-primary/20 h-[40%] rounded-t transition-all hover:h-[50%] cursor-pointer" />
-                                    <div className="flex-1 bg-primary/20 h-[75%] rounded-t transition-all hover:h-[85%] cursor-pointer" />
-                                    <div className="flex-1 bg-primary/20 h-[90%] rounded-t transition-all hover:h-[100%] cursor-pointer" />
-                                    <div className="flex-1 bg-primary/20 h-[50%] rounded-t transition-all hover:h-[60%] cursor-pointer" />
-                                    <div className="flex-1 bg-primary/20 h-[65%] rounded-t transition-all hover:h-[75%] cursor-pointer" />
-                                    <div className="flex-1 bg-primary/20 h-[40%] rounded-t transition-all hover:h-[50%] cursor-pointer" />
-                                    <div className="flex-1 bg-primary/20 h-[55%] rounded-t transition-all hover:h-[65%] cursor-pointer" />
-                                    <div className="flex-1 bg-primary/20 h-[80%] rounded-t transition-all hover:h-[90%] cursor-pointer" />
-                                    <div className="flex-1 bg-primary/20 h-[45%] rounded-t transition-all hover:h-[55%] cursor-pointer" />
-                                    <div className="flex-1 bg-primary/20 h-[30%] rounded-t transition-all hover:h-[40%] cursor-pointer" />
-                                    <div className="flex-1 bg-primary/20 h-[60%] rounded-t transition-all hover:h-[70%] cursor-pointer" />
-                                </div>
-                                <div className="flex justify-between mt-2 text-[9px] font-label-caps text-muted-foreground">
-                                    <span>0m</span>
-                                    <span>200m</span>
-                                    <span>400m</span>
-                                    <span>600m</span>
-                                    <span>800m</span>
-                                    <span>1000m</span>
-                                </div>
-                            </div>
+                            {/* Data-Driven Athlete Telemetry */}
+                            <AthleteTelemetry
+                                plans={plans}
+                                attendance={attendance}
+                                feedbacks={feedbacks}
+                                performances={performances}
+                                currentUser={currentUser}
+                                selectedDate={selectedDate}
+                                group={currentUser.group}
+                            />
                         </div>
                     </div>
                 )}
