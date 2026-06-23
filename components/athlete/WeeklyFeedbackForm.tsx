@@ -39,9 +39,19 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
     const [saveStatus, setSaveStatus] = useState<string | null>(null);
     const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
     const isInitialLoad = useRef(true);
+    const recognitionRef = useRef<any>(null);
 
     const [listeningDay, setListeningDay] = useState<number | null>(null);
     const [parsingDay, setParsingDay] = useState<number | null>(null);
+
+    // Cleanup speech recognition on unmount
+    useEffect(() => {
+        return () => {
+            if (recognitionRef.current) {
+                try { recognitionRef.current.abort(); } catch {}
+            }
+        };
+    }, []);
 
     const handleSpeech = (dayIdx: number) => {
         if (typeof window === "undefined") return;
@@ -51,7 +61,13 @@ export function WeeklyFeedbackForm({ swimmerId, weekStart }: WeeklyFeedbackFormP
             return;
         }
 
+        // Stop any existing recognition before starting new one
+        if (recognitionRef.current) {
+            try { recognitionRef.current.abort(); } catch {}
+        }
+
         const recognition = new SpeechRecognition();
+        recognitionRef.current = recognition;
         recognition.lang = "zh-CN";
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;

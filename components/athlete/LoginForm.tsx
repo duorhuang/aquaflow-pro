@@ -36,6 +36,8 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
             setRetryAttempt(attempt + 1);
             try {
+                // Abort previous controller before creating new one
+                abortRef.current?.abort();
                 const controller = new AbortController();
                 abortRef.current = controller;
                 const timeout = setTimeout(() => controller.abort(), 20000);

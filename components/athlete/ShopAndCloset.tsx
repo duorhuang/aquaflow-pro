@@ -36,14 +36,17 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer, onClose }: { swimmer
     const [inventory, setInventory] = useState<string[]>([]);
     const [equippedItems, setEquippedItems] = useState<Record<string, string>>({});
     const [previewEquipped, setPreviewEquipped] = useState<Record<string, string>>({});
-    
+    const [purchasing, setPurchasing] = useState<string | null>(null);
+
     const [mainTab, setMainTab] = useState<"个人装扮" | "同桌空间" | "校牌" | "道具卡">("同桌空间");
     const [subTab, setSubTab] = useState<string>("摆件");
 
     useEffect(() => {
         const fetchShop = async () => {
             try {
-                const res = await fetch(`/api/shop?swimmerId=${swimmerId}`).then(r => r.json());
+                const response = await fetch(`/api/shop?swimmerId=${swimmerId}`);
+                if (!response.ok) throw new Error(`Shop API returned ${response.status}`);
+                const res = await response.json();
                 setItems(res.items || []);
                 setBalance(res.balance || 0);
                 setTotalXp(res.totalXp || 0);
@@ -66,6 +69,7 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer, onClose }: { swimmer
     };
 
     const handlePurchase = async (item: ShopItem) => {
+        if (purchasing) return; // Prevent concurrent purchases
         const requiredLevel = TIER_REQUIRED_LEVEL[item.tier] || 1;
         const swimmerLevel = calculateLevel(totalXp);
         if (swimmerLevel < requiredLevel) {
@@ -77,6 +81,7 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer, onClose }: { swimmer
             return;
         }
         if (confirm(`确定花费 ${item.price} 金币兑换【${item.name}】吗？`)) {
+            setPurchasing(item.id);
             try {
                 const res = await fetch('/api/shop', {
                     method: 'POST',
@@ -92,6 +97,8 @@ export function ShopAndCloset({ swimmerId, onUpdateSwimmer, onClose }: { swimmer
                 toast("success", `成功兑换【${item.name}】！`);
             } catch (err: any) {
                 toast("error", err.message || "兑换失败，请重试");
+            } finally {
+                setPurchasing(null);
             }
         }
     };

@@ -59,7 +59,7 @@ const STROKES_MAP: Record<string, string> = {
   Choice: "自选",
 };
 
-const uid = () => Math.random().toString(36).substr(2, 9);
+const uid = () => crypto.randomUUID().slice(0, 9);
 
 interface PlanEditorProps {
   initialPlan?: TrainingPlan | null;

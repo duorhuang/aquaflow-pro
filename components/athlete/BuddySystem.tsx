@@ -268,7 +268,7 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
                         {/* Roster actions */}
                         <div className="flex gap-3 mt-6">
                             <button
-                                onClick={() => handleDissolve(buddySwimmer.id)}
+                                onClick={() => handleDissolve(buddyPair.id)}
                                 className="flex-1 py-3 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2"
                             >
                                 <Trash2 className="w-4 h-4" /> 解除死党结对
@@ -308,13 +308,13 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
                         
                         <div className="flex gap-3 max-w-xs mx-auto pt-2">
                             <button
-                                onClick={() => handleDissolve(buddySwimmer.id)}
+                                onClick={() => handleDissolve(buddyPair.id)}
                                 className="flex-1 py-2.5 bg-secondary text-white rounded-xl text-xs font-bold hover:bg-secondary/80 transition-all"
                             >
                                 婉拒
                             </button>
                             <button
-                                onClick={() => handleAcceptRequest(buddySwimmer.id)}
+                                onClick={() => handleAcceptRequest(buddyPair.id)}
                                 className="flex-1 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-bold hover:bg-purple-500 transition-all flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(139,92,246,0.3)] animate-pulse"
                             >
                                 <UserCheck className="w-4 h-4" /> 接受缔结

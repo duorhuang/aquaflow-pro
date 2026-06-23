@@ -34,6 +34,7 @@ export function BlockFeedbackPanel({
     }, [planId, blockId, swimmerId]);
 
     const handleSubmit = async () => {
+        if (!reaction) return; // Must select like or dislike before submitting
         setLoading(true);
         try {
             await api.blockFeedbacks.create({

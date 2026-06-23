@@ -13,7 +13,7 @@ import type {
   PerformanceRecord, BlockTemplate, TrainingBlock,
 } from '@/types';
 
-const uid = () => Math.random().toString(36).substr(2, 9);
+const uid = () => crypto.randomUUID().slice(0, 9);
 
 /**
  * Factory that returns all entity CRUD functions.

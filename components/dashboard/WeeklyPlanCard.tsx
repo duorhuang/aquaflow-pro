@@ -2,15 +2,12 @@ import { WeeklyPlan } from "@/types";
 import { cn } from "@/lib/utils";
 import { Link2, Target, Calendar } from "lucide-react";
 import Link from "next/link";
-import { useStore } from "@/lib/store";
 
 interface WeeklyPlanCardProps {
     plan: WeeklyPlan;
 }
 
 export function WeeklyPlanCard({ plan }: WeeklyPlanCardProps) {
-    const { } = useStore();
-    
     const targetGroupsStr = plan.targetGroup && plan.targetGroup.length > 0 
         ? plan.targetGroup.map(g => g === "Advanced" ? "高级组" : g === "Intermediate" ? "中级组" : g === "External" ? "校外组" : "初级组").join(", ")
         : (plan.group === "Advanced" ? "高级组" : plan.group === "Intermediate" ? "中级组" : plan.group === "External" ? "校外组" : "初级组");

@@ -185,7 +185,7 @@ export default function AthletesPage() {
                                         <Activity className="w-3 h-3 text-muted-foreground" />
                                         <span className="text-xs text-muted-foreground">{t.dashboard.readiness || "Readiness"}:</span>
                                         <span className={cn("text-xs font-bold", getReadinessColor(s.readiness))}>
-                                            {s.readiness}%
+                                            {s.readiness || 100}%
                                         </span>
                                     </div>
                                     {s.level && (

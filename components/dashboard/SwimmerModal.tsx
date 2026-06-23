@@ -81,7 +81,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
             } else {
                 // Create
                 const newSwimmer: Swimmer = {
-                    id: Math.random().toString(36).substr(2, 9),
+                    id: crypto.randomUUID().slice(0, 9),
                     name,
                     group,
                     username,

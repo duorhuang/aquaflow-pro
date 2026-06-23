@@ -84,7 +84,7 @@ export function FeedbackForm({ swimmerId, planId }: FeedbackFormProps) {
         const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
 
         const feedback: Feedback = {
-            id: Math.random().toString(36).substr(2, 9),
+            id: crypto.randomUUID().slice(0, 9),
             swimmerId,
             planId,
             date: dateStr,

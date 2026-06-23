@@ -9,12 +9,12 @@ export default defineConfig({
     include: ['tests/**/*.test.{ts,tsx}'],
     exclude: ['node_modules/**', 'ECC/**'],
     pool: 'threads',
-    fileParallelism: false,
-    maxWorkers: 1,
-    isolate: false,
-    // @ts-expect-error: Vitest 4 top-level pool options type mismatch
+    fileParallelism: true,
+    maxWorkers: 4,
+    isolate: true,
+    // @ts-expect-error: Vitest 4 top-level pool config type mismatch
     threads: {
-      singleThread: true,
+      singleThread: false,
       timeout: 300000, // 5 minutes timeout for worker startup
     },
   },

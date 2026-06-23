@@ -5,11 +5,9 @@ import { swimmerRepo } from '@/lib/repos';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  return handleAnyAuth(request, async (_req, auth) => {
+  return handleAnyAuth(request, async (_req, _auth) => {
     const swimmers = await swimmerRepo.list();
-    const isCoach = auth.role === 'coach';
     const safe = (swimmers || []).map((s: any) => {
-      if (isCoach) return s;
       const { password, ...rest } = s;
       return rest;
     });

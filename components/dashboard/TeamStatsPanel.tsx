@@ -16,7 +16,7 @@ export function TeamStatsPanel() {
     // Total distance this month (Advanced group only)
     const monthPlans = plans.filter(p => p.date.startsWith(thisMonth));
     const advancedMonthPlans = monthPlans.filter(p => p.group === "Advanced");
-    const totalDistance = advancedMonthPlans.reduce((sum, p) => sum + p.totalDistance, 0);
+    const totalDistance = advancedMonthPlans.reduce((sum, p) => sum + (p.totalDistance || 0), 0);
 
     // Average attendance rate — count expected attendances per swimmer group
     const monthAttendance = attendance.filter(a => a.date.startsWith(thisMonth));
@@ -56,7 +56,7 @@ export function TeamStatsPanel() {
         const stats = days.map(day => {
             // Only show Advanced group for weekly load
             const dayPlans = plans.filter(p => p.date === day.dateStr && p.group === "Advanced");
-            const load = dayPlans.reduce((sum, p) => sum + p.totalDistance, 0);
+            const load = dayPlans.reduce((sum, p) => sum + (p.totalDistance || 0), 0);
             return { ...day, load };
         });
 
@@ -71,7 +71,7 @@ export function TeamStatsPanel() {
         if (!acc[plan.group]) {
             acc[plan.group] = { distance: 0, count: 0 };
         }
-        acc[plan.group].distance += plan.totalDistance;
+        acc[plan.group].distance += (plan.totalDistance || 0);
         acc[plan.group].count++;
         return acc;
     }, {} as Record<string, { distance: number; count: number }>);

@@ -67,7 +67,7 @@ export function PerformanceForm({ swimmerId, onClose, initialData }: Performance
             updatePerformance(initialData.id, performanceData);
         } else {
             const newPerformance: PerformanceRecord = {
-                id: Math.random().toString(32).substr(2, 9),
+                id: crypto.randomUUID().slice(0, 9),
                 isPB: false,
                 ...performanceData
             };

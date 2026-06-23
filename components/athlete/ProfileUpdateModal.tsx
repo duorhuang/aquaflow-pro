@@ -53,12 +53,17 @@ export function ProfileUpdateModal({ swimmer, onClose }: ProfileUpdateModalProps
             "100Free": free100,
         };
 
-        updateSwimmer(swimmer.id, {
-            injuries,
-            bestTimes: updatedBestTimes,
-            lastProfileUpdate: new Date().toISOString()
-        });
-        onClose();
+        try {
+            await updateSwimmer(swimmer.id, {
+                injuries,
+                bestTimes: updatedBestTimes,
+                lastProfileUpdate: new Date().toISOString()
+            });
+            onClose();
+        } catch (err) {
+            console.error('Failed to save profile:', err);
+            setIsSaving(false);
+        }
     };
 
     return (

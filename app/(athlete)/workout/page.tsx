@@ -494,7 +494,8 @@ function AthleteWorkoutContent() {
     const level = currentUser.level || 1;
     const currentMin = LEVEL_THRESHOLDS[level - 1] || 0;
     const nextMin = LEVEL_THRESHOLDS[level] || (currentMin + 10000);
-    const progress = Math.min(100, Math.max(0, ((swimmerXp - currentMin) / (nextMin - currentMin)) * 100));
+    const denom = nextMin - currentMin;
+    const progress = denom > 0 ? Math.min(100, Math.max(0, ((swimmerXp - currentMin) / denom) * 100)) : 0;
 
     const myAnnouncements = getVisibleAnnouncements().filter((a: any) => {
         if (a.targetGroup && a.targetGroup !== currentUser?.group) return false;

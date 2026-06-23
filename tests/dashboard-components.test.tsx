@@ -23,7 +23,7 @@ vi.mock('@/lib/i18n', () => ({
 }));
 
 // ─── Mock store ────────────────────────────────────────────────────
-const mockStore: any = {
+let mockStore: any = {
     swimmers: [],
     attendance: [],
     plans: [],
@@ -39,9 +39,12 @@ import { TodayAttendance } from '@/components/dashboard/TodayAttendance';
 // ─── Tests ─────────────────────────────────────────────────────────
 describe('TodayAttendance Component', () => {
     beforeEach(() => {
-        mockStore.swimmers = [];
-        mockStore.attendance = [];
-        mockStore.plans = [];
+        // Create a fresh store object to avoid cross-test pollution
+        mockStore = {
+            swimmers: [],
+            attendance: [],
+            plans: [],
+        };
     });
 
     it('should render the attendance header using i18n', () => {
@@ -60,7 +63,7 @@ describe('TodayAttendance Component', () => {
     });
 
     it('should show "Not checked in" for absent swimmers', () => {
-        mockStore.swimmers = [{ id: 's1', name: 'Test Swimmer', group: 'A' }];
+        mockStore.swimmers = [{ id: 's-absent', name: 'Absent Swimmer', group: 'A' }];
         mockStore.plans = [{ id: 'p1', date: new Date().toISOString().split('T')[0], group: 'A' }];
 
         render(<TodayAttendance />);
@@ -69,31 +72,31 @@ describe('TodayAttendance Component', () => {
 
     it('should show checked-in swimmers with time', () => {
         const today = new Date().toISOString().split('T')[0];
-        mockStore.swimmers = [{ id: 's1', name: 'Test Swimmer', group: 'A' }];
+        mockStore.swimmers = [{ id: 's-checked', name: 'Checked In Swimmer', group: 'A' }];
         mockStore.plans = [{ id: 'p1', date: today, group: 'A' }];
         mockStore.attendance = [{
             id: 'a1',
-            swimmerId: 's1',
+            swimmerId: 's-checked',
             date: today,
             status: 'Present',
             timestamp: '2026-05-28T06:05:00Z',
         }];
 
         render(<TodayAttendance />);
-        expect(screen.getByText('Test Swimmer')).toBeTruthy();
+        expect(screen.getByText('Checked In Swimmer')).toBeTruthy();
         expect(screen.getByText('(A)')).toBeTruthy();
     });
 
     it('should calculate attendance rate correctly', () => {
         const today = new Date().toISOString().split('T')[0];
         mockStore.swimmers = [
-            { id: 's1', name: 'Swimmer 1', group: 'A' },
-            { id: 's2', name: 'Swimmer 2', group: 'A' },
+            { id: 's-rate-1', name: 'Rate Swimmer One', group: 'A' },
+            { id: 's-rate-2', name: 'Rate Swimmer Two', group: 'A' },
         ];
         mockStore.plans = [{ id: 'p1', date: today, group: 'A' }];
         mockStore.attendance = [{
             id: 'a1',
-            swimmerId: 's1',
+            swimmerId: 's-rate-1',
             date: today,
             status: 'Present',
             timestamp: '2026-05-28T06:05:00Z',

@@ -200,7 +200,7 @@ export default function CoachInjuryMonitorPage() {
                                 {swimmers.length > 0 ? (
                                     (() => {
                                         const avgReadiness = Math.round(
-                                            swimmers.reduce((acc, s) => acc + s.readiness, 0) / swimmers.length
+                                            swimmers.reduce((acc, s) => acc + (s.readiness || 0), 0) / swimmers.length
                                         );
                                         return (
                                             <div className="flex items-center justify-between">

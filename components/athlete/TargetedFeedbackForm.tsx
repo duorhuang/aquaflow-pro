@@ -40,8 +40,8 @@ export function TargetedFeedbackForm({ swimmerId }: { swimmerId: string }) {
 
     const handleSubmit = async (reminderId: string) => {
         if (!responses[reminderId]?.trim()) return;
-        
-        setSubmitting({ ...submitting, [reminderId]: true });
+
+        setSubmitting(prev => ({ ...prev, [reminderId]: true }));
         try {
             await api.feedbackReminders.respond({
                 reminderId,
@@ -49,12 +49,12 @@ export function TargetedFeedbackForm({ swimmerId }: { swimmerId: string }) {
                 content: responses[reminderId],
             });
             // remove from list locally
-            setReminders(reminders.filter(r => r.id !== reminderId));
+            setReminders(prev => prev.filter(r => r.id !== reminderId));
         } catch (e) {
             console.error(e);
-            setSubmitErrors({ ...submitErrors, [reminderId]: "提交失败，请重试" });
+            setSubmitErrors(prev => ({ ...prev, [reminderId]: "提交失败，请重试" }));
         } finally {
-            setSubmitting({ ...submitting, [reminderId]: false });
+            setSubmitting(prev => ({ ...prev, [reminderId]: false }));
         }
     };
 

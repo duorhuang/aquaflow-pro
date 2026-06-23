@@ -310,7 +310,7 @@ describe('ErrorBoundary Component', () => {
         );
 
         expect(screen.getByText('出错了')).toBeTruthy();
-        expect(screen.getByText('重试')).toBeTruthy();
+        expect(screen.getByRole('button', { name: '重试' })).toBeTruthy();
     });
 
     it('should show Try Again button', () => {
@@ -325,7 +325,7 @@ describe('ErrorBoundary Component', () => {
             </ErrorBoundary>
         );
 
-        expect(screen.getByText('重试')).toBeTruthy();
+        expect(screen.getByRole('button', { name: '重试' })).toBeTruthy();
     });
 
     it('should render normally when children do not throw', () => {

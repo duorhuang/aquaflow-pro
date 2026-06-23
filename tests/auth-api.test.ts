@@ -5,7 +5,7 @@ const MOCK_COACH = {
     id: 'coach-1',
     username: 'coach_admin',
     name: 'Coach Test',
-    password: 'salt:100000:hash', // Pre-computed for test
+    password: 'salt:10000:hash', // Legacy hash with fewer iterations to trigger auto-rehash
     createdAt: '2026-01-01T00:00:00Z',
 };
 
@@ -13,7 +13,7 @@ const MOCK_SWIMMER = {
     id: 'swimmer-1',
     username: 'swimmer_test',
     name: 'Test Swimmer',
-    password: 'salt:100000:hash',
+    password: 'salt:10000:hash',  // Legacy hash with fewer iterations to trigger auto-rehash
     group: 'A',
     status: 'active',
     xp: 100,
@@ -79,7 +79,7 @@ vi.mock('@/lib/auth', async () => {
     return {
         ...actual,
         verifyPassword: vi.fn(async (password: string, stored: string) => {
-            return password === 'testpass123' && stored === 'salt:100000:hash';
+            return password === 'testpass123' && (stored === 'salt:100000:hash' || stored === 'salt:10000:hash');
         }),
         hashPassword: vi.fn(async (password: string) => `salt:100000:${password}_hashed`),
         generateJWT: vi.fn(async (payload: any) => `mock-jwt-token-${payload.userId}`),
@@ -124,7 +124,7 @@ describe('Auth API', () => {
         vi.clearAllMocks();
         const auth = await import('@/lib/auth');
         vi.mocked(auth.verifyPassword).mockImplementation(async (password: string, stored: string) => {
-            return password === 'testpass123' && stored === 'salt:100000:hash';
+            return password === 'testpass123' && (stored === 'salt:100000:hash' || stored === 'salt:10000:hash');
         });
     });
 

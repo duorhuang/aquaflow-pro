@@ -183,7 +183,7 @@ export function TrainingHistory({ swimmerId }: TrainingHistoryProps) {
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-muted-foreground">训练距离</span>
                                         <span className="text-sm font-mono text-white">
-                                            {plan.totalDistance.toLocaleString()}m
+                                            {(plan.totalDistance || 0).toLocaleString()}m
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between">

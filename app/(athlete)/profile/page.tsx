@@ -43,8 +43,10 @@ export default function AthleteProfilePage() {
     } = useBackgroundTheme();
 
     useEffect(() => {
+        let isMounted = true;
         api.auth.me()
             .then((user: any) => {
+                if (!isMounted) return;
                 if (user.role !== 'athlete') {
                     router.push("/login");
                     return;
@@ -55,7 +57,8 @@ export default function AthleteProfilePage() {
                 setReadiness(user.readiness || 100);
                 setGender(user.gender || "male");
             })
-            .catch(() => router.push("/login"));
+            .catch(() => { if (isMounted) router.push("/login"); });
+        return () => { isMounted = false; };
     }, [router]);
 
     const handleSave = async () => {

@@ -108,7 +108,7 @@ function QuickPlanContent() {
 
     const handleAddSet = () => {
         const newItem: PlanItem = {
-            id: Math.random().toString(36).substr(2, 9),
+            id: crypto.randomUUID().slice(0, 9),
             repeats,
             distance,
             stroke,
@@ -120,7 +120,7 @@ function QuickPlanContent() {
         };
 
         const newBlock: TrainingBlock = {
-            id: Math.random().toString(36).substr(2, 9),
+            id: crypto.randomUUID().slice(0, 9),
             type: newSetType,
             rounds: 1,
             items: [newItem]

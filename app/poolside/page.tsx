@@ -148,7 +148,7 @@ export default function PoolsidePage() {
                         {isPlaying ? <Pause className="w-12 h-12" /> : <Play className="w-12 h-12 ml-1" />}
                     </button>
                     <button
-                        onClick={() => setCurrentSetIndex((prev) => (prev + 1) % items.length)}
+                        onClick={() => setCurrentSetIndex((prev) => items.length > 0 ? (prev + 1) % items.length : 0)}
                         aria-label="下一组训练"
                         className="p-6 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
                     >
