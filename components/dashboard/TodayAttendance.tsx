@@ -5,8 +5,9 @@ import { useLanguage } from "@/lib/i18n";
 import { Users, CheckCircle, Clock, AlertCircle, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { memo } from "react";
 
-export function TodayAttendance() {
+export const TodayAttendance = memo(function TodayAttendance() {
     const { swimmers, attendance, plans } = useStore();
     const { t } = useLanguage();
     const today = new Date().toISOString().split('T')[0];
@@ -116,4 +117,4 @@ export function TodayAttendance() {
             </div>
         </div>
     );
-}
+});

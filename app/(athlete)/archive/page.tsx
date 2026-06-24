@@ -48,11 +48,14 @@ export default function TrainingArchivePage() {
     const router = useRouter();
     const { plans, swimmers, attendance, weeklyPlans, isLoaded: storeLoaded } = useStore();
     const { t } = useLanguage();
-    const [currentUser, setCurrentUser] = useState<Swimmer | null>(null);
-    const [authResolved, setAuthResolved] = useState(false);
     const [viewMonth, setViewMonth] = useState(new Date());
     const [selectedEntry, setSelectedEntry] = useState<TrainingDayEntry | null>(null);
     const [activeTab, setActiveTab] = useState<'training' | 'feedback'>('training');
+    const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+    // Derive currentUser from store — sync endpoint scopes to the current athlete's data.
+    const currentUser = storeLoaded && swimmers.length > 0 ? swimmers[0] : null;
+    const authResolved = !isAuthLoading;
 
     const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
     const [fullSessionsCache, setFullSessionsCache] = useState<Record<string, any[]>>({});
@@ -131,41 +134,20 @@ export default function TrainingArchivePage() {
 
     useEffect(() => {
         let isMounted = true;
-        const storedId = localStorage.getItem("aquaflow_athlete_id");
-
-        // Primary: verify session with server
         api.auth.me()
             .then((user: any) => {
-                if (!isMounted || user?.role !== 'athlete') return;
-                const userId = user.id;
-                if (!storedId) localStorage.setItem("aquaflow_athlete_id", userId);
-                const syncAndFind = () => {
-                    const found = swimmers.find(s => s.id === userId);
-                    if (found && isMounted) {
-                        setCurrentUser(found);
-                        setAuthResolved(true);
-                    }
-                };
-                if (storeLoaded) {
-                    syncAndFind();
+                if (!isMounted) return;
+                if (user?.role === 'athlete') {
+                    setIsAuthLoading(false);
                 } else {
-                    const checkStore = setInterval(() => {
-                        if (!isMounted) { clearInterval(checkStore); return; }
-                        if (storeLoaded) {
-                            clearInterval(checkStore);
-                            syncAndFind();
-                        }
-                    }, 200);
+                    router.push("/login");
                 }
             })
             .catch(() => {
                 if (isMounted) router.push("/login");
             });
-
-        return () => {
-            isMounted = false;
-        };
-    }, [swimmers, storeLoaded, router]);
+        return () => { isMounted = false; };
+    }, [router]);
 
     useEffect(() => {
         let isMounted = true;

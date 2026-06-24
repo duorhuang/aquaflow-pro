@@ -13,12 +13,13 @@ export async function GET(request: Request) {
     const payload = await verifyJWT(token);
     if (!payload) return NextResponse.json({ error: 'Invalid session' }, { status: 401, headers: V12_FINGERPRINT });
 
-    // Warm up DB before query — handles Neon cold starts with timeout
     const sql = getNeon();
+    // Fast warmup — 3s timeout. If DB is cold, fail immediately (503)
+    // so the client can retry. The sync endpoint handles the full warmup.
     try {
       await Promise.race([
         sql`SELECT 1`,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('DB warmup timeout')), 8000)),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('DB warmup timeout')), 3000)),
       ]);
     } catch {
       return NextResponse.json({ error: 'Database waking up' }, { status: 503, headers: V12_FINGERPRINT });

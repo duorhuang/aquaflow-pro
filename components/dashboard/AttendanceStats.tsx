@@ -1,11 +1,12 @@
 "use client";
 
-import { useStore } from "@/lib/store";
+import { useStoreSelector } from "@/lib/store";
 import { CalendarCheck, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { memo } from "react";
 
-export function AttendanceStats() {
-    const { attendance, swimmers } = useStore();
+export const AttendanceStats = memo(function AttendanceStats() {
+    const { attendance, swimmers } = useStoreSelector(s => ({ attendance: s.attendance, swimmers: s.swimmers }));
     const today = new Date();
     const currentMonth = today.getMonth();
     
@@ -86,4 +87,4 @@ export function AttendanceStats() {
             </Link>
         </div>
     );
-}
+});

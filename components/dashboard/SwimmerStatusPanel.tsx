@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { createPortal } from "react-dom";
 import { useStore } from "@/lib/store";
 import { api } from "@/lib/api-client";
@@ -16,7 +16,7 @@ const PRESET_MESSAGES = [
     "克服困难完成高强度组，很有韧性！🔥"
 ];
 
-export function SwimmerStatusPanel() {
+export const SwimmerStatusPanel = memo(function SwimmerStatusPanel() {
     const { swimmers, feedbacks, updateSwimmer } = useStore();
 
     // Reward Modal States
@@ -384,4 +384,4 @@ export function SwimmerStatusPanel() {
             )}
         </div>
     );
-}
+});

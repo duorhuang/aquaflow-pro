@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { memo, useState, useEffect } from "react";
 import { Menu, X, Waves, LayoutDashboard, Users, Calendar, Settings, LogOut, PlusCircle, UserCheck, FolderOpen, MessageSquare, Send, Trophy, Activity, FolderPlus } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -23,7 +23,7 @@ const NAV_ITEMS = [
     { label: "settings", href: "/settings", icon: Settings },
 ];
 
-export function MobileNav() {
+export const MobileNav = memo(function MobileNav() {
     const [isOpen, setIsOpen] = useState(false);
     const pathname = usePathname();
     const { t } = useLanguage();
@@ -113,4 +113,4 @@ export function MobileNav() {
             )}
         </>
     );
-}
+});

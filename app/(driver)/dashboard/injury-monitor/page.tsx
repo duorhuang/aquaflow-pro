@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useStore } from "@/lib/store";
+import { useStoreSelector } from "@/lib/store";
 import { InjuryMap } from "@/components/athlete/InjuryMap";
 import { ArrowLeft, Activity, ShieldAlert, Heart, RefreshCw, UserCheck, ChevronRight, Flame, Zap, AlertTriangle, X } from "lucide-react";
 import Link from "next/link";
@@ -31,7 +31,7 @@ interface Swimmer {
 }
 
 export default function CoachInjuryMonitorPage() {
-    const { swimmers: storeSwimmers, isLoaded } = useStore();
+    const { swimmers: storeSwimmers, isLoaded } = useStoreSelector(s => ({ swimmers: s.swimmers, isLoaded: s.isLoaded }));
     const [swimmers, setSwimmers] = useState<Swimmer[]>([]);
     const [loading, setLoading] = useState(!isLoaded);
     const [heatMapData, setHeatMapData] = useState<Record<string, number>>({});

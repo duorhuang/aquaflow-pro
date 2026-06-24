@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useStore } from "@/lib/store";
+import { useStoreSelector } from "@/lib/store";
 import { CheckCircle, Users, FolderOpen, UserCheck } from "lucide-react";
 import Link from "next/link";
+import { memo } from "react";
 
-export function OnboardingChecklist() {
-    const { swimmers, plans, attendance } = useStore();
+export const OnboardingChecklist = memo(function OnboardingChecklist() {
+    const { swimmers, plans, attendance } = useStoreSelector(s => ({ swimmers: s.swimmers, plans: s.plans, attendance: s.attendance }));
     const [dismissed, setDismissed] = useState(false);
 
     const hasSwimmers = swimmers.length > 0;
@@ -104,4 +105,4 @@ export function OnboardingChecklist() {
             </div>
         </div>
     );
-}
+});

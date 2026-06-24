@@ -2,12 +2,12 @@
 
 import { useStore } from "@/lib/store";
 import { MessageSquare, TrendingUp, AlertTriangle, CheckCircle, Users, ChevronDown, ChevronUp, Activity, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { getLocalDateISOString } from "@/lib/date-utils";
 import Link from "next/link";
 
-export function AthletesFeedbackPanel() {
+export const AthletesFeedbackPanel = memo(function AthletesFeedbackPanel() {
     const { swimmers, feedbacks } = useStore();
     const [expandedSwimmer, setExpandedSwimmer] = useState<string | null>(null);
 
@@ -216,4 +216,4 @@ export function AthletesFeedbackPanel() {
             )}
         </div>
     );
-}
+});

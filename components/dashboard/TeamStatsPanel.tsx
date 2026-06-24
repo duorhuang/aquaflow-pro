@@ -1,12 +1,15 @@
 "use client";
 
-import { useStore } from "@/lib/store";
+import { useStoreSelector } from "@/lib/store";
 import { BarChart3, TrendingUp, Users, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getLocalDateISOString } from "@/lib/date-utils";
+import { memo } from "react";
 
-export function TeamStatsPanel() {
-    const { swimmers, plans, attendance, performances } = useStore();
+export const TeamStatsPanel = memo(function TeamStatsPanel() {
+    const { swimmers, plans, attendance, performances } = useStoreSelector(s => ({
+        swimmers: s.swimmers, plans: s.plans, attendance: s.attendance, performances: s.performances
+    }));
 
     // Calculate this month's stats
     const now = new Date();
@@ -184,4 +187,4 @@ export function TeamStatsPanel() {
             </div>
         </div>
     );
-}
+});

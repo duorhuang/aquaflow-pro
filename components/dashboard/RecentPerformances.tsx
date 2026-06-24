@@ -4,8 +4,9 @@ import { useStore } from "@/lib/store";
 import { Trophy, TrendingUp, TrendingDown, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+import { memo } from "react";
 
-export function RecentPerformances() {
+export const RecentPerformances = memo(function RecentPerformances() {
     const { performances, swimmers } = useStore();
     
 
@@ -92,4 +93,4 @@ export function RecentPerformances() {
             </div>
         </div>
     );
-}
+});

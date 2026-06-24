@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api-client";
-import { useStore } from "@/lib/store";
+import { useStoreSelector } from "@/lib/store";
 import { useLanguage } from "@/lib/i18n";
 import { CheckCircle, Clock, ChevronDown, ChevronUp, Send, Loader2, MessageSquare, AlertCircle, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -20,7 +20,7 @@ function Breadcrumb() {
 }
 
 export default function FeedbacksPage() {
-    const { swimmers } = useStore();
+    const swimmers = useStoreSelector(s => s.swimmers);
     const { t } = useLanguage();
     const [feedbacks, setFeedbacks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);

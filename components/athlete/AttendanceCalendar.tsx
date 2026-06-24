@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useStore } from "@/lib/store";
+import { useStoreSelector } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { Check, Calendar as CalendarIcon } from "lucide-react";
+import { memo } from "react";
 
-export function AttendanceCalendar({ swimmerId }: { swimmerId: string }) {
-    const { attendance } = useStore();
+export const AttendanceCalendar = memo(function AttendanceCalendar({ swimmerId }: { swimmerId: string }) {
+    const attendance = useStoreSelector(s => s.attendance);
     const today = new Date();
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
@@ -100,5 +101,4 @@ export function AttendanceCalendar({ swimmerId }: { swimmerId: string }) {
             <p className="text-xs text-muted-foreground/60 text-center">出勤由教练统一管理</p>
         </div>
     );
-}
-
+});

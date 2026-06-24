@@ -1,11 +1,12 @@
 "use client";
 
 import { RefreshCw, Check, AlertTriangle } from "lucide-react";
-import { useStore } from "@/lib/store";
+import { useStoreSelector } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { memo } from "react";
 
-export function RefreshButton() {
-    const { syncStatus } = useStore();
+export const RefreshButton = memo(function RefreshButton() {
+    const syncStatus = useStoreSelector(s => s.syncStatus);
 
     const handleRefresh = () => {
         window.location.reload();
@@ -40,4 +41,4 @@ export function RefreshButton() {
             </div>
         </button>
     );
-}
+});

@@ -6,8 +6,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
+import { memo, useState } from "react";
 import { api } from "@/lib/api-client";
-import { useState } from "react";
 
 const SIDEBAR_ITEMS = [
     { label: "dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -26,7 +26,7 @@ const SIDEBAR_ITEMS = [
     { label: "settings", href: "/settings", icon: Settings },
 ];
 
-export function Sidebar() {
+export const Sidebar = memo(function Sidebar() {
     const pathname = usePathname();
     const { t } = useLanguage();
     const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
@@ -148,4 +148,4 @@ export function Sidebar() {
             </div>
         </div>
     );
-}
+});

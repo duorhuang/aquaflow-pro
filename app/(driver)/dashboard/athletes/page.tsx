@@ -1,6 +1,6 @@
 "use client";
 
-import { useStore } from "@/lib/store";
+import { useStoreSelector } from "@/lib/store";
 import { useLanguage } from "@/lib/i18n";
 import { User, UserPlus, Activity, TrendingUp, Search, ChevronRight, Flame, Users } from "lucide-react";
 import Link from "next/link";
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { GROUP_LEVEL_ORDER } from "@/lib/group-constants";
 
 export default function AthletesPage() {
-    const { swimmers, isLoaded } = useStore();
+    const { swimmers, isLoaded } = useStoreSelector(s => ({ swimmers: s.swimmers, isLoaded: s.isLoaded }));
     const { t } = useLanguage();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSwimmer, setEditingSwimmer] = useState<typeof swimmers[0] | null>(null);

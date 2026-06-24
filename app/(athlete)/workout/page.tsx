@@ -19,7 +19,7 @@ import { AthleteTelemetry } from "@/components/athlete/AthleteTelemetry";
 import { AlertTriangle, LogOut, Waves, MessageSquare, TrendingUp, FolderOpen, ArrowRight, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Palette, Loader2, UserCircle2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useCallback, useMemo, Suspense, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
 import { useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
@@ -40,13 +40,17 @@ function AthleteWorkoutContent() {
     const { toast } = useToast();
     const { plans, swimmers, attendance, feedbacks, performances, updateSwimmer, weeklyPlans, announcements, archivedAnnouncements, getVisibleAnnouncements, isLoaded: storeLoaded, syncStatus } = useStore();
     const [selectedDate, setSelectedDate] = useState(new Date());
-    const [currentUser, setCurrentUser] = useState<Swimmer | null>(null);
-    const [authResolved, setAuthResolved] = useState(false);
     const [pendingReminders, setPendingReminders] = useState(0);
     const [showArchive, setShowArchive] = useState(false);
     const [athleteArchiveLimit, setAthleteArchiveLimit] = useState(5);
     const [showBgPicker, setShowBgPicker] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+    // Derive currentUser from store — sync endpoint scopes to the current athlete's data.
+    // Middleware has already verified the session, so swimmers[0] is the current athlete.
+    const currentUser = storeLoaded && swimmers.length > 0 ? swimmers[0] : null;
+    const authResolved = !isAuthLoading;
 
     // URL-based tab state (source of truth: query param ?tab=)
     const urlTab = searchParams.get('tab');
@@ -208,141 +212,34 @@ function AthleteWorkoutContent() {
         }
     }, []);
 
-    // Refs to track values without causing effect re-runs (prevents infinite loop)
-    const syncStatusRef = useRef(syncStatus);
-    useEffect(() => { syncStatusRef.current = syncStatus; }, [syncStatus]);
-    const swimmersRef = useRef(swimmers);
-    useEffect(() => { swimmersRef.current = swimmers; }, [swimmers]);
-    const storeLoadedRef = useRef(storeLoaded);
-    useEffect(() => { storeLoadedRef.current = storeLoaded; }, [storeLoaded]);
+    // Initialize readiness/status when currentUser becomes available from store
+    useEffect(() => {
+        if (currentUser) {
+            setReadiness(currentUser.readiness || 95);
+            if (currentUser.status === "Active" || currentUser.status === "Resting" || currentUser.status === "Injured") {
+                setStatus(currentUser.status);
+            }
+        }
+    }, [currentUser]);
 
-    // Auth check — runs ONCE on mount, never re-triggers on dependency changes
+    // Auth check — middleware already verified session, just confirm role and load reminders.
     useEffect(() => {
         let isMounted = true;
-        let pollTimer: ReturnType<typeof setInterval> | null = null;
-        let retryTimer: ReturnType<typeof setTimeout> | null = null;
-
-        const resolveAuth = (user: any) => {
-            const userId = user.id;
-            localStorage.setItem("aquaflow_athlete_id", userId);
-
-            const tryFind = () => {
-                if (!isMounted) return false;
-                const found = swimmersRef.current.find(s => s.id === userId);
-                if (found) {
-                    setCurrentUser(found);
-                    setReadiness(found.readiness || 95);
-                    if (found.status === "Active" || found.status === "Resting" || found.status === "Injured") {
-                        setStatus(found.status);
-                    }
-                    setAuthResolved(true);
-                    loadPendingReminders(userId);
-                    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-                    return true;
-                }
-                return false;
-            };
-
-            const currentSyncStatus = syncStatusRef.current;
-            const currentStoreLoaded = storeLoadedRef.current;
-
-            if (currentStoreLoaded) {
-                if (!tryFind()) {
-                    if (currentSyncStatus === 'error') {
-                        setAuthResolved(true);
-                    } else {
-                        localStorage.removeItem("aquaflow_athlete_id");
-                        router.push("/login");
-                    }
-                }
-            } else {
-                pollTimer = setInterval(() => {
-                    if (!isMounted) return;
-                    if (storeLoadedRef.current) {
-                        clearInterval(pollTimer!);
-                        pollTimer = null;
-                        if (!tryFind()) {
-                            if (syncStatusRef.current === 'error') {
-                                setAuthResolved(true);
-                            } else {
-                                localStorage.removeItem("aquaflow_athlete_id");
-                                router.push("/login");
-                            }
-                        }
-                    }
-                }, 200);
-
-                retryTimer = setTimeout(() => {
-                    if (!isMounted) return;
-                    if (!storeLoadedRef.current && !authResolved) {
-                        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-                        // Don't set authResolved here — let it stay false so the loading UI shows
-                        // The page will keep trying until the DB wakes up
-                    }
-                }, 30000); // Increased to 30s to give DB more time
-            }
-        };
-
-        const runAuth = async () => {
-            try {
-                const user = await api.auth.me();
+        api.auth.me()
+            .then((user: any) => {
                 if (!isMounted) return;
-
-                if (!user || user?.role !== 'athlete') {
-                    if (user === null) {
-                        // Cold DB — keep retrying until it wakes up
-                        let attempt = 0;
-                        const maxAttempts = 20;
-                        const pollDB = async () => {
-                            if (!isMounted || attempt >= maxAttempts) {
-                                // Still cold after many attempts — show error UI
-                                if (isMounted) setAuthResolved(true);
-                                return;
-                            }
-                            attempt++;
-                            try {
-                                const retryUser = await api.auth.me();
-                                if (!isMounted) return;
-                                if (retryUser && retryUser.role === 'athlete') {
-                                    resolveAuth(retryUser);
-                                } else if (retryUser === null) {
-                                    // Still cold — retry with exponential backoff
-                                    const delay = Math.min(3000 * attempt, 30000);
-                                    retryTimer = setTimeout(pollDB, delay);
-                                } else {
-                                    // Wrong role — redirect
-                                    localStorage.removeItem("aquaflow_athlete_id");
-                                    router.push("/login");
-                                }
-                            } catch {
-                                // Network error — retry
-                                const delay = Math.min(3000 * attempt, 30000);
-                                retryTimer = setTimeout(pollDB, delay);
-                            }
-                        };
-                        retryTimer = setTimeout(pollDB, 3000);
-                    } else {
-                        localStorage.removeItem("aquaflow_athlete_id");
-                        router.push("/login");
-                    }
-                    return;
-                }
-                resolveAuth(user);
-            } catch {
-                if (isMounted) {
-                    localStorage.removeItem("aquaflow_athlete_id");
+                if (user?.role === 'athlete') {
+                    setIsAuthLoading(false);
+                    loadPendingReminders(user.id);
+                } else {
                     router.push("/login");
                 }
-            }
-        };
-
-        runAuth();
-
-        return () => {
-            isMounted = false;
-            if (pollTimer) clearInterval(pollTimer);
-            if (retryTimer) clearTimeout(retryTimer);
-        };
+            })
+            .catch(() => {
+                if (!isMounted) return;
+                router.push("/login");
+            });
+        return () => { isMounted = false; };
     }, [router, loadPendingReminders]);
 
     const handleLogout = async () => {

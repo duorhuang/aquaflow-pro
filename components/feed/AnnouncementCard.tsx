@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import { ExternalLink, Trash2, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BlockRenderer, ImageLightbox } from "@/components/common/BlockRenderer";
@@ -13,7 +13,7 @@ interface AnnouncementCardProps {
     onStar?: (id: string) => void;
 }
 
-export function AnnouncementCard({ announcement, isCoach, onDelete, onStar }: AnnouncementCardProps) {
+export const AnnouncementCard = memo(function AnnouncementCard({ announcement, isCoach, onDelete, onStar }: AnnouncementCardProps) {
     const [expandedImages, setExpandedImages] = useState<string | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -112,4 +112,4 @@ export function AnnouncementCard({ announcement, isCoach, onDelete, onStar }: An
             )}
         </div>
     );
-}
+});

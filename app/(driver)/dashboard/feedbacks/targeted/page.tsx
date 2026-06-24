@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api-client";
-import { useStore } from "@/lib/store";
+import { useStoreSelector } from "@/lib/store";
 import { useLanguage } from "@/lib/i18n";
 import { Send, Target, MessageSquare, Calendar, Loader2, Users, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -25,7 +25,7 @@ function Breadcrumb() {
 }
 
 export default function TargetedFeedbacksPage() {
-    const { swimmers } = useStore();
+    const swimmers = useStoreSelector(s => s.swimmers);
     const [reminders, setReminders] = useState<any[]>([]);
     const [message, setMessage] = useState("");
     const [targetIds, setTargetIds] = useState<string[]>([]);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useStore } from "@/lib/store";
+import { useStoreSelector } from "@/lib/store";
 import { getLocalDateISOString } from "@/lib/date-utils";
 import { ChevronLeft, ChevronRight, Download, Calendar, Users, CheckCircle2, ChevronRight as ChevronRightIcon, UserX } from "lucide-react";
 import { useState, useMemo } from "react";
@@ -22,7 +22,7 @@ function Breadcrumb() {
 }
 
 export default function AttendanceStatsPage() {
-    const { swimmers, attendance } = useStore();
+    const { swimmers, attendance } = useStoreSelector(s => ({ swimmers: s.swimmers, attendance: s.attendance }));
     const [viewDate, setViewDate] = useState(new Date());
 
     const year = viewDate.getFullYear();

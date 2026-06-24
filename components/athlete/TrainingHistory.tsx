@@ -1,6 +1,6 @@
 "use client";
 
-import { useStore } from "@/lib/store";
+import { useStoreSelector } from "@/lib/store";
 import { Calendar, CheckCircle, XCircle, MessageSquare, ChevronDown, ChevronUp, Layers, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -41,7 +41,9 @@ interface HistoryEntry {
 }
 
 export function TrainingHistory({ swimmerId }: TrainingHistoryProps) {
-    const { plans, attendance, feedbacks, swimmers, weeklyPlans } = useStore();
+    const { plans, attendance, feedbacks, swimmers, weeklyPlans } = useStoreSelector(s => ({
+        plans: s.plans, attendance: s.attendance, feedbacks: s.feedbacks, swimmers: s.swimmers, weeklyPlans: s.weeklyPlans
+    }));
     const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
 
     const swimmer = swimmers.find(s => s.id === swimmerId);

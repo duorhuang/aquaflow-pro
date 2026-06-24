@@ -231,3 +231,33 @@ export const useStore = () => {
     if (!context) throw new Error("useStore must be used within StoreProvider");
     return context;
 };
+
+/**
+ * Selector hook — only re-renders when the selected value changes.
+ * Use this in components that only need specific fields from the store
+ * to avoid re-rendering when unrelated state changes (e.g., a component
+ * that only needs `swimmers` won't re-render when `plans` updates).
+ *
+ * Example:
+ *   const swimmers = useStoreSelector(s => s.swimmers);
+ *   const { isLoaded, dbOffline } = useStoreSelector(s => ({ isLoaded: s.isLoaded, dbOffline: s.dbOffline }));
+ */
+export function useStoreSelector<T>(selector: (state: StoreContextType) => T): T {
+    const context = useContext(StoreContext);
+    if (!context) throw new Error("useStoreSelector must be used within StoreProvider");
+    const selected = selector(context);
+    const prevRef = React.useRef<T>(selected);
+    // Only update the ref when the value actually changes (shallow comparison for objects)
+    const isEqual = (a: T, b: T): boolean => {
+        if (a === b) return true;
+        if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) return false;
+        const keysA = Object.keys(a);
+        const keysB = Object.keys(b);
+        if (keysA.length !== keysB.length) return false;
+        return keysA.every(k => (a as any)[k] === (b as any)[k]);
+    };
+    if (!isEqual(prevRef.current, selected)) {
+        prevRef.current = selected;
+    }
+    return prevRef.current;
+}

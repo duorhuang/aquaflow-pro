@@ -1,10 +1,10 @@
 "use client";
 
-import { useStore } from "@/lib/store";
+import { useStoreSelector } from "@/lib/store";
 import { Loader2, Database } from "lucide-react";
 
 export function DbStatus() {
-  const { dbWaking, dbOffline } = useStore();
+  const { dbWaking, dbOffline } = useStoreSelector(s => ({ dbWaking: s.dbWaking, dbOffline: s.dbOffline }));
 
   if (dbOffline) {
     return (

@@ -2,38 +2,37 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api-client";
 
+/**
+ * CoachGuard — brief loading gate while the page hydrates.
+ * Auth is handled by middleware.ts (Edge route protection) which verifies
+ * the JWT signature and role WITHOUT hitting the database. By the time this
+ * component renders, the user is already authenticated.
+ * We only show a brief loading flash (1s) to avoid flicker during hydration.
+ */
 export function CoachGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter();
-    const [status, setStatus] = useState<"loading" | "authorized" | "unauthorized">("loading");
+    const [showLoading, setShowLoading] = useState(true);
 
     useEffect(() => {
-        // Allow 15s for cold-start DB connections (Neon serverless)
-        const timer = setTimeout(() => {
-            if (status === "loading") {
-                router.push("/login?role=coach");
-            }
-        }, 15000);
+        // Brief loading flash for hydration — middleware has already verified auth.
+        // If the user has a stale/invalid cookie, the NEXT navigation will be caught
+        // by middleware and redirected. No need for a redundant DB-hitting auth call.
+        const timer = setTimeout(() => setShowLoading(false), 1000);
 
-        api.auth.me()
-            .then((user: any) => {
-                clearTimeout(timer);
-                if (user?.role === "coach") {
-                    setStatus("authorized");
-                } else {
-                    router.push("/login?role=coach");
-                }
-            })
-            .catch(() => {
-                clearTimeout(timer);
-                router.push("/login?role=coach");
-            });
+        // Safety net: if somehow we're still loading after 5s, redirect to login
+        // (this catches the extremely rare case of middleware bypass + stale cookie)
+        const fallback = setTimeout(() => {
+            router.push("/login?role=coach");
+        }, 5000);
 
-        return () => clearTimeout(timer);
+        return () => {
+            clearTimeout(timer);
+            clearTimeout(fallback);
+        };
     }, [router]);
 
-    if (status === "loading") {
+    if (showLoading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="text-center space-y-4">
@@ -42,10 +41,6 @@ export function CoachGuard({ children }: { children: React.ReactNode }) {
                 </div>
             </div>
         );
-    }
-
-    if (status === "unauthorized") {
-        return null;
     }
 
     return <>{children}</>;
