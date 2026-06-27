@@ -3,6 +3,7 @@
 import { useState, useCallback, createContext, useContext, type ReactNode } from "react";
 import { CheckCircle, AlertCircle, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
 export type ToastType = "success" | "error" | "info" | "loading";
 
@@ -21,6 +22,7 @@ interface ToastContextType {
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+    const { t } = useLanguage();
     const [toasts, setToasts] = useState<ToastItem[]>([]);
 
     const toastFn = useCallback((type: ToastType, message: string, duration = 4000) => {
@@ -67,7 +69,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                         <button
                             onClick={() => dismiss(t.id)}
                             className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-white/50 hover:text-white shrink-0 rounded-lg hover:bg-white/10 transition-colors"
-                            aria-label="关闭通知"
+                            aria-label={t.common.closeNotification as string || "Close notification"}
                         >
                             <X className="w-4 h-4" />
                         </button>

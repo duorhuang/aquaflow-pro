@@ -23,7 +23,7 @@ const SIDEBAR_ITEMS = [
     ]},
     { label: "meets", href: "/dashboard/meets", icon: Trophy },
     { label: "injuryMonitor", href: "/dashboard/injury-monitor", icon: Activity },
-    { label: "settings", href: "/settings", icon: Settings },
+    { label: "settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export const Sidebar = memo(function Sidebar() {

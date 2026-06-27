@@ -118,18 +118,31 @@ export function useEntityCRUD({
 
     setAttendance(prev => { const next = [...prev, ...newRecords]; persist('attendance', next); return next; });
     recordMutation();
-    swimmerIds.forEach(id => adjustXP(id, 10, false));
 
     try {
       const results = await Promise.allSettled(newRecords.map(r => api.attendance.create(r)));
-      const failedIds = newRecords
-        .filter((_, i) => results[i].status === 'rejected')
-        .map(r => r.id);
+      const succeededIds: string[] = [];
+      const failedIds: string[] = [];
+
+      newRecords.forEach((r, i) => {
+        if (results[i].status === 'fulfilled') {
+          succeededIds.push(r.swimmerId);
+        } else {
+          failedIds.push(r.id);
+        }
+      });
+
       if (failedIds.length > 0) {
         setAttendance(prev => { const next = prev.filter(a => !failedIds.includes(a.id)); persist('attendance', next); return next; });
         console.error(`${failedIds.length} attendance records failed to sync, removed from local state`);
       }
-    } catch { /* best-effort */ }
+
+      // Only award XP for successful records
+      succeededIds.forEach(id => adjustXP(id, 10, false));
+    } catch {
+      // All failed — rollback attendance and don't award XP
+      setAttendance(prev => { const next = prev.filter(a => !newRecords.some(nr => nr.id === a.id)); persist('attendance', next); return next; });
+    }
   }, [recordMutation, adjustXP]);
 
   const batchUnmarkAttendance = useCallback(async (swimmerIds: string[], date: string) => {
@@ -152,9 +165,38 @@ export function useEntityCRUD({
       return [...prev, fb];
     });
     adjustXP(fb.swimmerId, 20, false);
-    try { await api.feedbacks.create(fb); } catch { throw new Error('Failed to submit feedback'); }
-    markAttendance(fb.swimmerId);
-  }, [recordMutation, adjustXP, markAttendance]);
+
+    try {
+      await api.feedbacks.create(fb);
+
+      // Mark attendance inline without triggering another recordMutation
+      const timestamp = new Date().toISOString();
+      const today = new Date().toISOString().split('T')[0];
+      const attendanceRecord = {
+        id: uid(),
+        date: today,
+        swimmerId: fb.swimmerId,
+        status: 'Present' as const,
+        timestamp,
+      };
+      setAttendance(prev => {
+        const exists = prev.some(a => a.swimmerId === fb.swimmerId && a.date === today);
+        if (exists) return prev;
+        const next = [...prev, attendanceRecord];
+        persist('attendance', next);
+        return next;
+      });
+      adjustXP(fb.swimmerId, 10, false);
+
+      try {
+        await api.attendance.create(attendanceRecord);
+      } catch {
+        // Attendance sync will happen on next poll
+      }
+    } catch {
+      throw new Error('Failed to submit feedback');
+    }
+  }, [recordMutation, adjustXP]);
 
   // --- Plans ---
   const addPlan = useCallback(async (plan: TrainingPlan) => {
@@ -180,12 +222,20 @@ export function useEntityCRUD({
 
   const starPlan = useCallback(async (id: string) => {
     recordMutation();
+    let newStarredState: boolean | undefined;
     setPlans(prev => {
       const plan = prev.find(p => p.id === id);
-      if (plan) api.plans.update(id, { isStarred: !plan.isStarred }).catch(() => {});
-      return prev.map(p => p.id === id ? { ...p, isStarred: !p.isStarred } : p);
+      newStarredState = plan ? !plan.isStarred : undefined;
+      return prev.map(p => p.id === id ? { ...p, isStarred: newStarredState ?? p.isStarred } : p);
     });
-  }, []);
+    if (newStarredState !== undefined) {
+      try {
+        await api.plans.update(id, { isStarred: newStarredState });
+      } catch {
+        setPlans(prev => prev.map(p => p.id === id ? { ...p, isStarred: !newStarredState } : p));
+      }
+    }
+  }, [recordMutation]);
 
   // --- Swimmers ---
   const addSwimmer = useCallback(async (swimmer: Swimmer) => {
@@ -201,17 +251,24 @@ export function useEntityCRUD({
 
   const updateSwimmer = useCallback(async (id: string, updates: Partial<Swimmer>) => {
     recordMutation();
-    const oldSwimmer = swimmers.find(s => s.id === id);
-    const merged = oldSwimmer ? { ...oldSwimmer, ...updates } : updates;
-    setSwimmers(prev => { const next = prev.map(s => s.id === id ? { ...s, ...updates } : s); persist('swimmers', next); return next; });
+    let oldSwimmer: Swimmer | undefined;
+    setSwimmers(prev => {
+      oldSwimmer = prev.find(s => s.id === id);
+      const next = prev.map(s => s.id === id ? { ...s, ...updates } : s);
+      persist('swimmers', next);
+      return next;
+    });
+    const merged = oldSwimmer ? { ...oldSwimmer, ...updates } : { id, ...updates };
     try {
       const result = await api.swimmers.update(id, merged);
       if (result?.id) setSwimmers(prev => { const next = prev.map(s => s.id === result.id ? { ...s, ...result } : s); persist('swimmers', next); return next; });
     } catch {
-      if (oldSwimmer) setSwimmers(prev => { const next = prev.map(s => s.id === id ? oldSwimmer : s); persist('swimmers', next); return next; });
+      if (oldSwimmer) {
+        setSwimmers(prev => { const next = prev.map(s => s.id === id ? oldSwimmer! : s); persist('swimmers', next); return next; });
+      }
       throw new Error(`Failed to update swimmer`);
     }
-  }, [swimmers, recordMutation]);
+  }, [recordMutation]);
 
   const deleteSwimmer = useCallback(async (id: string) => {
     recordMutation();
@@ -309,12 +366,16 @@ export function useEntityCRUD({
     let targetState: boolean | undefined;
     setAnnouncements(prev => {
       const ann = prev.find(a => a.id === id);
-      if (ann) {
-        targetState = !ann.isStarred;
-        api.announcements.toggleStar(id, targetState).catch(() => {});
-      }
-      return prev.map(a => a.id === id ? { ...a, isStarred: !a.isStarred } : a);
+      targetState = ann ? !ann.isStarred : undefined;
+      return prev.map(a => a.id === id ? { ...a, isStarred: targetState ?? a.isStarred } : a);
     });
+    if (targetState !== undefined) {
+      try {
+        await api.announcements.toggleStar(id, targetState);
+      } catch {
+        setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, isStarred: !targetState } : a));
+      }
+    }
     setArchivedAnnouncements(prev => prev.map(a => a.id === id ? { ...a, isStarred: targetState } : a));
   }, []);
 

@@ -65,6 +65,12 @@ export async function verifyJWT(token: string): Promise<JWTPayload | null> {
     const valid = await hmacVerify(data, signature, secret);
     if (!valid) return null;
     const payload: JWTPayload = JSON.parse(atob(data));
+
+    // Validate payload shape — must have userId and role
+    if (typeof payload.userId !== 'string' || typeof payload.role !== 'string') {
+      return null;
+    }
+
     if (payload.exp < Math.floor(Date.now() / 1000)) return null;
     return payload;
   } catch {
@@ -87,7 +93,7 @@ export function setSessionCookie(token: string, maxAge = 7 * 24 * 60 * 60, host?
   const isProd = process.env.NODE_ENV === 'production';
   const parts = [`aquaflow_session=${token}`, 'Path=/', 'HttpOnly', 'SameSite=Strict', `Max-Age=${maxAge}`];
   if (isProd) {
-    if (host && host.includes('sportsflow.best')) {
+    if (host && (host.endsWith('.sportsflow.best') || host === 'sportsflow.best')) {
       parts.push('Domain=.sportsflow.best');
     }
     parts.push('Secure');
@@ -99,7 +105,7 @@ export function clearSessionCookie(host?: string): string {
   const isProd = process.env.NODE_ENV === 'production';
   const parts = ['aquaflow_session=', 'Path=/', 'HttpOnly', 'SameSite=Strict', 'Max-Age=0', 'Expires=Thu, 01 Jan 1970 00:00:00 GMT'];
   if (isProd) {
-    if (host && host.includes('sportsflow.best')) {
+    if (host && (host.endsWith('.sportsflow.best') || host === 'sportsflow.best')) {
       parts.push('Domain=.sportsflow.best');
     }
     parts.push('Secure');

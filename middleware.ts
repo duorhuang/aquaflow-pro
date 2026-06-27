@@ -28,8 +28,16 @@ export async function middleware(request: NextRequest) {
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
-  if (process.env.NODE_ENV === 'production') {
+
+  // CSP: 'unsafe-eval' only in development (Next.js dev server needs it)
+  const isProd = process.env.NODE_ENV === 'production';
+  const scriptSrc = isProd
+    ? "'self' 'unsafe-inline' https://static.cloudflareinsights.com"
+    : "'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com";
+
+  response.headers.set('Content-Security-Policy', `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`);
+
+  if (isProd) {
     response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   }
 
@@ -57,8 +65,15 @@ export async function middleware(request: NextRequest) {
       loginUrl.searchParams.set('redirect', safeRedirectUrl(pathname));
       return NextResponse.redirect(loginUrl);
     }
-    const payload = await verifyJWT(token);
-    if (!payload || payload.role !== 'coach') {
+    try {
+      const payload = await verifyJWT(token);
+      if (!payload || payload.role !== 'coach') {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('role', 'coach');
+        return NextResponse.redirect(loginUrl);
+      }
+    } catch {
+      // JWT verification failed (missing secret, invalid token, etc.)
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('role', 'coach');
       return NextResponse.redirect(loginUrl);
@@ -74,8 +89,15 @@ export async function middleware(request: NextRequest) {
       loginUrl.searchParams.set('redirect', safeRedirectUrl(pathname));
       return NextResponse.redirect(loginUrl);
     }
-    const payload = await verifyJWT(token);
-    if (!payload || payload.role !== 'athlete') {
+    try {
+      const payload = await verifyJWT(token);
+      if (!payload || payload.role !== 'athlete') {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('role', 'athlete');
+        return NextResponse.redirect(loginUrl);
+      }
+    } catch {
+      // JWT verification failed (missing secret, invalid token, etc.)
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('role', 'athlete');
       return NextResponse.redirect(loginUrl);

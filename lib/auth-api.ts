@@ -12,7 +12,12 @@ export { hashPassword };
 async function getAuth(request: Request): Promise<JWTPayload | null> {
   const token = getCookieFromRequest(request, 'aquaflow_session');
   if (!token) return null;
-  return verifyJWT(token);
+  try {
+    return await verifyJWT(token);
+  } catch {
+    // JWT verification failed (missing secret, invalid token, etc.)
+    return null;
+  }
 }
 
 function unauthorized(msg = 'Unauthorized'): NextResponse {

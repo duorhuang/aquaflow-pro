@@ -59,6 +59,14 @@ export default function DashboardPage() {
 
     return (
         <div className="min-h-screen bg-background px-4 md:px-8 lg:px-12 py-6">
+            {/* Skip navigation */}
+            <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[200] focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded-lg focus:font-medium"
+            >
+                跳过导航，直达主要内容
+            </a>
+
             {/* Header */}
             <header className="mb-8">
                 {/* Database Cold Start Warning */}
@@ -115,7 +123,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Main Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <div id="main-content" className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
                 {/* Left Column: Today's Operations */}
                 <div className="space-y-6">
                     <TodayAttendance />
@@ -222,6 +230,8 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                     {isLoaded ? <SwimmerStatusPanel /> : <PanelSkeleton />}
                     {isLoaded ? <AthletesFeedbackPanel /> : <PanelSkeleton />}
+                    {isLoaded ? <TeamStatsPanel /> : <PanelSkeleton />}
+                    {isLoaded ? <RecentPerformances /> : <PanelSkeleton />}
 
                     {/* Collapsible "More" section */}
                     <div>
@@ -234,9 +244,7 @@ export default function DashboardPage() {
                         </button>
                         {showMore && (
                             <div className="space-y-6 mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                <RecentPerformances />
                                 <TeamFeedbackSummary />
-                                <TeamStatsPanel />
                                 <OnboardingChecklist />
                             </div>
                         )}

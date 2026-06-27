@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect, useCallback, useRef } from "react";
 import { Menu, X, Waves, LayoutDashboard, Users, Calendar, Settings, LogOut, PlusCircle, UserCheck, FolderOpen, MessageSquare, Send, Trophy, Activity, FolderPlus } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -20,13 +20,14 @@ const NAV_ITEMS = [
     { label: "meets", href: "/dashboard/meets", icon: Trophy },
     { label: "injuryMonitor", href: "/dashboard/injury-monitor", icon: Activity },
     { label: "feedbackArchive", href: "/dashboard/archive", icon: FolderOpen },
-    { label: "settings", href: "/settings", icon: Settings },
+    { label: "settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export const MobileNav = memo(function MobileNav() {
     const [isOpen, setIsOpen] = useState(false);
     const pathname = usePathname();
     const { t } = useLanguage();
+    const menuRef = useRef<HTMLDivElement>(null);
 
     // Close menu on route change and scroll to top
     useEffect(() => {
@@ -42,6 +43,39 @@ export const MobileNav = memo(function MobileNav() {
             clearTimeout(timer);
         };
     }, [pathname]);
+
+    // Escape key handler
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isOpen) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+        return () => document.removeEventListener('keydown', handleEscape);
+    }, [isOpen]);
+
+    // Focus trap when menu is open
+    const handleFocusTrap = useCallback((e: React.KeyboardEvent) => {
+        if (e.key !== 'Tab' || !menuRef.current) return;
+        const focusable = menuRef.current.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+            if (document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+            }
+        } else {
+            if (document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+            }
+        }
+    }, []);
 
     return (
         <>
@@ -67,6 +101,8 @@ export const MobileNav = memo(function MobileNav() {
             {/* Full Screen Menu Overlay */}
             {isOpen && (
                 <div
+                    ref={menuRef}
+                    onKeyDown={handleFocusTrap}
                     className="fixed inset-0 z-40 bg-background pt-24 px-6 animate-in fade-in slide-in-from-top-4 duration-200 flex flex-col"
                     role="dialog"
                     aria-modal="true"

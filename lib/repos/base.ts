@@ -7,10 +7,8 @@ import { NotFoundError } from './errors';
  * Handles Neon client access and JSON field serialization/deserialization.
  */
 export abstract class BaseRepo {
-  protected sql: NeonQueryFunction<false, false>;
-
-  constructor() {
-    this.sql = getNeon();
+  protected get sql(): NeonQueryFunction<false, false> {
+    return getNeon();
   }
 
   /** Parse JSON fields from DB string to object. */

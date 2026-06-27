@@ -59,6 +59,8 @@ export function useSyncEngine({
   const hasLocalDataRef = useRef(false);
   /** Tracks whether the last sync attempt returned 401. When true, polling is paused until recovery. */
   const unauthenticatedRef = useRef(false);
+  /** Ref to track recovery timeout so it can be cleared on unmount. */
+  const recoveryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const recordMutation = useCallback(() => {
     if (!offlineRef.current) {
@@ -129,8 +131,10 @@ export function useSyncEngine({
         }
       } finally {
         clearTimeout(wakeTimeout);
-        setDbWaking(false);
-        if (isMounted) setIsLoaded(true);
+        if (isMounted) {
+          setDbWaking(false);
+          setIsLoaded(true);
+        }
       }
     };
 
@@ -145,7 +149,7 @@ export function useSyncEngine({
       // Skip polling when DB is offline (quota exceeded, DB waking, etc.) — retry after delay
       if (offlineRef.current) {
         // Schedule a single recovery retry after 30s
-        setTimeout(async () => {
+        recoveryTimeoutRef.current = setTimeout(async () => {
           if (!offlineRef.current) return; // Already recovered
           console.log('[DB] Attempting DB recovery check...');
           try {
@@ -192,6 +196,10 @@ export function useSyncEngine({
       isMounted = false;
       clearTimeout(wakeTimeout);
       clearInterval(syncInterval);
+      if (recoveryTimeoutRef.current) {
+        clearTimeout(recoveryTimeoutRef.current);
+        recoveryTimeoutRef.current = null;
+      }
     };
   }, [onLoad, onSync, trySync]);
 
