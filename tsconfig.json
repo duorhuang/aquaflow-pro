@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "ECC"]
+  "exclude": ["node_modules", "ECC", ".next", ".open-next", ".wrangler", ".jez", "dist"]
 }

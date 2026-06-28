@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE = 'https://sw.sportsflow.best';
+const BASE = '';
 
 test.describe('Verify UX audit fixes', () => {
 

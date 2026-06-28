@@ -17,7 +17,7 @@ test.describe('Comprehensive UX Audit', () => {
         if (msg.type() === 'warning') consoleWarnings.push(msg.text());
       });
 
-      await page.goto('https://sw.sportsflow.best/', { waitUntil: 'domcontentloaded' });
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       // Take screenshot
@@ -36,7 +36,7 @@ test.describe('Comprehensive UX Audit', () => {
     });
 
     test('Login page loads correctly', async ({ page }) => {
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       await page.screenshot({ path: 'audit-screenshots/02-login-page.png', fullPage: true });
@@ -48,7 +48,7 @@ test.describe('Comprehensive UX Audit', () => {
     });
 
     test('Poolside page loads correctly', async ({ page }) => {
-      await page.goto('https://sw.sportsflow.best/poolside', { waitUntil: 'domcontentloaded' });
+      await page.goto('/poolside', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       await page.screenshot({ path: 'audit-screenshots/03-poolside-page.png', fullPage: true });
@@ -56,7 +56,7 @@ test.describe('Comprehensive UX Audit', () => {
     });
 
     test('Shop page loads correctly', async ({ page }) => {
-      await page.goto('https://sw.sportsflow.best/shop', { waitUntil: 'domcontentloaded' });
+      await page.goto('/shop', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       await page.screenshot({ path: 'audit-screenshots/04-shop-page.png', fullPage: true });
@@ -85,7 +85,7 @@ test.describe('Comprehensive UX Audit', () => {
       });
 
       // Login
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(1000);
 
       // Switch to coach tab
@@ -122,7 +122,7 @@ test.describe('Comprehensive UX Audit', () => {
 
     test('Coach dashboard - all nav links', async ({ page }) => {
       // Login first
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '教练' }).click();
       await page.getByLabel('用户名').fill('testcoach');
       await page.getByLabel('密码').fill('password123');
@@ -148,7 +148,7 @@ test.describe('Comprehensive UX Audit', () => {
 
       for (const route of coachRoutes) {
         console.log(`Testing coach route: ${route}`);
-        await page.goto(`https://sw.sportsflow.best${route}`, { waitUntil: 'domcontentloaded' });
+        await page.goto(`${route}`, { waitUntil: 'domcontentloaded' });
         await page.waitForTimeout(2000);
 
         await page.screenshot({ path: `audit-screenshots/coach-${route.replace(/\//g, '_') || 'dashboard'}.png`, fullPage: true });
@@ -171,7 +171,7 @@ test.describe('Comprehensive UX Audit', () => {
 
     test('Coach - create plan flow', async ({ page }) => {
       // Login
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '教练' }).click();
       await page.getByLabel('用户名').fill('testcoach');
       await page.getByLabel('密码').fill('password123');
@@ -180,7 +180,7 @@ test.describe('Comprehensive UX Audit', () => {
       await page.waitForTimeout(2000);
 
       // Navigate to new plan
-      await page.goto('https://sw.sportsflow.best/dashboard/new-plan', { waitUntil: 'domcontentloaded' });
+      await page.goto('/dashboard/new-plan', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       await page.screenshot({ path: 'audit-screenshots/06-coach-new-plan.png', fullPage: true });
@@ -197,7 +197,7 @@ test.describe('Comprehensive UX Audit', () => {
 
     test('Coach - athletes management', async ({ page }) => {
       // Login
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '教练' }).click();
       await page.getByLabel('用户名').fill('testcoach');
       await page.getByLabel('密码').fill('password123');
@@ -206,7 +206,7 @@ test.describe('Comprehensive UX Audit', () => {
       await page.waitForTimeout(2000);
 
       // Navigate to athletes
-      await page.goto('https://sw.sportsflow.best/dashboard/athletes', { waitUntil: 'domcontentloaded' });
+      await page.goto('/dashboard/athletes', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       await page.screenshot({ path: 'audit-screenshots/07-coach-athletes.png', fullPage: true });
@@ -218,7 +218,7 @@ test.describe('Comprehensive UX Audit', () => {
 
     test('Coach - feedbacks page', async ({ page }) => {
       // Login
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '教练' }).click();
       await page.getByLabel('用户名').fill('testcoach');
       await page.getByLabel('密码').fill('password123');
@@ -227,7 +227,7 @@ test.describe('Comprehensive UX Audit', () => {
       await page.waitForTimeout(2000);
 
       // Navigate to feedbacks
-      await page.goto('https://sw.sportsflow.best/dashboard/feedbacks', { waitUntil: 'domcontentloaded' });
+      await page.goto('/dashboard/feedbacks', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       await page.screenshot({ path: 'audit-screenshots/08-coach-feedbacks.png', fullPage: true });
@@ -239,7 +239,7 @@ test.describe('Comprehensive UX Audit', () => {
 
     test('Coach - weekly plan page', async ({ page }) => {
       // Login
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '教练' }).click();
       await page.getByLabel('用户名').fill('testcoach');
       await page.getByLabel('密码').fill('password123');
@@ -248,7 +248,7 @@ test.describe('Comprehensive UX Audit', () => {
       await page.waitForTimeout(2000);
 
       // Navigate to weekly plan
-      await page.goto('https://sw.sportsflow.best/dashboard/weekly-plan', { waitUntil: 'domcontentloaded' });
+      await page.goto('/dashboard/weekly-plan', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       await page.screenshot({ path: 'audit-screenshots/09-coach-weekly-plan.png', fullPage: true });
@@ -260,7 +260,7 @@ test.describe('Comprehensive UX Audit', () => {
 
     test('Coach - attendance page', async ({ page }) => {
       // Login
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '教练' }).click();
       await page.getByLabel('用户名').fill('testcoach');
       await page.getByLabel('密码').fill('password123');
@@ -269,13 +269,13 @@ test.describe('Comprehensive UX Audit', () => {
       await page.waitForTimeout(2000);
 
       // Navigate to attendance
-      await page.goto('https://sw.sportsflow.best/dashboard/attendance', { waitUntil: 'domcontentloaded' });
+      await page.goto('/dashboard/attendance', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       await page.screenshot({ path: 'audit-screenshots/10-coach-attendance.png', fullPage: true });
 
       // Navigate to attendance stats
-      await page.goto('https://sw.sportsflow.best/dashboard/attendance/stats', { waitUntil: 'domcontentloaded' });
+      await page.goto('/dashboard/attendance/stats', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       await page.screenshot({ path: 'audit-screenshots/11-coach-attendance-stats.png', fullPage: true });
@@ -283,7 +283,7 @@ test.describe('Comprehensive UX Audit', () => {
 
     test('Coach - schedule page', async ({ page }) => {
       // Login
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '教练' }).click();
       await page.getByLabel('用户名').fill('testcoach');
       await page.getByLabel('密码').fill('password123');
@@ -292,7 +292,7 @@ test.describe('Comprehensive UX Audit', () => {
       await page.waitForTimeout(2000);
 
       // Navigate to schedule
-      await page.goto('https://sw.sportsflow.best/dashboard/schedule', { waitUntil: 'domcontentloaded' });
+      await page.goto('/dashboard/schedule', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       await page.screenshot({ path: 'audit-screenshots/12-coach-schedule.png', fullPage: true });
@@ -300,7 +300,7 @@ test.describe('Comprehensive UX Audit', () => {
 
     test('Coach - settings page', async ({ page }) => {
       // Login
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '教练' }).click();
       await page.getByLabel('用户名').fill('testcoach');
       await page.getByLabel('密码').fill('password123');
@@ -309,7 +309,7 @@ test.describe('Comprehensive UX Audit', () => {
       await page.waitForTimeout(2000);
 
       // Navigate to settings
-      await page.goto('https://sw.sportsflow.best/settings', { waitUntil: 'domcontentloaded' });
+      await page.goto('/settings', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       await page.screenshot({ path: 'audit-screenshots/13-coach-settings.png', fullPage: true });
@@ -336,7 +336,7 @@ test.describe('Comprehensive UX Audit', () => {
       });
 
       // Login
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(1000);
 
       // Switch to athlete tab
@@ -367,7 +367,7 @@ test.describe('Comprehensive UX Audit', () => {
 
     test('Athlete - profile page', async ({ page }) => {
       // Login
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '运动员' }).click();
       await page.getByLabel('用户名').fill('ggdayup');
       await page.getByLabel('密码').fill('123456');
@@ -376,7 +376,7 @@ test.describe('Comprehensive UX Audit', () => {
       await page.waitForTimeout(2000);
 
       // Navigate to profile
-      await page.goto('https://sw.sportsflow.best/profile', { waitUntil: 'domcontentloaded' });
+      await page.goto('/profile', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       await page.screenshot({ path: 'audit-screenshots/15-athlete-profile.png', fullPage: true });
@@ -388,7 +388,7 @@ test.describe('Comprehensive UX Audit', () => {
 
     test('Athlete - archive page', async ({ page }) => {
       // Login
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '运动员' }).click();
       await page.getByLabel('用户名').fill('ggdayup');
       await page.getByLabel('密码').fill('123456');
@@ -397,7 +397,7 @@ test.describe('Comprehensive UX Audit', () => {
       await page.waitForTimeout(2000);
 
       // Navigate to archive
-      await page.goto('https://sw.sportsflow.best/archive', { waitUntil: 'domcontentloaded' });
+      await page.goto('/archive', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       await page.screenshot({ path: 'audit-screenshots/16-athlete-archive.png', fullPage: true });
@@ -409,7 +409,7 @@ test.describe('Comprehensive UX Audit', () => {
 
     test('Athlete - shop page', async ({ page }) => {
       // Login
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '运动员' }).click();
       await page.getByLabel('用户名').fill('ggdayup');
       await page.getByLabel('密码').fill('123456');
@@ -418,7 +418,7 @@ test.describe('Comprehensive UX Audit', () => {
       await page.waitForTimeout(2000);
 
       // Navigate to shop
-      await page.goto('https://sw.sportsflow.best/shop', { waitUntil: 'domcontentloaded' });
+      await page.goto('/shop', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       await page.screenshot({ path: 'audit-screenshots/17-athlete-shop.png', fullPage: true });
@@ -438,7 +438,7 @@ test.describe('Comprehensive UX Audit', () => {
     test('Mobile viewport - landing page', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 812 });
 
-      await page.goto('https://sw.sportsflow.best/', { waitUntil: 'domcontentloaded' });
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       await page.screenshot({ path: 'audit-screenshots/18-mobile-landing.png', fullPage: true });
@@ -455,7 +455,7 @@ test.describe('Comprehensive UX Audit', () => {
     test('Mobile viewport - login page', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 812 });
 
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       await page.screenshot({ path: 'audit-screenshots/19-mobile-login.png', fullPage: true });
@@ -475,7 +475,7 @@ test.describe('Comprehensive UX Audit', () => {
       await page.setViewportSize({ width: 375, height: 812 });
 
       // Login as coach
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '教练' }).click();
       await page.getByLabel('用户名').fill('testcoach');
       await page.getByLabel('密码').fill('password123');
@@ -496,7 +496,7 @@ test.describe('Comprehensive UX Audit', () => {
       await page.setViewportSize({ width: 375, height: 812 });
 
       // Login as athlete
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '运动员' }).click();
       await page.getByLabel('用户名').fill('ggdayup');
       await page.getByLabel('密码').fill('123456');
@@ -517,7 +517,7 @@ test.describe('Comprehensive UX Audit', () => {
       await page.setViewportSize({ width: 768, height: 1024 });
 
       // Login as coach
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '教练' }).click();
       await page.getByLabel('用户名').fill('testcoach');
       await page.getByLabel('密码').fill('password123');
@@ -532,7 +532,7 @@ test.describe('Comprehensive UX Audit', () => {
       await page.setViewportSize({ width: 1920, height: 1080 });
 
       // Login as coach
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '教练' }).click();
       await page.getByLabel('用户名').fill('testcoach');
       await page.getByLabel('密码').fill('password123');
@@ -551,7 +551,7 @@ test.describe('Comprehensive UX Audit', () => {
   test.describe('Error Handling & Edge Cases', () => {
 
     test('Invalid login credentials', async ({ page }) => {
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
 
       // Try invalid credentials
       await page.getByLabel('用户名').fill('invaliduser');
@@ -574,7 +574,7 @@ test.describe('Comprehensive UX Audit', () => {
     });
 
     test('Empty form submission', async ({ page }) => {
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
 
       // Try to submit empty form
       await page.locator('button[type="submit"]').click();
@@ -593,7 +593,7 @@ test.describe('Comprehensive UX Audit', () => {
 
     test('Direct access to protected routes', async ({ page }) => {
       // Try to access coach dashboard without login
-      await page.goto('https://sw.sportsflow.best/dashboard', { waitUntil: 'domcontentloaded' });
+      await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(2000);
 
       const currentUrl = page.url();
@@ -626,7 +626,7 @@ test.describe('Comprehensive UX Audit', () => {
           } catch (e: any) {
             return { url, error: e.message };
           }
-        }, `https://sw.sportsflow.best${endpoint}`);
+        }, `${endpoint}`);
 
         console.log(`API ${endpoint}:`, response);
       }
@@ -641,7 +641,7 @@ test.describe('Comprehensive UX Audit', () => {
 
     test('Navigation links work', async ({ page }) => {
       // Login as coach
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '教练' }).click();
       await page.getByLabel('用户名').fill('testcoach');
       await page.getByLabel('密码').fill('password123');
@@ -670,7 +670,7 @@ test.describe('Comprehensive UX Audit', () => {
     });
 
     test('Buttons have hover states', async ({ page }) => {
-      await page.goto('https://sw.sportsflow.best/', { waitUntil: 'domcontentloaded' });
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
       await page.waitForTimeout(1000);
 
       // Find all buttons
@@ -687,7 +687,7 @@ test.describe('Comprehensive UX Audit', () => {
 
     test('Modal/dialog interactions', async ({ page }) => {
       // Login as coach
-      await page.goto('https://sw.sportsflow.best/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
       await page.locator('button[role="radio"]').filter({ hasText: '教练' }).click();
       await page.getByLabel('用户名').fill('testcoach');
       await page.getByLabel('密码').fill('password123');
