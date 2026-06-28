@@ -6,7 +6,7 @@ test.describe('Live Website E2E Tests - 5 Iterations', () => {
   for (let i = 1; i <= 5; i++) {
     test(`Swimmer Login & Verification - Iteration ${i}`, async ({ page }) => {
       console.log(`Swimmer Iteration ${i} starting...`);
-      await page.goto('/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login?role=athlete', { waitUntil: 'domcontentloaded' });
       
       // Ensure we are on Athlete tab (it defaults to athlete, so just ensure it's selected or click it)
       await page.locator('button[role="radio"]').filter({ hasText: '运动员' }).click();
@@ -43,7 +43,7 @@ test.describe('Live Website E2E Tests - 5 Iterations', () => {
   for (let i = 1; i <= 5; i++) {
     test(`Coach Login & Verification - Iteration ${i}`, async ({ page }) => {
       console.log(`Coach Iteration ${i} starting...`);
-      await page.goto('/login', { waitUntil: 'domcontentloaded' });
+      await page.goto('/login?role=coach', { waitUntil: 'domcontentloaded' });
       
       // Click coach role radio button
       await page.locator('button[role="radio"]').filter({ hasText: '教练' }).click();

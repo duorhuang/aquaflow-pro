@@ -1,5 +1,10 @@
 import { defineCloudflareConfig } from "@opennextjs/cloudflare";
 
 export default defineCloudflareConfig({
-  // 留空即可，Cloudflare 会自动帮你注入所有默认的边缘节点配置
+  edgeExternals: [
+    "@aws-sdk/nested-clients/sso",
+    "@aws-sdk/nested-clients/sso-oidc",
+    "@aws-sdk/nested-clients/sts",
+    "@aws-sdk/nested-clients/signin"
+  ]
 });

@@ -8,7 +8,14 @@ const nextConfig: NextConfig = {
   // turbopack: {
   //   root: __dirname,
   // },
-  serverExternalPackages: ["@prisma/client", ".prisma/client"],
+  serverExternalPackages: [
+    "@prisma/client",
+    ".prisma/client",
+    "@aws-sdk/nested-clients/sts",
+    "@aws-sdk/nested-clients/sso",
+    "@aws-sdk/nested-clients/signin",
+    "@aws-sdk/nested-clients/sso-oidc"
+  ],
   async redirects() {
     return [
       {
