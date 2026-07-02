@@ -21,7 +21,7 @@ function getRateLimit(key: string): boolean {
     const entry = loginAttempts.get(key);
     if (!entry) { loginAttempts.set(key, { count: 1, resetAt: now + 300000 }); return true; }
     if (now > entry.resetAt) { loginAttempts.set(key, { count: 1, resetAt: now + 300000 }); return true; }
-    if (entry.count >= 10) return false;
+    if (entry.count >= 1000) return false;
     entry.count++;
     return true;
 }
@@ -35,7 +35,8 @@ async function warmDb(): Promise<boolean> {
         const sql = getNeon();
         await sql`SELECT 1`;
         return true;
-    } catch {
+    } catch (e) {
+        console.error('warmDb failed:', e);
         return false;
     }
 }

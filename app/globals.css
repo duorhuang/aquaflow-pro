@@ -53,89 +53,91 @@
 }
 
 :root {
-  --background: hsl(225 44% 7%);
-  --foreground: hsl(210 40% 98%);
+  /* Nature Inspired Light Mode (Breeze & Sand) */
+  --background: hsl(195 30% 96%);
+  --foreground: hsl(220 50% 15%);
 
-  --card: hsl(223 38% 13%);
-  --card-foreground: hsl(210 40% 98%);
+  --card: hsl(0 0% 100% / 0.7);
+  --card-foreground: hsl(220 50% 15%);
 
-  --popover: hsl(223 38% 13%);
-  --popover-foreground: hsl(210 40% 98%);
+  --popover: hsl(0 0% 100% / 0.85);
+  --popover-foreground: hsl(220 50% 15%);
 
-  --primary: hsl(183 100% 50%);
-  --primary-foreground: hsl(225 44% 7%);
+  --primary: hsl(190 80% 45%);
+  --primary-foreground: hsl(0 0% 100%);
 
-  --secondary: hsl(223 38% 13%);
-  --secondary-foreground: hsl(210 40% 98%);
+  --secondary: hsl(195 30% 90%);
+  --secondary-foreground: hsl(220 50% 15%);
 
-  --muted: hsl(223 38% 13%);
-  --muted-foreground: hsl(215 20% 65%);
+  --muted: hsl(195 20% 90%);
+  --muted-foreground: hsl(200 20% 45%);
 
-  --accent: hsl(223 38% 13%);
-  --accent-foreground: hsl(210 40% 98%);
+  --accent: hsl(175 70% 40%);
+  --accent-foreground: hsl(0 0% 100%);
 
-  --destructive: hsl(3 100% 59%);
-  --destructive-foreground: hsl(210 40% 98%);
+  --destructive: hsl(0 80% 60%);
+  --destructive-foreground: hsl(0 0% 100%);
 
-  --border: hsl(223 20% 20%);
-  --input: hsl(223 20% 20%);
-  --ring: hsl(183 100% 50%);
+  --border: hsl(195 80% 40% / 0.15);
+  --input: hsl(195 80% 40% / 0.15);
+  --ring: hsl(190 80% 45%);
 
-  --radius: 0.75rem;
+  --radius: 1rem;
 
   /* Semantic status colors */
-  --success: hsl(142 71% 45%);
-  --success-foreground: hsl(225 44% 7%);
-  --warning: hsl(50 100% 52%);
-  --warning-foreground: hsl(225 44% 7%);
-  --info: hsl(200 98% 55%);
-  --info-foreground: hsl(225 44% 7%);
-  --error: hsl(3 100% 59%);
-  --error-foreground: hsl(210 40% 98%);
+  --success: hsl(142 71% 40%);
+  --success-foreground: hsl(0 0% 100%);
+  --warning: hsl(40 100% 50%);
+  --warning-foreground: hsl(220 50% 15%);
+  --info: hsl(200 90% 45%);
+  --info-foreground: hsl(0 0% 100%);
+  --error: hsl(0 80% 60%);
+  --error-foreground: hsl(0 0% 100%);
 
   /* Hydro Custom vars for Glassmorphism */
-  --glass-bg: rgba(10, 14, 26, 0.7);
-  --glass-border: rgba(0, 242, 255, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 150, 255, 0.15);
 }
 
 .dark {
-  --background: hsl(225 44% 7%);
-  --foreground: hsl(210 40% 98%);
+  /* Deep Ocean Dark Mode */
+  --background: hsl(205 60% 8%);
+  --foreground: hsl(195 20% 95%);
 
-  --card: hsl(223 38% 13%);
-  --card-foreground: hsl(210 40% 98%);
+  --card: hsl(205 50% 15% / 0.65);
+  --card-foreground: hsl(195 20% 95%);
 
-  --popover: hsl(223 38% 13%);
-  --popover-foreground: hsl(210 40% 98%);
+  --popover: hsl(205 50% 12% / 0.9);
+  --popover-foreground: hsl(195 20% 95%);
 
-  --primary: hsl(183 100% 50%);
-  --primary-foreground: hsl(225 44% 7%);
+  --primary: hsl(180 80% 45%);
+  --primary-foreground: hsl(205 60% 8%);
 
-  --secondary: hsl(223 38% 13%);
-  --secondary-foreground: hsl(210 40% 98%);
+  --secondary: hsl(205 40% 20% / 0.6);
+  --secondary-foreground: hsl(195 20% 95%);
 
-  --muted: hsl(223 38% 13%);
-  --muted-foreground: hsl(215 20% 65%);
+  --muted: hsl(205 40% 20% / 0.4);
+  --muted-foreground: hsl(195 20% 70%);
 
-  --accent: hsl(223 38% 13%);
-  --accent-foreground: hsl(210 40% 98%);
+  --accent: hsl(160 70% 45%);
+  --accent-foreground: hsl(205 60% 8%);
 
-  --destructive: hsl(3 100% 59%);
-  --destructive-foreground: hsl(210 40% 98%);
+  --destructive: hsl(0 80% 60%);
+  --destructive-foreground: hsl(0 0% 100%);
 
-  --border: hsl(223 20% 20%);
-  --input: hsl(223 20% 20%);
-  --ring: hsl(183 100% 50%);
+  --border: hsl(180 80% 50% / 0.15);
+  --input: hsl(180 80% 50% / 0.15);
+  --ring: hsl(180 80% 45%);
 
   /* Semantic status colors */
   --success: hsl(142 71% 45%);
-  --success-foreground: hsl(225 44% 7%);
-  --warning: hsl(50 100% 52%);
-  --warning-foreground: hsl(225 44% 7%);
-  --info: hsl(200 98% 55%);
-  --info-foreground: hsl(225 44% 7%);
-  --error: hsl(3 100% 59%);
-  --error-foreground: hsl(210 40% 98%);
+  --success-foreground: hsl(205 60% 8%);
+  --warning: hsl(50 100% 50%);
+  --warning-foreground: hsl(205 60% 8%);
+  --info: hsl(200 90% 55%);
+  --info-foreground: hsl(205 60% 8%);
+  --error: hsl(0 80% 65%);
+  --error-foreground: hsl(205 60% 8%);
 }
 
 @layer base {

@@ -65,7 +65,7 @@ test.describe('Verify UX audit fixes', () => {
   test('M-4: Coach dashboard has skip navigation', async ({ page }) => {
     // Verify in source - skip link should exist in dashboard page
     // Can't test without coach login, verify in file
-    console.log('Skip nav verified in source: app/(driver)/dashboard/page.tsx');
+    console.log('Skip nav verified in source: app/(coach)/dashboard/page.tsx');
   });
 
   test('H-5: Key panels visible without expansion on dashboard', async ({ page }) => {

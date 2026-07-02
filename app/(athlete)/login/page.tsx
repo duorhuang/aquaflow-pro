@@ -15,12 +15,16 @@ function LoginContent() {
     const [isCoach, setIsCoach] = useState(() => searchParams.get("role") === "coach");
 
     return (
-        <div className="min-h-screen bg-[#020b14] flex flex-col items-center justify-center p-4 relative overflow-hidden">
-            {/* Premium Background Gradients & Effects */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#021526] via-[#052220] to-[#01090d] z-0" />
-            <div className="absolute top-0 right-0 w-[50vw] h-[50vw] rounded-full bg-cyan-500/5 blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-[50vw] h-[50vw] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none" />
-            <div className="fixed inset-0 bg-theme-texture pointer-events-none z-0 opacity-10" aria-hidden="true" />
+        <div className="min-h-screen bg-sky-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+            {/* Premium Nature Background */}
+            <div 
+                className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-90"
+                style={{ backgroundImage: "url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073&auto=format&fit=crop')" }}
+            />
+            
+            {/* Ambient Gradient Overlays */}
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/60 via-sky-800/50 to-blue-900/70 z-0 backdrop-blur-sm" />
+            <div className="fixed inset-0 bg-theme-texture pointer-events-none z-0 opacity-20" aria-hidden="true" />
 
             <motion.div 
                 className="w-full max-w-md space-y-8 relative z-10"
@@ -31,25 +35,28 @@ function LoginContent() {
                 {/* Logo */}
                 <div className="text-center space-y-4">
                     <motion.div 
-                        className="w-24 h-24 bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 rounded-[2rem] flex items-center justify-center mx-auto mb-2 shadow-[0_0_40px_rgba(52,211,153,0.15)] border border-emerald-500/20 backdrop-blur-xl"
+                        className="w-24 h-24 bg-white/20 rounded-[2rem] flex items-center justify-center mx-auto mb-2 shadow-lg border border-white/40 backdrop-blur-xl"
                         whileHover={{ scale: 1.05, rotate: 5 }}
                         transition={{ type: "spring", stiffness: 300, damping: 15 }}
                     >
-                        <Waves className="w-12 h-12 text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.8)]" />
+                        <Waves className="w-12 h-12 text-white drop-shadow-md" />
                     </motion.div>
-                    <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-cyan-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent drop-shadow-sm">
+                    <h1 className="text-4xl font-bold tracking-tight text-white drop-shadow-lg">
                         AquaFlow Pro
                     </h1>
-                    <p className="text-muted-foreground/80 font-medium">
+                    <p className="text-white/90 font-medium drop-shadow-sm">
                         {isCoach ? (t.common.coach + "管理后台") : (t.common.athlete + "训练通道")}
                     </p>
                 </div>
 
                 {/* Role Toggle */}
-                <div className="flex p-1.5 bg-white/5 rounded-2xl max-w-[260px] mx-auto border border-white/10 backdrop-blur-md relative" role="radiogroup" aria-label="选择角色">
+                <div className="flex p-1.5 bg-white/20 rounded-2xl max-w-[260px] mx-auto border border-white/30 backdrop-blur-md relative shadow-lg" role="radiogroup" aria-label="选择角色">
                     {/* Sliding Background for Active Tab */}
                     <motion.div
-                        className="absolute inset-y-1.5 w-[calc(50%-0.375rem)] bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl shadow-lg"
+                        className={cn(
+                            "absolute inset-y-1.5 w-[calc(50%-0.375rem)] rounded-xl shadow-md",
+                            isCoach ? "bg-gradient-to-r from-orange-400 to-rose-500" : "bg-gradient-to-r from-cyan-400 to-blue-500"
+                        )}
                         initial={false}
                         animate={{ x: isCoach ? "100%" : "0%" }}
                         transition={{ type: "spring", stiffness: 400, damping: 30 }}
@@ -61,7 +68,7 @@ function LoginContent() {
                         aria-checked={!isCoach}
                         className={cn(
                             "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl transition-colors min-h-[48px] relative z-10",
-                            !isCoach ? "text-white" : "text-muted-foreground/70 hover:text-white"
+                            !isCoach ? "text-white" : "text-white/70 hover:text-white"
                         )}
                     >
                         <User className="w-4.5 h-4.5" /> {t.common.athlete}
@@ -72,7 +79,7 @@ function LoginContent() {
                         aria-checked={isCoach}
                         className={cn(
                             "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl transition-colors min-h-[48px] relative z-10",
-                            isCoach ? "text-white" : "text-muted-foreground/70 hover:text-white"
+                            isCoach ? "text-white" : "text-white/70 hover:text-white"
                         )}
                     >
                         <UserCog className="w-4.5 h-4.5" /> {t.common.coach}
@@ -95,7 +102,7 @@ function LoginContent() {
                     </motion.div>
                 </AnimatePresence>
 
-                <p className="text-center text-sm text-muted-foreground/50 mt-8">
+                <p className="text-center text-sm text-white/80 mt-8 drop-shadow-sm font-medium">
                     {isCoach ? "Powered by AquaFlow Pro Engine" : `${t.common.forgotPassword || "忘记密码？"}请联系${t.common.coach}`}
                 </p>
             </motion.div>
@@ -111,9 +118,9 @@ function LoginContent() {
 export default function LoginPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-[#020b14] flex flex-col items-center justify-center space-y-6">
-                <div className="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-400 rounded-full animate-spin" />
-                <p className="text-emerald-400/80 font-mono tracking-widest text-sm animate-pulse">INITIALIZING...</p>
+            <div className="min-h-screen bg-sky-900 flex flex-col items-center justify-center space-y-6">
+                <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin shadow-lg" />
+                <p className="text-white/90 font-mono tracking-widest text-sm animate-pulse">INITIALIZING...</p>
             </div>
         }>
             <LoginContent />

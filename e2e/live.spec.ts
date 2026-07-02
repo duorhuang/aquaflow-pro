@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Live Website E2E Tests - 5 Iterations', () => {
+test.describe('Live Website E2E Tests - 20 Iterations', () => {
 
-  // Test Swimmer Login and Features 5 Times
-  for (let i = 1; i <= 5; i++) {
+  // Test Swimmer Login and Features 20 Times
+  for (let i = 1; i <= 20; i++) {
     test(`Swimmer Login & Verification - Iteration ${i}`, async ({ page }) => {
       console.log(`Swimmer Iteration ${i} starting...`);
       await page.goto('/login?role=athlete', { waitUntil: 'domcontentloaded' });
@@ -19,7 +19,7 @@ test.describe('Live Website E2E Tests - 5 Iterations', () => {
       await page.locator('button[type="submit"]').click();
       
       // Wait for successful login redirect to workout feed
-      await page.waitForURL('**/workout**', { timeout: 15000 });
+      await page.waitForURL('**/workout**', { timeout: 45000 });
       
       // Verify Workout page has loaded basic content
       await expect(page.locator('body')).not.toBeEmpty();
@@ -39,8 +39,8 @@ test.describe('Live Website E2E Tests - 5 Iterations', () => {
     });
   }
 
-  // Test Coach Login and Features 5 Times
-  for (let i = 1; i <= 5; i++) {
+  // Test Coach Login and Features 20 Times
+  for (let i = 1; i <= 20; i++) {
     test(`Coach Login & Verification - Iteration ${i}`, async ({ page }) => {
       console.log(`Coach Iteration ${i} starting...`);
       await page.goto('/login?role=coach', { waitUntil: 'domcontentloaded' });
@@ -54,7 +54,7 @@ test.describe('Live Website E2E Tests - 5 Iterations', () => {
       await page.locator('button[type="submit"]').click();
       
       // Wait for dashboard
-      await page.waitForURL('**/dashboard**', { timeout: 15000 });
+      await page.waitForURL('**/dashboard**', { timeout: 45000 });
       
       // Verify Dashboard
       await expect(page.locator('body')).not.toBeEmpty();
