@@ -684,8 +684,8 @@ export async function POST() {
 
         await Promise.all(items.map(item =>
             sql`
-                INSERT INTO "ShopItem" ("id", "name", "category", "tier", "price", "imageKey", "slotType", "gender", "previewColor")
-                VALUES (${globalThis.crypto.randomUUID()}, ${item.name}, ${item.category}, ${item.tier}, ${item.price}, ${item.imageKey}, ${item.slotType}, ${item.gender}, ${item.previewColor})
+                INSERT INTO "ShopItem" ("id", "name", "category", "tier", "price", "imageKey", "slotType", "gender", "previewColor", "createdAt")
+                VALUES (${globalThis.crypto.randomUUID()}, ${item.name}, ${item.category}, ${item.tier}, ${item.price}, ${item.imageKey}, ${item.slotType}, ${item.gender}, ${item.previewColor}, ${new Date().toISOString()})
             `
         ));
 
