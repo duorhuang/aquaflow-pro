@@ -1,7 +1,7 @@
 "use client";
 
 import { Sidebar } from "@/components/layout/Sidebar";
-import { CoachGuard } from "@/components/auth/CoachGuard";
+
 import { MobileNav } from "@/components/layout/MobileNav";
 import { useSessionExpiryWarning } from "@/hooks/useSessionExpiryWarning";
 
@@ -16,7 +16,7 @@ export default function DriverLayout({
     children: React.ReactNode;
 }) {
     return (
-        <CoachGuard>
+        <>
             <SessionWarning />
             <a
                 href="#main-content"
@@ -50,6 +50,6 @@ export default function DriverLayout({
                 </main>
             </div>
             </div>
-        </CoachGuard>
+        </>
     );
 }

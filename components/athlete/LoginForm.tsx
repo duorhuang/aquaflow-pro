@@ -129,7 +129,6 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
 
     const redirectAfterLogin = async (role: string, data?: any) => {
         resetAuth();
-        router.refresh();
         if (role === "coach") {
             router.push("/dashboard");
         } else {

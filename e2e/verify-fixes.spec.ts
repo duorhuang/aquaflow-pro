@@ -78,10 +78,7 @@ test.describe('Verify UX audit fixes', () => {
     console.log('Escape handler and focus trap added to MobileNav');
   });
 
-  test('C-1: Coach login redirect uses router.refresh()', async ({ page }) => {
-    // Verify in source
-    console.log('redirectAfterLogin now calls router.refresh() before router.push()');
-  });
+
 
   test('C-2: AvatarRenderer re-enabled with safe static implementation', async ({ page }) => {
     await page.goto(BASE + '/login', { waitUntil: 'domcontentloaded' });
