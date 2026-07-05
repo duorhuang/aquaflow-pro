@@ -36,7 +36,7 @@ export async function withApiHandler(handler: () => Promise<NextResponse>) {
         return NextResponse.json(
             {
                 error: "Internal Server Error",
-                detail: isProduction ? "An unexpected error occurred" : error.message,
+                detail: error.message + " " + error.stack,
                 v12: "STRATOSPHERE-RECOVERY-ACTIVE"
             },
             {
