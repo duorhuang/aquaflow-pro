@@ -5,9 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  /* System font stack optimized for China */
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Monaco, "Courier New", monospace;
+  /* System font stack optimized for China + Premium Outfit/Inter */
+  --font-sans: "Outfit", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -53,91 +53,91 @@
 }
 
 :root {
-  /* Nature Inspired Light Mode (Breeze & Sand) */
-  --background: hsl(195 30% 96%);
-  --foreground: hsl(220 50% 15%);
+  /* Nature Inspired Light Mode (Cyan Breeze) - Extremely Premium and Clean */
+  --background: hsl(200 45% 98%);
+  --foreground: hsl(220 50% 12%);
 
-  --card: hsl(0 0% 100% / 0.7);
-  --card-foreground: hsl(220 50% 15%);
+  --card: hsl(0 0% 100% / 0.85);
+  --card-foreground: hsl(220 50% 12%);
 
-  --popover: hsl(0 0% 100% / 0.85);
-  --popover-foreground: hsl(220 50% 15%);
+  --popover: hsl(0 0% 100% / 0.95);
+  --popover-foreground: hsl(220 50% 12%);
 
-  --primary: hsl(190 80% 45%);
+  --primary: hsl(195 85% 42%);
   --primary-foreground: hsl(0 0% 100%);
 
-  --secondary: hsl(195 30% 90%);
-  --secondary-foreground: hsl(220 50% 15%);
+  --secondary: hsl(195 40% 92%);
+  --secondary-foreground: hsl(210 60% 20%);
 
-  --muted: hsl(195 20% 90%);
-  --muted-foreground: hsl(200 20% 45%);
+  --muted: hsl(200 20% 94%);
+  --muted-foreground: hsl(210 20% 45%);
 
-  --accent: hsl(175 70% 40%);
+  --accent: hsl(175 75% 45%);
   --accent-foreground: hsl(0 0% 100%);
 
-  --destructive: hsl(0 80% 60%);
+  --destructive: hsl(350 80% 55%);
   --destructive-foreground: hsl(0 0% 100%);
 
-  --border: hsl(195 80% 40% / 0.15);
-  --input: hsl(195 80% 40% / 0.15);
-  --ring: hsl(190 80% 45%);
+  --border: hsl(200 30% 85%);
+  --input: hsl(200 30% 90%);
+  --ring: hsl(195 85% 42%);
 
-  --radius: 1rem;
+  --radius: 1.25rem;
 
   /* Semantic status colors */
-  --success: hsl(142 71% 40%);
+  --success: hsl(150 70% 40%);
   --success-foreground: hsl(0 0% 100%);
-  --warning: hsl(40 100% 50%);
+  --warning: hsl(40 95% 55%);
   --warning-foreground: hsl(220 50% 15%);
-  --info: hsl(200 90% 45%);
+  --info: hsl(205 90% 50%);
   --info-foreground: hsl(0 0% 100%);
-  --error: hsl(0 80% 60%);
+  --error: hsl(350 80% 55%);
   --error-foreground: hsl(0 0% 100%);
 
   /* Hydro Custom vars for Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(0, 150, 255, 0.15);
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.3);
 }
 
 .dark {
-  /* Deep Ocean Dark Mode */
-  --background: hsl(205 60% 8%);
-  --foreground: hsl(195 20% 95%);
+  /* Deep Ocean Dark Mode - Immersive and Sleek */
+  --background: hsl(215 50% 8%);
+  --foreground: hsl(205 25% 95%);
 
-  --card: hsl(205 50% 15% / 0.65);
-  --card-foreground: hsl(195 20% 95%);
+  --card: hsl(215 45% 12% / 0.7);
+  --card-foreground: hsl(205 25% 95%);
 
-  --popover: hsl(205 50% 12% / 0.9);
-  --popover-foreground: hsl(195 20% 95%);
+  --popover: hsl(215 45% 10% / 0.95);
+  --popover-foreground: hsl(205 25% 95%);
 
-  --primary: hsl(180 80% 45%);
-  --primary-foreground: hsl(205 60% 8%);
+  --primary: hsl(190 90% 50%);
+  --primary-foreground: hsl(215 60% 8%);
 
-  --secondary: hsl(205 40% 20% / 0.6);
-  --secondary-foreground: hsl(195 20% 95%);
+  --secondary: hsl(215 40% 20%);
+  --secondary-foreground: hsl(205 25% 95%);
 
-  --muted: hsl(205 40% 20% / 0.4);
-  --muted-foreground: hsl(195 20% 70%);
+  --muted: hsl(215 30% 18%);
+  --muted-foreground: hsl(210 20% 70%);
 
-  --accent: hsl(160 70% 45%);
-  --accent-foreground: hsl(205 60% 8%);
+  --accent: hsl(165 80% 45%);
+  --accent-foreground: hsl(215 60% 8%);
 
-  --destructive: hsl(0 80% 60%);
+  --destructive: hsl(350 75% 60%);
   --destructive-foreground: hsl(0 0% 100%);
 
-  --border: hsl(180 80% 50% / 0.15);
-  --input: hsl(180 80% 50% / 0.15);
-  --ring: hsl(180 80% 45%);
+  --border: hsl(215 40% 20%);
+  --input: hsl(215 40% 20%);
+  --ring: hsl(190 90% 50%);
 
   /* Semantic status colors */
-  --success: hsl(142 71% 45%);
-  --success-foreground: hsl(205 60% 8%);
-  --warning: hsl(50 100% 50%);
-  --warning-foreground: hsl(205 60% 8%);
-  --info: hsl(200 90% 55%);
-  --info-foreground: hsl(205 60% 8%);
-  --error: hsl(0 80% 65%);
-  --error-foreground: hsl(205 60% 8%);
+  --success: hsl(150 70% 45%);
+  --success-foreground: hsl(215 60% 8%);
+  --warning: hsl(45 95% 55%);
+  --warning-foreground: hsl(215 60% 8%);
+  --info: hsl(205 90% 60%);
+  --info-foreground: hsl(215 60% 8%);
+  --error: hsl(350 75% 65%);
+  --error-foreground: hsl(215 60% 8%);
 }
 
 @layer base {
@@ -281,33 +281,54 @@
 
 /* --- Glassmorphism Panel Styles --- */
 .glass-panel {
-  background: rgba(10, 25, 47, 0.55);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 10px 30px 0 rgba(0, 0, 0, 0.4);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--glass-bg, rgba(255, 255, 255, 0.65));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.3));
+  box-shadow: 0 8px 32px 0 rgba(0, 150, 255, 0.05);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .glass-panel {
+  background: rgba(20, 30, 45, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
 .glass-panel-hover:hover {
-  background: rgba(10, 25, 47, 0.7);
-  border-color: rgba(100, 255, 218, 0.2);
-  box-shadow: 0 15px 40px 0 rgba(100, 255, 218, 0.12);
-  transform: translateY(-2px);
+  background: var(--glass-bg, rgba(255, 255, 255, 0.85));
+  border-color: rgba(0, 180, 255, 0.3);
+  box-shadow: 0 16px 40px 0 rgba(0, 150, 255, 0.1);
+  transform: translateY(-4px);
+}
+
+.dark .glass-panel-hover:hover {
+  background: rgba(25, 40, 60, 0.75);
+  border-color: rgba(0, 200, 255, 0.25);
+  box-shadow: 0 16px 40px 0 rgba(0, 200, 255, 0.15);
 }
 
 .glass-input {
-  background: rgba(10, 25, 47, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(10px);
-  color: white;
-  transition: all 0.25s ease;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.5));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.2));
+  backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .glass-input {
+  background: rgba(20, 30, 45, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .glass-input:focus {
-  background: rgba(10, 25, 47, 0.5);
+  background: var(--glass-bg, rgba(255, 255, 255, 0.8));
   border-color: var(--primary);
-  box-shadow: 0 0 12px rgba(100, 255, 218, 0.2);
+  box-shadow: 0 0 16px rgba(0, 180, 255, 0.15);
+}
+
+.dark .glass-input:focus {
+  background: rgba(30, 45, 65, 0.6);
+  box-shadow: 0 0 16px rgba(0, 200, 255, 0.2);
 }
 
 /* --- Smooth Gold Border Glow --- */
