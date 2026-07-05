@@ -682,12 +682,12 @@ export async function POST() {
         items.push({ name: '猫咪的春日小屋', category: '环境', tier: 'advanced', price: 300, slotType: 'decoration_floor', gender: 'unisex', imageKey: 'env_spring_floor_dec', previewColor: meta() });
         items.push({ name: '春日邮票贴', category: '环境', tier: 'advanced', price: 300, slotType: 'decoration_wall', gender: 'unisex', imageKey: 'env_spring_wall_dec', previewColor: meta() });
 
-        await Promise.all(items.map(item =>
-            sql`
+        for (const item of items) {
+            await sql`
                 INSERT INTO "ShopItem" ("id", "name", "category", "tier", "price", "imageKey", "slotType", "gender", "previewColor", "createdAt", "sortOrder")
                 VALUES (${globalThis.crypto.randomUUID()}, ${item.name}, ${item.category}, ${item.tier}, ${item.price}, ${item.imageKey}, ${item.slotType}, ${item.gender}, ${item.previewColor}, ${new Date().toISOString()}, 0)
-            `
-        ));
+            `;
+        }
 
         return NextResponse.json({ success: true, count: items.length }, { headers: V12_FINGERPRINT });
     });
