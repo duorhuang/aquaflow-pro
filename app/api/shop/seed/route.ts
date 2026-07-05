@@ -682,12 +682,26 @@ export async function POST() {
         items.push({ name: '猫咪的春日小屋', category: '环境', tier: 'advanced', price: 300, slotType: 'decoration_floor', gender: 'unisex', imageKey: 'env_spring_floor_dec', previewColor: meta() });
         items.push({ name: '春日邮票贴', category: '环境', tier: 'advanced', price: 300, slotType: 'decoration_wall', gender: 'unisex', imageKey: 'env_spring_wall_dec', previewColor: meta() });
 
-        for (const item of items) {
-            await sql`
-                INSERT INTO "ShopItem" ("id", "name", "category", "tier", "price", "imageKey", "slotType", "gender", "previewColor", "createdAt", "sortOrder")
-                VALUES (${globalThis.crypto.randomUUID()}, ${item.name}, ${item.category}, ${item.tier}, ${item.price}, ${item.imageKey}, ${item.slotType}, ${item.gender}, ${item.previewColor}, ${new Date().toISOString()}, 0)
-            `;
-        }
+        const itemsWithDefaults = items.map(item => ({
+            id: globalThis.crypto.randomUUID(),
+            name: item.name,
+            category: item.category,
+            tier: item.tier,
+            price: item.price,
+            imageKey: item.imageKey,
+            slotType: item.slotType,
+            gender: item.gender,
+            previewColor: item.previewColor,
+            sortOrder: 0,
+            createdAt: new Date().toISOString()
+        }));
+
+        await sql`
+            INSERT INTO "ShopItem" ("id", "name", "category", "tier", "price", "imageKey", "slotType", "gender", "previewColor", "sortOrder", "createdAt")
+            SELECT "id", "name", "category", "tier", "price", "imageKey", "slotType", "gender", "previewColor", "sortOrder", "createdAt"::timestamp
+            FROM json_to_recordset(${JSON.stringify(itemsWithDefaults)}::json)
+            AS x("id" text, "name" text, "category" text, "tier" text, "price" int, "imageKey" text, "slotType" text, "gender" text, "previewColor" text, "sortOrder" int, "createdAt" text)
+        `;
 
         return NextResponse.json({ success: true, count: items.length }, { headers: V12_FINGERPRINT });
     });
