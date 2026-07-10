@@ -19,7 +19,7 @@ import { AthleteTelemetry } from "@/components/athlete/AthleteTelemetry";
 import { AlertTriangle, LogOut, Waves, MessageSquare, TrendingUp, FolderOpen, ArrowRight, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Palette, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
 import { useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
@@ -38,18 +38,21 @@ function AthleteWorkoutContent() {
     const searchParams = useSearchParams();
     const { t } = useLanguage();
     const { toast } = useToast();
-    const { plans, swimmers, attendance, feedbacks, performances, updateSwimmer, weeklyPlans, announcements, archivedAnnouncements, getVisibleAnnouncements, isLoaded: storeLoaded, syncStatus } = useStore();
+    const { plans, swimmers, attendance, feedbacks, performances, updateSwimmer, weeklyPlans, announcements, archivedAnnouncements, getVisibleAnnouncements, isLoaded: storeLoaded, syncStatus, unauthenticated, currentUserInfo, isAuthLoading: globalAuthLoading, triggerSync } = useStore();
+
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [pendingReminders, setPendingReminders] = useState(0);
     const [showArchive, setShowArchive] = useState(false);
     const [athleteArchiveLimit, setAthleteArchiveLimit] = useState(5);
     const [showBgPicker, setShowBgPicker] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
-    const [isAuthLoading, setIsAuthLoading] = useState(true);
-    const [authUserId, setAuthUserId] = useState<string | null>(null);
+
+    // Derive authentication details from store
+    const authUserId = currentUserInfo?.id || (typeof window !== 'undefined' ? localStorage.getItem('aquaflow_athlete_id') : null);
+    const isAuthLoading = globalAuthLoading;
 
     // Derive currentUser from store using auth ID to prevent session loops when data is mixed
-    const currentAthleteId = authUserId || (typeof window !== 'undefined' ? localStorage.getItem('aquaflow_athlete_id') : null);
+    const currentAthleteId = authUserId;
     const currentUser = storeLoaded && swimmers.length > 0 
         ? (currentAthleteId ? swimmers.find(s => s.id === currentAthleteId) || swimmers[0] : swimmers[0]) 
         : null;
@@ -201,50 +204,53 @@ function AthleteWorkoutContent() {
     const [status, setStatus] = useState<"Active" | "Resting" | "Injured">("Active");
     const [statusSaved, setStatusSaved] = useState(false);
     const [statusSaving, setStatusSaving] = useState(false);
+    const [prevUserId, setPrevUserId] = useState<string | null>(null);
 
-    const loadPendingReminders = useCallback(async (swimmerId: string) => {
-        try {
-            const res = await api.feedbackReminders.getForSwimmer(swimmerId);
-            const pending = res.filter((r: any) => !r.isResponded);
-            setPendingReminders(pending.length);
-        } catch (e: unknown) {
-            const err = e instanceof Error ? e : new Error(String(e));
-            if (!err.message?.includes('API Error: 4')) {
-                console.error("Failed to load reminders count", e);
-            }
+    // Initialize readiness/status when currentUser becomes available from store (render-time sync)
+    if (currentUser && currentUser.id !== prevUserId) {
+        setPrevUserId(currentUser.id);
+        setReadiness(currentUser.readiness || 95);
+        if (currentUser.status === "Active" || currentUser.status === "Resting" || currentUser.status === "Injured") {
+            setStatus(currentUser.status);
         }
-    }, []);
+    }
 
-    // Initialize readiness/status when currentUser becomes available from store
+    // Load reminders when authUserId is resolved
     useEffect(() => {
-        if (currentUser) {
-            setReadiness(currentUser.readiness || 95);
-            if (currentUser.status === "Active" || currentUser.status === "Resting" || currentUser.status === "Injured") {
-                setStatus(currentUser.status);
-            }
-        }
-    }, [currentUser]);
-
-    // Auth check — middleware already verified session, just confirm role and load reminders.
-    useEffect(() => {
+        if (!authUserId) return;
+        
         let isMounted = true;
-        api.auth.me()
-            .then((user: any) => {
-                if (!isMounted) return;
-                if (user?.role === 'athlete') {
-                    setAuthUserId(user.id);
-                    setIsAuthLoading(false);
-                    loadPendingReminders(user.id);
-                } else {
-                    router.push("/login");
+        const fetchReminders = async () => {
+            try {
+                const res = await api.feedbackReminders.getForSwimmer(authUserId);
+                const pending = res.filter((r: any) => !r.isResponded);
+                if (isMounted) {
+                    setPendingReminders(pending.length);
                 }
-            })
-            .catch(() => {
-                if (!isMounted) return;
+            } catch (e: unknown) {
+                const err = e instanceof Error ? e : new Error(String(e));
+                if (!err.message?.includes('API Error: 4')) {
+                    console.error("Failed to load reminders count", e);
+                }
+            }
+        };
+        fetchReminders();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [authUserId]);
+
+    // Redirect to login if user is unauthenticated or not an athlete
+    useEffect(() => {
+        if (globalAuthLoading) return;
+        if (!currentUserInfo || currentUserInfo.role !== 'athlete') {
+            const localId = typeof window !== 'undefined' ? localStorage.getItem("aquaflow_athlete_id") : null;
+            if (!localId) {
                 router.push("/login");
-            });
-        return () => { isMounted = false; };
-    }, [router, loadPendingReminders]);
+            }
+        }
+    }, [globalAuthLoading, currentUserInfo, router]);
 
     const handleLogout = async () => {
         if (isLoggingOut) return;
@@ -331,7 +337,7 @@ function AthleteWorkoutContent() {
                     </div>
                     <div className="space-y-3 pt-2">
                         <button
-                            onClick={() => window.location.reload()}
+                            onClick={() => triggerSync(true)}
                             className="w-full bg-primary hover:bg-primary/95 text-black font-semibold py-3 rounded-xl transition-all duration-300 shadow-[0_0_15px_rgba(100,255,218,0.2)] hover:shadow-[0_0_25px_rgba(100,255,218,0.35)]"
                         >
                             重新尝试连接
@@ -348,7 +354,7 @@ function AthleteWorkoutContent() {
         );
     }
 
-    if (!currentUser) {
+    if (!currentUser || unauthenticated) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center">
                 <div className="space-y-4 max-w-xs">
@@ -424,7 +430,7 @@ function AthleteWorkoutContent() {
                         <div className="relative">
                             <div className="w-10 h-10 rounded-full border-2 border-primary overflow-hidden shadow-[0_0_12px_rgba(0,242,255,0.3)] bg-slate-900">
                                 <AvatarRenderer
-                                    gender={currentUser.gender || "male"}
+                                    gender={currentUser.gender === "female" ? "female" : "male"}
                                     equippedItems={currentUser.equippedItems || {}}
                                     size={40}
                                     animated={false}

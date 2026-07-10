@@ -21,9 +21,13 @@ import { useBackgroundTheme } from "@/hooks/useBackgroundTheme";
 
 export default function AthleteProfilePage() {
     const router = useRouter();
-    const { swimmers, updateSwimmer, isLoaded } = useStore();
+    const { swimmers, updateSwimmer, isLoaded, unauthenticated, currentUserInfo, isAuthLoading } = useStore();
     const { t } = useLanguage();
-    const [currentUser, setCurrentUser] = useState<any>(null);
+    
+    // Derive authentication details from store
+    const athleteId = currentUserInfo?.id || (typeof window !== 'undefined' ? localStorage.getItem('aquaflow_athlete_id') : null);
+    const currentUser = swimmers.find(s => s.id === athleteId) || swimmers[0];
+
     const [activeTab, setActiveTab] = useState<'shop' | 'buddy' | 'profile' | 'injury'>('shop');
     const [name, setName] = useState("");
     const [mainStroke, setMainStroke] = useState<Swimmer["mainStroke"] | undefined>(undefined);
@@ -32,6 +36,7 @@ export default function AthleteProfilePage() {
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [showBgPicker, setShowBgPicker] = useState(false);
+    const [prevUserId, setPrevUserId] = useState<string | null>(null);
 
     // Background theme
     const {
@@ -42,24 +47,25 @@ export default function AthleteProfilePage() {
         setAutoMode: setBgAuto,
     } = useBackgroundTheme();
 
+    // Initialize input states when current swimmer is resolved
+    if (currentUser && currentUser.id !== prevUserId) {
+        setPrevUserId(currentUser.id);
+        setName(currentUser.name || "");
+        setMainStroke((currentUser.mainStroke || undefined) as Swimmer["mainStroke"] | undefined);
+        setReadiness(currentUser.readiness || 100);
+        setGender(currentUser.gender || "male");
+    }
+
+    // Redirect to login if user is unauthenticated or not an athlete
     useEffect(() => {
-        let isMounted = true;
-        api.auth.me()
-            .then((user: any) => {
-                if (!isMounted) return;
-                if (user.role !== 'athlete') {
-                    router.push("/login");
-                    return;
-                }
-                setCurrentUser(user);
-                setName(user.name || "");
-                setMainStroke((user.mainStroke || undefined) as Swimmer["mainStroke"] | undefined);
-                setReadiness(user.readiness || 100);
-                setGender(user.gender || "male");
-            })
-            .catch(() => { if (isMounted) router.push("/login"); });
-        return () => { isMounted = false; };
-    }, [router]);
+        if (isAuthLoading) return;
+        if (!currentUserInfo || currentUserInfo.role !== 'athlete') {
+            const localId = typeof window !== 'undefined' ? localStorage.getItem("aquaflow_athlete_id") : null;
+            if (!localId) {
+                router.push("/login");
+            }
+        }
+    }, [isAuthLoading, currentUserInfo, router]);
 
     const handleSave = async () => {
         if (!currentUser) return;
@@ -88,7 +94,27 @@ export default function AthleteProfilePage() {
         router.push("/login");
     };
 
-    if (!isLoaded && !currentUser) {
+    if (unauthenticated) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center">
+                <div className="space-y-4 max-w-xs">
+                    <div className="w-16 h-16 bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                        <LogOut className="w-8 h-8 text-red-500" />
+                    </div>
+                    <h2 className="text-xl font-bold text-white">会话已过期</h2>
+                    <p className="text-sm text-muted-foreground">无法识别您的队员身份，请尝试重新登录程序。</p>
+                    <button
+                        onClick={handleLogout}
+                        className="w-full bg-primary text-white py-3 rounded-xl font-bold hover:scale-[1.02] transition-all"
+                    >
+                        返回登录页
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (isAuthLoading || (!isLoaded && !currentUser)) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">

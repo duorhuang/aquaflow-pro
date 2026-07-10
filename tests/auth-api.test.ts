@@ -400,9 +400,24 @@ describe('Auth API', () => {
 
     // ─── Register Coach Route ──────────────────────────────────────
     describe('POST /api/auth/register-coach', () => {
+        it('should reject registration with invalid or missing passcode', async () => {
+            const req = createRequest('POST', 'http://localhost/api/auth/register-coach', {
+                username: 'new_coach',
+                password: 'password123',
+                name: 'New Coach',
+                passcode: 'wrong',
+            });
+            const res = await registerCoachHandler(req);
+            const json = await res.json();
+
+            expect(res.status).toBe(401);
+            expect(json.error).toContain('passcode');
+        });
+
         it('should reject registration with missing fields', async () => {
             const req = createRequest('POST', 'http://localhost/api/auth/register-coach', {
                 username: 'new_coach',
+                passcode: 'aquaflow2026',
             });
             const res = await registerCoachHandler(req);
             const json = await res.json();
@@ -411,29 +426,12 @@ describe('Auth API', () => {
             expect(json.error).toContain('required');
         });
 
-        it('should reject registration when coach already exists', async () => {
-            // Override mock to return an existing coach
-            mockNeon.mockImplementationOnce(((strings: TemplateStringsArray, ...values: any[]) => {
-                return Promise.resolve([{ id: 'existing-coach' }]);
-            }) as any);
-
+        it('should register a new coach successfully with valid passcode', async () => {
             const req = createRequest('POST', 'http://localhost/api/auth/register-coach', {
                 username: 'new_coach',
                 password: 'password123',
                 name: 'New Coach',
-            });
-            const res = await registerCoachHandler(req);
-            const json = await res.json();
-
-            expect(res.status).toBe(409);
-            expect(json.error).toContain('already exists');
-        });
-
-        it('should register a new coach successfully', async () => {
-            const req = createRequest('POST', 'http://localhost/api/auth/register-coach', {
-                username: 'new_coach',
-                password: 'password123',
-                name: 'New Coach',
+                passcode: 'aquaflow2026',
             });
             const res = await registerCoachHandler(req);
             const json = await res.json();
@@ -450,6 +448,7 @@ describe('Auth API', () => {
                 username: 'new_coach',
                 password: 'password123',
                 name: 'New Coach',
+                passcode: 'aquaflow2026',
             });
             const res = await registerCoachHandler(req);
 

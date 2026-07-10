@@ -1,11 +1,11 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from "react";
 import { TrainingPlan, Swimmer, Feedback, AttendanceRecord, PerformanceRecord, BlockTemplate, WeeklyPlan, Announcement } from "@/types";
 import { persist, loadFromStorage, type StorageKey } from "./store/persist-layer";
 import { useSyncEngine, hasFreshStorage } from "./store/sync-engine";
 import { useEntityCRUD } from "./store/entity-crud";
-import { SyncResponse } from "./api-client";
+import { api, SyncResponse } from "./api-client";
 
 interface StoreContextType {
     isLoaded: boolean;
@@ -31,6 +31,7 @@ interface StoreContextType {
     deleteSwimmer: (id: string) => void;
     dbWaking: boolean;
     dbOffline: boolean;
+    unauthenticated: boolean;
     getSwimmerArgs: (swimmerId: string) => { name: string; group: string };
     hydrateMockData: () => void;
     starPlan: (id: string) => void;
@@ -52,6 +53,10 @@ interface StoreContextType {
     clearData: () => void;
     syncStatus: 'idle' | 'syncing' | 'error';
     resetAuth: () => void;
+    currentUserInfo: any | null;
+    isAuthLoading: boolean;
+    setCurrentUserInfo: (user: any | null) => void;
+    triggerSync: (force?: boolean) => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -66,6 +71,44 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const [weeklyPlans, setWeeklyPlans] = useState<WeeklyPlan[]>([]);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [archivedAnnouncements, setArchivedAnnouncements] = useState<Announcement[]>([]);
+
+    const [currentUserInfo, setCurrentUserInfo] = useState<any | null>(null);
+    const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+    useEffect(() => {
+        let isMounted = true;
+        
+        const checkAuth = async () => {
+            const hasSession = typeof document !== 'undefined' && document.cookie.split(';').some(c => c.trim().startsWith('aquaflow_session='));
+            if (!hasSession) {
+                if (isMounted) {
+                    setIsAuthLoading(false);
+                    setCurrentUserInfo(null);
+                }
+                return;
+            }
+
+            try {
+                const user = await api.auth.me();
+                if (isMounted) {
+                    setCurrentUserInfo(user);
+                    setIsAuthLoading(false);
+                }
+            } catch (err) {
+                console.error("Auth check failed in StoreProvider:", err);
+                if (isMounted) {
+                    setCurrentUserInfo(null);
+                    setIsAuthLoading(false);
+                }
+            }
+        };
+
+        checkAuth();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     const persistToStorage = useCallback((key: string, data: any[]) => {
         persist(key as StorageKey, data);
@@ -193,6 +236,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             .sort((a, b) => (a.isStarred === b.isStarred ? 0 : a.isStarred ? -1 : 1));
     }, [announcements]);
 
+    const resetAuth = useCallback(() => {
+        sync.resetAuth();
+        setCurrentUserInfo(null);
+        setIsAuthLoading(false);
+    }, [sync]);
+
     return (
         <StoreContext.Provider value={{
             isLoaded: sync.isLoaded,
@@ -205,6 +254,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             adjustXP: crud.adjustXP,
             addSwimmer: crud.addSwimmer, updateSwimmer: crud.updateSwimmer, deleteSwimmer: crud.deleteSwimmer,
             dbWaking: sync.dbWaking, dbOffline: sync.dbOffline,
+            unauthenticated: sync.unauthenticated,
             recordMutation: sync.recordMutation,
             getSwimmerArgs: crud.getSwimmerArgs,
             hydrateMockData: crud.hydrateMockData,
@@ -219,7 +269,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             getVisibleAnnouncements: () => visibleAnnouncements,
             totalXP, clearData: crud.clearData,
             syncStatus: sync.syncStatus,
-            resetAuth: sync.resetAuth,
+            resetAuth,
+            currentUserInfo,
+            isAuthLoading,
+            setCurrentUserInfo,
+            triggerSync: sync.triggerSync,
         }}>
             {children}
         </StoreContext.Provider>
@@ -256,8 +310,11 @@ export function useStoreSelector<T>(selector: (state: StoreContextType) => T): T
         if (keysA.length !== keysB.length) return false;
         return keysA.every(k => (a as any)[k] === (b as any)[k]);
     };
+    // eslint-disable-next-line react-hooks/refs
     if (!isEqual(prevRef.current, selected)) {
+        // eslint-disable-next-line react-hooks/refs
         prevRef.current = selected;
     }
+    // eslint-disable-next-line react-hooks/refs
     return prevRef.current;
 }

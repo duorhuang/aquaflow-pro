@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Lock, User, Loader2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
@@ -15,7 +16,7 @@ interface LoginFormProps {
 export function LoginForm({ mode = "athlete" }: LoginFormProps) {
     const router = useRouter();
     const { t } = useLanguage();
-    const { resetAuth } = useStore();
+    const { resetAuth, setCurrentUserInfo } = useStore();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -129,6 +130,9 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
 
     const redirectAfterLogin = async (role: string, data?: any) => {
         resetAuth();
+        if (data?.user) {
+            setCurrentUserInfo({ ...data.user, role });
+        }
         if (role === "coach") {
             router.push("/dashboard");
         } else {
@@ -211,7 +215,7 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
 
             {mode === "coach" && (
                 <p className="text-center text-xs text-muted-foreground">
-                    {t.common.forgotPassword || "忘记密码？"}请到 <a href="/setup" className="text-emerald-400 hover:underline">{t.common.resetPassword || "初始化页面"}</a> 重置。
+                    {t.common.forgotPassword || "忘记密码？"}请到 <Link href="/setup" className="text-emerald-400 hover:underline">{t.common.resetPassword || "初始化页面"}</Link> 重置。
                 </p>
             )}
 

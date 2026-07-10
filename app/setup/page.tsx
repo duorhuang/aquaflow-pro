@@ -13,8 +13,34 @@ export default function SetupPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [name, setName] = useState("");
+  const [passcode, setPasscode] = useState("");
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [passcodeError, setPasscodeError] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const handleUnlock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasscodeError("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/register-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passcode }),
+      });
+      if (res.status === 400) {
+        setIsUnlocked(true);
+      } else {
+        const data = await res.json();
+        setPasscodeError(data.error || "Invalid setup passcode");
+      }
+    } catch (err: any) {
+      setPasscodeError(err.message || "Network error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +60,7 @@ export default function SetupPage() {
       const res = await fetch("/api/auth/register-coach", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, name }),
+        body: JSON.stringify({ username, password, name, passcode }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -51,16 +77,61 @@ export default function SetupPage() {
     }
   };
 
+  if (!isUnlocked) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-8 animate-in fade-in duration-300">
+          <div className="text-center space-y-2">
+            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_25px_rgba(0,180,255,0.15)]">
+              <Lock className="w-8 h-8 text-primary" />
+            </div>
+            <h1 className="text-3xl font-bold text-white font-sans">Setup Locked</h1>
+            <p className="text-muted-foreground text-sm">
+              Please enter the configuration passcode to access setup
+            </p>
+          </div>
+
+          <div className="bg-secondary/20 p-6 rounded-3xl border border-white/5 backdrop-blur-sm">
+            <form onSubmit={handleUnlock} className="space-y-4">
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+                <input
+                  type="password"
+                  placeholder="Setup passcode"
+                  value={passcode}
+                  onChange={(e) => setPasscode(e.target.value)}
+                  className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  required
+                />
+              </div>
+
+              {passcodeError && (
+                <p className="text-red-400 text-xs text-center">{passcodeError}</p>
+              )}
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-xl font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-[1.02] flex items-center justify-center gap-2"
+              >
+                Unlock Setup <ArrowRight className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8">
+      <div className="w-full max-w-md space-y-8 animate-in fade-in duration-300">
         <div className="text-center space-y-2">
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Waves className="w-8 h-8 text-primary" />
+          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_25px_rgba(0,180,255,0.15)]">
+            <Waves className="w-8 h-8 text-primary animate-pulse" />
           </div>
           <h1 className="text-3xl font-bold text-white">Setup Coach Account</h1>
           <p className="text-muted-foreground">
-            Create your first coach account to get started
+            Create a coach account to get started
           </p>
         </div>
 

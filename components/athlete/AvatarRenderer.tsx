@@ -7,6 +7,7 @@ interface AvatarRendererProps {
     equippedItems?: Record<string, string>;
     size?: number;
     animated?: boolean;
+    mode?: string;
 }
 
 /**
@@ -14,7 +15,7 @@ interface AvatarRendererProps {
  * that caused Chrome crashes. Shows equipped item count as a badge.
  * TODO: Re-implement with SVG sprites or PNG frames when stable.
  */
-export function AvatarRenderer({ gender = "male", equippedItems = {}, size = 40 }: AvatarRendererProps) {
+export function AvatarRenderer({ gender = "male", equippedItems = {}, size = 40, mode }: AvatarRendererProps) {
     const equippedCount = Object.keys(equippedItems).filter(k => equippedItems[k]).length;
 
     return (

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import Link from "next/link";
 
 export default function GlobalError({
   error,
@@ -36,12 +37,12 @@ export default function GlobalError({
                 <RefreshCw className="w-4 h-4" />
                 重新加载
               </button>
-              <a
+              <Link
                 href="/"
                 className="w-full bg-white/5 hover:bg-white/10 text-white font-medium py-3 rounded-xl border border-white/5 transition-all block"
               >
                 返回首页
-              </a>
+              </Link>
             </div>
           </div>
         </div>

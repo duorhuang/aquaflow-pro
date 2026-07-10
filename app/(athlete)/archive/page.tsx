@@ -46,15 +46,20 @@ interface FeedbackItem {
 
 export default function TrainingArchivePage() {
     const router = useRouter();
-    const { plans, swimmers, attendance, weeklyPlans, isLoaded: storeLoaded } = useStore();
+    const { plans, swimmers, attendance, weeklyPlans, isLoaded: storeLoaded, unauthenticated, currentUserInfo, isAuthLoading: globalAuthLoading } = useStore();
     const { t } = useLanguage();
     const [viewMonth, setViewMonth] = useState(new Date());
     const [selectedEntry, setSelectedEntry] = useState<TrainingDayEntry | null>(null);
     const [activeTab, setActiveTab] = useState<'training' | 'feedback'>('training');
-    const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+    // Derive authentication details from store
+    const athleteId = currentUserInfo?.id || (typeof window !== 'undefined' ? localStorage.getItem('aquaflow_athlete_id') : null);
+    const isAuthLoading = globalAuthLoading;
 
     // Derive currentUser from store — sync endpoint scopes to the current athlete's data.
-    const currentUser = storeLoaded && swimmers.length > 0 ? swimmers[0] : null;
+    const currentUser = storeLoaded && swimmers.length > 0 
+        ? (athleteId ? swimmers.find(s => s.id === athleteId) || swimmers[0] : swimmers[0]) 
+        : null;
     const authResolved = !isAuthLoading;
 
     const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
@@ -132,22 +137,16 @@ export default function TrainingArchivePage() {
         }
     }, [currentUser]);
 
+    // Redirect to login if user is unauthenticated or not an athlete
     useEffect(() => {
-        let isMounted = true;
-        api.auth.me()
-            .then((user: any) => {
-                if (!isMounted) return;
-                if (user?.role === 'athlete') {
-                    setIsAuthLoading(false);
-                } else {
-                    router.push("/login");
-                }
-            })
-            .catch(() => {
-                if (isMounted) router.push("/login");
-            });
-        return () => { isMounted = false; };
-    }, [router]);
+        if (globalAuthLoading) return;
+        if (!currentUserInfo || currentUserInfo.role !== 'athlete') {
+            const localId = typeof window !== 'undefined' ? localStorage.getItem("aquaflow_athlete_id") : null;
+            if (!localId) {
+                router.push("/login");
+            }
+        }
+    }, [globalAuthLoading, currentUserInfo, router]);
 
     useEffect(() => {
         let isMounted = true;
@@ -195,7 +194,7 @@ export default function TrainingArchivePage() {
         );
     }
 
-    if (!currentUser) {
+    if (!currentUser || unauthenticated) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center text-center p-6">
                 <div className="space-y-4 max-w-xs">

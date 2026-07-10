@@ -9,10 +9,14 @@ export async function POST(request: Request) {
   return withApiHandler(async () => {
     const host = request.headers.get('host') || '';
     const sql = getNeon();
-    const existing = await sql`SELECT id FROM "CoachUser" LIMIT 1`;
-    if (existing.length > 0) return NextResponse.json({ error: 'A coach already exists. Use login.' }, { status: 409 });
-
     const data = flattenPayload(await request.json());
+    
+    // Passcode validation
+    const expectedPasscode = process.env.SETUP_PASSCODE || 'aquaflow2026';
+    if (!data.passcode || String(data.passcode) !== expectedPasscode) {
+      return NextResponse.json({ error: 'Invalid or missing setup passcode' }, { status: 401 });
+    }
+
     if (!data.username || !data.password || !data.name) {
       return NextResponse.json({ error: 'username, password, and name are required' }, { status: 400 });
     }

@@ -59,15 +59,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         <ToastContext.Provider value={{ toast: toastFn, dismiss }}>
             {children}
             <div className="fixed top-4 right-4 z-[100] space-y-2 max-w-sm w-full pointer-events-none">
-                {toasts.map(t => (
-                    <div key={t.id} className={cn(
+                {toasts.map(toastItem => (
+                    <div key={toastItem.id} className={cn(
                         "pointer-events-auto flex items-start gap-3 p-3 rounded-xl border backdrop-blur-sm shadow-lg",
-                        bgMap[t.type]
+                        bgMap[toastItem.type]
                     )}>
-                        <div className="mt-0.5 shrink-0">{icons[t.type]}</div>
-                        <p className="text-sm text-white flex-1">{t.message}</p>
+                        <div className="mt-0.5 shrink-0">{icons[toastItem.type]}</div>
+                        <p className="text-sm text-white flex-1">{toastItem.message}</p>
                         <button
-                            onClick={() => dismiss(t.id)}
+                            onClick={() => dismiss(toastItem.id)}
                             className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-white/50 hover:text-white shrink-0 rounded-lg hover:bg-white/10 transition-colors"
                             aria-label={t.common.closeNotification as string || "Close notification"}
                         >

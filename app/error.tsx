@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import Link from "next/link";
 
 export default function ErrorBoundary({
   error,
@@ -69,13 +70,13 @@ export default function ErrorBoundary({
             <RefreshCw className={cn("w-4 h-4", isResetting && "animate-spin")} />
             {isResetting ? "正在恢复..." : "重新尝试"}
           </button>
-          <a
+          <Link
             href="/"
             className="w-full bg-white/5 hover:bg-white/10 text-white font-medium py-3 rounded-xl border border-white/5 transition-all duration-300 flex items-center justify-center gap-2"
           >
             <Home className="w-4 h-4" />
             返回首页
-          </a>
+          </Link>
         </div>
 
         {/* Local data notice */}

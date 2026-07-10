@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api-client";
+import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ShieldAlert, Info, Check, Save, ImagePlus, Loader2, X } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
@@ -146,6 +147,7 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
     const { t } = useLanguage();
     const { toast } = useToast();
     const [bodyMap, setBodyMap] = useState<Record<string, number>>({});
+    const { swimmers, updateSwimmer } = useStore();
     const [selectedPart, setSelectedPart] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
@@ -160,30 +162,29 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
             if (initialBodyMap) {
                 setBodyMap(initialBodyMap);
             } else if (swimmerId && !readOnly) {
-                // Load swimmer's initial body map from API
-                api.auth.me().then(me => {
-                    if (isMounted && me && me.id === swimmerId) {
-                        if (me.injuryBodyMap) {
-                            try {
-                                const parsed = typeof me.injuryBodyMap === "string" 
-                                    ? JSON.parse(me.injuryBodyMap) 
-                                    : me.injuryBodyMap;
-                                setBodyMap(parsed || {});
-                            } catch {
-                                setBodyMap({});
-                            }
+                // Find swimmer in the global store
+                const me = swimmers.find(s => s.id === swimmerId);
+                if (me) {
+                    if (me.injuryBodyMap) {
+                        try {
+                            const parsed = typeof me.injuryBodyMap === "string" 
+                                ? JSON.parse(me.injuryBodyMap) 
+                                : me.injuryBodyMap;
+                            setBodyMap(parsed || {});
+                        } catch {
+                            setBodyMap({});
                         }
-                        if (me.injuryNote) setInjuryNote(me.injuryNote);
-                        if (me.injuryImageUrl) setInjuryImageUrl(me.injuryImageUrl);
                     }
-                });
+                    if (me.injuryNote) setInjuryNote(me.injuryNote);
+                    if (me.injuryImageUrl) setInjuryImageUrl(me.injuryImageUrl);
+                }
             }
         }, 0);
         return () => {
             isMounted = false;
             clearTimeout(timer);
         };
-    }, [swimmerId, initialBodyMap, readOnly]);
+    }, [swimmerId, initialBodyMap, readOnly, swimmers]);
 
     // Handle map click
     const handlePartClick = (part: string) => {
@@ -210,7 +211,7 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
         setSaving(true);
         setSaved(false);
         try {
-            await api.swimmers.update(swimmerId, {
+            await updateSwimmer(swimmerId, {
                 injuryBodyMap: bodyMap,
                 injuryNote,
                 injuryImageUrl

@@ -7,4 +7,4 @@ export default defineCloudflareConfig({
     "@aws-sdk/nested-clients/sts",
     "@aws-sdk/nested-clients/signin"
   ]
-});
+} as any);

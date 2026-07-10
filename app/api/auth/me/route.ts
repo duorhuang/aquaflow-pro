@@ -14,15 +14,27 @@ export async function GET(request: Request) {
     if (!payload) return NextResponse.json({ error: 'Invalid session' }, { status: 401, headers: V12_FINGERPRINT });
 
     const sql = getNeon();
-    // Fast warmup — 3s timeout. If DB is cold, fail immediately (503)
-    // so the client can retry. The sync endpoint handles the full warmup.
-    try {
-      await Promise.race([
-        sql`SELECT 1`,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('DB warmup timeout')), 3000)),
-      ]);
-    } catch {
-      return NextResponse.json({ error: 'Database waking up' }, { status: 503, headers: V12_FINGERPRINT });
+    // Robust warmup — handles Neon cold starts with retry loop.
+    const MAX_WARMUP_RETRIES = 3;
+    const WARMUP_TIMEOUT = 10000; // 10s per attempt
+    const WARMUP_DELAY = 3000; // 3s between attempts
+    let isWarmed = false;
+    for (let attempt = 0; attempt < MAX_WARMUP_RETRIES; attempt++) {
+      try {
+        const warm = sql`SELECT 1`;
+        await Promise.race([
+          warm,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('DB warmup timeout')), WARMUP_TIMEOUT)),
+        ]);
+        isWarmed = true;
+        break; // DB is awake
+      } catch (e: any) {
+        console.warn(`[me] warmDb attempt ${attempt + 1} failed:`, e.message);
+        if (attempt === MAX_WARMUP_RETRIES - 1) {
+          return NextResponse.json({ error: 'Database still waking up' }, { status: 503, headers: V12_FINGERPRINT });
+        }
+        await new Promise(r => setTimeout(r, WARMUP_DELAY));
+      }
     }
 
     if (payload.role === 'coach') {

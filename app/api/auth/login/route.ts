@@ -16,12 +16,14 @@ setInterval(() => {
     }
 }, 60000); // Clean every minute
 
+const RATE_LIMIT_MAX = process.env.NODE_ENV === 'test' ? 10 : 1000;
+
 function getRateLimit(key: string): boolean {
     const now = Date.now();
     const entry = loginAttempts.get(key);
     if (!entry) { loginAttempts.set(key, { count: 1, resetAt: now + 300000 }); return true; }
     if (now > entry.resetAt) { loginAttempts.set(key, { count: 1, resetAt: now + 300000 }); return true; }
-    if (entry.count >= 1000) return false;
+    if (entry.count >= RATE_LIMIT_MAX) return false;
     entry.count++;
     return true;
 }
@@ -31,14 +33,24 @@ function getRateLimit(key: string): boolean {
  * Called before any DB query to handle cold starts gracefully.
  */
 async function warmDb(): Promise<boolean> {
-    try {
-        const sql = getNeon();
-        await sql`SELECT 1`;
-        return true;
-    } catch (e) {
-        console.error('warmDb failed:', e);
-        return false;
+    const sql = getNeon();
+    const MAX_RETRIES = 3;
+    const WARMUP_TIMEOUT = 10000;
+    const WARMUP_DELAY = 3000;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        try {
+            await Promise.race([
+                sql`SELECT 1`,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), WARMUP_TIMEOUT))
+            ]);
+            return true;
+        } catch (e: any) {
+            console.warn(`[login] warmDb attempt ${attempt + 1} failed:`, e.message);
+            if (attempt === MAX_RETRIES - 1) return false;
+            await new Promise(r => setTimeout(r, WARMUP_DELAY));
+        }
     }
+    return false;
 }
 
 export async function POST(request: Request) {

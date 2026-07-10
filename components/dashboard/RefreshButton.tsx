@@ -7,9 +7,10 @@ import { memo } from "react";
 
 export const RefreshButton = memo(function RefreshButton() {
     const syncStatus = useStoreSelector(s => s.syncStatus);
+    const triggerSync = useStoreSelector(s => s.triggerSync);
 
     const handleRefresh = () => {
-        window.location.reload();
+        triggerSync(true);
     };
 
     return (

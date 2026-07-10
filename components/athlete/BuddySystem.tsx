@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api-client";
+import { useStore } from "@/lib/store";
 import { AvatarRenderer } from "./AvatarRenderer";
 import { Swimmer } from "@/types";
 import {
@@ -32,6 +33,7 @@ interface BuddySystemProps {
 }
 
 export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
+    const { swimmers: storeSwimmers } = useStore();
     const [loading, setLoading] = useState(true);
     const [buddyPair, setBuddyPair] = useState<BuddyPair | null>(null); // active/pending pair
     const [buddySwimmer, setBuddySwimmer] = useState<Swimmer | null>(null); // buddy Swimmer object
@@ -57,14 +59,13 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
                 setBuddySwimmer(null);
             }
 
-            // 2. Fetch all team members for search
-            const allSwimmers = await api.swimmers.getAll();
-            if (allSwimmers) {
-                const me = allSwimmers.find((s: Swimmer) => s.id === swimmerId);
+            // 2. Filter team members from the global store
+            if (storeSwimmers) {
+                const me = storeSwimmers.find((s: Swimmer) => s.id === swimmerId);
                 if (me) setMeSwimmer(me);
 
                 // Filter out self
-                const others = allSwimmers.filter((s: Swimmer) => s.id !== swimmerId);
+                const others = storeSwimmers.filter((s: Swimmer) => s.id !== swimmerId);
                 setSwimmers(others);
             }
 
@@ -74,7 +75,7 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
         } finally {
             setLoading(false);
         }
-    }, [swimmerId]);
+    }, [swimmerId, storeSwimmers]);
 
     useEffect(() => {
         let isMounted = true;
@@ -201,7 +202,7 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
                             <div className="flex items-center gap-4 relative">
                                 <div className="relative group">
                                     <AvatarRenderer 
-                                        gender={buddySwimmer.gender || "male"} 
+                                        gender={buddySwimmer.gender === "female" ? "female" : "male"} 
                                         equippedItems={buddySwimmer.equippedItems} 
                                         size={120} 
                                     />
@@ -219,7 +220,7 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
                                     <div className="w-[100px] h-[100px] rounded-2xl bg-slate-900 border border-white/5 overflow-hidden flex items-center justify-center relative">
                                         {meSwimmer ? (
                                             <AvatarRenderer 
-                                                gender={meSwimmer.gender || "male"} 
+                                                gender={meSwimmer.gender === "female" ? "female" : "male"} 
                                                 equippedItems={meSwimmer.equippedItems || {}} 
                                                 size={100} 
                                             />
@@ -369,7 +370,7 @@ export function BuddySystem({ swimmerId, onUpdateSwimmer }: BuddySystemProps) {
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-xl border border-white/5 overflow-hidden flex items-center justify-center bg-slate-900 relative">
                                                 <AvatarRenderer 
-                                                    gender={member.gender || "male"} 
+                                                    gender={member.gender === "female" ? "female" : "male"} 
                                                     equippedItems={member.equippedItems || {}} 
                                                     size={40} 
                                                 />
