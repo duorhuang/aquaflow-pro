@@ -62,3 +62,6 @@ lib/validation.44032d339db6
 
 ECC/
 test-results/
+git-credentials
+git-askpass.sh
+push_out.txt
