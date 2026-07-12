@@ -85,7 +85,7 @@ export default function SetupPage() {
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_25px_rgba(0,180,255,0.15)]">
               <Lock className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold text-white font-sans">Setup Locked</h1>
+            <h1 className="text-3xl font-bold text-foreground font-sans">Setup Locked</h1>
             <p className="text-muted-foreground text-sm">
               Please enter the configuration passcode to access setup
             </p>
@@ -129,7 +129,7 @@ export default function SetupPage() {
           <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_25px_rgba(0,180,255,0.15)]">
             <Waves className="w-8 h-8 text-primary animate-pulse" />
           </div>
-          <h1 className="text-3xl font-bold text-white">Setup Coach Account</h1>
+          <h1 className="text-3xl font-bold text-foreground">Setup Coach Account</h1>
           <p className="text-muted-foreground">
             Create a coach account to get started
           </p>

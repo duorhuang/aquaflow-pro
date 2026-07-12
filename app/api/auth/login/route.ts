@@ -38,16 +38,21 @@ async function warmDb(): Promise<boolean> {
     const WARMUP_TIMEOUT = 10000;
     const WARMUP_DELAY = 3000;
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        let timeoutId: any;
         try {
             await Promise.race([
                 sql`SELECT 1`,
-                new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), WARMUP_TIMEOUT))
+                new Promise((_, reject) => {
+                    timeoutId = setTimeout(() => reject(new Error('timeout')), WARMUP_TIMEOUT);
+                })
             ]);
             return true;
         } catch (e: any) {
             console.warn(`[login] warmDb attempt ${attempt + 1} failed:`, e.message);
             if (attempt === MAX_RETRIES - 1) return false;
             await new Promise(r => setTimeout(r, WARMUP_DELAY));
+        } finally {
+            if (timeoutId) clearTimeout(timeoutId);
         }
     }
     return false;

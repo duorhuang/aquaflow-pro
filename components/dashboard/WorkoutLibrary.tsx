@@ -73,7 +73,7 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
                 <div>
                     <div className="flex items-center gap-1.5">
                         {isUserTemplate && <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />}
-                        <h4 className="font-bold text-sm text-white truncate max-w-[130px]" title={template.name}>
+                        <h4 className="font-bold text-sm text-foreground truncate max-w-[130px]" title={template.name}>
                             {template.name}
                         </h4>
                     </div>

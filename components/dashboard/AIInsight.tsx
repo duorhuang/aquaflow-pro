@@ -56,7 +56,7 @@ export function AIInsight({ plan, swimmers }: AIInsightProps) {
     return (
         <div className="space-y-4">
             {/* Header */}
-            <div className="flex items-center gap-2 text-sm font-bold text-white/50 uppercase tracking-widest">
+            <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground uppercase tracking-widest">
                 <Activity className="w-4 h-4 text-primary" />
                 AI 负荷分析
             </div>
@@ -69,8 +69,8 @@ export function AIInsight({ plan, swimmers }: AIInsightProps) {
                 )}>
                     <AlertTriangle className={cn("w-5 h-5 shrink-0", r.level === "high" ? "text-red-500" : "text-orange-400")} />
                     <div>
-                        <div className="font-bold text-white text-sm">{r.swimmer.name}</div>
-                        <div className="text-xs text-white/70">{r.reason}</div>
+                        <div className="font-bold text-foreground text-sm">{r.swimmer.name}</div>
+                        <div className="text-xs text-muted-foreground">{r.reason}</div>
                     </div>
                 </div>
             ))}
@@ -80,8 +80,8 @@ export function AIInsight({ plan, swimmers }: AIInsightProps) {
                 <div key={o.swimmer.id} className="p-3 rounded-xl border border-green-500/30 bg-green-500/10 flex items-start gap-3">
                     <TrendingUp className="w-5 h-5 text-green-400 shrink-0" />
                     <div>
-                        <div className="font-bold text-white text-sm">{o.swimmer.name}</div>
-                        <div className="text-xs text-white/70">{o.reason}</div>
+                        <div className="font-bold text-foreground text-sm">{o.swimmer.name}</div>
+                        <div className="text-xs text-muted-foreground">{o.reason}</div>
                     </div>
                 </div>
             ))}

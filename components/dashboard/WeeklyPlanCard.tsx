@@ -36,7 +36,7 @@ export const WeeklyPlanCard = memo(function WeeklyPlanCard({ plan }: WeeklyPlanC
                         )}>
                             {targetGroupsStr}
                         </span>
-                        <h3 className="text-xl font-bold mt-2 text-white group-hover:text-primary transition-colors">
+                        <h3 className="text-xl font-bold mt-2 text-foreground group-hover:text-primary transition-colors">
                             {plan.title || `${plan.weekStart} 周训练`}
                         </h3>
                     </div>

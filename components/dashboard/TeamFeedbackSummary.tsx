@@ -39,7 +39,7 @@ export function TeamFeedbackSummary() {
 
     return (
         <div className="bg-card/30 border border-border rounded-2xl p-6">
-            <h3 className="text-sm font-bold text-white mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-bold text-foreground mb-4 flex items-center justify-between">
                 本周总结提交情况
                 {feedbacks.some(f => !f.readAt) && (
                     <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse" />
@@ -50,7 +50,7 @@ export function TeamFeedbackSummary() {
                     {feedbacks.slice(0, 5).map(f => (
                         <div key={f.id} className="flex justify-between items-center bg-black/20 p-2.5 rounded-xl border border-white/5">
                             <div className="flex items-center gap-2">
-                                <span className={cn("text-sm font-bold", !f.readAt ? "text-white" : "text-muted-foreground")}>
+                                <span className={cn("text-sm font-bold", !f.readAt ? "text-foreground" : "text-muted-foreground")}>
                                     {f.swimmer?.name || "未知"}
                                 </span>
                                 {!f.readAt && (

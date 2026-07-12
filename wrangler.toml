@@ -14,6 +14,7 @@ command = "npx opennextjs-cloudflare build"
 [assets]
 directory = ".open-next/assets"
 binding = "ASSETS"
+run_worker_first = true
 
 [[routes]]
 pattern = "sw.sportsflow.best"

@@ -14,11 +14,14 @@ export async function GET(request: Request) {
     const WARMUP_TIMEOUT = 10000; // 10s per attempt
     const WARMUP_DELAY = 3000; // 3s between attempts
     for (let attempt = 0; attempt < MAX_WARMUP_RETRIES; attempt++) {
+      let timeoutId: any;
       try {
         const warm = sql`SELECT 1`;
         await Promise.race([
           warm,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('DB warmup timeout')), WARMUP_TIMEOUT)),
+          new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('DB warmup timeout')), WARMUP_TIMEOUT);
+          }),
         ]);
         break; // DB is awake
       } catch {
@@ -26,13 +29,21 @@ export async function GET(request: Request) {
           return NextResponse.json({ error: 'Database still waking up' }, { status: 503, headers: V12_FINGERPRINT });
         }
         await new Promise(r => setTimeout(r, WARMUP_DELAY));
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
       }
     }
 
     const isCoach = auth.role === 'coach';
+    
+    // Cutoffs for active dashboard sync to minimize payload size and Neon CPU
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 7);
     const cutoffStr = cutoff.toISOString();
+
+    const cutoff30 = new Date();
+    cutoff30.setDate(cutoff30.getDate() - 30);
+    const cutoffDateStr30 = cutoff30.toISOString().split('T')[0];
 
     // For athletes: only load their specific data to reduce payload size for 70+ swimmers
     const athleteId = !isCoach ? auth.userId : null;
@@ -50,26 +61,26 @@ export async function GET(request: Request) {
       weeklyFeedbacks,
       templatesRaw
     ] = await Promise.all([
-      sql`SELECT * FROM "TrainingPlan" ORDER BY "date" DESC`,
+      sql`SELECT * FROM "TrainingPlan" WHERE "date" >= ${cutoffDateStr30} OR "isStarred" = true ORDER BY "date" DESC`,
       // For athletes, only load swimmer list (needed for buddy system) - no passwords
       isCoach
         ? sql`SELECT * FROM "Swimmer" ORDER BY "name" ASC`
         : sql`SELECT id, name, username, "group", gender, "mainStroke", readiness, status, level, "totalXp", balance, "currentStreak", "equippedItems", "lastProfileUpdate" FROM "Swimmer" ORDER BY "name" ASC`,
       isCoach
-        ? sql`SELECT * FROM "Feedback" ORDER BY "date" DESC`
-        : sql`SELECT * FROM "Feedback" WHERE "swimmerId" = ${athleteId} ORDER BY "date" DESC`,
+        ? sql`SELECT * FROM "Feedback" WHERE "date" >= ${cutoffDateStr30} ORDER BY "date" DESC`
+        : sql`SELECT * FROM "Feedback" WHERE "swimmerId" = ${athleteId} AND "date" >= ${cutoffDateStr30} ORDER BY "date" DESC`,
       isCoach
-        ? sql`SELECT * FROM "AttendanceRecord"`
-        : sql`SELECT * FROM "AttendanceRecord" WHERE "swimmerId" = ${athleteId}`,
+        ? sql`SELECT * FROM "AttendanceRecord" WHERE "date" >= ${cutoffDateStr30}`
+        : sql`SELECT * FROM "AttendanceRecord" WHERE "swimmerId" = ${athleteId} AND "date" >= ${cutoffDateStr30}`,
       isCoach
-        ? sql`SELECT * FROM "PerformanceRecord"`
+        ? sql`SELECT * FROM "PerformanceRecord" WHERE "date" >= ${cutoffDateStr30}`
         : sql`SELECT * FROM "PerformanceRecord" WHERE "swimmerId" = ${athleteId}`,
       sql`SELECT * FROM "WeeklyPlan" WHERE "isPublished" = true`,
       sql`SELECT * FROM "CoachAnnouncement" WHERE "createdAt" >= ${cutoffStr} OR "isStarred" = true ORDER BY "createdAt" DESC`,
       sql`SELECT * FROM "CoachAnnouncement" WHERE "createdAt" < ${cutoffStr} AND "isStarred" = false ORDER BY "createdAt" DESC`,
       isCoach
-        ? sql`SELECT * FROM "WeeklyFeedback" WHERE "isSubmitted" = true`
-        : sql`SELECT * FROM "WeeklyFeedback" WHERE "isSubmitted" = true AND "swimmerId" = ${athleteId}`,
+        ? sql`SELECT * FROM "WeeklyFeedback" WHERE "isSubmitted" = true AND "weekStart" >= ${cutoffDateStr30}`
+        : sql`SELECT * FROM "WeeklyFeedback" WHERE "isSubmitted" = true AND "swimmerId" = ${athleteId} AND "weekStart" >= ${cutoffDateStr30}`,
       sql`SELECT * FROM "BlockTemplate" ORDER BY "category" ASC`
     ]);
 

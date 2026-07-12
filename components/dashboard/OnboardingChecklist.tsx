@@ -48,7 +48,7 @@ export const OnboardingChecklist = memo(function OnboardingChecklist() {
     return (
         <div className="mb-6 p-5 rounded-2xl bg-gradient-to-br from-primary/10 to-blue-600/10 border border-primary/20">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-white">
+                <h3 className="text-sm font-bold text-foreground">
                     {allDone ? "🎉 初始设置完成！" : "欢迎使用 AquaFlow Pro — 快速入门"}
                 </h3>
                 <button
@@ -86,7 +86,7 @@ export const OnboardingChecklist = memo(function OnboardingChecklist() {
                                 )}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className={`text-sm font-bold ${step.done ? "text-green-400" : "text-white"}`}>
+                                <p className={`text-sm font-bold ${step.done ? "text-green-400" : "text-foreground"}`}>
                                     {step.title}
                                 </p>
                                 <p className="text-xs text-muted-foreground">{step.desc}</p>

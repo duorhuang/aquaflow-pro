@@ -91,7 +91,7 @@ export const TeamStatsPanel = memo(function TeamStatsPanel() {
     return (
         <div className="bg-card/50 border border-border rounded-2xl p-6 backdrop-blur-md">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                     <BarChart3 className="w-5 h-5 text-primary" />
                     团队统计
                 </h3>
@@ -170,7 +170,7 @@ export const TeamStatsPanel = memo(function TeamStatsPanel() {
                     return (
                         <div key={group} className="space-y-1">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-medium text-white">{GROUP_MAP[group] || group}</span>
+                                <span className="text-xs font-medium text-foreground">{GROUP_MAP[group] || group}</span>
                                 <span className="text-xs text-muted-foreground">
                                     {(stats.distance / 1000).toFixed(1)}k ({percentage.toFixed(0)}%)
                                 </span>
