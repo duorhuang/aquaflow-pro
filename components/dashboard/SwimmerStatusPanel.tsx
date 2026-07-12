@@ -88,7 +88,7 @@ export const SwimmerStatusPanel = memo(function SwimmerStatusPanel() {
         <div className="bg-card/50 border border-border rounded-2xl p-6 backdrop-blur-md relative">
             <div className="flex items-center justify-between mb-4">
                 <Link href="/dashboard/athletes" className="group flex items-center gap-2 hover:opacity-85 transition-opacity" aria-label="查看队员花名册详情">
-                    <h3 className="text-md font-semibold text-white flex items-center gap-2">
+                    <h3 className="text-md font-semibold text-foreground flex items-center gap-2">
                         <Activity className="w-5 h-5 text-primary" />
                         队员状态监控
                     </h3>
@@ -124,7 +124,7 @@ export const SwimmerStatusPanel = memo(function SwimmerStatusPanel() {
                             {/* Swimmer Name & Group */}
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
-                                    <span className="font-bold text-white max-w-[100px] truncate" title={swimmer.name}>
+                                    <span className="font-bold text-foreground max-w-[100px] truncate" title={swimmer.name}>
                                         {swimmer.name}
                                     </span>
                                     <span className="text-xs text-muted-foreground px-2 py-0.5 bg-white/10 rounded flex-shrink-0">

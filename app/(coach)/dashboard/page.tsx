@@ -89,7 +89,7 @@ export default function DashboardPage() {
 
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                     <div>
-                        <h1 className="text-xl font-bold text-white mb-1">
+                        <h1 className="text-xl font-bold text-foreground mb-1">
                             AquaFlow Pro
                         </h1>
                         <p className="text-sm text-muted-foreground">{t.common.dashboard}</p>
@@ -159,7 +159,7 @@ export default function DashboardPage() {
                             {archivedAnnouncements.length > 0 && (
                                 <button
                                     onClick={() => setShowArchive(!showArchive)}
-                                    className="text-xs text-muted-foreground hover:text-white flex items-center gap-1"
+                                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
                                 >
                                     {showArchive ? (
                                         <>{t.dashboard.collapse} <ChevronUp className="w-3 h-3" /></>
@@ -185,7 +185,7 @@ export default function DashboardPage() {
                         {showArchive && archivedAnnouncements.length > archiveLimit && (
                             <button
                                 onClick={() => setArchiveLimit(prev => prev + 10)}
-                                className="w-full text-center text-xs text-muted-foreground hover:text-white py-2"
+                                className="w-full text-center text-xs text-muted-foreground hover:text-foreground py-2"
                             >
                                 {t.dashboard.loadMore} ({archivedAnnouncements.length - archiveLimit} 条)
                             </button>
@@ -196,7 +196,7 @@ export default function DashboardPage() {
                 {/* Middle Column: Training Plans */}
                 <div className="lg:col-span-1 space-y-6">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-md font-semibold text-white">{t.dashboard.recentPlans}</h2>
+                        <h2 className="text-md font-semibold text-foreground">{t.dashboard.recentPlans}</h2>
                         <Link href="/dashboard/weekly-plan" className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full font-medium hover:brightness-110 transition-all shadow-md min-h-[44px]">
                             <FolderPlus className="w-4 h-4" aria-hidden="true" />
                             {t.dashboard.createPlan}

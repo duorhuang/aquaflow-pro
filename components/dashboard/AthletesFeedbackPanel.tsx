@@ -71,7 +71,7 @@ export const AthletesFeedbackPanel = memo(function AthletesFeedbackPanel() {
                 <Link href="/dashboard/feedbacks" className="group flex items-center gap-2 hover:opacity-85 transition-opacity" aria-label="查看队员反馈详情">
                     <div className="flex items-center gap-3">
                         <MessageSquare className="w-5 h-5 text-primary" />
-                        <h2 className="text-lg font-semibold text-white">队员状态总览</h2>
+                        <h2 className="text-lg font-semibold text-foreground">队员状态总览</h2>
                     </div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                 </Link>
@@ -84,7 +84,7 @@ export const AthletesFeedbackPanel = memo(function AthletesFeedbackPanel() {
                     <div className="flex items-center justify-center gap-1 mb-1">
                         <CheckCircle className="w-4 h-4 text-green-400" />
                     </div>
-                    <p className="text-lg font-bold text-white">{todayFeedbackCount}/{swimmers.length}</p>
+                    <p className="text-lg font-bold text-foreground">{todayFeedbackCount}/{swimmers.length}</p>
                     <p className="text-xs text-muted-foreground">今日反馈</p>
                 </div>
 
@@ -96,7 +96,7 @@ export const AthletesFeedbackPanel = memo(function AthletesFeedbackPanel() {
                     <div className="flex items-center justify-center gap-1 mb-1">
                         <AlertTriangle className={cn("w-4 h-4", attentionCount > 0 ? "text-red-400" : "text-muted-foreground")} />
                     </div>
-                    <p className={cn("text-lg font-bold", attentionCount > 0 ? "text-red-400" : "text-white")}>{attentionCount}</p>
+                    <p className={cn("text-lg font-bold", attentionCount > 0 ? "text-red-400" : "text-foreground")}>{attentionCount}</p>
                     <p className="text-xs text-muted-foreground">需关注</p>
                 </div>
 
@@ -125,7 +125,7 @@ export const AthletesFeedbackPanel = memo(function AthletesFeedbackPanel() {
                                 className="bg-red-500/10 border border-red-500/20 rounded-xl p-3"
                             >
                                 <div className="flex items-center justify-between">
-                                    <span className="font-bold text-white">{swimmer.name}</span>
+                                    <span className="font-bold text-foreground">{swimmer.name}</span>
                                     <div className="flex items-center gap-3 text-xs">
                                         <span className="text-red-400">RPE {latestFeedback?.rpe}/10</span>
                                         <span className="text-orange-400">酸痛 {latestFeedback?.soreness}/10</span>
@@ -156,7 +156,7 @@ export const AthletesFeedbackPanel = memo(function AthletesFeedbackPanel() {
                             >
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <span className="font-bold text-white">{swimmer.name}</span>
+                                        <span className="font-bold text-foreground">{swimmer.name}</span>
                                         <span className="text-xs text-muted-foreground">
                                             {new Date(latestFeedback!.date).toLocaleDateString('zh-CN', {
                                                 month: 'short',
@@ -167,11 +167,11 @@ export const AthletesFeedbackPanel = memo(function AthletesFeedbackPanel() {
                                     <div className="flex items-center gap-3">
                                         <div className="flex items-center gap-1 text-xs">
                                             <Activity className="w-3 h-3 text-blue-400" />
-                                            <span className="text-white">{latestFeedback?.rpe}/10</span>
+                                            <span className="text-foreground">{latestFeedback?.rpe}/10</span>
                                         </div>
                                         <div className="flex items-center gap-1 text-xs">
                                             <TrendingUp className="w-3 h-3 text-orange-400" />
-                                            <span className="text-white">{latestFeedback?.soreness}/10</span>
+                                            <span className="text-foreground">{latestFeedback?.soreness}/10</span>
                                         </div>
                                         {expandedSwimmer === swimmer.id ? (
                                             <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -185,7 +185,7 @@ export const AthletesFeedbackPanel = memo(function AthletesFeedbackPanel() {
                                 {expandedSwimmer === swimmer.id && recentFeedbacks.length > 1 && (
                                     <div className="mt-3 pt-3 border-t border-white/5 space-y-2">
                                         <p className="text-xs text-muted-foreground">
-                                            近7天平均 RPE: <span className="text-white font-bold">{avgRpe.toFixed(1)}</span>
+                                            近7天平均 RPE: <span className="text-foreground font-bold">{avgRpe.toFixed(1)}</span>
                                         </p>
                                         <div className="space-y-1">
                                             {recentFeedbacks.slice(1).map((fb, idx) => (
@@ -193,7 +193,7 @@ export const AthletesFeedbackPanel = memo(function AthletesFeedbackPanel() {
                                                     <span className="text-muted-foreground">
                                                         {new Date(fb.date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
                                                     </span>
-                                                    <span className="text-white">RPE {fb.rpe} / 酸痛 {fb.soreness}</span>
+                                                    <span className="text-foreground">RPE {fb.rpe} / 酸痛 {fb.soreness}</span>
                                                 </div>
                                             ))}
                                         </div>

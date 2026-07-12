@@ -42,7 +42,7 @@ export const RecentPerformances = memo(function RecentPerformances() {
     return (
         <div className="bg-card border border-white/10 rounded-2xl p-6 h-full">
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-yellow-500" />
                     最新成绩
                 </h3>
@@ -62,7 +62,7 @@ export const RecentPerformances = memo(function RecentPerformances() {
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm font-bold text-white">{getSwimmerName(perf.swimmerId)}</span>
+                                        <span className="text-sm font-bold text-foreground">{getSwimmerName(perf.swimmerId)}</span>
                                         <span className="text-xs text-muted-foreground">{perf.date}</span>
                                     </div>
                                     <div className="text-xs text-muted-foreground flex items-center gap-1">
@@ -74,7 +74,7 @@ export const RecentPerformances = memo(function RecentPerformances() {
                                 </div>
                             </div>
                             <div className="text-right">
-                                <div className="text-sm font-mono font-bold text-white">
+                                <div className="text-sm font-mono font-bold text-foreground">
                                     {formatTime(perf.time)}
                                 </div>
                                 {perf.improvement !== undefined && (

@@ -5,6 +5,7 @@ import { Waves, UserCog, User } from "lucide-react";
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { PremiumBackground } from "@/components/common/PremiumBackground";
 import { WaveAnimation } from "@/components/common/WaveAnimation";
 import { useLanguage } from "@/lib/i18n";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,12 +16,8 @@ function LoginContent() {
     const [isCoach, setIsCoach] = useState(() => searchParams.get("role") === "coach");
 
     return (
-        <div className="min-h-screen bg-sky-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-            {/* Premium Nature Background */}
-            <div 
-                className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-90"
-                style={{ backgroundImage: "url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073&auto=format&fit=crop')" }}
-            />
+        <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden bg-[#020b14]">
+            <PremiumBackground />
             
             {/* Ambient Gradient Overlays */}
             <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/60 via-sky-800/50 to-blue-900/70 z-0 backdrop-blur-sm" />

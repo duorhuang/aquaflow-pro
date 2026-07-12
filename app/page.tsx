@@ -4,10 +4,11 @@ import Link from "next/link";
 import { ArrowRight, UserCog, User, Waves, Sparkles } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 import { WaveAnimation } from "@/components/common/WaveAnimation";
+import { PremiumBackground } from "@/components/common/PremiumBackground";
 import { motion } from "framer-motion";
 
 export default function Home() {
-  const { t } = useLanguage();
+  const t = useLanguage().t;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -30,15 +31,11 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-sky-50 text-sky-950 relative overflow-hidden">
-      {/* Premium Nature Background */}
-      <div 
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073&auto=format&fit=crop')" }}
-      />
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-[#020b14]">
+      <PremiumBackground />
       
       {/* Ambient Gradient Overlays for readability and ocean feel */}
-      <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/40 via-sky-500/30 to-blue-700/50 z-0 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/60 via-sky-800/50 to-blue-900/70 z-0 backdrop-blur-[2px]" />
       <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-sky-900/40 to-transparent z-0" />
       <div className="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-sky-900/60 to-transparent z-0" />
 

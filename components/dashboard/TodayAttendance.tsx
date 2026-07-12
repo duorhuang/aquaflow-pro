@@ -34,7 +34,7 @@ export const TodayAttendance = memo(function TodayAttendance() {
         <div className="bg-card/50 border border-border rounded-2xl p-6 backdrop-blur-md">
             <div className="flex items-center justify-between mb-4">
                 <Link href="/dashboard/attendance" className="group flex items-center gap-2 hover:opacity-85 transition-opacity" aria-label="查看今日考勤详情">
-                    <h3 className="text-md font-semibold text-white flex items-center gap-2">
+                    <h3 className="text-md font-semibold text-foreground flex items-center gap-2">
                         <Users className="w-5 h-5 text-primary" />
                         {t.dashboard.todayAttendance}
                     </h3>
@@ -85,7 +85,7 @@ export const TodayAttendance = memo(function TodayAttendance() {
                         >
                             <div className="flex items-center gap-2">
                                 <CheckCircle className="w-4 h-4 text-success" />
-                                <span className="text-sm font-medium text-white">{swimmer.name}</span>
+                                <span className="text-sm font-medium text-foreground">{swimmer.name}</span>
                                 <span className="text-xs text-muted-foreground">({swimmer.group})</span>
                             </div>
                             <span className="text-xs text-success">{time}</span>
