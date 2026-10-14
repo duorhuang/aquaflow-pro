@@ -23,9 +23,9 @@ function Breadcrumb() {
     const { t } = useLanguage();
     return (
         <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-4" aria-label="面包屑导航">
-            <Link href="/dashboard" className="hover:text-white transition-colors">{t.common.dashboard}</Link>
+            <Link href="/dashboard" className="hover:text-foreground transition-colors">{t.common.dashboard}</Link>
             <ChevronRight className="w-3 h-3" aria-hidden="true" />
-            <span className="text-white font-medium">{t.common.attendance}</span>
+            <span className="text-foreground font-medium">{t.common.attendance}</span>
         </nav>
     );
 }
@@ -103,94 +103,94 @@ export default function CoachAttendancePage() {
 
             {/* Header */}
             <div className="flex items-center gap-3">
-                <div className="p-3 bg-emerald-500/20 rounded-xl">
-                    <UserCheck className="w-6 h-6 text-emerald-500" />
+                <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <UserCheck className="w-5 h-5" />
                 </div>
                 <div>
-                    <h1 className="text-2xl font-bold text-white">出勤管理</h1>
-                    <p className="text-sm text-muted-foreground">管理队员训练出勤打卡，查看统计数据</p>
+                    <h1 className="text-xl font-semibold text-foreground tracking-tight">出勤管理</h1>
+                    <p className="text-xs text-muted-foreground">管理队员训练出勤打卡，查看统计数据</p>
                 </div>
                 <div className="ml-auto">
                     <Link href="/dashboard/attendance/stats">
-                        <button className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 text-primary rounded-xl font-bold text-sm hover:bg-primary hover:text-white transition-all">
-                            <TrendingUp className="w-4 h-4" />
-                            查看统计报表
+                        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary border border-border text-foreground rounded-lg font-medium text-xs hover:bg-secondary/80 transition-colors">
+                            <TrendingUp className="w-3.5 h-3.5 text-primary" />
+                            统计报表
                         </button>
                     </Link>
                 </div>
             </div>
 
             {/* Date Navigation */}
-            <div className="bg-card border border-border rounded-2xl p-4">
+            <div className="bg-card border border-border rounded-xl p-4 shadow-xs">
                 <div className="flex items-center justify-between">
                     <button
                         onClick={() => goToDate(-1)}
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        className="p-1.5 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground"
                     >
-                        <ChevronLeft className="w-5 h-5 text-muted-foreground" />
+                        <ChevronLeft className="w-4 h-4" />
                     </button>
                     <div className="text-center">
-                        <p className="text-lg font-bold text-white flex items-center gap-2 justify-center">
-                            <Calendar className="w-5 h-5 text-emerald-400" />
+                        <p className="text-sm font-semibold text-foreground flex items-center gap-2 justify-center">
+                            <Calendar className="w-4 h-4 text-primary" />
                             {displayDate}
                         </p>
                         {isToday && (
-                            <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">今天</span>
+                            <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium inline-block mt-0.5">今天</span>
                         )}
                     </div>
                     <button
                         onClick={() => goToDate(1)}
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        className="p-1.5 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground"
                     >
-                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                        <ChevronRight className="w-4 h-4" />
                     </button>
                 </div>
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-4 gap-4">
-                <div className="bg-card border border-border rounded-xl p-4 text-center">
-                    <div className="flex items-center justify-center gap-2 mb-1">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span className="text-xs text-muted-foreground font-bold">已确认</span>
+            <div className="grid grid-cols-4 gap-3">
+                <div className="bg-card border border-border rounded-xl p-3 text-center shadow-xs">
+                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                        <span className="text-xs text-muted-foreground font-medium">已确认</span>
                     </div>
-                    <p className="text-2xl font-bold text-emerald-400">{presentCount}</p>
+                    <p className="text-xl font-semibold font-mono text-emerald-600 dark:text-emerald-400">{presentCount}</p>
                 </div>
-                <div className="bg-card border border-border rounded-xl p-4 text-center">
-                    <div className="flex items-center justify-center gap-2 mb-1">
-                        <UserCheck className="w-4 h-4 text-orange-400" />
-                        <span className="text-xs text-muted-foreground font-bold">待确认</span>
+                <div className="bg-card border border-border rounded-xl p-3 text-center shadow-xs">
+                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                        <UserCheck className="w-3.5 h-3.5 text-amber-500" />
+                        <span className="text-xs text-muted-foreground font-medium">待确认</span>
                     </div>
-                    <p className="text-2xl font-bold text-orange-400">{athletePresentCount}</p>
+                    <p className="text-xl font-semibold font-mono text-amber-600 dark:text-amber-400">{athletePresentCount}</p>
                 </div>
-                <div className="bg-card border border-border rounded-xl p-4 text-center">
-                    <div className="flex items-center justify-center gap-2 mb-1">
-                        <Clock className="w-4 h-4 text-slate-400" />
-                        <span className="text-xs text-muted-foreground font-bold">未标记</span>
+                <div className="bg-card border border-border rounded-xl p-3 text-center shadow-xs">
+                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                        <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground font-medium">未标记</span>
                     </div>
-                    <p className="text-2xl font-bold text-slate-400">{pendingCount}</p>
+                    <p className="text-xl font-semibold font-mono text-muted-foreground">{pendingCount}</p>
                 </div>
-                <div className="bg-card border border-border rounded-xl p-4 text-center">
-                    <div className="flex items-center justify-center gap-2 mb-1">
-                        <BarChart3 className="w-4 h-4 text-blue-400" />
-                        <span className="text-xs text-muted-foreground font-bold">到场率</span>
+                <div className="bg-card border border-border rounded-xl p-3 text-center shadow-xs">
+                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                        <BarChart3 className="w-3.5 h-3.5 text-primary" />
+                        <span className="text-xs text-muted-foreground font-medium">到场率</span>
                     </div>
-                    <p className="text-2xl font-bold text-blue-400">{attendanceRate}%</p>
+                    <p className="text-xl font-semibold font-mono text-primary">{attendanceRate}%</p>
                 </div>
             </div>
 
             {/* Group Filter + Batch Actions */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex p-1 bg-card/30 border border-border rounded-xl overflow-x-auto no-scrollbar">
+                <div className="flex p-1 bg-secondary border border-border rounded-lg overflow-x-auto no-scrollbar">
                     {GROUP_LEVEL_ORDER.map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setGroupFilter(tab)}
                             className={cn(
-                                "px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all",
+                                "px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors",
                                 groupFilter === tab
-                                    ? "bg-emerald-500 text-white shadow-lg"
-                                    : "text-muted-foreground hover:text-white hover:bg-white/5"
+                                    ? "bg-card text-foreground shadow-xs"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
                             )}
                         >
                             {GROUP_LABELS[tab]}
@@ -200,13 +200,13 @@ export default function CoachAttendancePage() {
                 <div className="flex gap-2">
                     <button
                         onClick={handleSelectAll}
-                        className="text-xs bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 px-3 py-2 rounded-lg font-bold transition-colors"
+                        className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 px-3 py-1.5 rounded-lg font-medium transition-colors border border-emerald-500/20"
                     >
                         全部到场
                     </button>
                     <button
                         onClick={handleDeselectAll}
-                        className="text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30 px-3 py-2 rounded-lg font-bold transition-colors"
+                        className="text-xs bg-destructive/10 text-destructive hover:bg-destructive/20 px-3 py-1.5 rounded-lg font-medium transition-colors border border-destructive/20"
                     >
                         全部清除
                     </button>
@@ -216,7 +216,7 @@ export default function CoachAttendancePage() {
             {/* Swimmer List */}
             <div className="space-y-2">
                 {filteredSwimmers.length === 0 && (
-                    <p className="text-center text-muted-foreground py-12">暂无队员，请先到&ldquo;运动员&rdquo;页面添加。</p>
+                    <p className="text-center text-muted-foreground py-12 text-sm">暂无队员，请先到&ldquo;运动员&rdquo;页面添加。</p>
                 )}
                 {filteredSwimmers.map((swimmer) => {
                     const status = getAttendanceStatus(swimmer.id);
@@ -229,38 +229,38 @@ export default function CoachAttendancePage() {
                             key={swimmer.id}
                             onClick={() => handleToggle(swimmer.id)}
                             className={cn(
-                                "w-full flex items-center justify-between p-4 rounded-xl border transition-all duration-200 active:scale-[0.98]",
+                                "w-full flex items-center justify-between p-3.5 rounded-xl border text-left transition-colors duration-150 active:scale-[0.99]",
                                 isPresent
-                                    ? "bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20"
+                                    ? "bg-emerald-500/5 border-emerald-500/30 hover:bg-emerald-500/10"
                                     : isAthletePresent
-                                        ? "bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/20"
+                                        ? "bg-amber-500/5 border-amber-500/30 hover:bg-amber-500/10"
                                     : isPending
-                                        ? "bg-card/30 border-dashed border-border/50 hover:bg-white/5"
-                                        : "bg-card border-border hover:bg-white/5"
+                                        ? "bg-card/40 border-dashed border-border hover:bg-secondary/40"
+                                        : "bg-card border-border hover:bg-secondary/40"
                             )}
                         >
                             <div className="flex items-center gap-3">
                                 <div className={cn(
-                                    "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors",
+                                    "w-9 h-9 rounded-full flex items-center justify-center font-medium text-xs transition-colors",
                                     isPresent
-                                        ? "bg-emerald-500 text-white shadow-[0_0_12px_rgba(16,185,129,0.4)]"
+                                        ? "bg-emerald-600 text-white"
                                         : isAthletePresent
-                                            ? "bg-orange-500 text-white shadow-[0_0_12px_rgba(251,146,60,0.4)]"
+                                            ? "bg-amber-500 text-white"
                                             : isPending
-                                                ? "bg-secondary/50 text-slate-400"
+                                                ? "bg-secondary text-muted-foreground"
                                                 : "bg-secondary text-muted-foreground"
                                 )}>
                                     {swimmer.name.charAt(0)}
                                 </div>
-                                <div className="text-left">
-                                    <p className="font-bold text-white">{swimmer.name}</p>
+                                <div>
+                                    <p className="font-medium text-sm text-foreground">{swimmer.name}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        {isPending ? "未标记 · 点击打卡" : isAthletePresent ? "已自查 · 待确认" : ""}{GROUP_LABELS[swimmer.group] || swimmer.group}
+                                        {isPending ? "未标记 · 点击打卡 · " : isAthletePresent ? "已自查 · 待确认 · " : ""}{GROUP_LABELS[swimmer.group] || swimmer.group}
                                     </p>
                                     {swimmer.status === "Injured" && (
-                                        <div className="flex items-center gap-1 mt-1">
-                                            <AlertTriangle className="w-3 h-3 text-red-400" />
-                                            <span className="text-xs text-red-400 font-medium">
+                                        <div className="flex items-center gap-1 mt-0.5">
+                                            <AlertTriangle className="w-3 h-3 text-destructive" />
+                                            <span className="text-xs text-destructive font-medium">
                                                 {swimmer.injuryNote || "受伤中"}
                                             </span>
                                         </div>
@@ -268,11 +268,11 @@ export default function CoachAttendancePage() {
                                 </div>
                             </div>
                             {isPresent ? (
-                                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                             ) : isAthletePresent ? (
-                                <UserCheck className="w-6 h-6 text-orange-400" />
+                                <UserCheck className="w-5 h-5 text-amber-500" />
                             ) : (
-                                <Clock className="w-6 h-6 text-slate-400/30" />
+                                <Clock className="w-5 h-5 text-muted-foreground/30" />
                             )}
                         </button>
                     );

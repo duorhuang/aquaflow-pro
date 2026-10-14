@@ -96,92 +96,82 @@ export function MeetCountdown() {
     return (
         <div 
             className={cn(
-                "glass-panel border rounded-3xl p-6 relative overflow-hidden transition-all duration-500",
+                "border rounded-xl p-5 relative overflow-hidden transition-all",
                 isDarkGold 
-                    ? "gold-glow border-yellow-500/30 bg-gradient-to-br from-yellow-500/10 via-amber-600/5 to-slate-950 shadow-[0_0_30px_rgba(212,175,55,0.15)] animate-pulse-slow" 
-                    : "border-white/5 bg-slate-900/40"
+                    ? "border-amber-500/30 bg-amber-500/5" 
+                    : "border-border bg-card shadow-xs"
             )}
         >
-            {/* Ambient gold glow decoration */}
-            {isDarkGold && (
-                <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/5 blur-2xl rounded-full pointer-events-none" />
-            )}
-
-            <div className="flex flex-col space-y-4">
+            <div className="flex flex-col space-y-3.5">
                 {/* Header Tag */}
                 <div className="flex items-center justify-between">
                     <span 
                         className={cn(
-                            "text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-full font-bold border",
+                            "text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-md font-semibold border",
                             isDarkGold 
-                                ? "bg-yellow-500/20 border-yellow-500/30 text-yellow-400 font-sans" 
-                                : "bg-primary/20 border-primary/30 text-primary"
+                                ? "bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400 font-sans" 
+                                : "bg-primary/10 border-primary/20 text-primary"
                         )}
                     >
-                        {isDarkGold ? "🔥 倒计时备战" : "📅 下一场赛事"}
+                        {isDarkGold ? "备战倒计时" : "下一场赛事"}
                     </span>
                     {isDarkGold && (
-                        <span className="text-xs text-amber-500 font-bold flex items-center gap-1 animate-pulse">
-                            <Sparkles className="w-3.5 h-3.5" /> 黄金备战已激活
+                        <span className="text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5" /> 备战周期中
                         </span>
                     )}
                 </div>
 
                 {/* Meet Details */}
                 <div>
-                    <h3 
-                        className={cn(
-                            "text-xl font-bold leading-tight line-clamp-1",
-                            isDarkGold ? "gold-text-gradient" : "text-white"
-                        )}
-                    >
+                    <h3 className="text-base font-bold text-foreground leading-tight line-clamp-1">
                         {meet.name}
                     </h3>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
-                            <Calendar className="w-3.5 h-3.5 text-primary/70" />
+                            <Calendar className="w-3.5 h-3.5 text-primary" />
                             {meet.date} {meet.time || ""}
                         </span>
                         {meet.location && (
                             <span className="flex items-center gap-1">
-                                <MapPin className="w-3.5 h-3.5 text-rose-400" />
+                                <MapPin className="w-3.5 h-3.5 text-rose-500" />
                                 {meet.location}
                             </span>
                         )}
                     </div>
                     {meet.description && (
-                        <p className="text-xs text-muted-foreground/80 mt-2 bg-white/5 p-2 rounded-xl border border-white/5 leading-relaxed">
+                        <p className="text-xs text-muted-foreground mt-2 bg-secondary p-2.5 rounded-lg border border-border leading-relaxed">
                             {meet.description}
                         </p>
                     )}
                 </div>
 
                 {/* Countdown Time Display (Split Cards Style) */}
-                <div className="grid grid-cols-4 gap-3 pt-2">
+                <div className="grid grid-cols-4 gap-2 pt-1">
                     {[
-                        { label: "DAYS", val: timeLeft.days },
-                        { label: "HOURS", val: timeLeft.hours },
-                        { label: "MINS", val: timeLeft.minutes },
-                        { label: "SECS", val: timeLeft.seconds },
+                        { label: "天", val: timeLeft.days },
+                        { label: "时", val: timeLeft.hours },
+                        { label: "分", val: timeLeft.minutes },
+                        { label: "秒", val: timeLeft.seconds },
                     ].map((item, i) => (
                         <div 
                             key={i} 
                             className={cn(
-                                "flex flex-col items-center p-3 rounded-2xl border text-center transition-all",
+                                "flex flex-col items-center py-2 px-1 rounded-lg border text-center transition-all",
                                 isDarkGold 
-                                    ? "bg-slate-950/80 border-yellow-500/20 shadow-[inset_0_1px_3px_rgba(212,175,55,0.1)]" 
-                                    : "bg-slate-950/40 border-white/5"
+                                    ? "bg-amber-500/10 border-amber-500/20" 
+                                    : "bg-secondary border-border"
                             )}
                         >
                             <span 
                                 className={cn(
-                                    "text-2xl font-mono font-bold leading-none tracking-tight",
-                                    isDarkGold ? "text-yellow-400" : "text-white"
+                                    "text-xl sm:text-2xl font-mono font-bold leading-none tracking-tight",
+                                    isDarkGold ? "text-amber-600 dark:text-amber-400" : "text-foreground"
                                 )}
                             >
                                 {String(item.val).padStart(2, "0")}
                             </span>
-                            <span className="text-[8px] text-muted-foreground/60 font-bold uppercase tracking-widest mt-1">
+                            <span className="text-[10px] text-muted-foreground font-medium mt-1">
                                 {item.label}
                             </span>
                         </div>

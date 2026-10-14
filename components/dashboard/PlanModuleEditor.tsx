@@ -257,10 +257,10 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
       {blocks.map((block) => (
         <div
           key={block.id}
-          className="relative group/block bg-black/20 rounded-xl p-4 border border-white/5"
+          className="relative group/block bg-card rounded-xl p-4 border border-border"
         >
-          <div className="flex flex-wrap items-center gap-2 mb-4 bg-secondary/20 p-2 rounded-lg">
-            <div className="bg-primary/20 p-1.5 rounded-lg">
+          <div className="flex flex-wrap items-center gap-2 mb-4 bg-secondary p-2 rounded-lg border border-border">
+            <div className="bg-primary/10 p-1.5 rounded-lg">
               <Layers className="w-4 h-4 text-primary" />
             </div>
             <select
@@ -270,7 +270,7 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
                   type: e.target.value as TrainingBlock["type"],
                 })
               }
-              className="bg-transparent font-bold text-sm text-white outline-none [&>option]:text-black"
+              className="bg-transparent font-semibold text-sm text-foreground outline-none"
             >
               {BLOCK_TYPES.map((t) => (
                 <option key={t} value={t}>
@@ -279,7 +279,7 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
               ))}
             </select>
 
-            <div className="h-4 w-px bg-white/10 mx-1" />
+            <div className="h-4 w-px bg-border mx-1" />
 
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-muted-foreground font-mono uppercase">
@@ -294,7 +294,7 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
                     rounds: parseInt(e.target.value) || 1,
                   })
                 }
-                className="w-10 bg-black/30 rounded text-center font-bold text-white border border-white/10 text-sm"
+                className="w-10 bg-secondary rounded text-center font-bold text-foreground border border-border text-sm"
               />
             </div>
 
@@ -303,7 +303,7 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
               placeholder="训练块备注 (如: 递减游)"
               value={block.note || ""}
               onChange={(e) => updateBlock(block.id, { note: e.target.value })}
-              className="flex-1 min-w-[120px] bg-transparent text-xs text-muted-foreground focus:text-white outline-none border-b border-transparent focus:border-primary/50 transition-all placeholder:text-muted-foreground/50"
+              className="flex-1 min-w-[120px] bg-transparent text-xs text-foreground outline-none border-b border-transparent focus:border-primary transition-all placeholder:text-muted-foreground"
             />
 
             <div className="flex items-center gap-1 ml-auto">
@@ -397,7 +397,7 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
                           stroke: e.target.value as PlanItem["stroke"],
                         })
                       }
-                      className="bg-secondary/30 rounded px-1.5 py-0.5 text-xs font-medium outline-none text-white border border-white/5 [&>option]:text-black"
+                      className="bg-secondary rounded px-1.5 py-0.5 text-xs font-medium outline-none text-foreground border border-border"
                     >
                       {STROKES_KEYS.map((s) => (
                         <option key={s} value={s}>
@@ -406,7 +406,7 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
                       ))}
                     </select>
 
-                    <div className="flex items-center gap-1 bg-black/20 rounded px-1.5 py-0.5 group/interval hover:bg-black/40 transition-colors">
+                    <div className="flex items-center gap-1 bg-secondary border border-border rounded px-1.5 py-0.5 group/interval hover:bg-secondary/80 transition-colors">
                       <button
                         onClick={() =>
                           updateItem(block.id, item.id, {
@@ -419,7 +419,7 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
                         className={cn(
                           "w-3 h-3 flex items-center justify-center transition-colors",
                           item.intervalMode === "Rest"
-                            ? "text-yellow-400"
+                            ? "text-warning"
                             : "text-primary",
                         )}
                         title={
@@ -446,8 +446,8 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
                         className={cn(
                           "w-12 bg-transparent text-xs font-mono outline-none",
                           item.intervalMode === "Rest"
-                            ? "text-yellow-400 placeholder:text-yellow-400/30"
-                            : "text-primary placeholder:text-primary/30",
+                            ? "text-warning placeholder:text-warning/40"
+                            : "text-primary placeholder:text-primary/40",
                         )}
                       />
                     </div>
@@ -462,7 +462,7 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
                             description: e.target.value,
                           })
                         }
-                        className="w-full bg-transparent text-xs text-white/80 outline-none border-b border-transparent focus:border-white/20"
+                        className="w-full bg-transparent text-xs text-foreground outline-none border-b border-transparent focus:border-primary"
                       />
                     ) : (
                       <div className="space-y-1.5">
@@ -479,7 +479,7 @@ export function PlanModuleEditor({ blocks, onChange }: PlanModuleEditorProps) {
                                   distance: parseInt(e.target.value),
                                 })
                               }
-                              className="w-8 bg-black/20 rounded px-1 py-0.5 text-center"
+                              className="w-8 bg-secondary border border-border rounded px-1 py-0.5 text-center text-foreground"
                             />
                             <select
                               value={seg.type}

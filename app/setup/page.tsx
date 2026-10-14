@@ -82,36 +82,36 @@ export default function SetupPage() {
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-md space-y-8 animate-in fade-in duration-300">
           <div className="text-center space-y-2">
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_25px_rgba(0,180,255,0.15)]">
-              <Lock className="w-8 h-8 text-primary" />
+            <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-5 border border-primary/20">
+              <Lock className="w-7 h-7 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground font-sans">Setup Locked</h1>
+            <h1 className="text-2xl font-bold text-foreground font-sans">Setup Locked</h1>
             <p className="text-muted-foreground text-sm">
               Please enter the configuration passcode to access setup
             </p>
           </div>
 
-          <div className="bg-secondary/20 p-6 rounded-3xl border border-white/5 backdrop-blur-sm">
+          <div className="bg-card p-6 rounded-xl border border-border shadow-xs">
             <form onSubmit={handleUnlock} className="space-y-4">
               <div className="relative">
-                <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+                <Lock className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-muted-foreground" />
                 <input
                   type="password"
                   placeholder="Setup passcode"
                   value={passcode}
                   onChange={(e) => setPasscode(e.target.value)}
-                  className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full bg-secondary border border-border rounded-xl py-3 pl-10 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary text-sm"
                   required
                 />
               </div>
 
               {passcodeError && (
-                <p className="text-red-400 text-xs text-center">{passcodeError}</p>
+                <p className="text-destructive text-xs text-center">{passcodeError}</p>
               )}
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-[1.02] flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl font-semibold transition-all bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center gap-2 text-sm"
               >
                 Unlock Setup <ArrowRight className="w-4 h-4" />
               </button>
@@ -126,64 +126,64 @@ export default function SetupPage() {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8 animate-in fade-in duration-300">
         <div className="text-center space-y-2">
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_25px_rgba(0,180,255,0.15)]">
-            <Waves className="w-8 h-8 text-primary animate-pulse" />
+          <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-5 border border-primary/20">
+            <Waves className="w-7 h-7 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground">Setup Coach Account</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold text-foreground">Setup Coach Account</h1>
+          <p className="text-muted-foreground text-sm">
             Create a coach account to get started
           </p>
         </div>
 
-        <div className="bg-secondary/20 p-6 rounded-3xl border border-white/5 backdrop-blur-sm">
+        <div className="bg-card p-6 rounded-xl border border-border shadow-xs">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
-              <User className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+              <User className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Display name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full bg-secondary border border-border rounded-xl py-3 pl-10 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary text-sm"
               />
             </div>
             <div className="relative">
-              <User className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+              <User className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Username (login name)"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full bg-secondary border border-border rounded-xl py-3 pl-10 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary text-sm"
                 required
               />
             </div>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+              <Lock className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-muted-foreground" />
               <input
                 type="password"
                 placeholder="Password (min 6 chars)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full bg-secondary border border-border rounded-xl py-3 pl-10 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary text-sm"
                 required
                 minLength={6}
               />
             </div>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+              <Lock className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-muted-foreground" />
               <input
                 type="password"
                 placeholder="Confirm password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
-                className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full bg-secondary border border-border rounded-xl py-3 pl-10 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary text-sm"
                 required
                 minLength={6}
               />
             </div>
 
-            {error && <p className="text-red-400 text-xs text-center">{error}</p>}
+            {error && <p className="text-destructive text-xs text-center">{error}</p>}
 
             <button
               type="submit"

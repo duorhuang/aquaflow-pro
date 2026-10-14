@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  /* System font stack optimized for China + Premium Outfit/Inter */
+  /* System font stack optimized for Chinese readability + modern aesthetics */
   --font-sans: var(--font-outfit), var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", monospace;
 
@@ -52,92 +52,147 @@
   --radius-lg: var(--radius);
 }
 
-:root {
-  /* Nature Inspired Light Mode (Cyan Breeze) - Extremely Premium and Clean */
-  --background: hsl(200 45% 98%);
-  --foreground: hsl(220 50% 12%);
+/* ==========================================================================
+   THEME 1: TRAINING (温润中性 - Clean Warm Neutral) — DEFAULT
+   ========================================================================== */
+:root,
+[data-theme="training"] {
+  --background: hsl(40 20% 97%);
+  --foreground: hsl(220 20% 16%);
 
-  --card: hsl(0 0% 100% / 0.85);
-  --card-foreground: hsl(220 50% 12%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(220 20% 16%);
 
-  --popover: hsl(0 0% 100% / 0.95);
-  --popover-foreground: hsl(220 50% 12%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(220 20% 16%);
 
-  --primary: hsl(195 85% 42%);
+  --primary: hsl(174 55% 36%);
   --primary-foreground: hsl(0 0% 100%);
 
-  --secondary: hsl(195 40% 92%);
-  --secondary-foreground: hsl(210 60% 20%);
+  --secondary: hsl(40 15% 94%);
+  --secondary-foreground: hsl(220 18% 22%);
 
-  --muted: hsl(200 20% 94%);
-  --muted-foreground: hsl(210 20% 45%);
+  --muted: hsl(40 12% 93%);
+  --muted-foreground: hsl(215 14% 46%);
 
-  --accent: hsl(175 75% 45%);
+  --accent: hsl(155 50% 40%);
   --accent-foreground: hsl(0 0% 100%);
 
-  --destructive: hsl(350 80% 55%);
+  --destructive: hsl(354 70% 52%);
   --destructive-foreground: hsl(0 0% 100%);
 
-  --border: hsl(200 30% 85%);
-  --input: hsl(200 30% 90%);
-  --ring: hsl(195 85% 42%);
+  --border: hsl(40 12% 88%);
+  --input: hsl(40 12% 90%);
+  --ring: hsl(174 55% 36%);
 
-  --radius: 1.25rem;
+  --radius: 0.75rem;
 
-  /* Semantic status colors */
-  --success: hsl(150 70% 40%);
+  --success: hsl(152 60% 38%);
   --success-foreground: hsl(0 0% 100%);
-  --warning: hsl(40 95% 55%);
+  --warning: hsl(38 88% 48%);
   --warning-foreground: hsl(220 50% 15%);
-  --info: hsl(205 90% 50%);
+  --info: hsl(205 82% 42%);
   --info-foreground: hsl(0 0% 100%);
-  --error: hsl(350 80% 55%);
+  --error: hsl(354 70% 52%);
   --error-foreground: hsl(0 0% 100%);
 
-  /* Hydro Custom vars for Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.65);
-  --glass-border: rgba(255, 255, 255, 0.3);
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+  --shadow-card-hover: 0 2px 8px 0 rgb(0 0 0 / 0.06);
 }
 
-.dark {
-  /* Deep Ocean Dark Mode - Immersive and Sleek */
-  --background: hsl(215 50% 8%);
-  --foreground: hsl(205 25% 95%);
+/* ==========================================================================
+   THEME 2: POOLSIDE (清新水感 - Light Aquatic)
+   ========================================================================== */
+[data-theme="poolside"] {
+  --background: hsl(205 30% 97%);
+  --foreground: hsl(218 35% 16%);
 
-  --card: hsl(215 45% 12% / 0.7);
-  --card-foreground: hsl(205 25% 95%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(218 35% 16%);
 
-  --popover: hsl(215 45% 10% / 0.95);
-  --popover-foreground: hsl(205 25% 95%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(218 35% 16%);
 
-  --primary: hsl(190 90% 50%);
-  --primary-foreground: hsl(215 60% 8%);
+  --primary: hsl(199 78% 40%);
+  --primary-foreground: hsl(0 0% 100%);
 
-  --secondary: hsl(215 40% 20%);
-  --secondary-foreground: hsl(205 25% 95%);
+  --secondary: hsl(201 28% 93%);
+  --secondary-foreground: hsl(215 40% 20%);
 
-  --muted: hsl(215 30% 18%);
-  --muted-foreground: hsl(210 20% 70%);
+  --muted: hsl(204 22% 93%);
+  --muted-foreground: hsl(215 18% 46%);
 
-  --accent: hsl(165 80% 45%);
-  --accent-foreground: hsl(215 60% 8%);
+  --accent: hsl(175 65% 40%);
+  --accent-foreground: hsl(0 0% 100%);
 
-  --destructive: hsl(350 75% 60%);
+  --destructive: hsl(350 72% 56%);
   --destructive-foreground: hsl(0 0% 100%);
 
-  --border: hsl(215 40% 20%);
-  --input: hsl(215 40% 20%);
-  --ring: hsl(190 90% 50%);
+  --border: hsl(204 22% 88%);
+  --input: hsl(204 22% 90%);
+  --ring: hsl(199 78% 40%);
 
-  /* Semantic status colors */
-  --success: hsl(150 70% 45%);
-  --success-foreground: hsl(215 60% 8%);
-  --warning: hsl(45 95% 55%);
-  --warning-foreground: hsl(215 60% 8%);
-  --info: hsl(205 90% 60%);
-  --info-foreground: hsl(215 60% 8%);
-  --error: hsl(350 75% 65%);
-  --error-foreground: hsl(215 60% 8%);
+  --radius: 0.75rem;
+
+  --success: hsl(152 58% 38%);
+  --success-foreground: hsl(0 0% 100%);
+  --warning: hsl(38 85% 50%);
+  --warning-foreground: hsl(220 50% 15%);
+  --info: hsl(205 85% 48%);
+  --info-foreground: hsl(0 0% 100%);
+  --error: hsl(350 72% 56%);
+  --error-foreground: hsl(0 0% 100%);
+
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+  --shadow-card-hover: 0 2px 8px 0 rgb(0 0 0 / 0.06);
+}
+
+/* ==========================================================================
+   THEME 3: COMPETITION (竞技深邃 - Midnight Ocean Dark)
+   ========================================================================== */
+.dark,
+[data-theme="competition"] {
+  --background: hsl(222 40% 9%);
+  --foreground: hsl(210 30% 93%);
+
+  --card: hsl(222 35% 13%);
+  --card-foreground: hsl(210 30% 93%);
+
+  --popover: hsl(222 38% 11%);
+  --popover-foreground: hsl(210 30% 93%);
+
+  --primary: hsl(185 72% 44%);
+  --primary-foreground: hsl(222 45% 8%);
+
+  --secondary: hsl(222 28% 18%);
+  --secondary-foreground: hsl(210 30% 90%);
+
+  --muted: hsl(222 22% 16%);
+  --muted-foreground: hsl(215 18% 60%);
+
+  --accent: hsl(38 88% 52%);
+  --accent-foreground: hsl(222 45% 8%);
+
+  --destructive: hsl(350 72% 58%);
+  --destructive-foreground: hsl(0 0% 100%);
+
+  --border: hsl(220 25% 22%);
+  --input: hsl(220 25% 20%);
+  --ring: hsl(185 72% 44%);
+
+  --radius: 0.75rem;
+
+  --success: hsl(152 60% 44%);
+  --success-foreground: hsl(222 45% 8%);
+  --warning: hsl(42 88% 52%);
+  --warning-foreground: hsl(222 45% 8%);
+  --info: hsl(205 82% 55%);
+  --info-foreground: hsl(222 45% 8%);
+  --error: hsl(350 72% 58%);
+  --error-foreground: hsl(0 0% 100%);
+
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.15);
+  --shadow-card-hover: 0 2px 8px 0 rgb(0 0 0 / 0.25);
 }
 
 @layer base {
@@ -146,206 +201,83 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-200;
+    min-height: 100vh;
   }
 }
 
 /* ==========================================
-   AquaFlow Pro V8 — Swimming Design System
+   Clean Card Utility Classes
    ========================================== */
 
-/* --- Swimming Color Palette --- */
-:root {
-  /* Water / swimming tones */
-  --water-50: hsl(195 50% 95%);
-  --water-100: hsl(195 55% 88%);
-  --water-200: hsl(195 60% 78%);
-  --water-300: hsl(195 65% 65%);
-  --water-400: hsl(195 70% 52%);
-  --water-500: hsl(195 75% 42%);
-  --water-600: hsl(195 80% 35%);
-  --water-700: hsl(195 85% 25%);
-  --water-800: hsl(195 90% 15%);
-  --water-900: hsl(195 95% 8%);
-
-  /* Wave animation colors */
-  --wave-primary: rgba(100, 255, 218, 0.06);
-  --wave-secondary: rgba(56, 189, 248, 0.04);
-  --wave-accent: rgba(100, 255, 218, 0.12);
-
-  /* Card opacity tokens */
-  --card-subtle: rgba(217, 221, 237, 0.08);
-  --card-default: rgba(217, 221, 237, 0.12);
-  --card-elevated: rgba(217, 221, 237, 0.2);
+/* Clean card: solid background + subtle border + micro shadow */
+.card-clean {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
 }
 
-.dark {
-  --water-50: hsl(195 95% 8%);
-  --water-100: hsl(195 90% 15%);
-  --water-200: hsl(195 85% 25%);
-  --water-300: hsl(195 80% 35%);
-  --water-400: hsl(195 75% 42%);
-  --water-500: hsl(195 70% 52%);
-  --water-600: hsl(195 65% 65%);
-  --water-700: hsl(195 60% 78%);
-  --water-800: hsl(195 55% 88%);
-  --water-900: hsl(195 50% 95%);
-
-  --wave-primary: rgba(100, 255, 218, 0.06);
-  --wave-secondary: rgba(56, 189, 248, 0.04);
-  --wave-accent: rgba(100, 255, 218, 0.12);
-
-  --card-subtle: rgba(217, 221, 237, 0.08);
-  --card-default: rgba(217, 221, 237, 0.12);
-  --card-elevated: rgba(217, 221, 237, 0.2);
+.card-clean:hover {
+  box-shadow: var(--shadow-card-hover);
 }
 
-/* --- Training Type Theme Tokens --- */
-.theme-aerobic {
-  --background: hsl(190 60% 8%);
-  --card: hsl(190 60% 9%);
-  --primary: hsl(190 100% 50%);
-  --ring: hsl(190 100% 50%);
-  --theme-glow: radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.12), transparent 75%);
-  --theme-texture: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 40 Q20 30 40 40 Q60 50 80 40' stroke='rgba(0,229,255,0.05)' fill='none' stroke-width='1'/%3E%3C/svg%3E");
+/* Page heading typography */
+.heading-page {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+  line-height: 1.3;
 }
 
-.theme-anaerobic {
-  --background: hsl(350 60% 8%);
-  --card: hsl(350 60% 9%);
-  --primary: hsl(350 100% 55%);
-  --ring: hsl(350 100% 55%);
-  --theme-glow: radial-gradient(circle at 50% 0%, rgba(255, 23, 68, 0.12), transparent 75%);
-  --theme-texture: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 30 L30 15 L60 30 L30 45Z' stroke='rgba(255,23,68,0.04)' fill='none'/%3E%3C/svg%3E");
+/* Section label typography */
+.heading-section {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
 }
 
-.theme-lactate {
-  --background: hsl(280 60% 8%);
-  --card: hsl(280 60% 9%);
-  --primary: hsl(280 90% 60%);
-  --ring: hsl(280 90% 60%);
-  --theme-glow: radial-gradient(circle at 50% 0%, rgba(224, 64, 251, 0.12), transparent 75%);
+/* Inline badge */
+.badge-group {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  letter-spacing: 0.04em;
 }
 
-.theme-sprint {
-  --background: hsl(45 60% 8%);
-  --card: hsl(45 60% 9%);
-  --primary: hsl(45 100% 50%);
-  --ring: hsl(45 100% 50%);
-  --theme-glow: radial-gradient(circle at 50% 0%, rgba(255, 196, 0, 0.12), transparent 75%);
-  --theme-texture: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='0' y1='20' x2='40' y2='20' stroke='rgba(255,196,0,0.06)' stroke-width='2'/%3E%3C/svg%3E");
-}
-
-.theme-recovery, .theme-relaxation {
-  --background: hsl(150 60% 8%);
-  --card: hsl(150 60% 9%);
-  --primary: hsl(150 90% 55%);
-  --ring: hsl(150 90% 55%);
-  --theme-glow: radial-gradient(circle at 50% 0%, rgba(0, 230, 118, 0.12), transparent 75%);
-  --theme-texture: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='50' cy='50' r='30' stroke='rgba(0,230,118,0.04)' fill='none'/%3E%3C/svg%3E");
-}
-
-.theme-strength, .theme-endurance {
-  --background: hsl(25 60% 8%);
-  --card: hsl(25 60% 9%);
-  --primary: hsl(25 90% 55%);
-  --ring: hsl(25 90% 55%);
-  --theme-glow: radial-gradient(circle at 50% 0%, rgba(255, 109, 0, 0.12), transparent 75%);
-}
-
-.theme-race_prep, .theme-dark-gold {
-  --background: hsl(220 50% 7%);
-  --card: hsl(220 50% 8%);
-  --primary: hsl(46 80% 54%);
-  --primary-foreground: hsl(220 50% 7%);
-  --ring: hsl(46 80% 54%);
-  --border: hsl(46 30% 18%);
-  --theme-glow: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.16), transparent 75%);
-  --theme-texture: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='10' width='60' height='60' stroke='rgba(212,175,55,0.06)' fill='none' stroke-width='1' rx='4'/%3E%3C/svg%3E");
-}
-
-.bg-theme-glow {
-  background-image: var(--theme-glow, radial-gradient(circle at 50% 0%, rgba(100, 255, 218, 0.08), transparent 70%));
-}
-
-/* --- Background Texture System --- */
-.bg-theme-texture {
-  background-image: var(--theme-texture, none);
-  background-repeat: repeat;
-  background-size: auto;
-}
-
-.bg-overlay {
-  background: var(--bg-overlay, none);
-}
-
-/* --- Glassmorphism Panel Styles --- */
+/* ==========================================
+   Legacy Compatibility — glass-panel now maps to card-clean
+   ========================================== */
 .glass-panel {
-  background: var(--glass-bg, rgba(255, 255, 255, 0.65));
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.3));
-  box-shadow: 0 8px 32px 0 rgba(0, 150, 255, 0.05);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.dark .glass-panel {
-  background: rgba(20, 30, 45, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease;
 }
 
 .glass-panel-hover:hover {
-  background: var(--glass-bg, rgba(255, 255, 255, 0.85));
-  border-color: rgba(0, 180, 255, 0.3);
-  box-shadow: 0 16px 40px 0 rgba(0, 150, 255, 0.1);
-  transform: translateY(-4px);
-}
-
-.dark .glass-panel-hover:hover {
-  background: rgba(25, 40, 60, 0.75);
-  border-color: rgba(0, 200, 255, 0.25);
-  box-shadow: 0 16px 40px 0 rgba(0, 200, 255, 0.15);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .glass-input {
-  background: var(--glass-bg, rgba(255, 255, 255, 0.5));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.2));
-  backdrop-filter: blur(12px);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.dark .glass-input {
-  background: rgba(20, 30, 45, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--card);
+  border: 1px solid var(--border);
+  transition: border-color 0.15s ease;
 }
 
 .glass-input:focus {
-  background: var(--glass-bg, rgba(255, 255, 255, 0.8));
   border-color: var(--primary);
-  box-shadow: 0 0 16px rgba(0, 180, 255, 0.15);
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
-.dark .glass-input:focus {
-  background: rgba(30, 45, 65, 0.6);
-  box-shadow: 0 0 16px rgba(0, 200, 255, 0.2);
-}
-
-/* --- Smooth Gold Border Glow --- */
-.gold-glow {
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.25);
-  border-color: hsl(46 80% 54%) !important;
-}
-
-/* --- Premium Gold Text Gradient --- */
-.gold-text-gradient {
-  background: linear-gradient(135deg, #FFE082 0%, #FFB300 50%, #FF8F00 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* --- No Scrollbar Utility --- */
+/* --- Scrollbar & Layout Utilities --- */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -354,225 +286,25 @@
   scrollbar-width: none;
 }
 
-/* ==========================================
-   Wave Animation
-   ========================================== */
-
-@keyframes wave-move {
-  0% { transform: translateX(0); }
-  50% { transform: translateX(-25%); }
-  100% { transform: translateX(0); }
-}
-
-.wave-animation {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-}
-
-.wave-animation .wave-layer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 200%;
-  height: 100%;
-  animation: wave-move linear infinite;
-}
-
-.wave-animation .wave-1 {
-  animation-duration: 12s;
-  opacity: 0.15;
-}
-
-.wave-animation .wave-2 {
-  animation-duration: 18s;
-  animation-direction: reverse;
-  opacity: 0.1;
-}
-
-.wave-animation .wave-3 {
-  animation-duration: 25s;
-  opacity: 0.06;
-}
-
-/* ==========================================
-   Water Ripple Click Effect
-   ========================================== */
-
-@keyframes water-ripple {
-  0% {
-    transform: scale(0.8);
-    opacity: 0.5;
-  }
-  100% {
-    transform: scale(2.5);
-    opacity: 0;
-  }
-}
-
-.water-ripple-container {
-  position: relative;
-  overflow: hidden;
-}
-
-.water-ripple-container .ripple {
-  position: absolute;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  background: rgba(100, 255, 218, 0.25);
-  animation: water-ripple 0.6s ease-out forwards;
-  pointer-events: none;
-}
-
-/* ==========================================
-   Premium Glow Pulse (for active elements)
-   ========================================== */
-
-@keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(100, 255, 218, 0.2); }
-  50% { box-shadow: 0 0 20px rgba(100, 255, 218, 0.4); }
-}
-
-.glow-pulse {
-  animation: glow-pulse 2s ease-in-out infinite;
-}
-
-/* ==========================================
-   Floating animation (for decorative elements)
-   ========================================== */
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-/* ==========================================
-   Night Theme: Stars & Moon
-   ========================================== */
-
-@keyframes twinkle {
-  0%, 100% { opacity: 0.2; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1.2); }
-}
-
-@keyframes twinkle-slow {
-  0%, 100% { opacity: 0.1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(0.9); }
-}
-
-.star-particle {
-  position: absolute;
-  border-radius: 50%;
-  background: white;
-  animation: twinkle var(--twinkle-duration, 3s) ease-in-out infinite;
-  animation-delay: var(--twinkle-delay, 0s);
-}
-
-.star-particle.dim {
-  background: rgba(255, 255, 240, 0.7);
-  animation-name: twinkle-slow;
-}
-
-.star-particle.bright {
-  background: rgba(255, 255, 255, 1);
-  box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
-}
-
-.moon-glow {
-  filter: drop-shadow(0 0 20px rgba(255, 255, 200, 0.4)) drop-shadow(0 0 40px rgba(255, 255, 200, 0.2));
-}
-
-/* ==========================================
-   Fire Theme: Fire Particles
-   ========================================== */
-
-@keyframes fire-rise {
-  0% {
-    transform: translateY(0) scale(1) rotate(0deg);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.8;
-  }
-  70% {
-    opacity: 0.6;
-  }
-  100% {
-    transform: translateY(var(--fire-rise-distance, -200px)) scale(0.2) rotate(180deg);
-    opacity: 0;
-  }
-}
-
-@keyframes fire-flicker {
-  0%, 100% { transform: translateX(0) scaleY(1); }
-  25% { transform: translateX(-2px) scaleY(1.1); }
-  75% { transform: translateX(2px) scaleY(0.9); }
-}
-
-.fire-particle {
-  position: absolute;
-  border-radius: 50%;
-  animation: fire-rise var(--fire-duration, 4s) ease-out infinite;
-  animation-delay: var(--fire-delay, 0s);
-  filter: blur(1px);
-}
-
-.fire-particle::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  animation: fire-flicker 0.3s ease-in-out infinite alternate;
-}
-
-.fire-ember {
-  position: absolute;
-  border-radius: 50%;
-  animation: fire-rise var(--ember-duration, 5s) ease-out infinite;
-  animation-delay: var(--ember-delay, 0s);
-  opacity: 0.6;
-  filter: blur(0.5px);
-}
-
-/* ==========================================
-   Stitch Apex Velocity Utilities
-   ========================================== */
-
-/* --- High-performance technical font families --- */
+/* --- Metrics & Typography Utilities --- */
 .font-display-metrics {
-  font-family: 'Inter', sans-serif !important;
+  font-family: var(--font-sans);
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 .font-label-caps {
-  font-family: 'JetBrains Mono', monospace !important;
-  font-weight: 500;
-  letter-spacing: 0.1em;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.08em;
 }
 
-/* --- High-performance glowing elements --- */
-.glow-border {
-  border: 1px solid rgba(0, 242, 255, 0.15) !important;
-  transition: border 0.3s ease, box-shadow 0.3s ease;
-}
-
-.glow-border:hover, .glow-border-active {
-  border: 1px solid rgba(0, 242, 255, 1) !important;
-  box-shadow: 0 0 8px rgba(0, 242, 255, 0.2) !important;
-}
-
+/* --- XP & Progress Bar (simplified, no gradient) --- */
 .xp-bar-gradient {
-  background: linear-gradient(90deg, #00f2ff 0%, #006a71 100%) !important;
-  box-shadow: 0 0 10px rgba(0, 242, 255, 0.5) !important;
+  background: var(--primary);
+}
+
+/* --- Safe Area Padding for Mobile Bottom Bar --- */
+.safe-bottom-padding {
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 16px));
 }

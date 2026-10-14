@@ -339,18 +339,18 @@ export default function CoachMeetsPage() {
 
                 {/* Form Modal */}
                 {showFormModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-                        <div className="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-foreground/20 animate-in fade-in duration-200">
+                        <div className="bg-card border border-border rounded-xl w-full max-w-lg overflow-hidden shadow-xl relative">
                             
                             {/* Modal Header */}
-                            <div className="flex items-center justify-between p-6 border-b border-white/5 bg-slate-950/20">
-                                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                    <Trophy className="w-5 h-5 text-yellow-400" />
+                            <div className="flex items-center justify-between p-5 border-b border-border bg-secondary/30">
+                                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                                    <Trophy className="w-5 h-5 text-amber-500" />
                                     {editingMeet ? "编辑赛事内容" : "发布新赛事预告"}
                                 </h3>
                                 <button
                                     onClick={() => setShowFormModal(false)}
-                                    className="p-1.5 hover:bg-white/5 rounded-lg transition-colors text-muted-foreground hover:text-white"
+                                    className="p-1.5 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>
@@ -359,7 +359,7 @@ export default function CoachMeetsPage() {
                             {/* Modal Form */}
                             <form onSubmit={handleFormSubmit} className="p-6 space-y-4">
                                 {errorMsg && (
-                                    <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-3 rounded-xl">{errorMsg}</p>
+                                    <p className="text-xs text-destructive bg-destructive/10 border border-destructive/20 p-3 rounded-xl">{errorMsg}</p>
                                 )}
 
                                 <div>
@@ -369,7 +369,7 @@ export default function CoachMeetsPage() {
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                         placeholder="例如: 2026年夏季全市青少年游泳锦标赛"
-                                        className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                        className="w-full bg-secondary border border-border rounded-xl py-2.5 px-3.5 text-sm text-foreground focus:outline-none focus:border-primary"
                                         required
                                     />
                                 </div>
@@ -381,7 +381,7 @@ export default function CoachMeetsPage() {
                                             type="date"
                                             value={formData.date}
                                             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                            className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                            className="w-full bg-secondary border border-border rounded-xl py-2.5 px-3.5 text-sm text-foreground focus:outline-none focus:border-primary"
                                             required
                                         />
                                     </div>
@@ -391,7 +391,7 @@ export default function CoachMeetsPage() {
                                             type="time"
                                             value={formData.time}
                                             onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                                            className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                            className="w-full bg-secondary border border-border rounded-xl py-2.5 px-3.5 text-sm text-foreground focus:outline-none focus:border-primary"
                                         />
                                     </div>
                                 </div>
@@ -403,7 +403,7 @@ export default function CoachMeetsPage() {
                                         value={formData.location}
                                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                                         placeholder="例如: 市奥林匹克游泳馆"
-                                        className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                        className="w-full bg-secondary border border-border rounded-xl py-2.5 px-3.5 text-sm text-foreground focus:outline-none focus:border-primary"
                                     />
                                 </div>
 
@@ -413,17 +413,17 @@ export default function CoachMeetsPage() {
                                         value={formData.description}
                                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                         placeholder="例如: 报名资格、参赛费、或者本次主攻 50自/100蛙..."
-                                        className="w-full bg-secondary/50 border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary/50 min-h-[90px] resize-none"
+                                        className="w-full bg-secondary border border-border rounded-xl py-2.5 px-3.5 text-sm text-foreground focus:outline-none focus:border-primary min-h-[90px] resize-none"
                                     />
                                 </div>
 
-                                <div className="flex items-center gap-3 pt-2">
+                                <div className="flex items-center gap-3 pt-1">
                                     <input
                                         type="checkbox"
                                         id="isActiveCheckbox"
                                         checked={formData.isActive}
                                         onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                                        className="w-4 h-4 rounded border-white/10 text-primary bg-secondary/50 focus:ring-0 cursor-pointer"
+                                        className="w-4 h-4 rounded border-border text-primary bg-secondary focus:ring-0 cursor-pointer"
                                     />
                                     <label htmlFor="isActiveCheckbox" className="text-xs text-muted-foreground cursor-pointer select-none">
                                         激活备战状态 (非激活的赛事仅作日程记录，不计算倒计时)
@@ -431,18 +431,18 @@ export default function CoachMeetsPage() {
                                 </div>
 
                                 {/* Modal Footer */}
-                                <div className="flex justify-end gap-3 border-t border-white/5 pt-5 mt-4">
+                                <div className="flex justify-end gap-3 border-t border-border pt-4 mt-4">
                                     <button
                                         type="button"
                                         onClick={() => setShowFormModal(false)}
-                                        className="px-4 py-2.5 rounded-xl bg-white/5 border border-transparent text-xs text-white hover:bg-white/10"
+                                        className="px-4 py-2.5 rounded-xl bg-secondary border border-border text-xs text-foreground hover:bg-secondary/80 transition-colors"
                                     >
                                         取消
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={saving}
-                                        className="px-5 py-2.5 bg-primary text-primary-foreground font-bold rounded-xl text-xs flex items-center gap-1.5 hover:brightness-110 disabled:opacity-50"
+                                        className="px-5 py-2.5 bg-primary text-primary-foreground font-semibold rounded-xl text-xs flex items-center gap-1.5 hover:bg-primary/90 transition-colors disabled:opacity-50"
                                     >
                                         {saving && <div className="w-3.5 h-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />}
                                         {editingMeet ? "保存修改" : "立即发布"}

@@ -117,21 +117,21 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="bg-card border border-border w-full max-w-md rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/20 p-4 animate-in fade-in duration-200">
+            <div className="bg-card border border-border w-full max-w-md rounded-xl p-6 shadow-xl animate-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
                         {swimmerToEdit ? "编辑队员" : "添加队员"}
                     </h2>
-                    <button onClick={onClose} disabled={isSubmitting} className="p-2 hover:bg-white/10 rounded-full transition-colors disabled:opacity-50">
+                    <button onClick={onClose} disabled={isSubmitting} className="p-2 hover:bg-secondary rounded-lg transition-colors disabled:opacity-50">
                         <X className="w-5 h-5 text-muted-foreground" />
                     </button>
                 </div>
 
                 {error && (
-                    <div className="mb-4 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400 flex items-center justify-between">
+                    <div className="mb-4 bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-3 text-sm text-destructive flex items-center justify-between">
                         <span>{error}</span>
-                        <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300 ml-2">
+                        <button onClick={() => setError(null)} className="text-destructive hover:opacity-80 ml-2">
                             <X className="w-4 h-4" />
                         </button>
                     </div>
@@ -147,7 +147,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             disabled={isSubmitting}
-                            className="w-full bg-secondary/50 border border-transparent focus:border-primary rounded-lg px-4 py-3 text-white outline-none transition-all disabled:opacity-50"
+                            className="w-full bg-secondary border border-border focus:border-primary rounded-lg px-4 py-2.5 text-foreground text-sm outline-none transition-all disabled:opacity-50"
                             placeholder="例如：张三"
                         />
                     </div>
@@ -162,9 +162,9 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                                     type="button"
                                     onClick={() => setGroup(lvl)}
                                     disabled={isSubmitting}
-                                    className={`py-2 rounded-lg text-xs font-bold border transition-all disabled:opacity-50 ${group === lvl
+                                    className={`py-2 rounded-lg text-xs font-semibold border transition-all disabled:opacity-50 ${group === lvl
                                         ? "bg-primary text-primary-foreground border-primary"
-                                        : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50"
+                                        : "bg-secondary text-muted-foreground border-border hover:bg-secondary/80"
                                         }`}
                                 >
                                     {GROUP_LABELS[lvl]}
@@ -183,9 +183,9 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                                     type="button"
                                     onClick={() => setStatus(stat)}
                                     disabled={isSubmitting}
-                                    className={`py-2 rounded-lg text-xs font-bold border transition-all disabled:opacity-50 ${status === stat
+                                    className={`py-2 rounded-lg text-xs font-semibold border transition-all disabled:opacity-50 ${status === stat
                                         ? "bg-primary text-primary-foreground border-primary"
-                                        : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50"
+                                        : "bg-secondary text-muted-foreground border-border hover:bg-secondary/80"
                                         }`}
                                 >
                                     {stat === "Active" ? "活跃" : stat === "Injured" ? "受伤" : "休整"}
@@ -204,7 +204,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 disabled={isSubmitting}
-                                className="w-full bg-secondary/50 border border-transparent focus:border-primary rounded-lg px-4 py-2 text-sm text-white outline-none disabled:opacity-50"
+                                className="w-full bg-secondary border border-border focus:border-primary rounded-lg px-4 py-2 text-sm text-foreground outline-none disabled:opacity-50"
                             />
                         </div>
                         <div>
@@ -216,7 +216,7 @@ export function SwimmerModal({ isOpen, onClose, swimmerToEdit }: SwimmerModalPro
                                 onChange={(e) => setPassword(e.target.value)}
                                 disabled={isSubmitting}
                                 placeholder={swimmerToEdit ? "留空则不修改密码" : ""}
-                                className="w-full bg-secondary/50 border border-transparent focus:border-primary rounded-lg px-4 py-2 text-sm text-white outline-none font-mono disabled:opacity-50 placeholder:text-muted-foreground/50"
+                                className="w-full bg-secondary border border-border focus:border-primary rounded-lg px-4 py-2 text-sm text-foreground outline-none font-mono disabled:opacity-50 placeholder:text-muted-foreground"
                             />
                         </div>
                     </div>

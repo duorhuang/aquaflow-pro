@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api-client";
@@ -264,22 +264,19 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
     };
 
     return (
-        <div className="bg-card/40 border border-border rounded-3xl p-6 relative overflow-hidden flex flex-col md:flex-row gap-6">
+        <div className="bg-card border border-border rounded-xl p-6 relative overflow-hidden flex flex-col md:flex-row gap-6">
             
             {/* Left: Interative SVG Body Canvas */}
             <div className="flex-1 flex flex-col items-center">
-                <h4 className="text-sm font-bold text-white mb-4 uppercase tracking-wider text-center flex items-center gap-2">
+                <h4 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wider text-center flex items-center gap-2">
                     {readOnly ? `📊 ${t.injuryMap.monitoring}` : `👤 ${t.injuryMap.clickRegion}`}
                 </h4>
                 
-                <div className="relative w-64 aspect-[1/2] bg-slate-950/60 rounded-3xl border border-white/5 p-4 flex items-center justify-center">
-                    {/* Glowing grid wires */}
-                    <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#3b82f6_1px,transparent_1px),linear-gradient(to_bottom,#3b82f6_1px,transparent_1px)] bg-[size:16px_16px] rounded-3xl pointer-events-none" />
-                    
+                <div className="relative w-64 aspect-[1/2] bg-secondary/30 rounded-xl border border-border p-4 flex items-center justify-center">
                     <svg viewBox="0 0 200 400" className={cn("relative z-10 w-full h-full select-none", onPartClick || !readOnly ? "pointer-events-auto" : "pointer-events-none")}>
                         <defs>
                             <filter id="neonPulse" x="-30%" y="-30%" width="160%" height="160%">
-                                <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+                                <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
                                 <feMerge>
                                     <feMergeNode in="blur" />
                                     <feMergeNode in="SourceGraphic" />
@@ -288,8 +285,8 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                         </defs>
 
                         {/* Symmetric grid markers */}
-                        <line x1="100" y1="0" x2="100" y2="400" stroke="#3b82f6" strokeWidth="0.5" strokeDasharray="5,5" opacity="0.3" />
-                        <line x1="0" y1="200" x2="200" y2="200" stroke="#3b82f6" strokeWidth="0.5" strokeDasharray="5,5" opacity="0.3" />
+                        <line x1="100" y1="0" x2="100" y2="400" stroke="currentColor" className="text-muted-foreground/20" strokeWidth="0.5" strokeDasharray="4,4" />
+                        <line x1="0" y1="200" x2="200" y2="200" stroke="currentColor" className="text-muted-foreground/20" strokeWidth="0.5" strokeDasharray="4,4" />
 
                         {/* Interactive Body Path Regions */}
                         {Object.entries(BODY_PARTS).map(([key, part]) => {
@@ -303,34 +300,33 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                                     className={cn("cursor-pointer transition-all hover:opacity-90")}
                                     onClick={() => handlePartClick(key)}
                                 >
-                                    {/* Glowing back outline path for severity */}
+                                    {/* Outline path for severity */}
                                     {score > 0 && (
                                         <path 
                                             d={part.path} 
                                             fill="none" 
                                             stroke={color} 
-                                            strokeWidth="5" 
-                                            opacity="0.4"
-                                            filter="url(#neonPulse)"
+                                            strokeWidth="4" 
+                                            opacity="0.3"
                                         />
                                     )}
 
                                     {/* Main Filled Region */}
                                     <path 
                                         d={part.path} 
-                                        fill={score > 0 ? `${color}40` : "#1e293b50"} 
-                                        stroke={isActive ? "#ffd700" : score > 0 ? color : "#475569"} 
-                                        strokeWidth={isActive ? "2.5" : "1.5"} 
-                                        className="transition-all duration-300"
+                                        fill={score > 0 ? `${color}35` : "currentColor"} 
+                                        stroke={isActive ? "var(--primary)" : score > 0 ? color : "currentColor"} 
+                                        strokeWidth={isActive ? "2" : "1"} 
+                                        className={cn("transition-all duration-200", score > 0 ? "" : "text-muted/40 stroke-border")}
                                     />
                                     
                                     {/* Hotspot anchor dots */}
                                     <circle 
                                         cx={part.coords.split(",")[0]} 
                                         cy={part.coords.split(",")[1]} 
-                                        r="3.5" 
-                                        fill={score > 0 ? color : "#94a3b8"} 
-                                        className="animate-pulse"
+                                        r="3" 
+                                        fill={score > 0 ? color : "var(--muted-foreground)"} 
+                                        opacity={score > 0 ? "0.9" : "0.4"}
                                     />
                                 </g>
                             );
@@ -339,7 +335,7 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                 </div>
                 
                 {!readOnly && (
-                    <p className="text-[11px] text-muted-foreground mt-3 flex items-center gap-1.5 justify-center">
+                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5 justify-center">
                         <Info className="w-3.5 h-3.5 text-primary" /> {t.injuryMap.clickRegion}
                     </p>
                 )}
@@ -350,7 +346,7 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                 {readOnly ? (
                     // COACH HEATMAP INSIGHT
                     <div className="space-y-4">
-                        <h5 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-1.5">
+                        <h5 className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                             <ShieldAlert className="w-4 h-4 text-primary" /> {t.injuryMap.monitoring}
                         </h5>
                         <p className="text-xs text-muted-foreground">
@@ -367,11 +363,11 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                                     <button 
                                         key={key} 
                                         onClick={() => handlePartClick(key)}
-                                        className="w-full text-left flex justify-between items-center text-xs p-2.5 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors"
+                                        className="w-full text-left flex justify-between items-center text-xs p-2.5 bg-secondary/50 rounded-lg border border-border hover:bg-secondary transition-colors"
                                     >
-                                        <span className="font-medium text-white">{getLocalizedPartLabel(key)}</span>
+                                        <span className="font-medium text-foreground">{getLocalizedPartLabel(key)}</span>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-20 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                            <div className="w-20 h-1.5 bg-secondary rounded-full overflow-hidden">
                                                 <div 
                                                     className="h-full rounded-full" 
                                                     style={{ width: `${(score / 5) * 100}%`, backgroundColor: PAIN_COLORS[index] }} 
@@ -395,10 +391,10 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                     // SWIMMER INDIVIDUAL EDITING
                     <div className="space-y-4">
                         {selectedPart ? (
-                            <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-5 space-y-4 animate-in fade-in duration-300">
+                            <div className="bg-secondary/40 border border-border rounded-xl p-4 space-y-4 animate-in fade-in duration-200">
                                 <div>
                                     <span className="text-xs text-muted-foreground uppercase tracking-wider">{t.injuryMap.selectedRegion}</span>
-                                    <h5 className="text-base font-bold text-white">{getLocalizedPartLabel(selectedPart)}</h5>
+                                    <h5 className="text-sm font-semibold text-foreground">{getLocalizedPartLabel(selectedPart)}</h5>
                                 </div>
 
                                 <div className="space-y-2">
@@ -411,10 +407,10 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                                                     key={idx}
                                                     onClick={() => handlePainChange(idx)}
                                                     className={cn(
-                                                        "w-full text-left p-2.5 rounded-xl text-xs font-medium transition-all flex justify-between items-center border cursor-pointer",
+                                                        "w-full text-left p-2.5 rounded-lg text-xs font-medium transition-all flex justify-between items-center border cursor-pointer",
                                                         isSelected 
-                                                            ? "bg-white/10 border-white/20 text-white shadow-md" 
-                                                            : "bg-white/5 border-transparent text-muted-foreground hover:bg-white/10 hover:text-white"
+                                                            ? "bg-primary/10 border-primary/30 text-primary font-semibold shadow-xs" 
+                                                            : "bg-background border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
                                                     )}
                                                 >
                                                     <span>{getLocalizedPainLabel(idx)}</span>
@@ -426,38 +422,38 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                                 </div>
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center p-6 border border-dashed border-white/10 rounded-2xl h-48 text-center text-muted-foreground">
-                                <span className="text-3xl mb-2">🤖</span>
+                            <div className="flex flex-col items-center justify-center p-6 border border-dashed border-border rounded-xl h-48 text-center text-muted-foreground">
+                                <span className="text-2xl mb-2">📋</span>
                                 <p className="text-xs">{t.injuryMap.clickRegion}</p>
                             </div>
                         )}
 
                         {/* Injury Documentation Section */}
-                        <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-5 space-y-4">
-                            <h5 className="text-sm font-bold text-white mb-2">{t.injuryMap.descLabel}</h5>
+                        <div className="bg-secondary/30 border border-border rounded-xl p-4 space-y-3">
+                            <h5 className="text-xs font-semibold text-foreground mb-1">{t.injuryMap.descLabel}</h5>
                             <textarea
                                 value={injuryNote}
                                 onChange={(e) => setInjuryNote(e.target.value)}
                                 placeholder={t.injuryMap.descPlaceholder}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none h-20 leading-relaxed"
+                                className="w-full bg-background border border-border rounded-lg p-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none h-20 leading-relaxed"
                             />
                             
                             {/* Image Upload Area */}
                             <div>
                                 {injuryImageUrl ? (
-                                    <div className="relative w-full h-32 rounded-xl overflow-hidden border border-white/10 group bg-black/40">
+                                    <div className="relative w-full h-32 rounded-lg overflow-hidden border border-border group bg-secondary/50">
                                         <img src={injuryImageUrl} alt="Injury" className="w-full h-full object-contain" />
                                         <button
                                             onClick={() => setInjuryImageUrl("")}
-                                            className="absolute top-2 right-2 bg-black/60 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80 text-white"
+                                            className="absolute top-2 right-2 bg-foreground/70 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive text-background"
                                         >
                                             <X className="w-4 h-4" />
                                         </button>
                                     </div>
                                 ) : (
-                                    <label className="flex flex-col items-center justify-center w-full h-20 rounded-xl border border-dashed border-white/20 bg-white/5 hover:bg-white/10 cursor-pointer transition-colors text-muted-foreground hover:text-white">
+                                    <label className="flex flex-col items-center justify-center w-full h-16 rounded-lg border border-dashed border-border bg-background hover:bg-secondary/50 cursor-pointer transition-colors text-muted-foreground hover:text-foreground">
                                         {uploading ? (
-                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            <Loader2 className="w-4 h-4 animate-spin" />
                                         ) : (
                                             <div className="flex items-center gap-2">
                                                 <ImagePlus className="w-4 h-4" />
@@ -481,14 +477,14 @@ export function InjuryMap({ swimmerId, readOnly = false, teamHeatMapData, initia
                             onClick={handleSave}
                             disabled={saving}
                             className={cn(
-                                "w-full py-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer",
+                                "w-full py-2.5 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-2 cursor-pointer",
                                 saved 
-                                    ? "bg-green-500 text-white" 
-                                    : "bg-primary text-primary-foreground hover:scale-[1.02] shadow-[0_0_15px_rgba(100,255,218,0.2)]"
+                                    ? "bg-emerald-600 text-white" 
+                                    : "bg-primary text-primary-foreground hover:bg-primary/90"
                             )}
                         >
                             {saving ? (
-                                <Loader2 className="w-4 h-4 animate-spin text-white" />
+                                <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" />
                             ) : saved ? (
                                 <Check className="w-4 h-4" />
                             ) : (

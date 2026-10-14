@@ -85,7 +85,7 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                                 onChange={e => updateBlock(i, { content: e.target.value })}
                                 placeholder="训练说明..."
                                 rows={3}
-                                className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-white resize-none outline-none focus:border-primary/50 placeholder:text-muted-foreground/50"
+                                className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-sm text-foreground resize-none outline-none focus:border-primary placeholder:text-muted-foreground"
                             />
                         </div>
                     )}
@@ -102,7 +102,7 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                                     />
                                     <button
                                         onClick={(e) => { e.stopPropagation(); updateBlock(i, { content: "" }); }}
-                                        className="absolute top-2 right-2 p-1 bg-black/60 rounded-full text-white hover:bg-red-500/80 transition-colors"
+                                        className="absolute top-2 right-2 p-1 bg-secondary border border-border rounded-full text-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors"
                                     >
                                         <X className="w-3 h-3" />
                                     </button>
@@ -111,13 +111,13 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                                 <label
                                     htmlFor={`image-input-${i}`}
                                     className={cn(
-                                        "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors block",
-                                        "border-white/20 hover:border-primary/50 hover:bg-white/5"
+                                        "border border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors block",
+                                        "border-border hover:border-primary hover:bg-secondary/50"
                                     )}
                                 >
                                     <Image className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                                     <p className="text-sm text-muted-foreground">点击上传图片</p>
-                                    <p className="text-xs text-muted-foreground/50 mt-1">JPG, PNG, WebP</p>
+                                    <p className="text-xs text-muted-foreground/60 mt-1">JPG, PNG, WebP</p>
                                 </label>
                             )}
                             <input
@@ -188,7 +188,7 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                                         <video src={block.content} controls className="w-full rounded-xl max-h-[400px]" preload="none" playsInline />
                                         <button
                                             onClick={() => updateBlock(i, { content: "" })}
-                                            className="absolute top-2 right-2 p-1 bg-black/60 rounded-full text-white hover:bg-red-500/80 transition-colors"
+                                            className="absolute top-2 right-2 p-1 bg-secondary border border-border rounded-full text-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors"
                                         >
                                             <X className="w-3 h-3" />
                                         </button>
@@ -208,13 +208,13 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                             />
                             {/* Video URL input */}
                             <div className="flex items-center gap-2">
-                                <Link2 className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                                <Link2 className="w-3.5 h-3.5 text-primary shrink-0" />
                                 <input
                                     type="text"
                                     value={block.content.startsWith("http") && !block.content.startsWith("data:") ? block.content : ""}
                                     onChange={e => updateBlock(i, { content: e.target.value })}
                                     placeholder="或粘贴视频链接 (Bilibili, 抖音, 小红书...)"
-                                    className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-blue-500/50 placeholder:text-muted-foreground/50"
+                                    className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-xs text-foreground outline-none focus:border-primary placeholder:text-muted-foreground"
                                 />
                             </div>
                         </div>
@@ -222,13 +222,13 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
 
                     {block.type === "link" && (
                         <div className="flex items-center gap-2">
-                            <Link2 className="w-4 h-4 text-blue-400 shrink-0" />
+                            <Link2 className="w-4 h-4 text-primary shrink-0" />
                             <input
                                 type="text"
                                 value={block.content}
                                 onChange={e => updateBlock(i, { content: e.target.value })}
                                 placeholder="粘贴链接..."
-                                className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-blue-500/50 placeholder:text-muted-foreground/50"
+                                className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary placeholder:text-muted-foreground"
                             />
                         </div>
                     )}
@@ -237,16 +237,16 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
 
             {/* Add Block Buttons */}
             <div className="flex gap-2 flex-wrap">
-                <button onClick={() => addBlock("text")} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-muted-foreground hover:text-white hover:bg-white/10 transition-colors">
+                <button onClick={() => addBlock("text")} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary border border-border rounded-lg text-xs text-foreground hover:bg-secondary/80 transition-colors">
                     <Plus className="w-3.5 h-3.5" /> 文字
                 </button>
-                <button onClick={() => addBlock("image")} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-muted-foreground hover:text-white hover:bg-white/10 transition-colors">
+                <button onClick={() => addBlock("image")} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary border border-border rounded-lg text-xs text-foreground hover:bg-secondary/80 transition-colors">
                     <Image className="w-3.5 h-3.5" /> 照片
                 </button>
-                <button onClick={() => addBlock("video")} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-muted-foreground hover:text-white hover:bg-white/10 transition-colors">
+                <button onClick={() => addBlock("video")} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary border border-border rounded-lg text-xs text-foreground hover:bg-secondary/80 transition-colors">
                     <Video className="w-3.5 h-3.5" /> 视频
                 </button>
-                <button onClick={() => addBlock("link")} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-muted-foreground hover:text-white hover:bg-white/10 transition-colors">
+                <button onClick={() => addBlock("link")} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary border border-border rounded-lg text-xs text-foreground hover:bg-secondary/80 transition-colors">
                     <Link2 className="w-3.5 h-3.5" /> 链接
                 </button>
             </div>

@@ -262,23 +262,23 @@ export default function TrainingArchivePage() {
     return (
         <div className="min-h-screen bg-background pb-24">
             {/* Header */}
-            <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/10">
+            <header className="sticky top-0 z-50 bg-card border-b border-border">
                 <div className="p-4 max-w-2xl mx-auto">
                     <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                        <Link href="/workout" className="hover:text-white transition-colors">训练</Link>
+                        <Link href="/workout" className="hover:text-foreground transition-colors">训练</Link>
                         <ChevronRightIcon className="w-3 h-3" />
-                        <span className="text-white font-medium">档案</span>
+                        <span className="text-foreground font-medium">档案</span>
                     </nav>
                     <div className="flex items-center justify-between">
-                        <button onClick={() => router.back()} className="p-2 hover:bg-white/10 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center">
-                            <ChevronLeft className="w-5 h-5 text-white" />
+                        <button onClick={() => router.back()} className="p-2 hover:bg-secondary rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center">
+                            <ChevronLeft className="w-5 h-5 text-foreground" />
                         </button>
                         <div className="text-center">
-                            <h1 className="text-lg font-bold text-white">训练档案</h1>
+                            <h1 className="text-base font-bold text-foreground">训练档案</h1>
                             <p className="text-xs text-muted-foreground">Training Archive</p>
                         </div>
-                        <button onClick={() => router.push("/workout")} className="p-2 hover:bg-white/10 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center">
-                            <Waves className="w-5 h-5 text-white" />
+                        <button onClick={() => router.push("/workout")} className="p-2 hover:bg-secondary rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center">
+                            <Waves className="w-5 h-5 text-primary" />
                         </button>
                     </div>
                 </div>

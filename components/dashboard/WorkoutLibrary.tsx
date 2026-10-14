@@ -66,18 +66,18 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
             key={template.templateId}
             className={cn(
                 "bg-secondary/30 border rounded-xl p-3 hover:border-primary/50 transition-all group relative",
-                isUserTemplate ? "border-yellow-500/20" : "border-white/5"
+                isUserTemplate ? "border-amber-500/30" : "border-border"
             )}
         >
             <div className="flex justify-between items-start mb-2">
                 <div>
                     <div className="flex items-center gap-1.5">
-                        {isUserTemplate && <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />}
-                        <h4 className="font-bold text-sm text-foreground truncate max-w-[130px]" title={template.name}>
+                        {isUserTemplate && <Star className="w-3 h-3 text-amber-500 fill-amber-500" />}
+                        <h4 className="font-semibold text-sm text-foreground truncate max-w-[130px]" title={template.name}>
                             {template.name}
                         </h4>
                     </div>
-                    <span className="text-xs text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded uppercase">
+                    <span className="text-xs text-muted-foreground bg-secondary px-1.5 py-0.5 rounded uppercase">
                         {CATEGORY_MAP[template.category] || template.category}
                     </span>
                 </div>
@@ -132,20 +132,20 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
         <>
             {/* Mobile Backdrop */}
             <div
-                className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 md:hidden animate-in fade-in duration-300"
+                className="fixed inset-0 bg-foreground/20 z-40 md:hidden animate-in fade-in duration-300"
                 onClick={onClose}
             />
 
-            <div className="bg-card border-l border-white/10 h-full flex flex-col w-[85vw] md:w-80 fixed right-0 top-0 bottom-0 pt-20 z-50 shadow-xl overflow-hidden animate-in slide-in-from-right duration-300">
+            <div className="bg-card border-l border-border h-full flex flex-col w-[85vw] md:w-80 fixed right-0 top-0 bottom-0 pt-20 z-50 shadow-xl overflow-hidden animate-in slide-in-from-right duration-300">
                 {/* Top Tabs */}
-                <div className="grid grid-cols-2 border-b border-white/10 bg-black/20">
+                <div className="grid grid-cols-2 border-b border-border bg-secondary">
                     <button
                         onClick={() => setMainTab("Templates")}
                         className={cn(
-                            "py-3 text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all",
+                            "py-3 text-xs font-semibold uppercase tracking-wide flex items-center justify-center gap-2 transition-all",
                             mainTab === "Templates"
-                                ? "bg-primary/10 text-primary border-b-2 border-primary"
-                                : "text-muted-foreground hover:bg-white/5"
+                                ? "bg-card text-primary border-b-2 border-primary"
+                                : "text-muted-foreground hover:bg-secondary/60"
                         )}
                     >
                         <Library className="w-4 h-4" />
@@ -154,10 +154,10 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
                     <button
                         onClick={() => setMainTab("Tools")}
                         className={cn(
-                            "py-3 text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all",
+                            "py-3 text-xs font-semibold uppercase tracking-wide flex items-center justify-center gap-2 transition-all",
                             mainTab === "Tools"
-                                ? "bg-primary/10 text-primary border-b-2 border-primary"
-                                : "text-muted-foreground hover:bg-white/5"
+                                ? "bg-card text-primary border-b-2 border-primary"
+                                : "text-muted-foreground hover:bg-secondary/60"
                         )}
                     >
                         <Calculator className="w-4 h-4" />
@@ -168,7 +168,7 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
                 {mainTab === "Templates" ? (
                     <>
                         {/* Header */}
-                        <div className="p-4 border-b border-white/10 bg-black/10">
+                        <div className="p-4 border-b border-border bg-secondary/30">
                             {/* Search */}
                             <div className="relative mb-3">
                                 <label htmlFor="template-search" className="sr-only">搜索模板</label>
@@ -287,7 +287,7 @@ export function WorkoutLibrary({ onSelect, onClose }: WorkoutLibraryProps) {
                     </div>
                 )}
 
-                <div className="p-3 bg-black/20 border-t border-white/10 text-xs text-center text-muted-foreground">
+                <div className="p-3 bg-secondary border-t border-border text-xs text-center text-muted-foreground">
                     {mainTab === 'Templates'
                         ? "提示: 在训练块上点击「保存为模板」可创建自定义模板"
                         : "提示: 配速计算器仅供参考"

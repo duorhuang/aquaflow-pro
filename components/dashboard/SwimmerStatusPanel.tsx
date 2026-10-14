@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useStore } from "@/lib/store";
 import { api } from "@/lib/api-client";
 import { Swimmer } from "@/types";
-import { Activity, AlertTriangle, MessageSquare, Award, Sparkles, X, Coins, Trophy, ChevronRight } from "lucide-react";
+import { AlertTriangle, Award, X, Coins, Trophy, Sparkles, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -15,6 +15,13 @@ const PRESET_MESSAGES = [
     "表现神勇，突破自我，太棒了！🏊",
     "克服困难完成高强度组，很有韧性！🔥"
 ];
+
+const GROUP_LABELS: Record<string, string> = {
+    Advanced: "高级",
+    Intermediate: "中级",
+    External: "校外",
+    Junior: "初级",
+};
 
 export const SwimmerStatusPanel = memo(function SwimmerStatusPanel() {
     const { swimmers, feedbacks, updateSwimmer } = useStore();
@@ -26,22 +33,16 @@ export const SwimmerStatusPanel = memo(function SwimmerStatusPanel() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const [modalPos, setModalPos] = useState({ x: 0, y: 0 });
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setMounted(true);
-        }, 0);
-        return () => clearTimeout(timer);
+        setMounted(true);
     }, []);
 
-    // Get latest feedback for each swimmer
     const getLatestFeedback = (swimmerId: string) => {
-        const swimmerFeedbacks = (feedbacks || [])
+        return (feedbacks || [])
             .filter(f => f.swimmerId === swimmerId)
-            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        return swimmerFeedbacks[0];
+            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
     };
 
     const handleSendReward = async () => {
@@ -63,12 +64,9 @@ export const SwimmerStatusPanel = memo(function SwimmerStatusPanel() {
             );
 
             if (res && res.success) {
-                // Instantly update the swimmer in the store to reflect new XP and Level
                 updateSwimmer(selectedSwimmerForReward.id, res.swimmer);
-                
                 setSuccessMessage(`打赏成功！${selectedSwimmerForReward.name} 已获得 ${rewardAmount} XP！`);
                 setRewardMessage("");
-                // Close after a brief delay to let them see success
                 setTimeout(() => {
                     setSelectedSwimmerForReward(null);
                     setSuccessMessage(null);
@@ -84,227 +82,155 @@ export const SwimmerStatusPanel = memo(function SwimmerStatusPanel() {
         }
     };
 
+    if (swimmers.length === 0) {
+        return (
+            <div className="border border-border rounded-xl p-8 text-center text-muted-foreground">
+                <p className="text-sm">暂无队员数据</p>
+            </div>
+        );
+    }
+
     return (
-        <div className="bg-card/50 border border-border rounded-2xl p-6 backdrop-blur-md relative">
-            <div className="flex items-center justify-between mb-4">
-                <Link href="/dashboard/athletes" className="group flex items-center gap-2 hover:opacity-85 transition-opacity" aria-label="查看队员花名册详情">
-                    <h3 className="text-md font-semibold text-foreground flex items-center gap-2">
-                        <Activity className="w-5 h-5 text-primary" />
-                        队员状态监控
-                    </h3>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+        <div className="border border-border rounded-xl bg-card overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                <h3 className="text-sm font-semibold text-foreground">队员状态</h3>
+                <Link
+                    href="/dashboard/athletes"
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                    aria-label="查看队员花名册"
+                >
+                    全部 <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
             </div>
 
-            <div className="space-y-3">
+            {/* Swimmer List */}
+            <div className="divide-y divide-border">
                 {swimmers.map(swimmer => {
                     const latestFeedback = getLatestFeedback(swimmer.id);
-                    const readiness = swimmer.readiness || 95;
                     const isValidInjury = swimmer.injuryNote
                         && typeof swimmer.injuryNote === 'string'
                         && swimmer.injuryNote.trim().length > 0
                         && swimmer.injuryNote !== 'null';
                     const hasInjury = isValidInjury || swimmer.status === "Injured";
+                    const readiness = swimmer.readiness || 95;
 
-                    // Determine status color
-                    const statusColor = hasInjury ? "error" :
-                        readiness >= 85 ? "success" :
-                            readiness >= 70 ? "warning" : "error";
+                    const statusEmoji = hasInjury ? "⚠️" :
+                        readiness >= 85 ? "✅" :
+                        readiness >= 70 ? "😐" : "😴";
 
                     return (
                         <div
                             key={swimmer.id}
                             className={cn(
-                                "p-4 rounded-xl border transition-all",
-                                hasInjury
-                                    ? "bg-error/10 border-error/30"
-                                    : "bg-white/5 border-white/10"
+                                "flex items-center gap-3 px-4 py-3 hover:bg-secondary/40 transition-colors",
+                                hasInjury && "bg-destructive/5"
                             )}
                         >
-                            {/* Swimmer Name & Group */}
-                            <div className="flex items-center justify-between mb-2">
+                            {/* Avatar */}
+                            <div className={cn(
+                                "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0",
+                                hasInjury ? "bg-destructive/15 text-destructive" : "bg-primary/10 text-primary"
+                            )}>
+                                {swimmer.name.slice(0, 1)}
+                            </div>
+
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                    <span className="font-bold text-foreground max-w-[100px] truncate" title={swimmer.name}>
+                                    <span className={cn(
+                                        "text-sm font-medium truncate",
+                                        hasInjury ? "text-destructive" : "text-foreground"
+                                    )}>
                                         {swimmer.name}
                                     </span>
-                                    <span className="text-xs text-muted-foreground px-2 py-0.5 bg-white/10 rounded flex-shrink-0">
-                                        {swimmer.group === "Advanced" ? "高级组" : swimmer.group === "Intermediate" ? "中级组" : swimmer.group === "External" ? "校外组" : "初级组"}
+                                    <span className="text-[10px] text-muted-foreground bg-secondary px-1.5 py-0.5 rounded flex-shrink-0">
+                                        {GROUP_LABELS[swimmer.group || "Junior"] || swimmer.group}
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={(e) => {
-                                            const isMobile = window.innerWidth < 640;
-                                            if (isMobile) {
-                                                setModalPos({ x: -1, y: -1 });
-                                            } else {
-                                                const modalWidth = 448;
-                                                const modalHeight = 480;
-                                                let x = e.clientX - modalWidth - 20;
-                                                if (x < 20) {
-                                                    x = e.clientX + 20;
-                                                    if (x + modalWidth > window.innerWidth) {
-                                                        x = window.innerWidth / 2 - modalWidth / 2;
-                                                    }
-                                                }
-                                                let y = e.clientY - modalHeight / 2;
-                                                if (y < 20) y = 20;
-                                                if (y + modalHeight > window.innerHeight - 20) {
-                                                    y = window.innerHeight - modalHeight - 20;
-                                                }
-                                                setModalPos({ x, y });
-                                            }
-                                            
-                                            setSelectedSwimmerForReward(swimmer);
-                                            setRewardAmount(100);
-                                            setRewardMessage("今天训练非常专注，状态拉满！🌟");
-                                            setError(null);
-                                            setSuccessMessage(null);
-                                        }}
-                                        className="px-2.5 py-0.5 text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded flex items-center gap-1 transition-all"
-                                        title="给该队员打赏 XP"
-                                    >
-                                        <Trophy className="w-3 h-3" /> 打赏
-                                    </button>
-                                    <div className={cn(
-                                        "text-sm font-bold",
-                                        statusColor === "success" ? "text-success" :
-                                            statusColor === "warning" ? "text-warning" :
-                                                "text-error"
-                                    )}>
-                                        {hasInjury ? "⚠️" : readiness >= 85 ? "✅" : readiness >= 70 ? "😐" : "😴"}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Readiness Bar */}
-                            <div className="mb-2">
-                                <div className="flex justify-between items-center mb-1">
-                                    <span className="text-xs text-muted-foreground">竞技状态</span>
-                                    <span className={cn(
-                                        "text-xs font-bold",
-                                        statusColor === "success" ? "text-success" :
-                                            statusColor === "warning" ? "text-warning" :
-                                                "text-error"
-                                    )}>
-                                        {readiness}%
-                                    </span>
-                                </div>
-                                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                    <div
-                                        className={cn(
-                                            "h-full rounded-full transition-all",
-                                            statusColor === "success" ? "bg-success" :
-                                                statusColor === "warning" ? "bg-warning" :
-                                                    "bg-error"
-                                        )}
-                                        style={{ width: `${readiness}%` }}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Injury Note */}
-                            {hasInjury && (
-                                <div className="flex items-start gap-2 p-2 bg-error/10 border border-error/20 rounded-lg mb-2">
-                                    <AlertTriangle className="w-4 h-4 text-error mt-0.5 flex-shrink-0" />
-                                    <div className="flex-1">
-                                        <p className="text-xs font-medium text-error mb-0.5">伤病报告</p>
-                                        <p className="text-xs text-red-300">{swimmer.injuryNote}</p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Latest Feedback */}
-                            {latestFeedback && (
-                                <div className="flex items-start gap-2 p-2 bg-white/5 rounded-lg">
-                                    <MessageSquare className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                                    <div className="flex-1">
-                                        <div className="flex items-center justify-between mb-0.5">
-                                            <p className="text-xs font-medium text-primary">最新反馈</p>
-                                            <span className="text-xs text-muted-foreground">
-                                                RPE: {latestFeedback.rpe}/10
-                                            </span>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    {hasInjury ? (
+                                        <div className="flex items-center gap-1">
+                                            <AlertTriangle className="w-3 h-3 text-destructive" />
+                                            <span className="text-xs text-destructive truncate max-w-[140px]">{swimmer.injuryNote}</span>
                                         </div>
-                                        <p className="text-xs text-muted-foreground line-clamp-2">
-                                            {latestFeedback.comments || "无评论"}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            {new Date(latestFeedback.timestamp).toLocaleDateString('zh-CN')}
-                                        </p>
-                                    </div>
+                                    ) : latestFeedback ? (
+                                        <span className="text-xs text-muted-foreground">
+                                            RPE {latestFeedback.rpe}/10 · {new Date(latestFeedback.timestamp).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
+                                        </span>
+                                    ) : (
+                                        <span className="text-xs text-muted-foreground italic">暂无反馈</span>
+                                    )}
                                 </div>
-                            )}
+                            </div>
 
-                            {!latestFeedback && !hasInjury && (
-                                <p className="text-xs text-muted-foreground italic">暂无反馈</p>
-                            )}
+                            {/* Status + Reward */}
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className="text-sm">{statusEmoji}</span>
+                                <button
+                                    onClick={() => {
+                                        setSelectedSwimmerForReward(swimmer);
+                                        setRewardAmount(100);
+                                        setRewardMessage("今天训练非常专注，状态拉满！🌟");
+                                        setError(null);
+                                        setSuccessMessage(null);
+                                    }}
+                                    className="p-1.5 rounded-lg text-amber-500 hover:bg-amber-50 transition-colors"
+                                    title="给该队员打赏 XP"
+                                >
+                                    <Trophy className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
                         </div>
                     );
                 })}
-
-                {swimmers.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                        <Activity className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">暂无队员数据</p>
-                    </div>
-                )}
             </div>
 
-            {/* Premium Gold XP Reward Modal */}
+            {/* XP Reward Modal */}
             {mounted && selectedSwimmerForReward && createPortal(
-                <div 
-                    className={cn(
-                        "fixed inset-0 z-[100] bg-black/40 backdrop-blur-[2px] transition-all",
-                        modalPos.x === -1 && "flex items-center justify-center p-4"
-                    )}
+                <div
+                    className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4"
                     onClick={() => !isSubmitting && setSelectedSwimmerForReward(null)}
                 >
-                    <div 
-                        className={cn(
-                            "bg-slate-900/95 border border-amber-500/30 w-full max-w-md rounded-2xl p-6 shadow-[0_0_35px_rgba(245,158,11,0.25)] animate-in zoom-in-95 duration-200 text-white",
-                            modalPos.x === -1 ? "relative" : "absolute"
-                        )}
-                        style={modalPos.x !== -1 ? { top: `${modalPos.y}px`, left: `${modalPos.x}px` } : undefined}
+                    <div
+                        className="bg-card border border-border w-full max-w-sm rounded-xl p-5 shadow-lg animate-in zoom-in-95 duration-200"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        
                         {/* Header */}
-                        <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
-                            <h3 className="text-lg font-bold text-amber-300 flex items-center gap-2">
-                                <Award className="w-5 h-5 text-amber-400 animate-pulse" />
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-semibold text-foreground flex items-center gap-2">
+                                <Award className="w-4 h-4 text-amber-500" />
                                 荣誉打赏：{selectedSwimmerForReward.name}
                             </h3>
-                            <button 
-                                onClick={() => setSelectedSwimmerForReward(null)} 
+                            <button
+                                onClick={() => setSelectedSwimmerForReward(null)}
                                 disabled={isSubmitting}
-                                className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-muted-foreground hover:text-white disabled:opacity-50"
+                                className="p-1.5 hover:bg-secondary rounded-lg transition-colors text-muted-foreground disabled:opacity-50"
                             >
-                                <X className="w-5 h-5" />
+                                <X className="w-4 h-4" />
                             </button>
                         </div>
 
-                        {/* Error & Success Alerts */}
+                        {/* Alerts */}
                         {error && (
-                            <div className="mb-4 bg-error/10 border border-error/30 rounded-xl px-4 py-3 text-sm text-error flex items-center justify-between">
+                            <div className="mb-3 bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 text-sm text-destructive flex items-center justify-between">
                                 <span>{error}</span>
-                                <button onClick={() => setError(null)} className="text-error hover:text-error/80 ml-2">
-                                    <X className="w-4 h-4" />
+                                <button onClick={() => setError(null)} className="ml-2 opacity-60 hover:opacity-100">
+                                    <X className="w-3.5 h-3.5" />
                                 </button>
                             </div>
                         )}
                         {successMessage && (
-                            <div className="mb-4 bg-success/10 border border-success/30 rounded-xl px-4 py-3 text-sm text-success flex items-center justify-between">
-                                <span className="flex items-center gap-2">
-                                    <Sparkles className="w-4 h-4 text-success animate-bounce" />
-                                    {successMessage}
-                                </span>
+                            <div className="mb-3 bg-success/10 border border-success/20 rounded-lg px-3 py-2 text-sm text-success flex items-center gap-2">
+                                <Sparkles className="w-3.5 h-3.5" />
+                                {successMessage}
                             </div>
                         )}
 
                         <div className="space-y-4">
-                            {/* XP Preset Select */}
+                            {/* XP Amount */}
                             <div>
-                                <label className="text-xs font-bold text-amber-400/80 mb-2 block uppercase tracking-wider">打赏金额 (XP)</label>
+                                <label className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">打赏金额 (XP)</label>
                                 <div className="grid grid-cols-4 gap-2">
                                     {[100, 200, 300, 500].map((amt) => (
                                         <button
@@ -313,14 +239,13 @@ export const SwimmerStatusPanel = memo(function SwimmerStatusPanel() {
                                             disabled={isSubmitting}
                                             onClick={() => setRewardAmount(amt)}
                                             className={cn(
-                                                "py-2.5 rounded-xl font-extrabold text-sm border flex flex-col items-center justify-center gap-0.5 transition-all shadow-sm",
+                                                "py-2 rounded-lg font-semibold text-sm border transition-colors",
                                                 rewardAmount === amt
-                                                    ? "bg-gradient-to-b from-amber-400 to-amber-500 text-slate-900 border-amber-400 scale-105 shadow-[0_0_12px_rgba(245,158,11,0.4)]"
-                                                    : "bg-white/5 text-amber-300/80 border-amber-500/20 hover:bg-white/10 hover:border-amber-500/40"
+                                                    ? "bg-amber-500 text-white border-amber-500"
+                                                    : "bg-secondary text-foreground border-border hover:border-amber-300"
                                             )}
                                         >
-                                            <Coins className="w-4 h-4" />
-                                            <span>+{amt}</span>
+                                            +{amt}
                                         </button>
                                     ))}
                                 </div>
@@ -328,51 +253,48 @@ export const SwimmerStatusPanel = memo(function SwimmerStatusPanel() {
 
                             {/* Message */}
                             <div>
-                                <label className="text-xs font-bold text-amber-400/80 mb-2 block uppercase tracking-wider">打赏寄语 (将发送至队员通知流)</label>
+                                <label className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">打赏寄语</label>
                                 <textarea
                                     disabled={isSubmitting}
                                     value={rewardMessage}
                                     onChange={(e) => setRewardMessage(e.target.value)}
                                     placeholder="输入激励队员的寄语..."
-                                    className="w-full bg-slate-950/60 border border-white/10 focus:border-amber-500/50 rounded-xl px-3 py-2 text-sm text-white outline-none h-20 resize-none transition-all placeholder:text-white/20"
+                                    className="w-full bg-secondary border border-border focus:border-primary rounded-lg px-3 py-2 text-sm text-foreground outline-none h-20 resize-none transition-colors placeholder:text-muted-foreground"
                                 />
                             </div>
 
                             {/* Presets */}
-                            <div>
-                                <span className="text-xs font-bold text-white/40 mb-1.5 block">快捷寄语选择：</span>
-                                <div className="flex flex-wrap gap-1.5 animate-fade-in">
-                                    {PRESET_MESSAGES.map((msg, i) => (
-                                        <button
-                                            key={i}
-                                            type="button"
-                                            disabled={isSubmitting}
-                                            onClick={() => setRewardMessage(msg)}
-                                            className="px-2.5 py-1 text-[11px] bg-white/5 border border-white/5 hover:border-amber-500/20 rounded-lg text-white/70 hover:text-white transition-all text-left"
-                                        >
-                                            {msg}
-                                        </button>
-                                    ))}
-                                </div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {PRESET_MESSAGES.map((msg, i) => (
+                                    <button
+                                        key={i}
+                                        type="button"
+                                        disabled={isSubmitting}
+                                        onClick={() => setRewardMessage(msg)}
+                                        className="px-2 py-1 text-[11px] bg-secondary border border-border hover:border-amber-300 rounded-lg text-muted-foreground hover:text-foreground transition-colors text-left"
+                                    >
+                                        {msg}
+                                    </button>
+                                ))}
                             </div>
 
-                            {/* Notice Badge */}
-                            <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-3 text-xs text-amber-300/70">
-                                💡 **说明**：打赏的 XP 将以{"双轨制"}形式同时增加队员的 **总经验值**（提升等级）与 **金币余额**（用于商城消费）。每日手动打赏全队限额为 3 人次，请合理激励！
-                            </div>
+                            {/* Notice */}
+                            <p className="text-xs text-muted-foreground bg-secondary border border-border rounded-lg p-2.5">
+                                💡 打赏的 XP 将同时增加队员的总经验值与金币余额。每日手动打赏全队限额为 3 人次。
+                            </p>
 
-                            {/* Submit Button */}
+                            {/* Submit */}
                             <button
                                 type="button"
                                 disabled={isSubmitting || !!successMessage}
                                 onClick={handleSendReward}
-                                className="w-full mt-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_25px_rgba(245,158,11,0.5)] transition-all disabled:opacity-50 disabled:pointer-events-none"
+                                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:pointer-events-none"
                             >
                                 {isSubmitting ? (
-                                    <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                 ) : (
                                     <>
-                                        <Sparkles className="w-4 h-4" />
+                                        <Coins className="w-4 h-4" />
                                         确认打赏
                                     </>
                                 )}

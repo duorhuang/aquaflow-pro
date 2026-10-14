@@ -535,31 +535,28 @@ function WeeklyPlanContent() {
                 <div className="md:col-span-2 space-y-6 relative">
                     {loadingPlanId && (
                         <div
-                            className="absolute inset-0 bg-black/40 rounded-2xl flex flex-col items-center justify-center space-y-4 transition-all duration-300 z-10"
+                            className="absolute inset-0 bg-background/80 rounded-xl flex flex-col items-center justify-center space-y-4 transition-all duration-300 z-10"
                             role="status"
                             aria-live="polite"
                             aria-label="正在加载周计划"
                         >
-                            <div className="relative">
-                                <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur opacity-70 animate-pulse"></div>
-                                <Loader2 className="w-12 h-12 text-purple-400 animate-spin relative" />
-                            </div>
+                            <Loader2 className="w-10 h-10 text-primary animate-spin" />
                             <div className="flex flex-col items-center space-y-1">
-                                <p className="text-sm font-semibold text-white tracking-wider animate-pulse">正在加载周计划...</p>
-                                <p className="text-xs text-purple-300/70">优化数据拉取中，秒级即达</p>
+                                <p className="text-sm font-semibold text-foreground tracking-wider">正在加载周计划...</p>
+                                <p className="text-xs text-muted-foreground">优化数据拉取中，秒级即达</p>
                             </div>
                         </div>
                     )}
                     {/* Plan metadata */}
-                    <div className="bg-card/40 border border-border rounded-xl p-6">
+                    <div className="bg-card border border-border rounded-xl p-6">
                         <div className="grid grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label htmlFor="week-start" className="text-xs text-muted-foreground block mb-1">开始日期 (周一)</label>
-                                <input id="week-start" type="date" value={weekStart} onChange={e => { setWeekStart(e.target.value); }} className="w-full bg-black/40 border border-border rounded-lg px-3 py-2 text-white" />
+                                <input id="week-start" type="date" value={weekStart} onChange={e => { setWeekStart(e.target.value); }} className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-foreground text-sm" />
                             </div>
                             <div>
                                 <label htmlFor="plan-title" className="text-xs text-muted-foreground block mb-1">标题</label>
-                                <input id="plan-title" type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-black/40 border border-border rounded-lg px-3 py-2 text-white" />
+                                <input id="plan-title" type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-foreground text-sm" />
                             </div>
                         </div>
                         <div>
@@ -573,25 +570,25 @@ function WeeklyPlanContent() {
                     </div>
 
                     {/* Weekly Overview Section */}
-                    <div className="bg-gradient-to-br from-card/40 to-amber-900/10 border border-amber-500/20 rounded-xl p-6">
-                        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                            <Target className="w-5 h-5 text-amber-400" />
+                    <div className="bg-card border border-border rounded-xl p-6">
+                        <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
+                            <Target className="w-5 h-5 text-primary" />
                             本周总览
                         </h2>
 
                         {overviewImageUrl ? (
-                            <div className="relative mb-4 rounded-lg overflow-hidden">
+                            <div className="relative mb-4 rounded-lg overflow-hidden border border-border">
                                 <ImageViewer src={overviewImageUrl} className="w-full max-h-[300px] object-contain" />
                                 <button
                                     onClick={() => setOverviewImageUrl("")}
-                                    className="absolute top-2 right-2 p-1 bg-black/60 rounded-full text-white hover:bg-red-500/80 transition-colors"
+                                    className="absolute top-2 right-2 p-1 bg-secondary border border-border rounded-full text-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors"
                                 >
                                     <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                             </div>
                         ) : (
                             <div
-                                className="aspect-[4/3] rounded-lg overflow-hidden bg-secondary flex items-center justify-center cursor-pointer mb-4 border-2 border-dashed border-white/10 hover:border-amber-500/50 transition-colors"
+                                className="aspect-[4/3] rounded-lg overflow-hidden bg-secondary flex items-center justify-center cursor-pointer mb-4 border border-dashed border-border hover:border-primary/50 transition-colors"
                                 onClick={() => overviewFileInputRef.current?.click()}
                             >
                                 {uploadingOverview ? (
@@ -662,7 +659,7 @@ function WeeklyPlanContent() {
                                                 const mode = s.editorMode || "legacy";
 
                                                 return (
-                                                    <div key={s.id} className="bg-black/30 border border-white/10 rounded-xl p-4 group">
+                                                    <div key={s.id} className="bg-card border border-border rounded-xl p-4 group">
                                                         {/* Session header with label, date, mode, delete */}
                                                         <div className="flex items-center justify-between mb-3 gap-2">
                                                             <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
@@ -671,18 +668,18 @@ function WeeklyPlanContent() {
                                                                     value={s.label}
                                                                     placeholder="如：上午训练"
                                                                     onChange={e => updateSession(s.id, { label: e.target.value })}
-                                                                    className="bg-transparent border-b border-white/20 px-1 py-0.5 text-sm text-white focus:border-purple-400 outline-none max-w-[140px]"
+                                                                    className="bg-transparent border-b border-border px-1 py-0.5 text-sm text-foreground focus:border-primary outline-none max-w-[140px]"
                                                                 />
                                                                 <input
                                                                     type="date"
                                                                     value={s.date}
                                                                     onChange={e => updateSession(s.id, { date: e.target.value })}
-                                                                    className="bg-secondary/50 rounded px-2 py-0.5 text-xs text-white outline-none"
+                                                                    className="bg-secondary rounded px-2 py-0.5 text-xs text-foreground outline-none border border-border"
                                                                 />
                                                                 <select
                                                                     value={s.trainingType || ""}
                                                                     onChange={e => updateSession(s.id, { trainingType: e.target.value })}
-                                                                    className="bg-secondary/50 rounded px-2 py-1 text-xs text-white outline-none border border-white/10"
+                                                                    className="bg-secondary rounded px-2 py-1 text-xs text-foreground outline-none border border-border"
                                                                 >
                                                                     <option value="">类型 (可选)</option>
                                                                     <option value="aerobic">有氧</option>
@@ -696,7 +693,7 @@ function WeeklyPlanContent() {
                                                                 <select
                                                                     value={s.primaryStroke || ""}
                                                                     onChange={e => updateSession(s.id, { primaryStroke: e.target.value })}
-                                                                    className="bg-secondary/50 rounded px-2 py-1 text-xs text-white outline-none border border-white/10"
+                                                                    className="bg-secondary rounded px-2 py-1 text-xs text-foreground outline-none border border-border"
                                                                 >
                                                                     <option value="">主项 (可选)</option>
                                                                     <option value="Free">自由泳</option>
@@ -709,7 +706,7 @@ function WeeklyPlanContent() {
                                                             </div>
                                                             <div className="flex items-center gap-1.5">
                                                                 {/* Mode toggle with guidance */}
-                                                                <div className="flex bg-black/30 rounded-lg p-0.5">
+                                                                <div className="flex bg-secondary rounded-lg p-0.5 border border-border">
                                                                     {(["plan", "block", "rich", "legacy"] as const).map(m => (
                                                                         <button
                                                                             key={m}
@@ -720,8 +717,8 @@ function WeeklyPlanContent() {
                                                                             }}
                                                                             className={`px-2 py-1 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${
                                                                                 mode === m
-                                                                                    ? "bg-purple-500/30 text-white"
-                                                                                    : "text-muted-foreground hover:text-white"
+                                                                                    ? "bg-primary text-primary-foreground shadow-xs"
+                                                                                    : "text-muted-foreground hover:text-foreground"
                                                                             }`}
                                                                             title={
                                                                                 m === "plan" ? "结构化训练计划（推荐）：分组+距离+配速" :
@@ -768,7 +765,7 @@ function WeeklyPlanContent() {
                                                                             <ImageViewer src={s.imageData} className="w-full h-full object-contain" />
                                                                             <button
                                                                                 onClick={(e) => { e.stopPropagation(); updateSession(s.id, { imageData: "", imageType: "" }); }}
-                                                                                className="absolute top-2 right-2 p-1 bg-black/60 rounded-full text-white hover:bg-red-500/80 transition-colors"
+                                                                                className="absolute top-2 right-2 p-1 bg-secondary border border-border rounded-full text-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors"
                                                                             >
                                                                                 <Trash2 className="w-3.5 h-3.5" />
                                                                             </button>
@@ -785,7 +782,7 @@ function WeeklyPlanContent() {
                                                                     onChange={e => updateSession(s.id, { notes: e.target.value })}
                                                                     placeholder="今日训练说明..."
                                                                     rows={2}
-                                                                    className="w-full bg-black/30 rounded px-2 py-1.5 text-xs text-white resize-none outline-none border border-white/10 focus:border-purple-500/50 placeholder:text-muted-foreground/50"
+                                                                    className="w-full bg-secondary rounded px-2.5 py-1.5 text-xs text-foreground resize-none outline-none border border-border focus:border-primary placeholder:text-muted-foreground/60"
                                                                 />
                                                             </div>
                                                         )}
@@ -948,12 +945,12 @@ function WeeklyPlanContent() {
                 {/* Sidebar - Overview & History */}
                 <div className="space-y-6">
                     {/* Full Week Overview (全周总览) */}
-                    <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-purple-500/20 rounded-xl p-5">
-                        <h3 className="font-bold text-lg text-white flex items-center gap-2 mb-4">
-                            <Blocks className="w-5 h-5 text-purple-400" />
+                    <div className="bg-card border border-border rounded-xl p-5">
+                        <h3 className="font-semibold text-base text-foreground flex items-center gap-2 mb-4">
+                            <Blocks className="w-4.5 h-4.5 text-primary" />
                             全周总览
                         </h3>
-                        <div className="grid grid-cols-7 gap-1">
+                        <div className="grid grid-cols-7 gap-1.5">
                             {DAY_NAMES.map((dayName, idx) => {
                                 const daySessions = getSessionsForDay(idx);
                                 const hasTraining = daySessions.length > 0;
@@ -962,29 +959,29 @@ function WeeklyPlanContent() {
                                         <div className="text-xs text-muted-foreground mb-1">{dayName}</div>
                                         <div className={`w-full aspect-square rounded-md flex flex-col items-center justify-center transition-all ${
                                             hasTraining 
-                                                ? 'bg-purple-500/20 border border-purple-500/50 shadow-[0_0_10px_rgba(168,85,247,0.15)]' 
-                                                : 'bg-black/40 border border-white/5'
+                                                ? 'bg-primary/10 border border-primary/30' 
+                                                : 'bg-secondary border border-border'
                                         }`}>
                                             {hasTraining ? (
-                                                <span className="text-xs font-bold text-purple-300">{daySessions.length}</span>
+                                                <span className="text-xs font-bold text-primary">{daySessions.length}</span>
                                             ) : (
-                                                <span className="text-white/20 text-xs">-</span>
+                                                <span className="text-muted-foreground/30 text-xs">-</span>
                                             )}
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
-                        <div className="mt-4 flex justify-between items-center bg-black/30 rounded-lg p-3">
+                        <div className="mt-4 flex justify-between items-center bg-secondary border border-border rounded-lg p-3">
                             <div className="text-center">
                                 <p className="text-xs text-muted-foreground">训练天数</p>
-                                <p className="text-lg font-bold text-white">
+                                <p className="text-base font-bold text-foreground">
                                     {new Set(sessions.map(s => getDayOfWeek(s.date)).filter(d => d !== -1)).size} <span className="text-xs font-normal text-muted-foreground">天</span>
                                 </p>
                             </div>
                             <div className="text-center">
                                 <p className="text-xs text-muted-foreground">总训练数</p>
-                                <p className="text-lg font-bold text-purple-400">
+                                <p className="text-base font-bold text-primary">
                                     {sessions.length} <span className="text-xs font-normal text-muted-foreground">节</span>
                                 </p>
                             </div>

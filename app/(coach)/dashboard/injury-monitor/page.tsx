@@ -288,7 +288,7 @@ export default function CoachInjuryMonitorPage() {
             {/* Clickable Injury Detail Drawer Overlay */}
             {selectedHeatmapPart && (
                 <div
-                    className="fixed inset-y-0 right-0 w-full sm:w-[450px] bg-slate-950/95 border-l border-white/10 backdrop-blur-md shadow-2xl p-6 z-50 overflow-y-auto animate-in slide-in-from-right duration-300"
+                    className="fixed inset-y-0 right-0 w-full sm:w-[450px] bg-card border-l border-border shadow-xl p-6 z-50 overflow-y-auto animate-in slide-in-from-right duration-300"
                     role="dialog"
                     aria-modal="true"
                     aria-label="伤病详情"
@@ -296,14 +296,14 @@ export default function CoachInjuryMonitorPage() {
                     <div className="flex justify-between items-start mb-6">
                         <div>
                             <span className="text-[10px] font-mono text-primary uppercase tracking-widest">区域病灶细分 (Zone telemetry)</span>
-                            <h3 className="text-xl font-bold text-white flex items-center gap-2 mt-1">
-                                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping inline-block" />
+                            <h3 className="text-lg font-bold text-foreground flex items-center gap-2 mt-1">
+                                <span className="w-2.5 h-2.5 rounded-full bg-destructive inline-block" />
                                 {selectedHeatmapLabel}
                             </h3>
                         </div>
                         <button
                             onClick={() => setSelectedHeatmapPart(null)}
-                            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-muted-foreground hover:text-white transition-colors cursor-pointer"
+                            className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                             aria-label="关闭详情"
                         >
                             <X className="w-4 h-4" />
@@ -312,32 +312,32 @@ export default function CoachInjuryMonitorPage() {
 
                     <div className="space-y-4">
                         {getSwimmersForRegion(selectedHeatmapPart).map(swimmer => (
-                            <div key={swimmer.id} className="p-4 bg-white/5 border border-white/5 rounded-2xl space-y-3">
+                            <div key={swimmer.id} className="p-4 bg-secondary/30 border border-border rounded-xl space-y-3">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <h4 className="text-sm font-bold text-white">{swimmer.name}</h4>
-                                        <span className="text-[10px] text-muted-foreground bg-white/5 px-2 py-0.5 rounded-full">{swimmer.group}</span>
+                                        <h4 className="text-sm font-semibold text-foreground">{swimmer.name}</h4>
+                                        <span className="text-[10px] text-muted-foreground bg-secondary border border-border px-2 py-0.5 rounded-full">{swimmer.group}</span>
                                     </div>
                                     <div className="text-right">
-                                        <span className="text-xs font-mono font-bold text-red-400">
+                                        <span className="text-xs font-mono font-bold text-destructive">
                                             痛感: {swimmer.partPain} / 5
                                         </span>
-                                        <p className="text-[9px] text-muted-foreground mt-0.5">
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">
                                             Readiness: {swimmer.readiness}%
                                         </p>
                                     </div>
                                 </div>
 
                                 {swimmer.injuryNote && (
-                                    <p className="text-xs text-muted-foreground bg-black/40 p-2.5 rounded-xl border border-white/5 italic leading-relaxed">
+                                    <p className="text-xs text-muted-foreground bg-secondary p-2.5 rounded-lg border border-border italic leading-relaxed">
                                         &ldquo; {swimmer.injuryNote} &rdquo;
                                     </p>
                                 )}
 
                                 {swimmer.injuryImageUrl && (
-                                    <div className="rounded-xl overflow-hidden border border-white/5 cursor-pointer hover:border-white/20 transition-colors bg-black/40"
+                                    <div className="rounded-xl overflow-hidden border border-border cursor-pointer hover:border-primary/50 transition-colors bg-secondary"
                                          onClick={() => window.open(swimmer.injuryImageUrl, '_blank')}>
-                                        <img src={swimmer.injuryImageUrl} alt="Injury" className="w-full h-32 object-cover opacity-85 hover:opacity-100 transition-opacity" />
+                                        <img src={swimmer.injuryImageUrl} alt="Injury" className="w-full h-32 object-cover opacity-90 hover:opacity-100 transition-opacity" />
                                     </div>
                                 )}
                             </div>

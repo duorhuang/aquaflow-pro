@@ -163,29 +163,29 @@ export default function AttendanceStatsPage() {
                     </Link>
                 </div>
             ) : (
-            <div className="bg-card/40 border border-border rounded-2xl overflow-hidden">
+            <div className="bg-card border border-border rounded-xl overflow-hidden shadow-xs">
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead>
-                            <tr className="bg-secondary/50 border-b border-border">
-                                <th className="sticky left-0 z-10 bg-secondary/80 backdrop-blur-md p-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider w-32 min-w-[120px]">
+                            <tr className="bg-secondary border-b border-border">
+                                <th className="sticky left-0 z-10 bg-secondary p-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider w-32 min-w-[120px]">
                                     队员姓名
                                 </th>
                                 {daysArray.map(day => (
-                                    <th key={day} className="p-2 text-center text-xs font-bold text-muted-foreground border-l border-border/10 min-w-[32px]">
+                                    <th key={day} className="p-2 text-center text-xs font-semibold text-muted-foreground border-l border-border/40 min-w-[32px]">
                                         {day}
                                     </th>
                                 ))}
-                                <th className="p-4 text-center text-xs font-bold text-muted-foreground uppercase tracking-wider border-l border-border bg-black/20">
+                                <th className="p-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider border-l border-border bg-secondary">
                                     总计
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border/50">
                             {swimmerStats.stats.map(swimmer => (
-                                <tr key={swimmer.id} className="hover:bg-white/5 transition-colors group">
-                                    <td className="sticky left-0 z-10 bg-card/90 backdrop-blur-md p-4 flex flex-col">
-                                        <span className="text-sm font-bold text-white group-hover:text-primary transition-colors">{swimmer.name}</span>
+                                <tr key={swimmer.id} className="hover:bg-secondary/40 transition-colors group">
+                                    <td className="sticky left-0 z-10 bg-card p-4 flex flex-col">
+                                        <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{swimmer.name}</span>
                                         <span className="text-xs text-muted-foreground">{swimmer.group}</span>
                                     </td>
                                     {daysArray.map(day => {

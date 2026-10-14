@@ -77,28 +77,28 @@ export function PerformanceForm({ swimmerId, onClose, initialData }: Performance
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl">
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                        <Trophy className="w-5 h-5 text-primary" />
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-card border border-border rounded-xl p-5 max-w-md w-full shadow-lg">
+                <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-primary" />
                         {initialData ? "修改成绩" : "添加成绩"}
                     </h3>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                        className="p-1.5 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground"
                     >
-                        <X className="w-5 h-5 text-muted-foreground" />
+                        <X className="w-4 h-4" />
                     </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-2">项目</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">项目</label>
                         <select
                             value={event}
                             onChange={(e) => setEvent(e.target.value as SwimEvent)}
-                            className="w-full bg-black/40 rounded-xl px-4 py-2 text-white border border-white/10 focus:border-primary/50 outline-none"
+                            className="w-full bg-secondary/50 rounded-lg px-3 py-2 text-sm text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary"
                         >
                             {SWIM_EVENTS.map(evt => (
                                 <option key={evt} value={evt}>{EVENT_LABELS[evt]}</option>
@@ -107,61 +107,61 @@ export function PerformanceForm({ swimmerId, onClose, initialData }: Performance
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-2">成绩时间 (秒)</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">成绩时间 (秒)</label>
                         <input
                             type="text"
                             value={time}
                             onChange={(e) => setTime(e.target.value)}
                             placeholder="例如: 28.50"
-                            className="w-full bg-black/40 rounded-xl px-4 py-2 text-white border border-white/10 focus:border-primary/50 outline-none"
+                            className="w-full bg-secondary/50 rounded-lg px-3 py-2 text-sm text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary"
                             required
                         />
                         <p className="text-xs text-muted-foreground mt-1">请输入总秒数，例如 1:02.5 = 62.5</p>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-2">日期</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">日期</label>
                         <input
                             type="date"
                             value={date}
                             onChange={(e) => setDate(e.target.value)}
-                            className="w-full bg-black/40 rounded-xl px-4 py-2 text-white border border-white/10 focus:border-primary/50 outline-none"
+                            className="w-full bg-secondary/50 rounded-lg px-3 py-2 text-sm text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary"
                             required
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-2">比赛名称 (可选)</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">比赛名称 (可选)</label>
                         <input
                             type="text"
                             value={meetName}
                             onChange={(e) => setMeetName(e.target.value)}
                             placeholder="例如: 市级锦标赛"
-                            className="w-full bg-black/40 rounded-xl px-4 py-2 text-white border border-white/10 focus:border-primary/50 outline-none"
+                            className="w-full bg-secondary/50 rounded-lg px-3 py-2 text-sm text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-2">备注 (可选)</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">备注 (可选)</label>
                         <textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             placeholder="当时感觉如何？..."
-                            className="w-full bg-black/40 rounded-xl px-4 py-2 text-white border border-white/10 focus:border-primary/50 outline-none h-20 resize-none"
+                            className="w-full bg-secondary/50 rounded-lg px-3 py-2 text-sm text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary h-20 resize-none"
                         />
                     </div>
 
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex gap-2.5 pt-2">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-4 py-2 rounded-xl bg-white/5 text-white font-bold hover:bg-white/10 transition-all"
+                            className="flex-1 px-4 py-2 rounded-lg bg-secondary text-foreground text-xs font-medium hover:bg-secondary/80 transition-colors"
                         >
                             取消
                         </button>
                         <button
                             type="submit"
-                            className="flex-1 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-bold hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                            className="flex-1 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-1.5"
                         >
                             <Plus className="w-4 h-4" />
                             {initialData ? "保存修改" : "添加成绩"}
@@ -216,15 +216,15 @@ export function PerformanceList({ swimmerId }: PerformanceListProps) {
         <div className="space-y-4">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-primary" />
+                <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-primary" />
                     我的成绩
                 </h3>
                 <button
                     onClick={() => setShowAddForm(true)}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-full text-sm font-bold hover:brightness-110 transition-all flex items-center gap-2"
+                    className="px-3.5 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors flex items-center gap-1.5"
                 >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-3.5 h-3.5" />
                     添加成绩
                 </button>
             </div>
@@ -233,7 +233,7 @@ export function PerformanceList({ swimmerId }: PerformanceListProps) {
             <select
                 value={selectedEvent}
                 onChange={(e) => setSelectedEvent(e.target.value as SwimEvent | "all")}
-                className="w-full bg-black/40 rounded-xl px-4 py-2 text-white border border-white/10 focus:border-primary/50 outline-none text-sm"
+                className="w-full bg-secondary/50 rounded-lg px-3 py-2 text-foreground border border-border focus:outline-none focus:ring-1 focus:ring-primary text-xs"
             >
                 <option value="all">所有项目</option>
                 {SWIM_EVENTS.map(evt => (
@@ -254,12 +254,12 @@ export function PerformanceList({ swimmerId }: PerformanceListProps) {
             {/* Personal Bests Summary */}
             {Object.keys(pbs).length > 0 && (
                 <div className="bg-primary/10 border border-primary/20 rounded-xl p-4">
-                    <h4 className="text-sm font-bold text-primary mb-2 flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5" /> 个人最佳</h4>
+                    <h4 className="text-xs font-semibold text-primary mb-2 flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5" /> 个人最佳</h4>
                     <div className="grid grid-cols-2 gap-2">
                         {Object.entries(pbs).slice(0, 4).map(([event, perf]) => (
                             <div key={event} className="text-xs">
                                 <span className="text-muted-foreground">{EVENT_LABELS[event as SwimEvent]}</span>
-                                <span className="ml-2 text-white font-mono">{formatTime(perf.time)}</span>
+                                <span className="ml-2 text-foreground font-mono font-medium">{formatTime(perf.time)}</span>
                             </div>
                         ))}
                     </div>
@@ -270,8 +270,8 @@ export function PerformanceList({ swimmerId }: PerformanceListProps) {
             <div className="space-y-2">
                 {filteredPerformances.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
-                        <Trophy className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p>还没有成绩记录</p>
+                        <Trophy className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                        <p className="text-sm">还没有成绩记录</p>
                         <p className="text-xs mt-1">点击&ldquo;添加成绩&rdquo;开始记录</p>
                     </div>
                 ) : (
@@ -279,20 +279,20 @@ export function PerformanceList({ swimmerId }: PerformanceListProps) {
                         <div
                             key={perf.id}
                             className={cn(
-                                "bg-card/50 border rounded-xl p-4 transition-all",
+                                "bg-card border rounded-xl p-4 transition-colors",
                                 perf.isPB
-                                    ? "border-primary/50 shadow-[0_0_15px_rgba(100,255,218,0.2)]"
-                                    : "border-white/5"
+                                    ? "border-primary/40 bg-primary/5"
+                                    : "border-border"
                             )}
                         >
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <h4 className="font-bold text-white">
+                                        <h4 className="font-medium text-sm text-foreground">
                                             {EVENT_LABELS[perf.event]}
                                         </h4>
                                         {perf.isPB && (
-                                            <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
+                                            <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded font-medium">
                                                 PB 🎉
                                             </span>
                                         )}
@@ -302,7 +302,7 @@ export function PerformanceList({ swimmerId }: PerformanceListProps) {
                                         <div className="flex items-center gap-1">
                                             <button 
                                                 onClick={() => setEditingPerformance(perf)}
-                                                className="p-1.5 rounded-lg text-primary bg-primary/10 hover:bg-primary/20 transition-all border border-primary/20"
+                                                className="p-1.5 rounded-md text-primary bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20"
                                                 title="修改"
                                             >
                                                 <Edit2 className="w-3.5 h-3.5" />
@@ -310,7 +310,7 @@ export function PerformanceList({ swimmerId }: PerformanceListProps) {
                                             <button 
                                                 onClick={() => handleDelete(perf.id)}
                                                 disabled={isDeleting === perf.id}
-                                                className="p-1.5 rounded-lg text-red-400 bg-red-400/10 hover:bg-red-500/20 transition-all border border-red-500/20 disabled:opacity-30"
+                                                className="p-1.5 rounded-md text-destructive bg-destructive/10 hover:bg-destructive/20 transition-colors border border-destructive/20 disabled:opacity-30"
                                                 title="删除"
                                             >
                                                 <Trash2 className="w-3.5 h-3.5" />
@@ -329,13 +329,13 @@ export function PerformanceList({ swimmerId }: PerformanceListProps) {
                                     )}
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-2xl font-mono font-bold text-white">
+                                    <p className="text-xl font-mono font-semibold text-foreground">
                                         {formatTime(perf.time)}
                                     </p>
                                     {perf.improvement !== undefined && (
                                         <p className={cn(
                                             "text-xs font-mono mt-1",
-                                            perf.improvement < 0 ? "text-green-400" : "text-red-400"
+                                            perf.improvement < 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"
                                         )}>
                                             {perf.improvement < 0 ? "↓" : "↑"} {Math.abs(perf.improvement).toFixed(2)}s
                                         </p>

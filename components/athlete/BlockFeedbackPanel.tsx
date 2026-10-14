@@ -63,23 +63,33 @@ export function BlockFeedbackPanel({
     }
 
     return (
-        <div className="bg-black/20 border border-border rounded-xl p-4 mt-2">
+        <div className="bg-secondary/40 border border-border rounded-xl p-3.5 mt-2">
             <p className="text-xs text-muted-foreground mb-3 font-medium flex items-center gap-2">
-                <MessageSquare className="w-3 h-3" />
+                <MessageSquare className="w-3.5 h-3.5" />
                 针对这组动作感觉如何？
             </p>
             <div className="flex items-center gap-3 mb-3">
                 <button
                     onClick={() => setReaction('like')}
-                    className={cn("flex-1 py-2 rounded-lg border transition-all flex items-center justify-center gap-2", reaction === 'like' ? "bg-green-500/20 border-green-500/50 text-green-400" : "bg-card/50 border-border text-muted-foreground hover:bg-white/5")}
+                    className={cn(
+                        "flex-1 py-2 rounded-lg border text-xs transition-colors flex items-center justify-center gap-2",
+                        reaction === 'like' 
+                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-medium" 
+                            : "bg-card border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    )}
                 >
-                    <ThumbsUp className="w-4 h-4" /> 游得顺
+                    <ThumbsUp className="w-3.5 h-3.5" /> 游得顺
                 </button>
                 <button
                     onClick={() => setReaction('dislike')}
-                    className={cn("flex-1 py-2 rounded-lg border transition-all flex items-center justify-center gap-2", reaction === 'dislike' ? "bg-red-500/20 border-red-500/50 text-red-400" : "bg-card/50 border-border text-muted-foreground hover:bg-white/5")}
+                    className={cn(
+                        "flex-1 py-2 rounded-lg border text-xs transition-colors flex items-center justify-center gap-2",
+                        reaction === 'dislike' 
+                            ? "bg-destructive/10 border-destructive/30 text-destructive font-medium" 
+                            : "bg-card border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    )}
                 >
-                    <ThumbsDown className="w-4 h-4" /> 不适应
+                    <ThumbsDown className="w-3.5 h-3.5" /> 不适应
                 </button>
             </div>
             {reaction && (
@@ -89,12 +99,12 @@ export function BlockFeedbackPanel({
                         placeholder="简单说两句..."
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
-                        className="flex-1 bg-black/40 border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="flex-1 bg-card border border-border rounded-lg px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="bg-primary text-black px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
+                        className="bg-primary text-primary-foreground px-3.5 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
                     >
                         {loading ? "发送中..." : "发送"}
                     </button>

@@ -118,30 +118,30 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
     };
 
     return (
-        <div className="border border-white/10 rounded-xl overflow-hidden focus-within:border-primary/50 transition-colors">
+        <div className="border border-border rounded-xl overflow-hidden focus-within:border-primary transition-colors bg-card">
             {/* Toolbar */}
-            <div className="flex items-center gap-0.5 px-2 py-1.5 bg-black/20 border-b border-white/10">
+            <div className="flex items-center gap-0.5 px-2 py-1.5 bg-secondary border-b border-border">
                 <ToolbarButton onMouseDown={saveSelection} onClick={() => exec("bold")} title="粗体">
                     <Bold className="w-3.5 h-3.5" />
                 </ToolbarButton>
                 <ToolbarButton onMouseDown={saveSelection} onClick={() => exec("italic")} title="斜体">
                     <Italic className="w-3.5 h-3.5" />
                 </ToolbarButton>
-                <div className="w-px h-5 bg-white/10 mx-1" />
+                <div className="w-px h-5 bg-border mx-1" />
                 <ToolbarButton onMouseDown={saveSelection} onClick={() => exec("insertUnorderedList")} title="无序列表">
                     <List className="w-3.5 h-3.5" />
                 </ToolbarButton>
                 <ToolbarButton onMouseDown={saveSelection} onClick={() => exec("insertOrderedList")} title="有序列表">
                     <ListOrdered className="w-3.5 h-3.5" />
                 </ToolbarButton>
-                <div className="w-px h-5 bg-white/10 mx-1" />
+                <div className="w-px h-5 bg-border mx-1" />
                 <ToolbarButton onMouseDown={saveSelection} onClick={insertLink} title="插入链接">
                     <Link2 className="w-3.5 h-3.5" />
                 </ToolbarButton>
                 <ToolbarButton onMouseDown={saveSelection} onClick={() => imageInputRef.current?.click()} title="插入图片" disabled={uploading}>
                     <ImageIcon className="w-3.5 h-3.5" />
                 </ToolbarButton>
-                <div className="w-px h-5 bg-white/10 mx-1" />
+                <div className="w-px h-5 bg-border mx-1" />
                 <ToolbarButton onMouseDown={saveSelection} onClick={() => exec("undo")} title="撤销">
                     <Undo className="w-3.5 h-3.5" />
                 </ToolbarButton>
@@ -162,15 +162,15 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
                     className={cn(
-                        "min-h-[120px] px-3 py-2 text-sm text-white outline-none",
-                        "prose-sm prose-invert max-w-none",
+                        "min-h-[120px] px-3 py-2 text-sm text-foreground outline-none",
+                        "prose-sm max-w-none",
                         "[&>img]:max-w-full [&>img]:rounded-lg [&>img]:my-2",
-                        "[&>a]:text-blue-400 [&>a]:underline [&>a:hover]:text-blue-300",
+                        "[&>a]:text-primary [&>a]:underline",
                         "[&>ul]:list-disc [&>ul]:pl-5 [&>ol]:list-decimal [&>ol]:pl-5",
                     )}
                 />
                 {!isFocused && isEmpty && placeholder && (
-                    <div className="absolute top-2 left-3 text-muted-foreground/50 text-sm pointer-events-none">
+                    <div className="absolute top-2 left-3 text-muted-foreground/60 text-sm pointer-events-none">
                         {placeholder}
                     </div>
                 )}
@@ -210,7 +210,7 @@ function ToolbarButton({ onClick, onMouseDown, children, title, disabled }: {
             disabled={disabled}
             title={title}
             className={cn(
-                "p-1.5 rounded-md text-muted-foreground hover:text-white hover:bg-white/10 transition-colors",
+                "p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-card transition-colors",
                 disabled && "opacity-40 cursor-not-allowed"
             )}
         >

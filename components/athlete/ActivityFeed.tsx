@@ -199,25 +199,25 @@ export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
             {/* FLOATING NOTIFICATION TRAY SLIDEOUT */}
             {showTray && (
                 <div
-                    className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end animate-in fade-in duration-200"
+                    className="fixed inset-0 z-50 bg-foreground/20 flex justify-end animate-in fade-in duration-200"
                     onClick={handleBackdropClick}
                     role="dialog"
                     aria-modal="true"
                     aria-label="互动通知流"
                 >
-                    <div ref={trayRef} className="w-full max-w-sm bg-slate-950 border-l border-white/10 h-screen max-h-[100dvh] flex flex-col justify-between shadow-2xl relative animate-in slide-in-from-right duration-300">
+                    <div ref={trayRef} className="w-full max-w-sm bg-card border-l border-border h-screen max-h-[100dvh] flex flex-col justify-between shadow-xl relative animate-in slide-in-from-right duration-300">
 
                         {/* Header */}
-                        <div className="p-5 border-b border-white/10 flex items-center justify-between">
+                        <div className="p-4 border-b border-border flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <Bell className="w-5 h-5 text-primary" />
-                                <h3 className="text-sm font-bold text-white uppercase tracking-wider">互动通知流</h3>
+                                <Bell className="w-4.5 h-4.5 text-primary" />
+                                <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">互动通知流</h3>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
                                 {unreadCount > 0 && (
                                     <button
                                         onClick={handleReadAll}
-                                        className="text-xs text-primary hover:underline font-bold px-3 py-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors"
+                                        className="text-xs text-primary hover:underline font-semibold px-2 py-1 flex items-center justify-center rounded-lg transition-colors"
                                         aria-label="全部标记为已读"
                                     >
                                         全部已读
@@ -226,7 +226,7 @@ export function ActivityFeed({ swimmerId, onFeedUpdated }: ActivityFeedProps) {
                                 <button
                                     ref={closeBtnRef}
                                     onClick={() => setShowTray(false)}
-                                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/5 rounded-lg text-muted-foreground hover:text-white transition-colors"
+                                    className="p-1.5 flex items-center justify-center hover:bg-secondary rounded-lg text-muted-foreground hover:text-foreground transition-colors"
                                     aria-label="关闭通知"
                                 >
                                     <X className="w-4 h-4" />

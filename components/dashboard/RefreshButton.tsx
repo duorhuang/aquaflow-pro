@@ -17,27 +17,27 @@ export const RefreshButton = memo(function RefreshButton() {
         <button
             onClick={handleRefresh}
             className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-full border transition-all",
-                syncStatus === 'idle' && "bg-card/50 border-border hover:bg-card hover:border-primary/50",
-                syncStatus === 'syncing' && "bg-primary/10 border-primary animate-pulse",
-                syncStatus === 'error' && "bg-red-500/10 border-red-500/50 text-red-500"
+                "flex items-center gap-2.5 px-3 py-1.5 rounded-lg border text-left transition-colors",
+                syncStatus === 'idle' && "bg-card border-border hover:bg-secondary",
+                syncStatus === 'syncing' && "bg-primary/10 border-primary/30",
+                syncStatus === 'error' && "bg-destructive/10 border-destructive/30 text-destructive"
             )}
         >
             {syncStatus === 'syncing' ? (
-                <RefreshCw className="w-4 h-4 animate-spin text-primary" />
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
             ) : syncStatus === 'error' ? (
-                <AlertTriangle className="w-4 h-4" />
+                <AlertTriangle className="w-3.5 h-3.5" />
             ) : (
-                <Check className="w-4 h-4 text-primary" />
+                <Check className="w-3.5 h-3.5 text-emerald-500" />
             )}
             
-            <div className="flex flex-col items-start">
-                <span className="text-xs font-bold text-white uppercase tracking-tighter">
+            <div className="flex flex-col items-start leading-tight">
+                <span className="text-xs font-medium text-foreground">
                     {syncStatus === 'syncing' ? "正在同步..." : 
                      syncStatus === 'error' ? "同步异常" : "云端在线"}
                 </span>
-                <span className="text-[9px] text-muted-foreground">
-                    {syncStatus === 'error' ? "请重试或检查数据库状态" : "每 30s 自动同步数据"}
+                <span className="text-[10px] text-muted-foreground">
+                    {syncStatus === 'error' ? "请重试或检查状态" : "自动定时同步"}
                 </span>
             </div>
         </button>

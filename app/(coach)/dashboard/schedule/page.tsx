@@ -113,7 +113,7 @@ export default function SchedulePage() {
             };
             addPlan(newPlan);
             setShowModal(false);
-            router.push(`/dashboard/quick-plan?id=${newPlan.id}`);
+            router.push(`/dashboard/weekly-plan`);
         }
     };
 
@@ -175,7 +175,7 @@ export default function SchedulePage() {
                 <h1 className="text-3xl font-bold text-white">训练日程表</h1>
                 <div className="flex items-center gap-2">
                     <Link
-                        href="/dashboard/quick-plan"
+                        href="/dashboard/weekly-plan"
                         className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:brightness-110 transition-all"
                     >
                         <Plus className="w-4 h-4" />
@@ -354,13 +354,13 @@ export default function SchedulePage() {
 
             {/* Add Plan Modal */}
             {showModal && selectedDate && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 animate-in zoom-in-95">
+                <div className="fixed inset-0 bg-foreground/20 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-card border border-border rounded-xl w-full max-w-md p-6 shadow-xl animate-in zoom-in-95">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold text-white">
+                            <h2 className="text-lg font-bold text-foreground">
                                 {selectedDate.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
                             </h2>
-                            <button onClick={() => { setShowModal(false); setShowReminder(false); setReminderMsg(""); }} className="p-1 hover:bg-white/10 rounded-lg">
+                            <button onClick={() => { setShowModal(false); setShowReminder(false); setReminderMsg(""); }} className="p-1 hover:bg-secondary rounded-lg transition-colors">
                                 <X className="w-5 h-5 text-muted-foreground" />
                             </button>
                         </div>
@@ -373,23 +373,23 @@ export default function SchedulePage() {
                                     {getTrainingForDate(selectedDate).map(p => (
                                         <Link
                                             key={p.id}
-                                            href={`/dashboard/quick-plan?id=${p.id}`}
-                                            className="flex items-center gap-3 p-4 bg-secondary/50 rounded-xl hover:bg-secondary transition-colors"
+                                            href={`/dashboard/weekly-plan`}
+                                            className="flex items-center gap-3 p-4 bg-secondary rounded-xl hover:bg-secondary/80 border border-border transition-colors"
                                         >
                                             <FileText className="w-5 h-5 text-primary" />
                                             <div>
-                                                <div className="font-bold text-white">{p.group}</div>
+                                                <div className="font-semibold text-foreground">{p.group}</div>
                                                 <div className="text-xs text-muted-foreground">{p.totalDistance}m - {p.focus}</div>
                                             </div>
                                         </Link>
                                     ))}
-                                    <div className="border-t border-white/10 pt-3 mt-3">
+                                    <div className="border-t border-border pt-3 mt-3">
                                         <Link
-                                            href={`/dashboard/quick-plan?date=${getLocalDateISOString(selectedDate)}`}
-                                            className="flex items-center gap-3 p-4 bg-primary/20 rounded-xl hover:bg-primary/30 transition-colors text-primary"
+                                            href={`/dashboard/weekly-plan`}
+                                            className="flex items-center gap-3 p-4 bg-primary/10 border border-primary/20 rounded-xl hover:bg-primary/20 transition-colors text-primary"
                                         >
                                             <Plus className="w-5 h-5" />
-                                            <span className="font-bold">添加另一个组别的计划</span>
+                                            <span className="font-bold">前往周计划管理</span>
                                         </Link>
                                     </div>
                                 </>

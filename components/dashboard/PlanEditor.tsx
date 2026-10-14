@@ -331,10 +331,10 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                   key={g}
                   onClick={() => setGroup(g)}
                   className={cn(
-                    "px-4 py-2 min-h-[44px] rounded-xl text-sm font-bold transition-all border",
+                    "px-4 py-2 min-h-[44px] rounded-xl text-sm font-semibold transition-all border",
                     group === g
-                      ? "bg-primary text-black border-primary"
-                      : "bg-black/20 text-muted-foreground border-white/5 hover:bg-white/5"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-secondary text-muted-foreground border-border hover:bg-secondary/80"
                   )}
                 >
                   {g}
@@ -352,7 +352,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 transition-all font-mono"
+                className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary transition-all font-mono text-sm"
               />
             </div>
             <div>
@@ -365,7 +365,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                 value={focus}
                 onChange={(e) => setFocus(e.target.value)}
                 placeholder="如: 有氧耐力"
-                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 transition-all"
+                className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary transition-all text-sm"
               />
             </div>
           </div>
@@ -378,7 +378,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                 id="training-type"
                 value={trainingType}
                 onChange={(e) => setTrainingType(e.target.value)}
-                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 transition-all"
+                className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary transition-all text-sm"
               >
                 <option value="">无 (None)</option>
                 <option value="aerobic">有氧 Aerobic</option>
@@ -398,7 +398,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                 id="primary-stroke"
                 value={primaryStroke}
                 onChange={(e) => setPrimaryStroke(e.target.value)}
-                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 transition-all"
+                className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary transition-all text-sm"
               >
                 <option value="">无 (None)</option>
                 {STROKES.map((s) => (
@@ -487,7 +487,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                             })
                           }
                           placeholder="备注..."
-                          className="flex-1 bg-black/20 border border-white/10 rounded-lg px-2 py-1 text-xs text-white placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30"
+                          className="flex-1 bg-secondary border border-border rounded-lg px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                         />
                         <input
                           type="text"
@@ -498,11 +498,11 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                             })
                           }
                           placeholder="@1:30"
-                          className="w-16 bg-black/20 border border-white/10 rounded-lg px-2 py-1 text-xs text-white placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/30 font-mono"
+                          className="w-16 bg-secondary border border-border rounded-lg px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary font-mono"
                         />
                         <button
                           onClick={() => handleRemoveItem(block.id, item.id)}
-                          className="p-1.5 text-white/20 hover:text-red-400 transition-colors rounded"
+                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded"
                           aria-label="删除此项目"
                         >
                           <X className="w-3 h-3" />
@@ -513,7 +513,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
 
                   <button
                     onClick={() => handleAddItemToBlock(block.id)}
-                    className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-white transition-colors px-2 py-1.5 rounded-lg hover:bg-white/5"
+                    className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded-lg hover:bg-secondary"
                     aria-label="添加项目到训练块"
                   >
                     <Plus className="w-3.5 h-3.5" /> 添加项目
@@ -531,32 +531,32 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
           setIsDrawerOpen(true);
           setDrawerTab("add");
         }}
-        className="fixed bottom-8 right-6 w-14 h-14 bg-primary text-black rounded-full shadow-[0_0_20px_rgba(100,255,218,0.4)] flex items-center justify-center hover:scale-110 transition-transform active:scale-95 z-40"
+        className="fixed bottom-8 right-6 w-13 h-13 bg-primary text-primary-foreground rounded-full shadow-md flex items-center justify-center hover:scale-105 transition-transform active:scale-95 z-40"
         aria-label="添加训练块"
       >
-        <Plus className="w-7 h-7 stroke-[3]" />
+        <Plus className="w-6 h-6 stroke-[2.5]" />
       </button>
 
       {/* Bottom Drawer Overlay */}
       {isDrawerOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/20 animate-in fade-in duration-200"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsDrawerOpen(false);
           }}
         >
-          <div className="w-full max-w-md bg-[#0f172a] rounded-t-3xl border-t border-white/10 p-6 space-y-6 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-full duration-300 shadow-2xl relative">
-            <div className="flex justify-between items-center pb-4 border-b border-white/5">
+          <div className="w-full max-w-md bg-card rounded-t-2xl border-t border-border p-6 space-y-6 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-full duration-300 shadow-xl relative">
+            <div className="flex justify-between items-center pb-4 border-b border-border">
               <div>
-                <h2 className="text-xl font-bold text-white">添加训练</h2>
+                <h2 className="text-lg font-bold text-foreground">添加训练</h2>
                 <p className="text-xs text-muted-foreground">Add Set</p>
               </div>
               <button
                 onClick={() => setIsDrawerOpen(false)}
-                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center bg-white/5 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"
+                className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center bg-secondary rounded-full hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="关闭"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -604,23 +604,23 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                     <label className="text-xs uppercase font-bold text-muted-foreground">
                       组数 (Repeats)
                     </label>
-                    <div className="flex items-center gap-2 bg-black/20 rounded-2xl p-2 border border-white/5">
+                    <div className="flex items-center gap-2 bg-secondary rounded-xl p-2 border border-border">
                       <button
                         onClick={() => setRepeats(Math.max(1, repeats - 1))}
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        className="p-2 hover:bg-card rounded-lg transition-colors"
                         aria-label="减少组数"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-3 h-3 text-muted-foreground" />
                       </button>
-                      <span className="flex-1 text-center text-xl font-bold text-white">
+                      <span className="flex-1 text-center text-lg font-bold text-foreground">
                         {repeats}
                       </span>
                       <button
                         onClick={() => setRepeats(repeats + 1)}
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        className="p-2 hover:bg-card rounded-lg transition-colors"
                         aria-label="增加组数"
                       >
-                        <Plus className="w-3 h-3" />
+                        <Plus className="w-3 h-3 text-muted-foreground" />
                       </button>
                     </div>
                   </div>
@@ -634,10 +634,10 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                           key={d}
                           onClick={() => setDistance(d)}
                           className={cn(
-                            "px-3 py-2 rounded-lg text-xs font-bold transition-all border",
+                            "px-3 py-2 rounded-lg text-xs font-semibold transition-all border",
                             distance === d
-                              ? "bg-primary text-black border-primary"
-                              : "bg-white/5 text-muted-foreground border-transparent hover:bg-white/10"
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-secondary text-muted-foreground border-border hover:bg-secondary/80"
                           )}
                         >
                           {d}
@@ -658,10 +658,10 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                         key={s}
                         onClick={() => setStroke(s)}
                         className={cn(
-                          "px-4 py-2 rounded-xl text-sm font-bold transition-all border",
+                          "px-4 py-2 rounded-xl text-sm font-semibold transition-all border",
                           stroke === s
-                            ? "bg-white text-black border-white"
-                            : "bg-white/5 text-muted-foreground border-transparent hover:bg-white/10"
+                            ? "bg-foreground text-background border-foreground"
+                            : "bg-secondary text-muted-foreground border-border hover:bg-secondary/80"
                         )}
                       >
                         {STROKES_MAP[s]}
@@ -681,7 +681,7 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                     value={interval}
                     onChange={(e) => setInterval(e.target.value)}
                     placeholder="1:30"
-                    className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white font-mono focus:outline-none focus:border-primary/50"
+                    className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground font-mono focus:outline-none focus:border-primary text-sm"
                   />
                 </div>
 
@@ -702,10 +702,10 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                           )
                         }
                         className={cn(
-                          "px-3 py-1.5 rounded-full text-xs font-bold transition-all border",
+                          "px-3 py-1.5 rounded-full text-xs font-semibold transition-all border",
                           selectedEquipment.includes(eq)
-                            ? "bg-primary/20 text-primary border-primary/50"
-                            : "bg-white/5 text-muted-foreground border-transparent hover:bg-white/10"
+                            ? "bg-primary/10 text-primary border-primary/30"
+                            : "bg-secondary text-muted-foreground border-border hover:bg-secondary/80"
                         )}
                       >
                         {EQUIPMENT_MAP[eq]}
@@ -715,9 +715,9 @@ export function PlanEditor({ initialPlan }: PlanEditorProps) {
                 </div>
 
                 {/* Preview */}
-                <div className="bg-white/5 rounded-xl p-4 text-center">
-                  <p className="text-sm text-muted-foreground mb-1">预览</p>
-                  <p className="text-xl font-bold text-white">
+                <div className="bg-secondary rounded-xl p-4 text-center border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">预览</p>
+                  <p className="text-lg font-bold text-foreground">
                     {repeats}x{distance}m{" "}
                     <span className="text-primary">{STROKES_MAP[stroke]}</span>
                     {interval && (

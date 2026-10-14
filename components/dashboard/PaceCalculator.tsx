@@ -37,9 +37,9 @@ export function PaceCalculator() {
 
     return (
         <div className="p-4 space-y-6">
-            <div className="bg-secondary/30 rounded-xl p-3 border border-white/5 space-y-3">
+            <div className="bg-secondary rounded-xl p-3 border border-border space-y-3">
                 <h4 className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-2">
-                    <Calculator className="w-3 h-3" />
+                    <Calculator className="w-3 h-3 text-primary" />
                     设定基准
                 </h4>
 
@@ -49,7 +49,7 @@ export function PaceCalculator() {
                         <select
                             value={baseDistance}
                             onChange={(e) => setBaseDistance(parseInt(e.target.value))}
-                            className="w-full bg-black/20 text-white text-xs p-2 rounded-lg outline-none border border-transparent focus:border-primary/50"
+                            className="w-full bg-background text-foreground text-xs p-2 rounded-lg outline-none border border-border focus:border-primary"
                         >
                             <option value={50}>50m</option>
                             <option value={100}>100m</option>
@@ -64,12 +64,12 @@ export function PaceCalculator() {
                             value={baseTimeStr}
                             onChange={(e) => setBaseTimeStr(e.target.value)}
                             placeholder="1:30"
-                            className="w-full bg-black/20 text-white text-xs p-2 rounded-lg outline-none border border-transparent focus:border-primary/50"
+                            className="w-full bg-background text-foreground text-xs p-2 rounded-lg outline-none border border-border focus:border-primary"
                         />
                     </div>
                 </div>
 
-                <div className="text-center">
+                <div className="text-center pt-1">
                     <p className="text-xs text-muted-foreground">每百米配速</p>
                     <p className="text-xl font-bold text-primary font-mono">{formatTime(pacePer100)}</p>
                 </div>
@@ -81,9 +81,9 @@ export function PaceCalculator() {
                     {TARGET_DISTANCES.map(dist => {
                         const time = formatTime((pacePer100 / 100) * dist);
                         return (
-                            <div key={dist} className="bg-white/5 p-2 rounded-lg flex justify-between items-center">
+                            <div key={dist} className="bg-secondary p-2 rounded-lg border border-border flex justify-between items-center">
                                 <span className="text-xs text-muted-foreground font-medium">{dist}m</span>
-                                <span className="text-sm font-mono font-bold text-white max-w-[50%] truncate ml-2">
+                                <span className="text-sm font-mono font-bold text-foreground max-w-[50%] truncate ml-2">
                                     {time}
                                 </span>
                             </div>
@@ -92,8 +92,8 @@ export function PaceCalculator() {
                 </div>
             </div>
 
-            <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                <p className="text-xs text-yellow-200 leading-relaxed">
+            <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
+                <p className="text-xs text-warning leading-relaxed">
                     💡 提示: 输入您的 &ldquo;Base Interval&rdquo; (如 100m 包干 1:40)，此处即显示长距离对应的包干时间。
                 </p>
             </div>

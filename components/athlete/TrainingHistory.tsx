@@ -116,11 +116,11 @@ export function TrainingHistory({ swimmerId }: TrainingHistoryProps) {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-primary" />
+                <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-primary" />
                     训练历史
                 </h3>
-                <Link href="/archive" className="text-xs text-primary hover:underline flex items-center gap-1">
+                <Link href="/archive" className="text-xs text-primary hover:underline flex items-center gap-1 font-medium">
                     归档记录 <ChevronRight className="w-3 h-3" />
                 </Link>
             </div>
@@ -133,25 +133,25 @@ export function TrainingHistory({ swimmerId }: TrainingHistoryProps) {
                         <div
                             key={plan.id}
                             className={cn(
-                                "bg-card/50 border rounded-xl overflow-hidden transition-all",
+                                "bg-card border rounded-xl overflow-hidden transition-colors",
                                 attended
-                                    ? "border-green-500/30 bg-green-500/5"
-                                    : "border-white/10 opacity-80"
+                                    ? "border-emerald-500/30"
+                                    : "border-border opacity-90"
                             )}
                         >
                             {/* Card Header - Clickable */}
                             <div
                                 onClick={() => setExpandedPlanId(isExpanded ? null : plan.id)}
-                                className="p-4 cursor-pointer hover:bg-white/5 transition-colors"
+                                className="p-4 cursor-pointer hover:bg-secondary/40 transition-colors"
                             >
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-2">
                                         {attended ? (
-                                            <CheckCircle className="w-5 h-5 text-green-400" />
+                                            <CheckCircle className="w-4 h-4 text-emerald-500" />
                                         ) : (
-                                            <XCircle className="w-5 h-5 text-muted-foreground" />
+                                            <XCircle className="w-4 h-4 text-muted-foreground" />
                                         )}
-                                        <span className="font-bold text-white">
+                                        <span className="font-medium text-foreground text-sm">
                                             {new Date(plan.date).toLocaleDateString('zh-CN', {
                                                 month: 'short',
                                                 day: 'numeric',
@@ -159,17 +159,17 @@ export function TrainingHistory({ swimmerId }: TrainingHistoryProps) {
                                             })}
                                         </span>
                                         {type === 'weekly' && weeklyPlanTitle && (
-                                            <span className="text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30">
+                                            <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full border border-primary/20 font-medium">
                                                 周计划: {weeklyPlanTitle}
                                             </span>
                                         )}
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className={cn(
-                                            "text-xs font-medium px-2 py-1 rounded-full",
+                                            "text-xs font-medium px-2 py-0.5 rounded-full",
                                             attended
-                                                ? "bg-green-500/20 text-green-400"
-                                                : "bg-white/10 text-muted-foreground"
+                                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                                : "bg-secondary text-muted-foreground"
                                         )}>
                                             {attended ? "已完成" : "未完成"}
                                         </span>
@@ -183,41 +183,41 @@ export function TrainingHistory({ swimmerId }: TrainingHistoryProps) {
 
                                 <div className="space-y-1">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-muted-foreground">训练距离</span>
-                                        <span className="text-sm font-mono text-white">
+                                        <span className="text-xs text-muted-foreground">训练距离</span>
+                                        <span className="text-xs font-mono font-medium text-foreground">
                                             {(plan.totalDistance || 0).toLocaleString()}m
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-muted-foreground">训练重点</span>
-                                        <span className="text-sm text-white">{plan.focus}</span>
+                                        <span className="text-xs text-muted-foreground">训练重点</span>
+                                        <span className="text-xs font-medium text-foreground">{plan.focus}</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Expanded Details */}
                             {isExpanded && (
-                                <div className="p-4 border-t border-white/5 bg-black/20 animate-in slide-in-from-top-2">
+                                <div className="p-4 border-t border-border bg-secondary/20">
                                     {/* Plan Content */}
                                     <div className="space-y-4 mb-4">
-                                        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                                            <Layers className="w-3 h-3" />
+                                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                                            <Layers className="w-3.5 h-3.5" />
                                             训练内容
                                         </h4>
 
                                         {plan.blocks?.map((block: TrainingBlock, i: number) => (
                                             <div key={block.id || i} className="space-y-2">
-                                                <div className="text-xs font-bold text-primary flex justify-between">
+                                                <div className="text-xs font-medium text-primary flex justify-between">
                                                     <span>{block.type} {block.rounds > 1 && `(${block.rounds} rounds)`}</span>
                                                 </div>
                                                 <div className="space-y-1 pl-2 border-l-2 border-primary/20">
                                                     {block.items.map((item: PlanItem, j: number) => (
-                                                        <div key={item.id || j} className="text-sm text-white flex justify-between">
+                                                        <div key={item.id || j} className="text-xs text-foreground flex justify-between">
                                                             <span>
-                                                                <span className="font-mono text-primary">{item.repeats}x{item.distance}m</span>
+                                                                <span className="font-mono text-primary font-medium">{item.repeats}x{item.distance}m</span>
                                                                 <span className="ml-2 text-muted-foreground">{item.stroke}</span>
                                                             </span>
-                                                            <span className="text-xs text-muted-foreground">{item.interval}</span>
+                                                            <span className="text-xs text-muted-foreground font-mono">{item.interval}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -231,28 +231,28 @@ export function TrainingHistory({ swimmerId }: TrainingHistoryProps) {
                                     </div>
 
                                     {/* Feedback & Notes Section */}
-                                    <div className="space-y-3 pt-3 border-t border-white/5">
+                                    <div className="space-y-3 pt-3 border-t border-border">
                                         {plan.targetedNotes?.[swimmerId] && (
                                             <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
-                                                <p className="text-xs font-medium text-primary mb-1">教练备注</p>
-                                                <p className="text-xs text-white">{plan.targetedNotes[swimmerId]}</p>
+                                                <p className="text-xs font-semibold text-primary mb-1">教练备注</p>
+                                                <p className="text-xs text-foreground">{plan.targetedNotes[swimmerId]}</p>
                                             </div>
                                         )}
 
                                         {feedback && (
-                                            <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                                            <div className="p-3 bg-card border border-border rounded-lg">
                                                 <div className="flex items-center justify-between mb-1">
                                                     <div className="flex items-center gap-1">
                                                         <MessageSquare className="w-3 h-3 text-primary" />
-                                                        <span className="text-xs font-medium text-primary">我的反馈</span>
+                                                        <span className="text-xs font-semibold text-primary">我的反馈</span>
                                                     </div>
                                                     <div className="flex items-center gap-2 text-xs">
                                                         <span className="text-muted-foreground">RPE:</span>
                                                         <span className={cn(
-                                                            "font-bold",
-                                                            feedback.rpe >= 8 ? "text-red-400" :
-                                                                feedback.rpe >= 6 ? "text-yellow-400" :
-                                                                    "text-green-400"
+                                                            "font-bold font-mono",
+                                                            feedback.rpe >= 8 ? "text-destructive" :
+                                                                feedback.rpe >= 6 ? "text-amber-500" :
+                                                                    "text-emerald-500"
                                                         )}>
                                                             {feedback.rpe}/10
                                                         </span>

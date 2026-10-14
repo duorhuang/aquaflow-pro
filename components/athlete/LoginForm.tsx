@@ -3,9 +3,8 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Lock, User, Loader2, Eye, EyeOff } from "lucide-react";
+import { Lock, User, Loader2, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -15,7 +14,6 @@ interface LoginFormProps {
 
 export function LoginForm({ mode = "athlete" }: LoginFormProps) {
     const router = useRouter();
-    const { t } = useLanguage();
     const { resetAuth, setCurrentUserInfo } = useStore();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
@@ -31,13 +29,11 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
         setError("");
         setIsLoading(true);
 
-        // Retry login up to 5 times with exponential backoff for cold DB starts / Worker limits
-        let lastError: string = "Network error";
+        let lastError: string = "网络连接异常，请重试";
 
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
             setRetryAttempt(attempt + 1);
             try {
-                // Abort previous controller before creating new one
                 abortRef.current?.abort();
                 const controller = new AbortController();
                 abortRef.current = controller;
@@ -51,10 +47,10 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                 });
                 clearTimeout(timeout);
 
-                const contentType = res.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
+                const contentType = res.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
                     if (res.status === 429) {
-                        setError(t.common.tooManyAttempts || 'Too many attempts, please wait a moment.');
+                        setError("请求过于频繁，请稍候再试");
                         setIsLoading(false);
                         return;
                     }
@@ -62,11 +58,9 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                         redirectAfterLogin(mode);
                         return;
                     }
-                    const text = await res.text();
-                    lastError = `Server error (${res.status}). Please try again in a moment.`;
-                    console.error('Login API returned non-JSON response:', text.substring(0, 200));
+                    lastError = `服务暂时不可用 (${res.status})，正在尝试重连...`;
                     if (attempt < MAX_RETRIES - 1) {
-                        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+                        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
                         continue;
                     }
                     setError(lastError);
@@ -78,25 +72,25 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
 
                 if (!res.ok) {
                     if (res.status === 401 || res.status === 400) {
-                        setError(data.error || "Username or password incorrect");
+                        setError(data.error || "用户名或密码不正确");
                         setIsLoading(false);
                         return;
                     }
                     if (res.status === 429) {
-                        setError(data.error || t.common.tooManyAttempts || "Too many attempts, please wait a moment.");
+                        setError(data.error || "尝试次数过多，请稍后再试");
                         setIsLoading(false);
                         return;
                     }
                     if (res.status === 503) {
-                        lastError = data.error || "服务器繁忙，正在重试...";
+                        lastError = data.error || "云端数据库正在唤醒，请稍候...";
                         if (attempt < MAX_RETRIES - 1) {
-                            await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
+                            await new Promise((r) => setTimeout(r, 2500 * (attempt + 1)));
                             continue;
                         }
                     }
-                    lastError = data.error || "Server error, retrying...";
+                    lastError = data.error || "服务器忙，正在重试...";
                     if (attempt < MAX_RETRIES - 1) {
-                        await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+                        await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
                         continue;
                     }
                     setError(lastError);
@@ -107,17 +101,15 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                 redirectAfterLogin(mode, data);
                 return;
             } catch (err: any) {
-                const is503 = err.message?.includes('503');
-                const delay = is503 ? 3000 * (attempt + 1) : 1500 * (attempt + 1);
-                lastError = err.name === 'AbortError'
-                    ? (t.common.retrying 
-                        ? t.common.retrying.replace("{n}", (attempt + 1).toString()).replace("{total}", MAX_RETRIES.toString())
-                        : `Connecting... attempt ${attempt + 1}/${MAX_RETRIES}`)
-                    : is503 
-                        ? (t.common.loggingIn || "Connecting to server...") 
-                        : (err.message || "Network error");
+                const is503 = err.message?.includes("503");
+                const delay = is503 ? 2500 * (attempt + 1) : 1500 * (attempt + 1);
+                lastError =
+                    err.name === "AbortError"
+                        ? `正在连接数据库... (第 ${attempt + 1}/${MAX_RETRIES} 次)`
+                        : err.message || "网络请求异常";
+
                 if (attempt < MAX_RETRIES - 1) {
-                    await new Promise(r => setTimeout(r, delay));
+                    await new Promise((r) => setTimeout(r, delay));
                     continue;
                 }
                 setError(lastError);
@@ -128,7 +120,7 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
         }
     };
 
-    const redirectAfterLogin = async (role: string, data?: any) => {
+    const redirectAfterLogin = (role: string, data?: any) => {
         resetAuth();
         if (data?.user) {
             setCurrentUserInfo({ ...data.user, role });
@@ -144,134 +136,110 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
     };
 
     return (
-        <form onSubmit={handleLogin} className="space-y-5 w-full relative">
-            {/* Full-form loading overlay during retries (DB cold start) */}
-            {isLoading && retryAttempt > 0 && (
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center z-50 gap-3">
-                    <Loader2 className="w-10 h-10 animate-spin text-emerald-400" />
-                    <p className="text-sm text-white font-medium">{t.common.connecting || "Connecting..."}</p>
-                    <p className="text-xs text-white/60">
-                        {t.common.retrying 
-                            ? t.common.retrying.replace("{n}", retryAttempt.toString()).replace("{total}", MAX_RETRIES.toString())
-                            : `Retrying (attempt ${retryAttempt} of ${MAX_RETRIES})...`}
+        <form onSubmit={handleLogin} className="space-y-4 w-full relative">
+            {/* Cold start overlay */}
+            {isLoading && retryAttempt > 1 && (
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center z-50 gap-2 p-4 text-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <p className="text-sm font-medium text-foreground">正在连通数据服务...</p>
+                    <p className="text-xs text-muted-foreground">
+                        首次连接或唤醒需要数秒，第 {retryAttempt}/{MAX_RETRIES} 次尝试
                     </p>
                 </div>
             )}
-            <div className="space-y-4">
-                <motion.div 
-                    className="relative group"
-                    whileTap={{ scale: 0.995 }}
-                >
-                    <User className="absolute left-4 top-3.5 w-5 h-5 text-emerald-500/50 group-focus-within:text-emerald-400 transition-colors" />
-                    <input
-                        type="text"
-                        placeholder={t.common.username || "Username"}
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        className="w-full bg-black/20 border border-white/5 rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/50 focus:bg-black/40 transition-all shadow-inner"
-                        required
-                        aria-label="用户名"
-                        autoComplete="username"
-                    />
-                </motion.div>
-                <motion.div 
-                    className="relative group"
-                    whileTap={{ scale: 0.995 }}
-                >
-                    <Lock className="absolute left-4 top-3.5 w-5 h-5 text-emerald-500/50 group-focus-within:text-emerald-400 transition-colors" />
-                    <input
-                        type={showPassword ? "text" : "password"}
-                        placeholder={t.common.password || "Password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-black/20 border border-white/5 rounded-2xl py-3.5 pl-12 pr-12 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/50 focus:bg-black/40 transition-all shadow-inner"
-                        required
-                        aria-label="密码"
-                        autoComplete="current-password"
-                    />
-                    <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-3.5 p-0.5 text-muted-foreground hover:text-emerald-400 focus:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 rounded transition-colors"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                </motion.div>
+
+            <div className="space-y-3">
+                <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground block">
+                        {mode === "coach" ? "教练账号" : "队员用户名"}
+                    </label>
+                    <div className="relative group">
+                        <User className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <input
+                            type="text"
+                            placeholder={mode === "coach" ? "请输入教练用户名" : "请输入拼音或姓名"}
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            className="w-full bg-background border border-border rounded-xl py-3 pl-11 pr-4 text-foreground placeholder:text-muted-foreground/60 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                            required
+                            aria-label="用户名"
+                            autoComplete="username"
+                        />
+                    </div>
+                </div>
+
+                <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground block">
+                        账户密码
+                    </label>
+                    <div className="relative group">
+                        <Lock className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="请输入密码"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full bg-background border border-border rounded-xl py-3 pl-11 pr-11 text-foreground placeholder:text-muted-foreground/60 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                            required
+                            aria-label="密码"
+                            autoComplete="current-password"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3.5 top-3.5 p-0.5 text-muted-foreground hover:text-foreground focus:outline-none rounded transition-colors"
+                            aria-label={showPassword ? "隐藏密码" : "显示密码"}
+                        >
+                            {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <AnimatePresence>
                 {error && (
-                    <motion.p 
+                    <motion.div 
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="text-red-400 text-sm text-center font-medium bg-red-500/10 py-2 rounded-lg border border-red-500/20"
+                        className="text-destructive text-xs font-medium bg-destructive/10 py-2.5 px-3 rounded-xl border border-destructive/20 text-center"
                     >
                         {error}
-                    </motion.p>
+                    </motion.div>
                 )}
             </AnimatePresence>
 
             {mode === "coach" && (
-                <p className="text-center text-xs text-muted-foreground">
-                    {t.common.forgotPassword || "忘记密码？"}请到 <Link href="/setup" className="text-emerald-400 hover:underline">{t.common.resetPassword || "初始化页面"}</Link> 重置。
-                </p>
+                <div className="flex justify-end pt-0.5">
+                    <Link href="/setup" className="text-xs text-primary hover:underline font-medium">
+                        重置教练初始密码 →
+                    </Link>
+                </div>
             )}
 
-            <div className="space-y-3 pt-2">
-                <motion.button
+            <div className="pt-2">
+                <button
                     type="submit"
                     disabled={isLoading}
-                    whileHover={{ scale: isLoading ? 1 : 1.02 }}
-                    whileTap={{ scale: isLoading ? 1 : 0.98 }}
                     className={cn(
-                        "w-full py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 text-lg shadow-lg relative overflow-hidden",
+                        "w-full py-3.5 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 text-sm text-primary-foreground shadow-sm",
                         isLoading
-                            ? "bg-emerald-500/50 text-white/80 cursor-wait"
-                            : "bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                            ? "bg-primary/70 cursor-wait"
+                            : "bg-primary hover:bg-primary/90 active:scale-[0.99]"
                     )}
                 >
-                    {isLoading && (
-                        <motion.div 
-                            className="absolute left-0 top-0 bottom-0 bg-white/20"
-                            initial={{ width: "0%" }}
-                            animate={{ width: "100%" }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                        />
-                    )}
                     {isLoading ? (
                         <>
-                            <Loader2 className="w-5 h-5 animate-spin relative z-10" />
-                            <span className="relative z-10 text-sm">
-                                {retryAttempt > 0 
-                                    ? (t.common.retrying 
-                                        ? t.common.retrying.replace("{n}", retryAttempt.toString()).replace("{total}", MAX_RETRIES.toString())
-                                        : `Connecting... attempt ${retryAttempt}/${MAX_RETRIES}`)
-                                    : (t.common.loggingIn || "Connecting to server...")}
-                            </span>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>{retryAttempt > 1 ? `连接中 (${retryAttempt}/${MAX_RETRIES})...` : "正在登录..."}</span>
                         </>
-                    ) : t.common.login}
-                </motion.button>
-
-                <AnimatePresence>
-                    {isLoading && (
-                        <motion.button
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            type="button"
-                            onClick={() => {
-                                abortRef.current?.abort();
-                                setIsLoading(false);
-                                setRetryAttempt(0);
-                            }}
-                            className="w-full py-3 rounded-2xl text-sm font-medium text-muted-foreground hover:text-white hover:bg-white/5 transition-colors"
-                        >
-                            {t.common.back || "取消连接"}
-                        </motion.button>
+                    ) : (
+                        <>
+                            <span>{mode === "coach" ? "进入教练管理后台" : "进入队员训练空间"}</span>
+                            <ArrowRight className="w-4 h-4" />
+                        </>
                     )}
-                </AnimatePresence>
+                </button>
             </div>
         </form>
     );

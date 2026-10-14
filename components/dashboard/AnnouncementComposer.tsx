@@ -90,28 +90,28 @@ export function AnnouncementComposer({ className }: { className?: string }) {
 
     if (published) {
         return (
-            <div className={cn("bg-green-500/10 border border-green-500/30 rounded-2xl p-6 text-center", className)}>
-                <p className="text-green-400 font-bold">发布成功！内容已同步给队员</p>
+            <div className={cn("bg-success/10 border border-success/20 rounded-xl p-5 text-center", className)}>
+                <p className="text-success font-semibold text-sm">✓ 发布成功！内容已同步给队员</p>
             </div>
         );
     }
 
     return (
-        <div className={cn("bg-card/40 border border-border rounded-2xl overflow-hidden", className)}>
+        <div className={cn("border border-border rounded-xl bg-card overflow-hidden", className)}>
             {/* Header */}
-            <div className="px-5 py-4 border-b border-white/5">
-                <h3 className="text-sm font-bold text-white">发布新动态</h3>
+            <div className="px-4 py-3 border-b border-border">
+                <p className="text-sm font-semibold text-foreground">发布新公告</p>
                 <p className="text-xs text-muted-foreground mt-0.5">添加文字、照片、视频或链接，指定可见队员</p>
             </div>
 
             {/* Blocks */}
-            <div className="p-5 space-y-3 max-h-[50vh] overflow-y-auto">
+            <div className="p-4 space-y-3 max-h-[50vh] overflow-y-auto">
                 {blocks.map((block, i) => (
                     <div key={i} className="relative group">
                         {blocks.length > 1 && (
                             <button
                                 onClick={() => removeBlock(i)}
-                                className="absolute top-2 right-2 p-1 bg-red-500/80 rounded text-white opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                className="absolute top-2 right-2 p-1 bg-destructive/10 text-destructive rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-10"
                             >
                                 <X className="w-3 h-3" />
                             </button>
@@ -123,27 +123,27 @@ export function AnnouncementComposer({ className }: { className?: string }) {
                                 onChange={e => updateBlock(i, e.target.value)}
                                 placeholder="写点什么..."
                                 rows={3}
-                                className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-white resize-none outline-none focus:border-primary/50 placeholder:text-muted-foreground/50"
+                                className="w-full bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-foreground resize-none outline-none focus:border-primary transition-colors placeholder:text-muted-foreground"
                             />
                         )}
 
                         {block.type === "image" && (
                             <div
                                 className={cn(
-                                    "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors",
+                                    "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
                                     block.content
                                         ? "border-transparent p-0"
-                                        : "border-white/20 hover:border-primary/50 hover:bg-white/5"
+                                        : "border-border hover:border-primary/50 hover:bg-secondary/50"
                                 )}
                                 onClick={() => !block.content && imageInputRef.current?.click()}
                             >
                                 {block.content ? (
-                                    <img src={block.content} className="w-full rounded-xl max-h-[400px] object-contain" />
+                                    <img src={block.content} className="w-full rounded-lg max-h-[400px] object-contain" alt="上传的图片" />
                                 ) : (
                                     <>
                                         <Image className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                                         <p className="text-sm text-muted-foreground">点击上传图片</p>
-                                        <p className="text-xs text-muted-foreground/50 mt-1">JPG, PNG, WebP</p>
+                                        <p className="text-xs text-muted-foreground/60 mt-1">JPG, PNG, WebP</p>
                                     </>
                                 )}
                                 <input
@@ -163,20 +163,20 @@ export function AnnouncementComposer({ className }: { className?: string }) {
                         {block.type === "video" && (
                             <div
                                 className={cn(
-                                    "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors",
+                                    "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
                                     block.content
                                         ? "border-transparent p-0"
-                                        : "border-white/20 hover:border-blue-500/50 hover:bg-white/5"
+                                        : "border-border hover:border-info/50 hover:bg-secondary/50"
                                 )}
                                 onClick={() => !block.content && videoInputRef.current?.click()}
                             >
                                 {block.content ? (
-                                    <video src={block.content} controls className="w-full rounded-xl max-h-[400px]" />
+                                    <video src={block.content} controls className="w-full rounded-lg max-h-[400px]" />
                                 ) : (
                                     <>
-                                        <Video className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                                        <Video className="w-8 h-8 text-info mx-auto mb-2" />
                                         <p className="text-sm text-muted-foreground">点击上传视频</p>
-                                        <p className="text-xs text-muted-foreground/50 mt-1">MP4, WebM</p>
+                                        <p className="text-xs text-muted-foreground/60 mt-1">MP4, WebM</p>
                                     </>
                                 )}
                                 <input
@@ -195,13 +195,13 @@ export function AnnouncementComposer({ className }: { className?: string }) {
 
                         {block.type === "link" && (
                             <div className="flex items-center gap-2">
-                                <Link2 className="w-4 h-4 text-blue-400 shrink-0" />
+                                <Link2 className="w-4 h-4 text-info shrink-0" />
                                 <input
                                     type="text"
                                     value={block.content}
                                     onChange={e => updateBlock(i, e.target.value)}
                                     placeholder="粘贴链接..."
-                                    className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-blue-500/50 placeholder:text-muted-foreground/50"
+                                    className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary transition-colors placeholder:text-muted-foreground"
                                 />
                             </div>
                         )}
@@ -210,26 +210,26 @@ export function AnnouncementComposer({ className }: { className?: string }) {
 
                 {/* Add Block Buttons */}
                 <div className="flex gap-2 flex-wrap">
-                    <button onClick={() => addBlock("text")} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-muted-foreground hover:text-white hover:bg-white/10 transition-colors">
+                    <button onClick={() => addBlock("text")} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary border border-border rounded-lg text-xs text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors">
                         <Plus className="w-3.5 h-3.5" /> 文字
                     </button>
-                    <button onClick={() => addBlock("image")} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-muted-foreground hover:text-white hover:bg-white/10 transition-colors">
+                    <button onClick={() => addBlock("image")} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary border border-border rounded-lg text-xs text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors">
                         <Image className="w-3.5 h-3.5" /> 照片
                     </button>
-                    <button onClick={() => addBlock("video")} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-muted-foreground hover:text-white hover:bg-white/10 transition-colors">
+                    <button onClick={() => addBlock("video")} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary border border-border rounded-lg text-xs text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors">
                         <Video className="w-3.5 h-3.5" /> 视频
                     </button>
-                    <button onClick={() => addBlock("link")} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-muted-foreground hover:text-white hover:bg-white/10 transition-colors">
+                    <button onClick={() => addBlock("link")} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary border border-border rounded-lg text-xs text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors">
                         <Link2 className="w-3.5 h-3.5" /> 链接
                     </button>
                 </div>
             </div>
 
             {/* Targeting */}
-            <div className="px-5 py-4 border-t border-white/5 space-y-3">
+            <div className="px-4 py-3 border-t border-border space-y-3">
                 <div>
-                    <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">可见组别</label>
-                    <div className="flex gap-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">可见组别</label>
+                    <div className="flex gap-2 flex-wrap">
                         {["Advanced", "Intermediate", "Junior", "External"].map(g => (
                             <button
                                 key={g}
@@ -237,8 +237,8 @@ export function AnnouncementComposer({ className }: { className?: string }) {
                                 className={cn(
                                     "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
                                     targetGroup === g
-                                        ? "bg-primary/20 border-primary text-primary"
-                                        : "bg-white/5 border-white/10 text-muted-foreground hover:border-white/20"
+                                        ? "bg-primary/10 border-primary text-primary"
+                                        : "bg-secondary border-border text-muted-foreground hover:text-foreground"
                                 )}
                             >
                                 {g === "Advanced" ? "高级组" : g === "Intermediate" ? "中级组" : g === "External" ? "校外组" : "初级组"}
@@ -249,7 +249,7 @@ export function AnnouncementComposer({ className }: { className?: string }) {
 
                 {swimmers.length > 0 && (
                     <div>
-                        <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">指定队员 (可选)</label>
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">指定队员 (可选)</label>
                         <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
                             {swimmers.map(s => (
                                 <button
@@ -258,8 +258,8 @@ export function AnnouncementComposer({ className }: { className?: string }) {
                                     className={cn(
                                         "px-2 py-1 rounded-lg text-xs font-medium border transition-colors",
                                         targetSwimmerIds.includes(s.id)
-                                            ? "bg-yellow-500/20 border-yellow-500 text-yellow-300"
-                                            : "bg-white/5 border-white/10 text-muted-foreground hover:border-white/20"
+                                            ? "bg-warning/10 border-warning text-warning-foreground"
+                                            : "bg-secondary border-border text-muted-foreground hover:text-foreground"
                                     )}
                                 >
                                     {s.name}
@@ -270,11 +270,11 @@ export function AnnouncementComposer({ className }: { className?: string }) {
                 )}
             </div>
 
-            {/* Publish Status */}
+            {/* Status */}
             {(error || publishing) && (
-                <div className="px-5 py-3 border-t border-white/5">
+                <div className="px-4 py-3 border-t border-border">
                     {error ? (
-                        <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</div>
+                        <div className="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">{error}</div>
                     ) : (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Loader2 className="w-3.5 h-3.5 animate-spin" /> 发布中...
@@ -284,17 +284,15 @@ export function AnnouncementComposer({ className }: { className?: string }) {
             )}
 
             {/* Publish Button */}
-            <div className="px-5 py-4 border-t border-white/5">
+            <div className="px-4 py-3 border-t border-border">
                 <button
                     onClick={handlePublish}
                     disabled={publishing || uploading || !hasContent}
                     className={cn(
-                        "w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all",
-                        publishing || uploading
-                            ? "bg-yellow-500/80 text-white cursor-wait"
-                            : hasContent
-                            ? "bg-primary text-primary-foreground hover:brightness-110 shadow-[0_0_15px_rgba(100,255,218,0.3)]"
-                            : "bg-white/5 text-muted-foreground cursor-not-allowed"
+                        "w-full py-2.5 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors",
+                        hasContent && !publishing && !uploading
+                            ? "bg-primary text-primary-foreground hover:opacity-90"
+                            : "bg-secondary text-muted-foreground cursor-not-allowed"
                     )}
                 >
                     {publishing ? (
@@ -303,7 +301,7 @@ export function AnnouncementComposer({ className }: { className?: string }) {
                         </>
                     ) : (
                         <>
-                            <Send className="w-4 h-4" /> 发布
+                            <Send className="w-4 h-4" /> 发布公告
                         </>
                     )}
                 </button>

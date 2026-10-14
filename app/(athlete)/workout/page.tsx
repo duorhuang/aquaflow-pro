@@ -1,887 +1,206 @@
 "use client";
 
-import { SessionRenderer } from "@/components/dashboard/SessionRenderer";
-import { BlockFeedbackPanel } from "@/components/athlete/BlockFeedbackPanel";
-import { WeeklyFeedbackForm } from "@/components/athlete/WeeklyFeedbackForm";
-import { TargetedFeedbackForm } from "@/components/athlete/TargetedFeedbackForm";
-import { CoachReplyPanel } from "@/components/athlete/CoachReplyPanel";
-import { AnnouncementCard } from "@/components/feed/AnnouncementCard";
-import { InjuryMap } from "@/components/athlete/InjuryMap";
-import { ActivityFeed } from "@/components/athlete/ActivityFeed";
-import { MeetCountdown } from "@/components/athlete/MeetCountdown";
-import { AvatarRenderer } from "@/components/athlete/AvatarRenderer";
-import { BottomTabBar } from "@/components/athlete/BottomTabBar";
-import { BackgroundPicker } from "@/components/athlete/BackgroundPicker";
-import { WaveAnimation } from "@/components/common/WaveAnimation";
-import { useBackgroundTheme } from "@/hooks/useBackgroundTheme";
-import { api } from "@/lib/api-client";
-import { AthleteTelemetry } from "@/components/athlete/AthleteTelemetry";
-import { AlertTriangle, LogOut, Waves, MessageSquare, TrendingUp, FolderOpen, ArrowRight, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Palette, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
-import { LanguageToggle } from "@/components/common/LanguageToggle";
-import { useLanguage } from "@/lib/i18n";
-import { useStore } from "@/lib/store";
-import { TrainingPlan, Swimmer } from "@/types";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getLocalDateISOString, LEVEL_THRESHOLDS } from "@/lib/date-utils";
-import { sanitizeHtml } from "@/lib/sanitize-html";
-import dynamic from "next/dynamic";
-import { useToast } from "@/components/common/Toast";
+import { useStore } from "@/lib/store";
+import { api } from "@/lib/api-client";
+import { BottomTabBar } from "@/components/athlete/BottomTabBar";
+import { AthleteTrainingTab } from "@/components/athlete/views/AthleteTrainingTab";
+import { AthleteFeedbackTab } from "@/components/athlete/views/AthleteFeedbackTab";
+import { AthleteAchievementsTab } from "@/components/athlete/views/AthleteAchievementsTab";
+import { AthleteProfileTab } from "@/components/athlete/views/AthleteProfileTab";
+import { LEVEL_THRESHOLDS } from "@/lib/date-utils";
+import { LogOut, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const TrainingHistory = dynamic(() => import("@/components/athlete/TrainingHistory").then(m => ({ default: m.TrainingHistory })));
-const PerformanceList = dynamic(() => import("@/components/athlete/PerformanceTracker").then(m => ({ default: m.PerformanceList })));
-
-function AthleteWorkoutContent() {
+function WorkoutContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { t } = useLanguage();
-    const { toast } = useToast();
-    const { plans, swimmers, attendance, feedbacks, performances, updateSwimmer, weeklyPlans, announcements, archivedAnnouncements, getVisibleAnnouncements, isLoaded: storeLoaded, syncStatus, unauthenticated, currentUserInfo, isAuthLoading: globalAuthLoading, triggerSync } = useStore();
-
-    const [selectedDate, setSelectedDate] = useState(new Date());
-    const [pendingReminders, setPendingReminders] = useState(0);
-    const [showArchive, setShowArchive] = useState(false);
-    const [athleteArchiveLimit, setAthleteArchiveLimit] = useState(5);
-    const [showBgPicker, setShowBgPicker] = useState(false);
-    const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-    // Derive authentication details from store
-    const authUserId = currentUserInfo?.id || (typeof window !== 'undefined' ? localStorage.getItem('aquaflow_athlete_id') : null);
-    const isAuthLoading = globalAuthLoading;
-
-    // Derive currentUser from store using auth ID to prevent session loops when data is mixed
-    const currentAthleteId = authUserId;
-    const currentUser = storeLoaded && swimmers.length > 0 
-        ? (currentAthleteId ? swimmers.find(s => s.id === currentAthleteId) || swimmers[0] : swimmers[0]) 
-        : null;
-    const authResolved = !isAuthLoading;
-
-    // URL-based tab state (source of truth: query param ?tab=)
-    const urlTab = searchParams.get('tab');
-    const activeTab = (urlTab === 'feedback' || urlTab === 'achievements' || urlTab === 'health')
-        ? urlTab as 'feedback' | 'achievements' | 'health'
-        : 'training' as const;
-
-    // Check if a weekly plan is visible to this swimmer
-    // NOTE: Must be declared BEFORE any code that references it,
-    // including the useMemo below that calls getSelectedDatePlans.
-    function isWeeklyPlanVisible(wp: any): boolean {
-        if (!currentUser) return false;
-        const targetGroup: string[] = Array.isArray(wp.targetGroup)
-            ? wp.targetGroup
-            : typeof wp.targetGroup === 'string' ? (() => { try { return JSON.parse(wp.targetGroup || '[]'); } catch { return []; } })() : [];
-        const targetSwimmerIds: string[] = Array.isArray(wp.targetSwimmerIds)
-            ? wp.targetSwimmerIds
-            : typeof wp.targetSwimmerIds === 'string' ? (() => { try { return JSON.parse(wp.targetSwimmerIds || '[]'); } catch { return []; } })() : [];
-
-        const hasGroupTarget = targetGroup.length > 0;
-        const hasIndividualTarget = targetSwimmerIds.length > 0;
-
-        if (!hasGroupTarget && !hasIndividualTarget) return true;
-        if (hasGroupTarget && targetGroup.includes(currentUser.group)) return true;
-        if (hasIndividualTarget && targetSwimmerIds.includes(currentUser.id)) return true;
-
-        return false;
-    }
-
-    // Get all plans/sessions for selected date
-    // NOTE: Declared as function (hoisted) BEFORE the useMemo below.
-    function getSelectedDatePlans(): (TrainingPlan & { isDerived?: boolean; notes?: string })[] {
-        if (!currentUser) return [];
-        const dateStr = getLocalDateISOString(selectedDate);
-        const dayPlansObj: (TrainingPlan & { isDerived?: boolean; notes?: string })[] = [];
-
-        const dayPlans = plans.filter(p => p.date === dateStr && p.group === currentUser.group);
-        if (dayPlans.length > 0) dayPlansObj.push(...dayPlans);
-
-        for (const wp of weeklyPlans) {
-            if (!isWeeklyPlanVisible(wp)) continue;
-            const sessions = wp.sessions?.filter((s: any) => s.date === dateStr);
-            if (sessions && sessions.length > 0) {
-                sessions.forEach((session: any) => {
-                    dayPlansObj.push({
-                        id: `derived-${session.id}`,
-                        date: dateStr,
-                        group: currentUser.group,
-                        totalDistance: session.totalDistance || 0,
-                        focus: session.label,
-                        imageUrl: session.imageUrl || session.imageData,
-                        blocks: session.trainingBlocks || [],
-                        isDerived: true,
-                        targetedNotes: {},
-                        status: "Published",
-                        editorMode: session.editorMode,
-                        contentBlocks: session.contentBlocks,
-                        trainingBlocks: session.trainingBlocks,
-                        contentHtml: session.contentHtml,
-                        imageData: session.imageData,
-                        imageType: session.imageType,
-                        notes: session.notes,
-                        trainingType: session.trainingType,
-                        primaryStroke: session.primaryStroke,
-                    } as any);
-                });
-            }
-        }
-
-        return dayPlansObj;
-    }
-
-    // Calculate monthly stats
-    // NOTE: Declared as function (hoisted) BEFORE where it's called in JSX.
-    function getMonthlyStats() {
-        try {
-            if (!currentUser) return { totalDistance: 0, trainingDays: 0, completionRate: 0 };
-
-            const now = new Date();
-            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-            const monthPlans = (plans || []).filter(p => {
-                const planDate = new Date(p.date);
-                return planDate >= firstDay &&
-                    planDate <= now &&
-                    p.group === currentUser.group;
-            });
-
-            const totalDistance = monthPlans.reduce((sum, p) => sum + (p.totalDistance || 0), 0);
-            const trainingDays = monthPlans.length;
-
-            const monthAttendance = (attendance || []).filter(a => {
-                const attDate = new Date(a.date);
-                return attDate >= firstDay &&
-                    attDate <= now &&
-                    a.swimmerId === currentUser.id;
-            });
-
-            const completionRate = trainingDays > 0
-                ? Math.round((monthAttendance.length / trainingDays) * 100)
-                : 0;
-
-            return { totalDistance, trainingDays, completionRate };
-        } catch (e) {
-            console.error("Stats calculation error", e);
-            return { totalDistance: 0, trainingDays: 0, completionRate: 0 };
-        }
-    }
-
-    // Background theme
-    const currentTrainingType = useMemo(() => {
-        const selectedPlans = getSelectedDatePlans();
-        if (selectedPlans.length > 0) return selectedPlans[0].trainingType;
-        return undefined;
-    }, [selectedDate, plans, weeklyPlans, currentUser]);
 
     const {
-        theme: bgTheme,
-        mode: bgMode,
-        gradientClass,
-        setManualTheme: setBgTheme,
-        setAutoMode: setBgAuto,
-        allThemes,
-    } = useBackgroundTheme(currentTrainingType);
+        plans,
+        swimmers,
+        attendance,
+        weeklyPlans,
+        announcements,
+        archivedAnnouncements,
+        isLoaded: storeLoaded,
+        currentUserInfo,
+        isAuthLoading,
+        triggerSync,
+        syncStatus,
+    } = useStore();
 
-    // Current viewing week (navigable with arrows)
-    const getCurrentWeekMonday = () => {
-        const d = new Date(new Date().toISOString().split('T')[0] + "T12:00:00");
-        const day = d.getDay();
-        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-        d.setDate(diff);
-        return d.toISOString().split('T')[0];
-    };
-    const [currentWeekStart, setCurrentWeekStart] = useState(getCurrentWeekMonday());
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-    const navigateWeek = (direction: -1 | 1) => {
-        const d = new Date(currentWeekStart + "T12:00:00");
-        d.setDate(d.getDate() + direction * 7);
-        setCurrentWeekStart(d.toISOString().split('T')[0]);
-    };
+    // Active tab from URL query params (training | feedback | achievements | profile)
+    const tabParam = searchParams.get("tab") || "training";
+    const activeTab = (tabParam === "feedback" || tabParam === "achievements" || tabParam === "profile")
+        ? tabParam
+        : "training";
 
-    const isCurrentWeek = currentWeekStart === getCurrentWeekMonday();
-
-    // Status form
-    const [readiness, setReadiness] = useState(95);
-    const [status, setStatus] = useState<"Active" | "Resting" | "Injured">("Active");
-    const [statusSaved, setStatusSaved] = useState(false);
-    const [statusSaving, setStatusSaving] = useState(false);
-    const [prevUserId, setPrevUserId] = useState<string | null>(null);
-
-    // Initialize readiness/status when currentUser becomes available from store (render-time sync)
-    if (currentUser && currentUser.id !== prevUserId) {
-        setPrevUserId(currentUser.id);
-        setReadiness(currentUser.readiness || 95);
-        if (currentUser.status === "Active" || currentUser.status === "Resting" || currentUser.status === "Injured") {
-            setStatus(currentUser.status);
+    // Resolve current athlete
+    const authUserId = currentUserInfo?.id || (typeof window !== "undefined" ? localStorage.getItem("aquaflow_athlete_id") : null);
+    const currentUser = useMemo(() => {
+        if (!storeLoaded || swimmers.length === 0) return null;
+        if (authUserId) {
+            const match = swimmers.find((s) => s.id === authUserId);
+            if (match) return match;
         }
-    }
+        return swimmers[0];
+    }, [storeLoaded, swimmers, authUserId]);
 
-    // Load reminders when authUserId is resolved
+    // Auth redirection
     useEffect(() => {
-        if (!authUserId) return;
-        
-        let isMounted = true;
-        const fetchReminders = async () => {
-            try {
-                const res = await api.feedbackReminders.getForSwimmer(authUserId);
-                const pending = res.filter((r: any) => !r.isResponded);
-                if (isMounted) {
-                    setPendingReminders(pending.length);
-                }
-            } catch (e: unknown) {
-                const err = e instanceof Error ? e : new Error(String(e));
-                if (!err.message?.includes('API Error: 4')) {
-                    console.error("Failed to load reminders count", e);
-                }
-            }
-        };
-        fetchReminders();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [authUserId]);
-
-    // Redirect to login if user is unauthenticated or not an athlete
-    useEffect(() => {
-        if (globalAuthLoading) return;
-        if (!currentUserInfo || currentUserInfo.role !== 'athlete') {
-            const localId = typeof window !== 'undefined' ? localStorage.getItem("aquaflow_athlete_id") : null;
-            if (!localId) {
-                router.push("/login");
-            }
+        if (isAuthLoading) return;
+        const localId = typeof window !== "undefined" ? localStorage.getItem("aquaflow_athlete_id") : null;
+        if (!currentUserInfo && !localId) {
+            router.push("/login?role=athlete");
         }
-    }, [globalAuthLoading, currentUserInfo, router]);
+    }, [isAuthLoading, currentUserInfo, router]);
 
     const handleLogout = async () => {
         if (isLoggingOut) return;
+        if (!window.confirm("确认要退出当前队员账号吗？")) return;
         setIsLoggingOut(true);
-        try { await api.auth.logout(); } catch {}
-        localStorage.removeItem("aquaflow_athlete_id");
-        router.push('/login');
-    };
-
-    const handleSaveStatus = async () => {
-        if (!currentUser || statusSaving) return;
-        setStatusSaving(true);
         try {
-            const updates: any = {
-                readiness,
-                status: status as "Active" | "Resting" | "Injured",
-                lastProfileUpdate: new Date().toISOString()
-            };
-            await updateSwimmer(currentUser.id, updates);
-            setStatusSaved(true);
-            setTimeout(() => setStatusSaved(false), 3000);
-        } catch (e) {
-            console.error("Failed to save status:", e);
-            toast("error", "保存失败，请重试");
-        } finally {
-            setStatusSaving(false);
-        }
+            await api.auth.logout();
+        } catch {}
+        localStorage.removeItem("aquaflow_athlete_id");
+        router.push("/login?role=athlete");
     };
 
-    if (!authResolved || !storeLoaded) {
-        return (
-            <div className="min-h-screen bg-background">
-                {/* Skeleton Header */}
-                <div className="h-16 bg-card/30 border-b border-white/5 flex items-center px-4 gap-3">
-                    <div className="w-10 h-10 rounded-full bg-white/5 animate-pulse" />
-                    <div className="flex-1">
-                        <div className="h-3 w-20 bg-white/5 rounded animate-pulse mb-1" />
-                        <div className="h-2 w-14 bg-white/5 rounded animate-pulse" />
-                    </div>
-                </div>
-                {/* Skeleton Weekly Calendar */}
-                <div className="p-4 space-y-4 max-w-2xl mx-auto">
-                    <div className="h-16 bg-card/30 rounded-2xl border border-white/5 animate-pulse flex items-center justify-center gap-2">
-                        {Array.from({ length: 7 }).map((_, i) => (
-                            <div key={i} className="w-10 h-12 bg-white/5 rounded-xl" />
-                        ))}
-                    </div>
-                    {/* Skeleton Training Card */}
-                    <div className="h-32 bg-card/30 rounded-2xl border border-white/5 animate-pulse" />
-                    {/* Skeleton Stats */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="h-20 bg-card/30 rounded-2xl border border-white/5 animate-pulse" />
-                        <div className="h-20 bg-card/30 rounded-2xl border border-white/5 animate-pulse" />
-                    </div>
-                    {/* Skeleton Chart */}
-                    <div className="h-32 bg-card/30 rounded-2xl border border-white/5 animate-pulse" />
-                </div>
-                {/* Bottom Tab Bar Skeleton */}
-                <div className="fixed bottom-0 left-0 right-0 h-16 bg-[#0f131f]/75 border-t border-white/5 flex items-center justify-around">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className="flex flex-col items-center gap-1">
-                            <div className="w-5 h-5 bg-white/5 rounded animate-pulse" />
-                            <div className="w-6 h-2 bg-white/5 rounded animate-pulse" />
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
-    }
-
-    if (syncStatus === 'error' && (!swimmers || swimmers.length === 0)) {
-        return (
-            <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-6 text-center">
-                <div className="space-y-6 max-w-sm glass-panel border border-white/5 bg-slate-900/40 p-8 rounded-3xl shadow-[0_0_50px_rgba(239,68,68,0.08)]">
-                    <div className="w-16 h-16 bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto shadow-[0_0_20px_rgba(239,68,68,0.1)]">
-                        <AlertTriangle className="w-8 h-8 text-red-500 animate-pulse" />
-                    </div>
-                    <div className="space-y-2">
-                        <h2 className="text-xl font-bold text-white tracking-wide">网络连接失败</h2>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                            无法连接到 AquaFlow 核心服务器。<br />
-                            可能由于数据库正在休眠唤醒中，或当前网络存在波动。
-                        </p>
-                    </div>
-                    <div className="space-y-3 pt-2">
-                        <button
-                            onClick={() => triggerSync(true)}
-                            className="w-full bg-primary hover:bg-primary/95 text-black font-semibold py-3 rounded-xl transition-all duration-300 shadow-[0_0_15px_rgba(100,255,218,0.2)] hover:shadow-[0_0_25px_rgba(100,255,218,0.35)]"
-                        >
-                            重新尝试连接
-                        </button>
-                        <button
-                            onClick={handleLogout}
-                            className="w-full bg-white/5 hover:bg-white/10 text-white font-medium py-3 rounded-xl border border-white/5 transition-all duration-300"
-                        >
-                            返回登录页
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (!currentUser || unauthenticated) {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center">
-                <div className="space-y-4 max-w-xs">
-                    <div className="w-16 h-16 bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                        <LogOut className="w-8 h-8 text-red-500" />
-                    </div>
-                    <h2 className="text-xl font-bold text-white">会话已过期</h2>
-                    <p className="text-sm text-muted-foreground">无法识别您的队员身份，请尝试重新登录程序。</p>
-                    <button
-                        onClick={() => router.push('/login')}
-                        className="w-full bg-primary text-white py-3 rounded-xl font-bold"
-                    >
-                        返回登录页
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    const selectedPlansObj = getSelectedDatePlans();
-    const myNote = (selectedPlansObj.length > 0 && selectedPlansObj[0].targetedNotes && currentUser) ? selectedPlansObj[0].targetedNotes[currentUser.id] : null;
-    const monthlyStats = getMonthlyStats();
-
-    // Find weekly plan that covers the viewing week
-    const currentWeeklyPlan = weeklyPlans.find(wp => {
-        if (!isWeeklyPlanVisible(wp)) return false;
-        if (!wp.weekStart || !wp.weekEnd) return false;
-        return currentWeekStart >= wp.weekStart && currentWeekStart <= wp.weekEnd;
-    });
-
-    const weekDays = (() => {
-        const days = [];
-        const start = new Date(currentWeekStart + "T12:00:00");
-        for (let i = 0; i < 7; i++) {
-            const d = new Date(start);
-            d.setDate(d.getDate() + i);
-            days.push(d);
-        }
-        return days;
-    })();
-
-    // Gamification
-    const swimmerXp = currentUser.totalXp !== undefined ? currentUser.totalXp : (currentUser.xp || 0);
-    const level = currentUser.level || 1;
+    // Calculate level & XP
+    const swimmerXp = currentUser?.totalXp !== undefined ? currentUser.totalXp : (currentUser?.xp || 0);
+    const level = currentUser?.level || 1;
     const currentMin = LEVEL_THRESHOLDS[level - 1] || 0;
-    const nextMin = LEVEL_THRESHOLDS[level] || (currentMin + 10000);
+    const nextMin = LEVEL_THRESHOLDS[level] || currentMin + 10000;
     const denom = nextMin - currentMin;
     const progress = denom > 0 ? Math.min(100, Math.max(0, ((swimmerXp - currentMin) / denom) * 100)) : 0;
 
-    const myAnnouncements = getVisibleAnnouncements().filter((a: any) => {
-        if (a.targetGroup && a.targetGroup !== currentUser?.group) return false;
-        if (a.targetSwimmerIds && !a.targetSwimmerIds.includes(currentUser?.id)) return false;
-        return true;
-    });
+    // Loading Skeleton
+    if (isAuthLoading || !storeLoaded) {
+        return (
+            <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 space-y-4">
+                <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                <p className="text-sm font-medium text-muted-foreground">正在同步队员训练数据...</p>
+            </div>
+        );
+    }
+
+    // Unauthenticated state
+    if (!currentUser) {
+        return (
+            <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mx-auto">
+                    <AlertCircle className="w-7 h-7" />
+                </div>
+                <div>
+                    <h3 className="text-base font-bold text-foreground">未检测到登录状态</h3>
+                    <p className="text-xs text-muted-foreground mt-1">请返回登录页面并输入队员账号密码</p>
+                </div>
+                <button
+                    onClick={() => router.push("/login?role=athlete")}
+                    className="px-6 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-xl"
+                >
+                    前往登录
+                </button>
+            </div>
+        );
+    }
 
     return (
-        <div className={cn("min-h-screen pb-24 transition-colors duration-700 ease-in-out bg-gradient-to-br", gradientClass)}>
-            {/* Skip navigation */}
-            <a
-                href="#main-content"
-                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[200] focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded-lg focus:font-medium"
-            >
-                跳过导航，直达主要内容
-            </a>
-
-            {/* Background texture overlay */}
-            <div className="fixed inset-0 bg-theme-texture pointer-events-none z-0 opacity-30" aria-hidden="true" />
-
+        <div className="min-h-screen bg-background text-foreground transition-colors duration-200 safe-bottom-padding">
             {/* Header */}
-            <header className="sticky top-0 z-50 bg-card/65 backdrop-blur-md border-b border-white/5">
-                <div className="flex items-center justify-between p-4 max-w-2xl mx-auto">
-                    <Link href="/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                        <div className="relative">
-                            <div className="w-10 h-10 rounded-full border-2 border-primary overflow-hidden shadow-[0_0_12px_rgba(0,242,255,0.3)] bg-slate-900">
-                                <AvatarRenderer
-                                    gender={currentUser.gender === "female" ? "female" : "male"}
-                                    equippedItems={currentUser.equippedItems || {}}
-                                    size={40}
-                                    animated={false}
-                                />
-                            </div>
-                            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-warning flex items-center justify-center text-xs font-bold text-black border border-black">
-                                {level}
-                            </div>
+            <header className="sticky top-0 z-40 bg-card border-b border-border">
+                <div className="flex items-center justify-between p-3 sm:p-4 max-w-2xl mx-auto">
+                    {/* Athlete Info */}
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+                            {currentUser.name.slice(0, 1)}
                         </div>
                         <div>
-                            <h1 className="text-base font-bold text-white tracking-wide font-display-metrics">{currentUser.name}</h1>
-                            <div className="flex items-center gap-2">
-                                <div className="w-24 h-1.5 bg-secondary/50 rounded-full overflow-hidden">
-                                    <div className="h-full xp-bar-gradient rounded-full transition-all" style={{ width: `${progress}%` }} />
+                            <div className="flex items-center gap-1.5">
+                                <h1 className="text-sm font-bold text-foreground tracking-tight">
+                                    {currentUser.name}
+                                </h1>
+                                <span className="text-[10px] font-semibold bg-secondary px-1.5 py-0.5 rounded text-muted-foreground">
+                                    Lv.{level}
+                                </span>
+                            </div>
+                            {/* Mini XP bar */}
+                            <div className="flex items-center gap-2 mt-0.5">
+                                <div className="w-20 h-1 bg-secondary rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-primary rounded-full transition-all duration-300"
+                                        style={{ width: `${progress}%` }}
+                                    />
                                 </div>
-                                <span className="text-[10px] text-muted-foreground font-label-caps">{swimmerXp} XP / Lv.{level + 1}</span>
+                                <span className="text-[10px] text-muted-foreground">
+                                    {swimmerXp} XP
+                                </span>
                             </div>
                         </div>
-                    </Link>
-                    <div className="flex items-center gap-1.5">
+                    </div>
+
+                    {/* Actions: Sync & Logout */}
+                    <div className="flex items-center gap-1">
                         <button
-                            onClick={() => setShowBgPicker(true)}
-                            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors text-muted-foreground hover:text-white"
-                            title="更换背景"
-                            aria-label="更换背景主题"
+                            onClick={() => triggerSync(true)}
+                            disabled={syncStatus === "syncing"}
+                            className={cn(
+                                "p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors",
+                                syncStatus === "syncing" && "text-primary"
+                            )}
+                            title={syncStatus === "syncing" ? "正在同步最新数据..." : "点击同步最新训练"}
+                            aria-label="同步数据"
                         >
-                            <Palette className="w-4 h-4" />
+                            <RefreshCw className={cn("w-4 h-4", syncStatus === "syncing" && "animate-spin")} />
                         </button>
-                        <ActivityFeed swimmerId={currentUser.id} />
-                        <LanguageToggle />
                         <button
                             onClick={handleLogout}
                             disabled={isLoggingOut}
-                            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-error/10 rounded-lg transition-colors text-error disabled:opacity-50"
-                            title="登出"
+                            className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                            title="退出登录"
                             aria-label="退出登录"
                         >
-                            {isLoggingOut ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <LogOut className="w-4 h-4" />
-                            )}
+                            <LogOut className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
             </header>
 
-            <main id="main-content" className="p-4 max-w-2xl mx-auto space-y-6">
-                {/* Meet Countdown Widget */}
-                <MeetCountdown />
-
-                {/* Tab Content: Training Section */}
-                {activeTab === 'training' && (
-                    <div className="space-y-6">
-                        {/* Coach Announcements Feed */}
-                        {myAnnouncements.length > 0 && (
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                                        <MessageSquare className="w-3.5 h-3.5 text-primary" />
-                                        {t.dashboard.coachFeed}
-                                    </h2>
-                                    <button
-                                        onClick={() => setShowArchive(!showArchive)}
-                                        className="text-xs text-muted-foreground hover:text-white flex items-center gap-1"
-                                    >
-                                        {showArchive ? (
-                                            <>{t.dashboard.collapse} <ChevronUp className="w-3 h-3" /></>
-                                        ) : (
-                                            <>{t.dashboard.viewAll} ({archivedAnnouncements.length}) <ChevronDown className="w-3 h-3" /></>
-                                        )}
-                                    </button>
-                                </div>
-                                {myAnnouncements.map((a: any) => (
-                                    <AnnouncementCard key={a.id} announcement={a} />
-                                ))}
-                                {showArchive && (
-                                    <div className="pt-4 border-t border-white/10 space-y-3">
-                                        <p className="text-xs text-muted-foreground uppercase tracking-wider">{t.dashboard.archivedFeed}</p>
-                                        {archivedAnnouncements.length === 0 && (
-                                            <p className="text-xs text-muted-foreground/50 italic">{t.dashboard.archiveHint}</p>
-                                        )}
-                                        {archivedAnnouncements.slice(0, athleteArchiveLimit).map((a: any) => (
-                                            <div key={a.id} className="opacity-60">
-                                                <AnnouncementCard announcement={a} />
-                                            </div>
-                                        ))}
-                                        {archivedAnnouncements.length > athleteArchiveLimit && (
-                                            <button
-                                                onClick={() => setAthleteArchiveLimit(prev => prev + 10)}
-                                                className="w-full text-center text-xs text-muted-foreground hover:text-white py-2"
-                                            >
-                                                {t.dashboard.loadMore} ({archivedAnnouncements.length - athleteArchiveLimit} 条)
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Weekly Framework */}
-                        <div className="bg-card/50 border border-border/50 rounded-2xl p-4 md:p-5 glow-border">
-                            <div className="flex items-center justify-between mb-3">
-                                <button
-                                    onClick={() => navigateWeek(-1)}
-                                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
-                                    title="上一周"
-                                    aria-label="上一周"
-                                >
-                                    <ChevronLeft className="w-4 h-4 text-white" />
-                                </button>
-                                <div className="flex items-center gap-2">
-                                    <h2 className="text-sm font-bold text-white flex items-center gap-2 font-display-metrics">
-                                        <Waves className="w-4 h-4 text-primary" />
-                                        {currentWeeklyPlan?.title || t.dashboard.weeklyOverview}
-                                    </h2>
-                                    {!isCurrentWeek && (
-                                        <button
-                                            onClick={() => setCurrentWeekStart(getCurrentWeekMonday())}
-                                            className="text-xs text-primary hover:underline px-2.5 py-1 rounded-full bg-primary/10 font-label-caps"
-                                            aria-label="回到本周"
-                                        >
-                                            回到本周
-                                        </button>
-                                    )}
-                                </div>
-                                <button
-                                    onClick={() => navigateWeek(1)}
-                                    disabled={isCurrentWeek}
-                                    className={cn(
-                                        "p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors",
-                                        isCurrentWeek ? "text-white/20 cursor-default" : "text-white hover:bg-white/10"
-                                    )}
-                                    title="下一周"
-                                    aria-label="下一周"
-                                >
-                                    <ChevronRight className="w-4 h-4" aria-hidden="true" />
-                                </button>
-                            </div>
-                            {currentWeeklyPlan?.coachNotes && (
-                                <p className="text-xs text-muted-foreground mb-4 italic pl-3 border-l-2 border-primary/50">教练说：{currentWeeklyPlan.coachNotes}</p>
-                            )}
-
-                            {currentWeeklyPlan?.overviewImageUrl && (
-                                <div className="mb-4 rounded-xl overflow-hidden border border-white/5">
-                                    <img src={currentWeeklyPlan.overviewImageUrl} alt="本周总览" className="w-full max-h-[250px] object-contain" />
-                                </div>
-                            )}
-                            {currentWeeklyPlan?.overviewContentHtml && (
-                                <div
-                                    className="mb-4 text-sm text-white prose prose-invert prose-sm max-w-none px-3"
-                                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentWeeklyPlan.overviewContentHtml) }}
-                                />
-                            )}
-
-                            <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-                                {weekDays.map(date => {
-                                    const dateStr = getLocalDateISOString(date);
-                                    const isSelected = dateStr === getLocalDateISOString(selectedDate);
-                                    const isToday = dateStr === getLocalDateISOString(new Date());
-
-                                    const hasSession = currentWeeklyPlan?.sessions?.some((s: any) => s.date === dateStr) ||
-                                        plans.some(p => p.date === dateStr && p.group === currentUser.group);
-
-                                    // Determine training theme type for tags
-                                    let typeLabel = "";
-                                    let typeColor = "";
-                                    if (hasSession) {
-                                        const foundPlan = plans.find(p => p.date === dateStr && p.group === currentUser.group);
-                                        const type = foundPlan?.trainingType ||
-                                            currentWeeklyPlan?.sessions?.find((s: any) => s.date === dateStr)?.trainingType;
-
-                                        if (type === "aerobic") {
-                                            typeLabel = "有氧";
-                                            typeColor = "text-primary bg-primary/10 border-primary/20";
-                                        } else if (type === "anaerobic" || type === "lactate") {
-                                            typeLabel = "无氧";
-                                            typeColor = "text-destructive bg-destructive/10 border-destructive/20";
-                                        } else if (type === "sprint" || type === "strength" || type === "race_prep") {
-                                            typeLabel = "冲刺";
-                                            typeColor = "text-warning bg-warning/10 border-warning/20";
-                                        } else {
-                                            typeLabel = "活跃";
-                                            typeColor = "text-primary bg-primary/10 border-primary/20";
-                                        }
-                                    }
-
-                                    const dayName = date.toLocaleDateString('zh-CN', { weekday: 'short' }).replace('周', '');
-
-                                    return (
-                                        <button
-                                            key={dateStr}
-                                            onClick={() => setSelectedDate(date)}
-                                            className={cn(
-                                                "flex flex-col items-center justify-between py-2 rounded-xl transition-all relative border min-h-[72px]",
-                                                isSelected
-                                                    ? "bg-primary text-black border-primary shadow-[0_0_12px_rgba(0,242,255,0.4)] ring-2 ring-primary/30"
-                                                    : hasSession
-                                                        ? "bg-secondary/40 border-primary/20 text-white hover:bg-secondary/50"
-                                                        : "bg-surface-container-lowest/50 border-white/5 text-muted-foreground hover:bg-white/5"
-                                            )}
-                                            aria-label={`${date.getMonth() + 1}月${date.getDate()}日 ${date.toLocaleDateString('zh-CN', { weekday: 'long' })}${hasSession ? '，有训练' : ''}${isSelected ? '，已选择' : ''}`}
-                                            aria-pressed={isSelected}
-                                        >
-                                            <span className={cn("text-[10px] font-bold uppercase font-label-caps", isSelected ? "text-black/60" : "text-muted-foreground")}>{dayName}</span>
-                                            <span className="text-sm font-bold font-display-metrics mt-0.5">{date.getDate()}</span>
-                                            {hasSession ? (
-                                                <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full border mt-1 scale-90", isSelected ? "text-black bg-black/10 border-black/20" : typeColor)}>
-                                                    {typeLabel}
-                                                </span>
-                                            ) : (
-                                                <span className="text-[10px] text-muted-foreground/30 font-label-caps mt-1">休息</span>
-                                            )}
-                                            {isToday && (
-                                                <div className={cn("absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-background ring-1 ring-primary", isSelected ? "bg-black" : "bg-primary")} aria-label="今天" />
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {/* Daily Context */}
-                        <div className="pt-2 space-y-6">
-                            <h3 className="text-md font-semibold text-white flex items-center gap-2 font-display-metrics">
-                                <FolderOpen className="w-5 h-5 text-primary" />
-                                {selectedDate.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })} {t.dashboard.dailyDetails}
-                            </h3>
-
-                            {selectedPlansObj.length > 0 ? (
-                                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    {myNote && (
-                                        <div className="bg-gradient-to-r from-warning/20 to-warning/10 border border-warning/30 p-5 rounded-3xl relative overflow-hidden shadow-md">
-                                            <p className="text-white text-lg font-medium italic">&ldquo;{myNote}&rdquo;</p>
-                                        </div>
-                                    )}
-                                    {selectedPlansObj.map((plan, index) => (
-                                        <div key={plan.id || index} className="bg-card/50 border border-border/50 rounded-2xl p-6 glow-border relative overflow-hidden">
-                                            {/* Decorative background subtle glow */}
-                                            <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
-
-                                            <div className="flex justify-between items-start mb-4">
-                                                <div>
-                                                    <span className="text-[10px] font-label-caps text-primary uppercase tracking-wider block mb-1">今日训练计划</span>
-                                                    <h4 className="text-lg font-bold text-white font-display-metrics">{plan.focus || "耐力训练"}</h4>
-                                                </div>
-                                                <div className="text-right">
-                                                    <span className={cn(
-                                                        "text-[10px] font-label-caps px-2.5 py-1 rounded-full border",
-                                                        plan.trainingType === "aerobic" ? "text-primary bg-primary/10 border-primary/20" :
-                                                        plan.trainingType === "anaerobic" || plan.trainingType === "lactate" ? "text-destructive bg-destructive/10 border-destructive/20" :
-                                                        plan.trainingType === "sprint" || plan.trainingType === "strength" ? "text-warning bg-warning/10 border-warning/20" :
-                                                        "text-primary bg-primary/10 border-primary/20"
-                                                    )}>
-                                                        {plan.trainingType ? plan.trainingType.toUpperCase() : "有氧"} 重点
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            {plan.isDerived && (
-                                                <div className="flex justify-between items-start mb-4">
-                                                    <div className="inline-block bg-info/20 text-info text-xs font-medium tracking-wider px-2 py-1 rounded-full border border-info/30">
-                                                        {t.dashboard.extractedFromWeekly}
-                                                    </div>
-                                                    {selectedPlansObj.length > 1 && (
-                                                        <div className="text-xs text-muted-foreground">{t.dashboard.sessionOf.replace('{n}', String(index + 1)).replace('{total}', String(selectedPlansObj.length))}</div>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                                <div className="bg-surface-container-lowest/40 p-3 rounded-xl border border-white/5">
-                                                    <p className="text-[10px] font-label-caps text-muted-foreground uppercase">总距离</p>
-                                                    <p className="text-2xl font-bold font-display-metrics text-primary mt-1">
-                                                        {plan.totalDistance > 0 ? plan.totalDistance : "3,000"}<span className="text-xs font-label-caps ml-0.5 text-muted-foreground">M</span>
-                                                    </p>
-                                                </div>
-                                                <div className="bg-surface-container-lowest/40 p-3 rounded-xl border border-white/5">
-                                                    <p className="text-[10px] font-label-caps text-muted-foreground uppercase">主项泳姿</p>
-                                                    <p className="text-sm font-semibold text-white mt-2 truncate">
-                                                        {plan.primaryStroke || "自由泳"}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <SessionRenderer session={plan} className="mb-4" />
-
-                                            {plan.notes && (
-                                                <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
-                                                    <h5 className="text-[10px] font-label-caps text-white uppercase tracking-wider">教练备注</h5>
-                                                    <div className="flex gap-2 items-start p-3 bg-surface-container-lowest/30 rounded-xl border border-white/5">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />
-                                                        <p className="text-xs text-muted-foreground leading-relaxed">{plan.notes}</p>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {plan.blocks && plan.blocks.length > 0 && currentUser && (
-                                                <div className="mt-4 space-y-3">
-                                                    <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t.dashboard.techniqueFeedback}</div>
-                                                    {plan.blocks.map((block: any) => (
-                                                        <BlockFeedbackPanel
-                                                            key={block.id}
-                                                            planId={plan.id}
-                                                            blockId={block.id}
-                                                            swimmerId={currentUser.id}
-                                                            blockName={block.type || block.items?.[0]?.description}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-16 bg-card/50 border border-dashed border-border rounded-3xl">
-                                    <Waves className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-                                    <p className="text-sm text-muted-foreground">{t.dashboard.noTrainingToday}</p>
-                                    <p className="text-xs text-muted-foreground/50 mt-2">{t.dashboard.tryFeedback}</p>
-                                </div>
-                            )}
-
-                            {/* Data-Driven Athlete Telemetry */}
-                            <AthleteTelemetry
-                                plans={plans}
-                                attendance={attendance}
-                                feedbacks={feedbacks}
-                                performances={performances}
-                                currentUser={currentUser}
-                                selectedDate={selectedDate}
-                                group={currentUser.group}
-                            />
-                        </div>
-                    </div>
+            {/* Main Content Area */}
+            <main className="p-4 max-w-2xl mx-auto">
+                {activeTab === "training" && (
+                    <AthleteTrainingTab
+                        currentUser={currentUser}
+                        plans={plans}
+                        weeklyPlans={weeklyPlans}
+                        announcements={announcements}
+                        archivedAnnouncements={archivedAnnouncements}
+                    />
                 )}
 
-                {/* Tab Content: Feedback Section */}
-                {activeTab === 'feedback' && currentUser && (
-                    <div className="space-y-6">
-                        <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl flex items-center gap-4">
-                            <MessageSquare className="w-6 h-6 text-primary" />
-                            <div>
-                                <h3 className="text-sm font-semibold text-primary">{t.athlete.feedbackInbox}</h3>
-                                <p className="text-xs text-muted-foreground">{t.athlete.feedbackInboxDesc}</p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <h4 className="text-xs uppercase tracking-widest text-muted-foreground">{t.athlete.targetedTasks} ({pendingReminders} {t.athlete.pending})</h4>
-                            <TargetedFeedbackForm swimmerId={currentUser.id} />
-                        </div>
-
-                        <div className="space-y-4 pt-6 border-t border-border/50">
-                            <h4 className="text-xs uppercase tracking-widest text-muted-foreground">{t.athlete.weeklySummary}</h4>
-                            <WeeklyFeedbackForm swimmerId={currentUser.id} weekStart={currentWeekStart} />
-                        </div>
-
-                        <CoachReplyPanel swimmerId={currentUser.id} />
-                    </div>
+                {activeTab === "feedback" && (
+                    <AthleteFeedbackTab currentUser={currentUser} />
                 )}
 
-                {/* Tab Content: Health & Stats */}
-                {activeTab === 'health' && (
-                    <div className="space-y-6">
-                        <div className="bg-card/50 border border-border/50 rounded-2xl p-6">
-                            <h2 className="text-md font-semibold text-white mb-4">{t.athlete.currentStatus}</h2>
-                            <div className="mb-6">
-                                <label htmlFor="readiness-slider" className="text-sm text-muted-foreground mb-2 block">
-                                    {t.athlete.readiness}: {readiness}% — {
-                                        readiness <= 20 ? t.athlete.veryFatigued :
-                                        readiness <= 40 ? t.athlete.fatigued :
-                                        readiness <= 60 ? t.athlete.fair :
-                                        readiness <= 80 ? t.athlete.good :
-                                        t.athlete.excellent
-                                    }
-                                </label>
-                                <input id="readiness-slider" type="range" min="0" max="100" value={readiness} onChange={(e) => setReadiness(parseInt(e.target.value))} className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary" aria-valuemin={0} aria-valuemax={100} aria-valuenow={readiness} aria-label={`${t.athlete.readiness}: ${readiness}%`} />
-                            </div>
-                            <div className="grid grid-cols-3 gap-3 mb-6">
-                                <button onClick={() => setStatus("Active")} className={cn("py-3 rounded-xl font-medium text-sm min-h-[44px]", status === "Active" ? "bg-success/20 text-success border border-success/50" : "bg-secondary/50 border border-transparent")}>{t.athlete.training}</button>
-                                <button onClick={() => setStatus("Resting")} className={cn("py-3 rounded-xl font-medium text-sm min-h-[44px]", status === "Resting" ? "bg-warning/20 text-warning border border-warning/50" : "bg-secondary/50 border border-transparent")}>{t.athlete.resting}</button>
-                                <button onClick={() => setStatus("Injured")} className={cn("py-3 rounded-xl font-medium text-sm min-h-[44px]", status === "Injured" ? "bg-error/20 text-error border border-error/50" : "bg-secondary/50 border border-transparent")}>{t.athlete.injured}</button>
-                            </div>
-                            <div className="mb-6">
-                                <InjuryMap swimmerId={currentUser.id} />
-                            </div>
-                            <button onClick={handleSaveStatus} disabled={statusSaving} className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-medium relative min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed">
-                                {statusSaving ? "保存中..." : t.athlete.saveStatus}
-                                {statusSaved && (
-                                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs text-success bg-background border border-success/20 px-3 py-1 rounded-full whitespace-nowrap shadow-lg z-10">
-                                        {t.athlete.saved}
-                                    </span>
-                                )}
-                            </button>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            <div className="bg-card/50 p-4 rounded-2xl border border-border/50 text-center">
-                                <p className="text-xs text-muted-foreground uppercase">{t.athlete.monthlyDistance}</p>
-                                <p className="text-xl font-bold text-primary">{monthlyStats.totalDistance}m</p>
-                            </div>
-                            <div className="bg-card/50 p-4 rounded-2xl border border-border/50 text-center">
-                                <p className="text-xs text-muted-foreground uppercase">{t.athlete.attendanceDays}</p>
-                                <p className="text-base font-semibold text-foreground">{monthlyStats.trainingDays}天</p>
-                            </div>
-                            <div className="bg-card/50 p-4 rounded-2xl border border-border/50 text-center col-span-2 sm:col-span-1">
-                                <p className="text-xs text-muted-foreground uppercase">{t.athlete.xpPoints}</p>
-                                <p className="text-base font-semibold text-foreground">{swimmerXp}</p>
-                            </div>
-                        </div>
-                    </div>
+                {activeTab === "achievements" && (
+                    <AthleteAchievementsTab
+                        currentUser={currentUser}
+                        attendance={attendance}
+                        plans={plans}
+                    />
                 )}
 
-                {/* Tab Content: Achievements */}
-                {activeTab === 'achievements' && (
-                    <div className="space-y-6">
-                        <div className="bg-warning/10 border border-warning/20 p-4 rounded-2xl flex items-center justify-between">
-                            <h3 className="text-sm font-semibold text-warning flex items-center gap-2">
-                                <TrendingUp className="w-5 h-5" />
-                                {t.athlete.achievements}
-                            </h3>
-                            <Link href="/archive" className="text-xs text-primary hover:underline flex items-center gap-1">
-                                {t.athlete.viewFullArchive} <ArrowRight className="w-3 h-3" />
-                            </Link>
-                        </div>
-                        <TrainingHistory swimmerId={currentUser.id} />
-                        <PerformanceList swimmerId={currentUser.id} />
-                    </div>
+                {activeTab === "profile" && (
+                    <AthleteProfileTab currentUser={currentUser} />
                 )}
             </main>
 
-            {/* Background Picker Modal */}
-            <BackgroundPicker
-                open={showBgPicker}
-                onClose={() => setShowBgPicker(false)}
-                currentThemeId={bgTheme.id}
-                currentMode={bgMode}
-                onThemeSelect={(id) => {
-                    setBgTheme(id);
-                    setShowBgPicker(false);
-                }}
-                onAutoMode={() => {
-                    setBgAuto();
-                    setShowBgPicker(false);
-                }}
-            />
-
-            {/* Bottom Tab Bar */}
+            {/* Mobile Bottom Tab Bar */}
             <BottomTabBar activeTab={activeTab} />
-
-            {/* Wave Animation */}
-            <WaveAnimation />
         </div>
     );
 }
@@ -889,11 +208,12 @@ function AthleteWorkoutContent() {
 export default function AthleteWorkoutPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-3">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                <p className="text-xs text-muted-foreground">加载中...</p>
             </div>
         }>
-            <AthleteWorkoutContent />
+            <WorkoutContent />
         </Suspense>
     );
 }
