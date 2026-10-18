@@ -65,3 +65,6 @@ test-results/
 git-credentials
 git-askpass.sh
 push_out.txt
+node_modules
+* 2.*
+* 2/

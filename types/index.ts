@@ -43,7 +43,20 @@ export interface ShopItem {
     previewColor?: string; // For skin tone / hair color swatches
 }
 
-export type GroupLevel = "Junior" | "Intermediate" | "Advanced" | "External";
+export const GROUP_LEVELS = ["Junior", "Intermediate", "Advanced", "External"] as const;
+export type GroupLevel = (typeof GROUP_LEVELS)[number];
+
+export const ALL_STROKES = ["Free", "Back", "Breast", "Fly", "IM", "Choice"] as const;
+export type StrokeType = (typeof ALL_STROKES)[number];
+
+export const INTENSITY_LEVELS = ["Low", "Moderate", "High", "RacePace"] as const;
+export type IntensityLevel = (typeof INTENSITY_LEVELS)[number];
+
+export const EQUIPMENT_OPTIONS = ["Fins", "Paddles", "Snorkel", "Kickboard", "Pullbuoy"] as const;
+export type Equipment = (typeof EQUIPMENT_OPTIONS)[number];
+
+export const BLOCK_TYPES = ["Warmup", "Pre-Set", "Main Set", "Drill Set", "Cool Down"] as const;
+export type BlockType = (typeof BLOCK_TYPES)[number];
 
 export interface Swimmer {
     id: string;
@@ -76,7 +89,6 @@ export interface Swimmer {
 
 
 // Sub-types for TrainingPlan
-export type Equipment = "Fins" | "Paddles" | "Snorkel" | "Kickboard" | "Pullbuoy";
 
 export interface PlanSegment {
     distance: number;

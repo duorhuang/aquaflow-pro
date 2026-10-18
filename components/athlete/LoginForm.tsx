@@ -68,27 +68,36 @@ export function LoginForm({ mode = "athlete" }: LoginFormProps) {
                     return;
                 }
 
+function localizeAuthError(errorMsg?: string): string {
+    if (!errorMsg) return "用户名或密码不正确";
+    if (errorMsg === "Invalid credentials") return "用户名或密码不正确";
+    if (errorMsg.includes("username") || errorMsg.includes("password are required")) return "请输入用户名和密码";
+    if (errorMsg.includes("Too many attempts") || errorMsg.includes("429")) return "尝试次数过多，请 5 分钟后再试";
+    if (errorMsg.includes("Database is waking up") || errorMsg.includes("waking up")) return "云端数据库正在唤醒，请稍候...";
+    return errorMsg;
+}
+
                 const data = await res.json();
 
                 if (!res.ok) {
                     if (res.status === 401 || res.status === 400) {
-                        setError(data.error || "用户名或密码不正确");
+                        setError(localizeAuthError(data.error));
                         setIsLoading(false);
                         return;
                     }
                     if (res.status === 429) {
-                        setError(data.error || "尝试次数过多，请稍后再试");
+                        setError(localizeAuthError(data.error || "尝试次数过多，请稍后再试"));
                         setIsLoading(false);
                         return;
                     }
                     if (res.status === 503) {
-                        lastError = data.error || "云端数据库正在唤醒，请稍候...";
+                        lastError = localizeAuthError(data.error || "云端数据库正在唤醒，请稍候...");
                         if (attempt < MAX_RETRIES - 1) {
                             await new Promise((r) => setTimeout(r, 2500 * (attempt + 1)));
                             continue;
                         }
                     }
-                    lastError = data.error || "服务器忙，正在重试...";
+                    lastError = localizeAuthError(data.error || "服务器忙，正在重试...");
                     if (attempt < MAX_RETRIES - 1) {
                         await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
                         continue;

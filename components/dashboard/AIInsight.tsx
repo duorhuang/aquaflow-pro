@@ -28,7 +28,7 @@ export function AIInsight({ plan, swimmers }: AIInsightProps) {
         if (hasShoulderIssue && (hasPaddles || hasFly)) {
             risks.push({
                 swimmer: s,
-                reason: `肩部风险警报！计划包含 ${hasPaddles ? "手蹼" : ""} ${hasFly ? "高强蝶泳" : ""}。建议调整。`,
+                reason: `肩部风险警报！计划包含 ${hasPaddles ? "划手掌" : ""} ${hasFly ? "高强蝶泳" : ""}。建议调整。`,
                 level: "high"
             });
         }

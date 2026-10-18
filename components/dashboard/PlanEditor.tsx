@@ -30,7 +30,7 @@ const STROKES: PlanItem["stroke"][] = ["Free", "Back", "Breast", "Fly", "IM", "C
 const DISTANCES = [15, 25, 50, 75, 100, 150, 200, 300, 400, 800];
 const EQUIPMENT_MAP: Record<Equipment, string> = {
   Fins: "脚蹼",
-  Paddles: "手蹼",
+  Paddles: "划手掌",
   Snorkel: "呼吸管",
   Kickboard: "浮板",
   Pullbuoy: "夹板",

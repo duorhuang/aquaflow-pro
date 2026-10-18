@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     const data = flattenPayload(await request.json());
     // SECURITY: Athletes can only submit their own feedback
     if (auth.role === 'athlete' && data.swimmerId && data.swimmerId !== auth.userId) {
-      return NextResponse.json({ error: 'Forbidden: Can only submit your own feedback' }, { status: 403 });
+      return NextResponse.json({ error: '无权操作：只能提交您本人的训练反馈' }, { status: 403 });
     }
     const feedback = await feedbackRepo.upsert(data);
     return NextResponse.json(feedback, { headers: V12_FINGERPRINT });

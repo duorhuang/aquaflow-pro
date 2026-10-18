@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       } catch (e: any) {
         console.warn(`[me] warmDb attempt ${attempt + 1} failed:`, e.message);
         if (attempt === MAX_WARMUP_RETRIES - 1) {
-          return NextResponse.json({ error: 'Database still waking up' }, { status: 503, headers: V12_FINGERPRINT });
+          return NextResponse.json({ error: '数据库正在唤醒中，请稍候' }, { status: 503, headers: V12_FINGERPRINT });
         }
         await new Promise(r => setTimeout(r, WARMUP_DELAY));
       }
@@ -40,14 +40,14 @@ export async function GET(request: Request) {
     if (payload.role === 'coach') {
       const rows = await sql`SELECT id, name, username, "createdAt" FROM "CoachUser" WHERE id = ${payload.userId} LIMIT 1`;
       const coach = rows[0];
-      if (!coach) return NextResponse.json({ error: 'User not found' }, { status: 401, headers: V12_FINGERPRINT });
+      if (!coach) return NextResponse.json({ error: '用户不存在' }, { status: 401, headers: V12_FINGERPRINT });
       return NextResponse.json({ ...coach, role: 'coach' }, { headers: V12_FINGERPRINT });
     }
 
     if (payload.role === 'athlete') {
       const rows = await sql`SELECT id, name, username, "group", status, xp, "totalXp", balance, level, gender, "equippedItems", "currentStreak", "bestTimes", "injuries", "readiness", "injuryNote", "injuryBodyMap", "injuryImageUrl", "lastProfileUpdate", "mainStroke" FROM "Swimmer" WHERE id = ${payload.userId} LIMIT 1`;
       const swimmer = rows[0];
-      if (!swimmer) return NextResponse.json({ error: 'User not found' }, { status: 401, headers: V12_FINGERPRINT });
+      if (!swimmer) return NextResponse.json({ error: '用户不存在' }, { status: 401, headers: V12_FINGERPRINT });
       if (swimmer.bestTimes && typeof swimmer.bestTimes === 'string') {
         try { swimmer.bestTimes = JSON.parse(swimmer.bestTimes); } catch {}
       }
@@ -63,6 +63,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ ...swimmer, role: 'athlete' }, { headers: V12_FINGERPRINT });
     }
 
-    return NextResponse.json({ error: 'Invalid role' }, { status: 401, headers: V12_FINGERPRINT });
+    return NextResponse.json({ error: '角色无效' }, { status: 401, headers: V12_FINGERPRINT });
   });
 }

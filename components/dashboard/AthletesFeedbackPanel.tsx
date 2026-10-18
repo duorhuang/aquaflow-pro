@@ -72,7 +72,7 @@ export const AthletesFeedbackPanel = memo(function AthletesFeedbackPanel() {
                             </div>
                             <div className="flex items-center gap-2 text-xs flex-shrink-0">
                                 <span className="text-destructive font-medium">RPE {latest?.rpe}</span>
-                                <span className="text-warning-foreground font-medium">酸 {latest?.soreness}</span>
+                                <span className="text-warning-foreground font-medium">酸痛 {latest?.soreness}</span>
                             </div>
                         </div>
                     ))}

@@ -25,7 +25,7 @@ export async function PUT(request: Request) {
   return handleCoach(request, async () => {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
+    if (!id) return NextResponse.json({ error: '缺少计划ID' }, { status: 400 });
     const data = flattenPayload(await request.json());
     const plan = await planRepo.update(id, data);
     return NextResponse.json(plan, { headers: V12_FINGERPRINT });
@@ -36,7 +36,7 @@ export async function DELETE(request: Request) {
   return handleCoach(request, async () => {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
+    if (!id) return NextResponse.json({ error: '缺少计划ID' }, { status: 400 });
     await planRepo.delete(id);
     return NextResponse.json({ success: true }, { headers: V12_FINGERPRINT });
   });

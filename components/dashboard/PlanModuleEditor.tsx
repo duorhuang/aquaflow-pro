@@ -51,7 +51,7 @@ const EQUIPMENT: Equipment[] = [
 ];
 const EQUIPMENT_MAP: Record<Equipment, string> = {
   Fins: "脚蹼",
-  Paddles: "手蹼",
+  Paddles: "划手掌",
   Snorkel: "呼吸管",
   Kickboard: "浮板",
   Pullbuoy: "夹板",
